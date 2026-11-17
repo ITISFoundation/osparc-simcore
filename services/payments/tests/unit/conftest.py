@@ -27,7 +27,7 @@ from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import TypeAdapter
+from pydantic import SecretStr, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_method_view
 from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
@@ -597,3 +597,11 @@ def mock_resource_usage_tracker_service_api(
     )
 
     return mock_resource_usage_tracker_service_api_base
+
+
+@pytest.fixture
+def auth_settings() -> ApplicationSettings:
+    settings = Mock(spec=ApplicationSettings)
+    settings.PAYMENTS_USERNAME = "testuser"
+    settings.PAYMENTS_PASSWORD = SecretStr("testpass")
+    return settings

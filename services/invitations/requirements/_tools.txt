@@ -6,7 +6,7 @@ black==26.10.1
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
-click==8.2.1
+click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   black

@@ -1,5 +1,6 @@
+import hashlib
 import logging
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import sqlalchemy as sa
 from aiocache import cached  # type: ignore[import-untyped]
@@ -19,13 +20,19 @@ class UserAndProductTuple(NamedTuple):
     product_name: ProductName
 
 
+def _auth_cache_key(*_args: Any, **kwargs: Any) -> str:
+    digest = hashlib.sha256(f"{kwargs['api_key']}:{kwargs['api_secret']}".encode()).hexdigest()
+    return f"api_auth:{digest}"
+
+
 class ApiKeysRepository(BaseRepository):
     """Auth access"""
 
     @cached(
         ttl=AUTH_SESSION_TTL_SECONDS,
-        key_builder=lambda *_args, **kwargs: f"api_auth:{kwargs['api_key']}",
+        key_builder=_auth_cache_key,
         namespace=__name__,
+        skip_cache_func=lambda user: user is None,
         noself=True,
     )
     async def get_user(
@@ -35,9 +42,10 @@ class ApiKeysRepository(BaseRepository):
         api_key: str,
         api_secret: str,
     ) -> UserAndProductTuple | None:
-        """Validates API key and secret, returning user info if valid otherwise None.
+        """Validates API key, secret, and expiry, returning user info if valid otherwise None.
 
-        WARNING: Cached for 120s TTL - secret validation occurs every 2 minutes.
+        WARNING: Cached for 120s TTL, keyed on both api_key and api_secret: a
+        cached success is only replayed for the same credential pair.
         NOTE: to disable caching set AIOCACHE_DISABLE=1
         """
 
@@ -47,6 +55,7 @@ class ApiKeysRepository(BaseRepository):
         ).where(
             (auth_api_keys_table.c.api_key == api_key)  # NOTE: keep order, api_key is indexed
             & (auth_api_keys_table.c.api_secret == sa.func.crypt(api_secret, auth_api_keys_table.c.api_secret))
+            & (auth_api_keys_table.c.expires_at.is_(None) | (auth_api_keys_table.c.expires_at > sa.func.now())),
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(stmt)

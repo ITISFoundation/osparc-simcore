@@ -4,7 +4,16 @@ attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   referencing
-coverage==7.16.2
+certifi==2026.10.19
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   requests
+charset-normalizer==3.4.6
+    # via
+    #   -c requirements/_base.txt
+    #   requests
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -12,6 +21,10 @@ faker==40.39.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in
+idna==3.19
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 iniconfig==2.3.0
     # via
     #   -c requirements/_base.txt
@@ -29,7 +42,7 @@ pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -48,23 +61,25 @@ referencing==0.35.1
     # via
     #   -c requirements/_base.txt
     #   types-jsonschema
+requests==2.34.2
+    # via
+    #   -c requirements/_base.txt
+    #   types-docker
 rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   referencing
 termcolor==3.3.0
     # via pytest-sugar
-types-docker==7.2.0.20261006
+types-docker==7.2.0.20261102
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20260906
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
-types-requests==2.33.0.20261006
-    # via types-docker
 urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   requests
     #   types-docker
-    #   types-requests

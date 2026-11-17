@@ -4,7 +4,16 @@ arrow==1.4.0
     # via -r requirements/_test.in
 attrs==26.1.0
     # via pytest-docker
-coverage==7.16.2
+certifi==2026.10.19
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_migration.txt
+    #   requests
+charset-normalizer==3.5.1
+    # via
+    #   -c requirements/_migration.txt
+    #   requests
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -17,6 +26,11 @@ greenlet==3.3.2
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   sqlalchemy
+idna==3.19
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_migration.txt
+    #   requests
 iniconfig==2.3.0
     # via pytest
 librt==0.8.1
@@ -35,7 +49,7 @@ pluggy==1.6.0
     #   pytest-cov
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -43,7 +57,7 @@ pytest==9.1.1
     #   pytest-docker
     #   pytest-instafail
     #   pytest-timeout
-pytest-asyncio==1.4.1
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -61,6 +75,10 @@ pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+requests==2.34.2
+    # via
+    #   -c requirements/_migration.txt
+    #   types-docker
 six==1.17.0
     # via python-dateutil
 sqlalchemy==2.0.51
@@ -69,12 +87,10 @@ sqlalchemy==2.0.51
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   -r requirements/_test.in
-types-docker==7.2.0.20261006
+types-docker==7.2.0.20261102
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20261008
+types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
-types-requests==2.33.0.20261006
-    # via types-docker
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
@@ -87,5 +103,5 @@ urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_migration.txt
+    #   requests
     #   types-docker
-    #   types-requests

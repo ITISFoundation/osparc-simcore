@@ -19,6 +19,7 @@ import json
 import logging
 import re
 from collections.abc import Callable, Iterator
+from datetime import timedelta
 from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
@@ -28,7 +29,12 @@ from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, wait_for_service_running
+from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
+    RobustWebSocket,
+    wait_for_service_running,
+)
 from tenacity import (
     RetryError,
     before_sleep_log,
@@ -39,6 +45,7 @@ from tenacity import (
     wait_fixed,
 )
 
+_PROJECT_CLOSING_TIMEOUT: Final[timedelta] = timedelta(minutes=2)
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_function_job_collections_for_functionid")
@@ -61,6 +68,9 @@ _LHS_SEED: Final[int] = 42
 _DEFAULT_NUM_SAMPLING_POINTS: Final[int] = 40
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
+_PARAMETER_PERSISTENCE_TIMEOUT: Final[timedelta] = timedelta(seconds=15)
+_PARAMETER_PERSISTENCE_POLL: Final[timedelta] = timedelta(seconds=1)
+_PARAMETER_SERVICE_KEY_PREFIX: Final[str] = "simcore/services/frontend/parameter/"
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
 _SELECT_FUNCTION_RETRY_WAIT_SECONDS: Final[int] = 2
 _SAMPLING_STATUS_POLL_SECONDS: Final[int] = 5
@@ -413,6 +423,32 @@ def _assert_project_name_persisted(
 
 
 @retry(
+    wait=wait_fixed(_PARAMETER_PERSISTENCE_POLL),
+    stop=stop_after_delay(_PARAMETER_PERSISTENCE_TIMEOUT),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+)
+def _assert_parameter_connected(
+    *,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+    project_uuid: str,
+    node_id: str,
+    port_key: str,
+) -> None:
+    get_prj_resp = api_request_context.get(f"{product_url}v0/projects/{project_uuid}")
+    assert get_prj_resp.ok, f"Failed to GET project: {get_prj_resp.status} {get_prj_resp.text()}"
+    workbench = get_prj_resp.json()["data"]["workbench"]
+    connection = workbench[node_id].get("inputs", {}).get(port_key)
+    assert isinstance(connection, dict), f"Port {port_key} of {node_id} is not connected: {connection=}"
+    source_node = workbench.get(connection.get("nodeUuid"))
+    assert source_node is not None, f"Port {port_key} is connected to a node that does not exist: {connection=}"
+    assert source_node["key"].startswith(_PARAMETER_SERVICE_KEY_PREFIX), (
+        f"Port {port_key} is connected to {source_node['key']}, expected a parameter"
+    )
+
+
+@retry(
     wait=wait_fixed(_SAMPLING_STATUS_POLL_SECONDS),
     stop=stop_after_delay(_SAMPLING_TIMEOUT / 1000),
     retry=retry_if_exception_type(AssertionError),
@@ -532,22 +568,24 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
         with log_context(logging.INFO, "Create parameter on jsonifier_1.number_1"):
             page.get_by_test_id("connect_input_btn_number_1").click()
 
-            with (
-                page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}") and resp.request.method == "PATCH"
-                ) as patch_prj_param_ctx,
-                page.expect_response(
-                    lambda resp: (
-                        resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes") and resp.request.method == "POST"
-                    )
-                ) as create_param_ctx,
-            ):
+            # the project PATCH is not awaited: the frontend can send it before this click
+            with page.expect_response(
+                lambda resp: (
+                    resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes") and resp.request.method == "POST"
+                )
+            ) as create_param_ctx:
                 page.get_by_text("new parameter").click()
 
-            patch_prj_param_resp = patch_prj_param_ctx.value
-            assert patch_prj_param_resp.status == 204, f"Expected 204 from PATCH, got {patch_prj_param_resp.status}"
             create_param_resp = create_param_ctx.value
             assert create_param_resp.status == 201, f"Expected 201 from POST, got {create_param_resp.status}"
+
+            _assert_parameter_connected(
+                api_request_context=api_request_context,
+                product_url=product_url,
+                project_uuid=jsonifier_prj_uuid,
+                node_id=jsonifier_1_node_id,
+                port_key="number_1",
+            )
             page.wait_for_timeout(3 * SECOND)
 
         with log_context(logging.INFO, "Add second jsonifier node via API"):
@@ -664,6 +702,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     with (
         log_context(logging.INFO, "Go back to dashboard"),
         page.expect_response(re.compile(r"/projects\?.+")) as list_projects_response,
+        log_in_and_out.expect_project_closed(jsonifier_prj_uuid, timeout=_PROJECT_CLOSING_TIMEOUT),
     ):
         page.get_by_test_id("dashboardBtn").click()
         page.get_by_test_id("confirmDashboardBtn").click()

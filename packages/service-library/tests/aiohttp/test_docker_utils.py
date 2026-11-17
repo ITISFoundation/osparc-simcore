@@ -18,6 +18,9 @@ from servicelib.aiohttp.docker_utils import retrieve_image_layer_information
 from servicelib.docker_utils import pull_image
 from settings_library.docker_registry import RegistrySettings
 
+# NOTE: this module pulls, tags and removes images by name (see `docker_images_exclusive`)
+pytestmark = pytest.mark.usefixtures("docker_images_exclusive")
+
 
 @pytest.mark.parametrize(
     "service_repo, service_tag",
@@ -34,17 +37,23 @@ from settings_library.docker_registry import RegistrySettings
 async def test_retrieve_image_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     registry_settings: RegistrySettings,
+    external_registry_settings: RegistrySettings | None,
     osparc_service: dict[str, Any],
     service_repo: str,
     service_tag: str,
 ):
+    if external_registry_settings is not None:
+        pytest.skip(
+            "the injected image is only in the local pytest registry, "
+            f"not in the external one at {external_registry_settings.REGISTRY_URL}"
+        )
     # clean first
     image_name = f"{service_repo}:{service_tag}"
     if "sha256" in service_tag:
         image_name = f"{service_repo}@{service_tag}"
     await remove_images_from_host([image_name])
     docker_image = TypeAdapter(DockerGenericTag).validate_python(
-        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
+        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['registry_name']}:{osparc_service['image']['tag']}",
     )
     layer_information = await retrieve_image_layer_information(docker_image, registry_settings)
 

@@ -6,6 +6,7 @@
 import asyncio
 import logging
 from contextlib import AsyncExitStack
+from http.cookies import SimpleCookie
 from unittest.mock import AsyncMock
 
 import pytest
@@ -23,20 +24,26 @@ from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._twofa_service import (
+    _ATTEMPTS_KEY,
+    TrialOutcome,
+    check_2fa_code,
     create_2fa_code,
     delete_2fa_code,
     get_redis_validation_code_client,
     has_2fa_code,
     notifications_service,
+    release_2fa_resend_cooldown,
     send_email_code,
-    verify_2fa_code,
+    start_2fa_resend_cooldown,
 )
 from simcore_service_webserver.login.constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
+    MAX_2FA_CODE_TRIALS,
     MSG_2FA_UNAVAILABLE,
     MSG_LOGGED_IN,
     MSG_PHONE_REGISTER_2FA_REQUIRED,
     MSG_REGISTRATION_SUCCESS,
+    MSG_WRONG_2FA_CODE__EXPIRED,
     MSG_WRONG_2FA_CODE__INVALID,
 )
 from simcore_service_webserver.user_preferences import user_preferences_service
@@ -50,6 +57,8 @@ pytest_simcore_core_services_selection = [
     "redis",
     "rabbit",
 ]
+
+pytestmark = pytest.mark.usefixtures("clean_2fa_redis_state")
 
 
 @pytest.fixture
@@ -81,23 +90,27 @@ def mocked_twilio_service(mocker: MockerFixture) -> dict[str, MockType]:
 async def test_2fa_code_operations(client: TestClient):
     assert client.app
 
-    # check/verify an entry that does not exist
+    # an entry that does not exist
     assert await has_2fa_code(client.app, "invalid@bar.com") is False
-    assert await verify_2fa_code(client.app, user_email="invalid@bar.com", code="123456") is False
+    assert await check_2fa_code(client.app, user_email="invalid@bar.com", code="123456") is TrialOutcome.NO_CODE
     await delete_2fa_code(client.app, "invalid@bar.com")
 
-    # set/verify/delete
+    # set/check/delete
     email = "foo@bar.com"
     code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
 
     assert await has_2fa_code(client.app, email) is True
-    assert await verify_2fa_code(client.app, user_email=email, code=code) is True
-    # a wrong code is rejected
+    # a wrong code is rejected and charged a trial
     wrong_code = "000000" if code != "000000" else "111111"
-    assert await verify_2fa_code(client.app, user_email=email, code=wrong_code) is False
+    assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
     # only the HMAC digest is persisted, never the plaintext code
     assert await get_redis_validation_code_client(client.app).get(email) != code
+    # the genuine code authenticates and is consumed
+    assert await check_2fa_code(client.app, user_email=email, code=code) is TrialOutcome.VALID
+    assert await has_2fa_code(client.app, email) is False
 
+    await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    assert await has_2fa_code(client.app, email) is True
     await delete_2fa_code(client.app, email)
     assert await has_2fa_code(client.app, email) is False
 
@@ -106,6 +119,167 @@ async def test_2fa_code_operations(client: TestClient):
     await create_2fa_code(client.app, user_email=email, expiration_in_seconds=1)
     await asyncio.sleep(1.5)
     assert await has_2fa_code(client.app, email) is False
+
+
+async def test_2fa_trial_budget_and_resend_cooldown(client: TestClient):
+    """The trial budget belongs to the current code, gates verification and
+    leaves the code intact; the resend cooldown allows one code per account and
+    channel per window
+    """
+    assert client.app
+
+    email = "attempts@bar.com"
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    stored = await get_redis_validation_code_client(client.app).get(email)
+    wrong_code = "000000" if code != "000000" else "111111"
+
+    # the code above belongs to `email`: another account stores nothing, so
+    # this check reports NO_CODE rather than charging a trial
+    assert await check_2fa_code(client.app, user_email="nobody@bar.com", code=code) is TrialOutcome.NO_CODE
+
+    for _ in range(MAX_2FA_CODE_TRIALS):
+        assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=code) is TrialOutcome.TRIALS_EXHAUSTED
+
+    # an exhausted budget gates verification without destroying the code
+    assert await has_2fa_code(client.app, email) is True
+    assert await get_redis_validation_code_client(client.app).get(email) == stored
+
+    # a new code starts a fresh budget; the genuine code authenticates and is
+    # consumed
+    new_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    assert await check_2fa_code(client.app, user_email=email, code=code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=new_code) is TrialOutcome.VALID
+    assert await has_2fa_code(client.app, email) is False
+
+    # the cooldown grants the first resend and times the following ones
+    cooldown_email = "cooldown@bar.com"
+    first = await start_2fa_resend_cooldown(
+        client.app, user_email=cooldown_email, channel="SMS", cooldown_in_seconds=60
+    )
+    assert first.retry_after_s is None
+
+    second = await start_2fa_resend_cooldown(
+        client.app, user_email=cooldown_email, channel="SMS", cooldown_in_seconds=60
+    )
+    assert second.retry_after_s is not None
+    assert 1 <= second.retry_after_s <= 60
+
+    # a request that armed the window can release it again, so a delivery that
+    # never happened does not cost the account the whole window
+    await release_2fa_resend_cooldown(client.app, first)
+    third = await start_2fa_resend_cooldown(
+        client.app, user_email=cooldown_email, channel="SMS", cooldown_in_seconds=60
+    )
+    assert third.retry_after_s is None
+
+    # releasing a window another request owns leaves it in place
+    await release_2fa_resend_cooldown(client.app, second)
+    fourth = await start_2fa_resend_cooldown(
+        client.app, user_email=cooldown_email, channel="SMS", cooldown_in_seconds=60
+    )
+    assert fourth.retry_after_s is not None
+    assert 1 <= fourth.retry_after_s <= 60
+
+    # the cooldown is tracked per channel
+    other_channel = await start_2fa_resend_cooldown(
+        client.app, user_email=cooldown_email, channel="Email", cooldown_in_seconds=60
+    )
+    assert other_channel.retry_after_s is None
+
+
+async def test_concurrent_wrong_trials_admit_at_most_the_trial_budget(client: TestClient):
+    """Trials are charged atomically before any comparison: submitting a whole
+    budget's worth concurrently cannot let more than MAX_2FA_CODE_TRIALS
+    verifications reach the stored code
+    """
+    assert client.app
+
+    email = "concurrent@bar.com"
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    stored = await get_redis_validation_code_client(client.app).get(email)
+    wrong_code = "000000" if code != "000000" else "111111"
+
+    outcomes = await asyncio.gather(
+        *(check_2fa_code(client.app, user_email=email, code=wrong_code) for _ in range(4 * MAX_2FA_CODE_TRIALS))
+    )
+
+    assert outcomes.count(TrialOutcome.INVALID) == MAX_2FA_CODE_TRIALS
+    assert outcomes.count(TrialOutcome.TRIALS_EXHAUSTED) == 3 * MAX_2FA_CODE_TRIALS
+
+    # the budget was spent in bookkeeping only: the code was never deleted
+    assert await has_2fa_code(client.app, email) is True
+    assert await get_redis_validation_code_client(client.app).get(email) == stored
+
+
+async def test_resend_during_validation_isolates_the_new_code(client: TestClient):
+    """A replaced code is neither authenticated by trials admitted for the old
+    one, nor drained or deleted by their bookkeeping
+    """
+    assert client.app
+
+    email = "resend-race@bar.com"
+    first_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    wrong_code = "000000" if first_code != "000000" else "111111"
+
+    # one wrong trial charged to the first code
+    assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+
+    # the resend replaces the code mid-flow
+    second_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+
+    # the genuine old code does not authenticate the replacement, and its
+    # submission is charged to the replacement's budget, not to the old one's
+    assert await check_2fa_code(client.app, user_email=email, code=first_code) is TrialOutcome.INVALID
+    for _ in range(MAX_2FA_CODE_TRIALS - 1):
+        assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=second_code) is TrialOutcome.TRIALS_EXHAUSTED
+
+    # a third code survives: neither verified by the exhausted code's trials
+    # nor drained by them
+    third_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    assert await check_2fa_code(client.app, user_email=email, code=second_code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=third_code) is TrialOutcome.VALID
+    assert await has_2fa_code(client.app, email) is False
+
+
+async def test_2fa_code_authenticates_once_under_concurrent_submissions(client: TestClient):
+    """Only the submission that consumes the code authenticates, so a concurrent
+    replay of the same code cannot reuse it
+    """
+    assert client.app
+
+    email = "one-shot@bar.com"
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+
+    outcomes = await asyncio.gather(*(check_2fa_code(client.app, user_email=email, code=code) for _ in range(3)))
+
+    assert outcomes.count(TrialOutcome.VALID) == 1
+    assert await has_2fa_code(client.app, email) is False
+
+
+async def test_trial_counter_expires_with_its_code(client: TestClient):
+    """The trial counter copies the code's remaining lifetime to the
+    millisecond: a whole-second copy lets the counter lapse while the code is
+    still alive, and a replay in that gap refills the budget
+    """
+    assert client.app
+
+    redis_client = get_redis_validation_code_client(client.app)
+    email = "ttl@bar.com"
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=2)
+    wrong_code = "000000" if code != "000000" else "111111"
+
+    assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+
+    counter_keys = [key async for key in redis_client.scan_iter(match=f"{_ATTEMPTS_KEY}:{email}:*")]
+    assert len(counter_keys) == 1
+
+    code_pttl = await redis_client.pttl(email)
+    counter_pttl = await redis_client.pttl(counter_keys[0])
+    assert counter_pttl > 0
+    # the counter never lags its code by more than the script's round-trip
+    assert code_pttl - counter_pttl <= 300
 
 
 @pytest.mark.acceptance_test
@@ -494,7 +668,8 @@ async def test_phone_reconfirmation_cannot_take_over_another_account(
         # the OTP was minted for the session's own account, not for the named email
         registration_code = mocked_twilio_service["send_sms_code_for_registration"].call_args.kwargs["code"]
         assert await has_2fa_code(client.app, second_account["email"]) is False
-        assert await verify_2fa_code(client.app, user_email=first_account["email"], code=registration_code) is True
+        # existence only: consuming the code here would leave nothing to confirm below
+        assert await has_2fa_code(client.app, first_account["email"]) is True
 
         response = await client.post(
             f"{client.app.router['auth_phone_confirmation'].url_for()}",
@@ -672,7 +847,8 @@ async def test_resend_2fa_code_uses_session_email_not_body(
         assert last_sms.kwargs["phone_number"] == first_phone
         assert await has_2fa_code(client.app, second_account["email"]) is False
         assert (
-            await verify_2fa_code(client.app, user_email=first_account["email"], code=last_sms.kwargs["code"]) is True
+            await check_2fa_code(client.app, user_email=first_account["email"], code=last_sms.kwargs["code"])
+            is TrialOutcome.VALID
         )
 
 
@@ -816,12 +992,149 @@ async def test_login_2fa_ignores_a_code_valid_for_another_account(
         assert MSG_WRONG_2FA_CODE__INVALID.split(".")[0] in error["message"]
 
         # the second account's code was neither consumed nor replaced
-        assert await verify_2fa_code(client.app, user_email=second_account["email"], code=second_code) is True
+        assert (
+            await check_2fa_code(client.app, user_email=second_account["email"], code=second_code) is TrialOutcome.VALID
+        )
 
         # the session's own login is intact and completes with its own code
         response = await client.post(
             f"{client.app.router['auth_login_2fa'].url_for()}",
             json={"email": first_account["email"], "code": first_code},
+        )
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in data["message"]
+
+
+async def test_2fa_trial_limit_survives_session_cookie_replay(
+    client: TestClient,
+    mocked_twilio_service: dict[str, MockType],
+):
+    """Wrong-code trials are counted in Redis before the code is verified:
+    replaying the session cookie handed out at code creation cannot add
+    trials, concurrent submissions cannot outguess the budget, and the code
+    authenticates no longer once the budget is spent
+    """
+    assert client.app
+
+    account_phone = "+41770000071"
+
+    def _use_cookie(value: str) -> None:
+        client.session.cookie_jar.clear()
+        client.session.cookie_jar.update_cookies(
+            SimpleCookie({DEFAULT_SESSION_COOKIE_NAME: value}), client.make_url("/")
+        )
+
+    async with NewUser(user_data={"phone": account_phone}, app=client.app) as account:
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": account["email"], "password": account["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+        code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
+        wrong_code = "000000" if code != "000000" else "111111"
+        stored = await get_redis_validation_code_client(client.app).get(account["email"])
+
+        # the cookie issued together with the code carries the full trial budget
+        issued_cookie = response.cookies[DEFAULT_SESSION_COOKIE_NAME].value
+        latest_cookie = issued_cookie
+
+        # a full trial budget per attempt, presented concurrently: the Redis
+        # budget is consumed before verification, so no more than
+        # MAX_2FA_CODE_TRIALS submissions ever reach the stored code
+        url = f"{client.app.router['auth_login_2fa'].url_for()}"
+        responses = await asyncio.gather(
+            *(
+                client.post(
+                    url,
+                    json={"email": account["email"], "code": wrong_code},
+                    cookies={DEFAULT_SESSION_COOKIE_NAME: issued_cookie},
+                )
+                for _ in range(MAX_2FA_CODE_TRIALS)
+            )
+        )
+        assert all(r.status == status.HTTP_401_UNAUTHORIZED for r in responses)
+        latest_cookie = responses[-1].cookies[DEFAULT_SESSION_COOKIE_NAME].value
+
+        # the newest cookie grants no further attempt either: the server-side
+        # budget is spent
+        _use_cookie(latest_cookie)
+        response = await client.post(
+            url,
+            json={"email": account["email"], "code": wrong_code},
+        )
+        _, error = await assert_status(response, status.HTTP_401_UNAUTHORIZED)
+        assert error is not None
+        assert MSG_WRONG_2FA_CODE__EXPIRED.split(".")[0] in error["message"]
+
+        # the genuine code authenticates no longer either
+        response = await client.post(
+            url,
+            json={"email": account["email"], "code": code},
+        )
+        await assert_status(response, status.HTTP_401_UNAUTHORIZED)
+
+        # the spent budget never destroyed the code: it was gated before
+        # verification, never deleted or replaced
+        assert await has_2fa_code(client.app, account["email"]) is True
+        assert await get_redis_validation_code_client(client.app).get(account["email"]) == stored
+
+        # a resent code, with the trial counter reset, authenticates again
+        response = await client.post(
+            f"{client.app.router['auth_resend_2fa_code'].url_for()}",
+            json={"email": account["email"], "via": "SMS"},
+        )
+        await assert_status(response, status.HTTP_200_OK)
+        resent_code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
+
+        response = await client.post(
+            url,
+            json={"email": account["email"], "code": resent_code},
+        )
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in data["message"]
+
+
+async def test_resend_recovers_validation_after_exhausted_trials(
+    client: TestClient,
+    mocked_twilio_service: dict[str, MockType],
+):
+    """After exhausting the trials of one code, resending recovers the flow:
+    the new code authenticates without the session having to re-login
+    """
+    assert client.app
+
+    account_phone = "+41770000072"
+
+    async with NewUser(user_data={"phone": account_phone}, app=client.app) as account:
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": account["email"], "password": account["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+        code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
+        wrong_code = "000000" if code != "000000" else "111111"
+
+        url = f"{client.app.router['auth_login_2fa'].url_for()}"
+        for _ in range(MAX_2FA_CODE_TRIALS):
+            response = await client.post(
+                url,
+                json={"email": account["email"], "code": wrong_code},
+            )
+            assert response.status == status.HTTP_401_UNAUTHORIZED
+
+        # the new code must be grantable to this session again: a session that
+        # spent its validation budget on wrong codes would otherwise be locked
+        # out of a code it never guessed wrong
+        response = await client.post(
+            f"{client.app.router['auth_resend_2fa_code'].url_for()}",
+            json={"email": account["email"], "via": "SMS"},
+        )
+        await assert_status(response, status.HTTP_200_OK)
+        resent_code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
+
+        response = await client.post(
+            url,
+            json={"email": account["email"], "code": resent_code},
         )
         data, _ = await assert_status(response, status.HTTP_200_OK)
         assert MSG_LOGGED_IN in data["message"]

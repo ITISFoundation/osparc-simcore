@@ -6,7 +6,6 @@ from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from random import choice
-from typing import Protocol
 
 import httpx2
 import pytest
@@ -23,23 +22,13 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
+from pytest_simcore.helpers.storage_utils import CreateProjectAccessRightsCallable
 from servicelib.aiohttp import status
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
-
-
-class CreateProjectAccessRightsCallable(Protocol):
-    async def __call__(
-        self,
-        project_id: ProjectID,
-        user_id: UserID,
-        read: bool,
-        write: bool,
-        delete: bool,
-    ) -> None: ...
 
 
 @pytest.mark.parametrize(

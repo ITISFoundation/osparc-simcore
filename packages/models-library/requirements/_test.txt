@@ -4,7 +4,7 @@ attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   referencing
-coverage==7.16.2
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -28,7 +28,7 @@ multidict==7.0.0
     # via yarl
 packaging==26.3
     # via pytest
-pint==0.25.2
+pint==0.26.2
     # via -r requirements/_test.in
 platformdirs==4.9.4
     # via pint
@@ -44,7 +44,7 @@ psutil==7.2.2
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -53,7 +53,7 @@ pytest==9.1.1
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.4.1
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -87,7 +87,7 @@ termcolor==3.3.0
     # via pytest-sugar
 types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20260906
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

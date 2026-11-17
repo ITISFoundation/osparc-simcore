@@ -76,7 +76,7 @@ flowchart TD
     other["Renovate: major,<br/>non-Python minor"]
     gate{"review gate, every 15 min:<br/>checks of the draft"}
     ready["ready: GitHub requests<br/>the code owners"]
-    held["ready,<br/>fast-lane label removed"]
+    held["ready, 🙋-needs-takeover,<br/>one owner assigned"]
     fastq["renovate-fast queue:<br/>checks only"]
     defq["default queue: 2 approvals,<br/>one by a code owner, checks"]
     merge["Mergify merges master in,<br/>CI runs again, squash-merge"]
@@ -133,10 +133,12 @@ only after the checks have finished:
    - **all passed, no label** (majors, other minors): the requested
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
-     commit is still failing, the pull request loses `🤖-renovate-fast-lane`, is
-     marked ready (which requests the code owners), and a warning comment lists
-     the failing checks and how to take the update over. From then on it goes
-     through the reviewed path.
+     commit is still failing, the pull request loses `🤖-renovate-fast-lane` and
+     gets `🙋-needs-takeover`, one of its owners is assigned, it is marked ready
+     (which requests the code owners), and a warning comment lists the failing
+     checks, names the assignee and says how to take the update over. From then
+     on it goes through the reviewed path. See
+     [When a pull request needs a person](#when-a-pull-request-needs-a-person).
 
    The gate leaves a draft alone once it has requested reviewers or reviews, so
    a pull request turned back into a draft stays a draft.
@@ -220,6 +222,20 @@ what breaks is repository code coupled to the older version, like a test
 importing a private `psutil` type that 7.2 removed. The gate's checks decide
 whether such a pull request merges; the moved pins are commented, not blocked.
 
+Moves in the other direction are not wanted, and a successful resolve does not
+mean one did not happen. uv also reads the lockfile it is about to overwrite as
+a source of version preferences, so an `--upgrade-package dnspython==2.9.2` in a
+directory whose `--constraint` source still pinned 2.9.0 did not fail: it
+dropped the extra that pulls `email-validator` in and backtracked what stood
+above it. In the two lockfiles of #10099 it took `fastapi` from 0.162.0 to
+0.110.3, `starlette` from 1.6.0 to 0.37.2 and `fastapi-pagination` from 0.16.1
+to 0.15.16. The resync now compares every managed lockfile against the
+merge-base with the base branch (`RENOVATE_RESYNC_BASE_REF` names another ref)
+and writes the same report the unresolvable-directory case writes, which puts
+those downgrades under `test_no_lockfile_resync_left_behind` too. Where no
+base ref is reachable it warns instead, since a shallow clone is not evidence
+of a rollback.
+
 A directory that resolves at nothing gets the `MAX_UNBLOCK_ROUNDS` fallback
 instead: uv names the pin in its way, the first round lets that package rise no
 higher than another lockfile here pins it, and the round after frees it. That is
@@ -246,6 +262,36 @@ A pull request that waits for reviews is only updated by Renovate's runs. The
 push trigger of the `renovate` job makes that happen within minutes of every
 dependency merge.
 
+## When a pull request needs a person
+
+A Renovate pull request needs someone when it carries `🙋-needs-takeover`: its
+checks have been failing for 3 h on the last commit and Renovate did not fix
+them. The review gate adds the label, assigns one owner, and marks the pull
+request ready. What to do with it is in
+[Fixing a failing Renovate pull request](#fixing-a-failing-renovate-pull-request).
+
+To list them:
+[is:pr is:open label:"🙋-needs-takeover"](https://github.com/ITISFoundation/osparc-simcore/issues?q=is%3Apr+is%3Aopen+label%3A%22%F0%9F%99%8B-needs-takeover%22).
+
+The assignee comes from `TAKEOVER_ASSIGNEES` in the `review-gate` job, picked by
+the pull request number, so one pull request keeps its owner and consecutive
+ones walk the list. That person owns it until the pull request merges, closes,
+or goes green on its own. A test keeps that list equal to the owners of the last
+[CODEOWNERS](../.github/CODEOWNERS) block.
+
+The gate removes the label and its assignee once the checks of a ready pull
+request are green again, which is what a Renovate rebase onto a `master`
+carrying the fix produces. Only the assignee it added goes: `osparc-shared`,
+which Renovate assigns to every pull request, stays. It adds nothing back:
+`🤖-renovate-fast-lane` is a label a person puts on.
+
+Two states that are *not* a takeover:
+
+- a green pull request waiting for a code-owner review needs a review, not a
+  fix;
+- `🤖-do-not-merge` is a person holding a pull request back, and theirs to
+  remove.
+
 ## Fixing a failing Renovate pull request
 
 Do not push to a `renovate/*` branch: Renovate makes no further commits to a
@@ -269,9 +315,14 @@ stops following `master`. Instead:
    ```
 
    The push prints a link that opens the comparison with `master`. Open your
-   pull request there, and copy the description of Renovate's across: its update
-   type and its changelog and release-note links are what a reviewer reads
-   first. Then close Renovate's with a comment `replaced by #<number>`: the
+   pull request there and fill `.github/PULL_REQUEST_TEMPLATE.md` like any
+   hand-written pull request, with the takeover in the `## Goal` sentence and
+   `## Related issue/s` reading `replaces #<number> (Renovate's release notes
+   are there)`. Reference those notes instead of pasting them: a copied
+   description truncates at platform limits. The title keeps Renovate's, appends
+   `(taken over from #<number>)`, and carries the `⬆️` gitmoji. [PR
+   #10037](https://github.com/ITISFoundation/osparc-simcore/pull/10037) is an
+   example. Then close Renovate's with a comment `replaced by #<number>`: the
    reference is the traceable link, and it reads as a handover rather than a
    declined version. Bring the fix along with the update, because closing hands
    the update over: Renovate matches a pull
@@ -284,8 +335,9 @@ stops following `master`. Instead:
    the version in `.renovaterc.jsonc` (`allowedVersions`, `ignoreDeps`).
 
 A pull request the review gate held lost `🤖-renovate-fast-lane`. The reviewed
-path does not need that label: the pull request merges once its checks pass and
-two reviewers approve. Re-adding the label sends it through the fast lane again.
+path does not need it: the pull request merges once its checks pass and two
+reviewers approve. Re-adding it sends the pull request through the fast lane
+again.
 
 ## Adding something new for Renovate to manage
 

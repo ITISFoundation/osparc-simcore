@@ -26,6 +26,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
+@pytest.mark.docker_exclusive(reason="pauses the 'rabbit' container every xdist worker connects to")
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_client_lose_connection(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
@@ -66,6 +67,7 @@ def random_rabbit_message(
     return _creator
 
 
+@pytest.mark.docker_exclusive(reason="pauses the 'rabbit' container every xdist worker connects to")
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_client_with_paused_container(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
@@ -108,8 +110,9 @@ def _assert_rabbitmq_has_connections(rabbit_service: RabbitSettings, num_connect
     )
     response = requests.get(rabbit_list_connections_url, timeout=5)
     response.raise_for_status()
-    list_connections = response.json()
-    assert len(list_connections) == num_connections
+    # other xdist workers hold their own connections on this broker, each in its own vhost
+    list_connections = [conn for conn in response.json() if conn["vhost"] == rabbit_service.RABBIT_VHOST]
+    assert len(list_connections) == num_connections, f"got {list_connections}"
     return [conn["name"] for conn in list_connections]
 
 

@@ -40,11 +40,11 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.16.2
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 faker==40.38.0
     # via -r requirements/_test.in
@@ -120,7 +120,7 @@ pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -128,7 +128,7 @@ pytest==9.1.1
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.4.1
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -156,7 +156,7 @@ requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 simple-websocket==1.1.0
     # via
@@ -179,7 +179,7 @@ types-pyasn1==0.6.0.20250914
     # via types-python-jose
 types-python-jose==3.5.0.20260408
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20260906
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

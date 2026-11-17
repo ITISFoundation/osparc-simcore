@@ -20,6 +20,7 @@ from servicelib.docker_utils import (
     _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC,
     _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO,
     _DockerPullImage,
+    _DockerPullImageProgressDetail,
     _parse_pull_information,
     _PulledStatus,
     pull_image,
@@ -29,6 +30,9 @@ from servicelib.fastapi.docker_utils import (
     retrieve_image_layer_information,
 )
 from settings_library.docker_registry import RegistrySettings
+
+# NOTE: this module pulls, tags and removes images by name (see `docker_images_exclusive`)
+pytestmark = pytest.mark.usefixtures("docker_images_exclusive")
 
 
 @pytest.mark.parametrize(
@@ -46,17 +50,23 @@ from settings_library.docker_registry import RegistrySettings
 async def test_retrieve_image_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     registry_settings: RegistrySettings,
+    external_registry_settings: RegistrySettings | None,
     osparc_service: dict[str, Any],
     service_repo: str,
     service_tag: str,
 ):
+    if external_registry_settings is not None:
+        pytest.skip(
+            "the injected image is only in the local pytest registry, "
+            f"not in the external one at {external_registry_settings.REGISTRY_URL}"
+        )
     # clean first
     image_name = f"{service_repo}:{service_tag}"
     if "sha256" in service_tag:
         image_name = f"{service_repo}@{service_tag}"
     await remove_images_from_host([image_name])
     docker_image = TypeAdapter(DockerGenericTag).validate_python(
-        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
+        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['registry_name']}:{osparc_service['image']['tag']}",
     )
     layer_information = await retrieve_image_layer_information(docker_image, registry_settings)
 
@@ -263,7 +273,8 @@ async def test_pull_image_without_layer_information(
     [
         {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
     ],
-    ids=str,
+    # str(set) depends on the per-process hash seed, so pytest's own id differs per worker
+    ids=lambda images: "-".join(sorted(images)),
 )
 async def test_pull_images_set(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -312,7 +323,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
         progress_1s = _DockerPullImage(
             status="extracting",
             id=layer_id,
-            progress_detail={"current": 1, "total": 0, "units": "seconds"},
+            progress_detail=_DockerPullImageProgressDetail(current=1, total=0, units="seconds"),
         )
         await _parse_pull_information(
             progress_1s,
@@ -329,7 +340,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
         progress_2s = _DockerPullImage(
             status="extracting",
             id=layer_id,
-            progress_detail={"current": 2, "total": 0, "units": "seconds"},
+            progress_detail=_DockerPullImageProgressDetail(current=2, total=0, units="seconds"),
         )
         await _parse_pull_information(
             progress_2s,
@@ -352,7 +363,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
         progress_large = _DockerPullImage(
             status="extracting",
             id=layer_id,
-            progress_detail={"current": 9999, "total": 0, "units": "seconds"},
+            progress_detail=_DockerPullImageProgressDetail(current=9999, total=0, units="seconds"),
         )
         await _parse_pull_information(
             progress_large,

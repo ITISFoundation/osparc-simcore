@@ -493,6 +493,16 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "new password is shorter than the minimum length",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
@@ -547,7 +557,7 @@
             }
           },
           "422": {
-            "description": "current password is invalid",
+            "description": "current password is invalid or new password is shorter than the minimum length",
             "content": {
               "application/json": {
                 "schema": {
