@@ -16,11 +16,9 @@ Flow:
 import asyncio
 import logging
 from functools import lru_cache
-from typing import Annotated, Final
 from uuid import UUID, uuid5
 
 from aiohttp import web
-from annotated_types import doc
 from common_library.json_serialization import json_dumps
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -38,24 +36,13 @@ from ..projects.api import (
     get_project_dict_and_type,
 )
 from ..projects.exceptions import ProjectNotFoundError
-from ..projects.projects_trash_service import delete_project_as_admin, trash_project_for_immediate_deletion
+from ..projects.projects_trash_service import trash_project_for_immediate_deletion
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users.users_service import get_user
 
 _logger = logging.getLogger(__name__)
 
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
-
-_COPY_CLEANUP_TIMEOUT_S: Final[
-    Annotated[
-        int,
-        doc(
-            "seconds the best-effort delete of a failed clone's copy may hold up the dispatch "
-            "task; past the timeout the garbage-collector deletes the already-stamped copy on "
-            "its next sweep, so keep it below the sweep interval"
-        ),
-    ]
-] = 10
 
 
 @lru_cache
@@ -93,37 +80,6 @@ async def _safe_stamp_copy_for_immediate_deletion(
                 project_id=ProjectID(project_uuid),
             )
         )
-
-
-async def _delete_copy_or_leave_it_to_gc(
-    app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
-) -> None:
-    """Deletes a copy whose clone did not finish, or leaves it to the garbage-collector.
-
-    Stamping (hidden and trashed in one query) comes first: from then on the
-    garbage-collector owns the copy, so neither a timeout here nor a shutdown can strand
-    it. The direct delete below only frees the uuid sooner.
-
-    A copy that is already hidden belongs to another deletion: stamp it and leave it —
-    deleting the same uuid twice can remove a clone recreated under it.
-    """
-    try:
-        copy = await _projects_repository.get_project(app, project_uuid=ProjectID(project_uuid))
-    except ProjectNotFoundError:
-        return
-
-    await _safe_stamp_copy_for_immediate_deletion(
-        app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
-    )
-    if copy.hidden:
-        return
-
-    try:
-        async with asyncio.timeout(_COPY_CLEANUP_TIMEOUT_S):
-            await delete_project_as_admin(app, project_uuid=ProjectID(project_uuid), product_name=product_name)
-    except Exception, asyncio.CancelledError:  # pylint: disable=broad-exception-caught
-        # stamped above: the garbage-collector retries the deletion on its next sweep
-        _logger.warning("Left copy %s to the garbage-collector after its deletion did not complete", project_uuid)
 
 
 async def _copy_exists(app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str) -> bool:
@@ -194,19 +150,14 @@ async def _clone_study_with_gc_lock(
         )
     except Exception, asyncio.CancelledError:
         # `clone_project_data` commits the copy before its later steps and its uuid is
-        # deterministic: a partial copy would be taken for a finished clone by the next dispatch.
-        try:
-            with log_catch(_logger, reraise=False):
-                await _delete_copy_or_leave_it_to_gc(
-                    app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
-                )
-        except asyncio.CancelledError:
-            # the cancellation may have landed before the stamp was attempted; request it
-            # again — the shield lets the stamp finish while this task unwinds
-            await _safe_stamp_copy_for_immediate_deletion(
-                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
-            )
-            raise
+        # deterministic: a partial copy would be taken for a finished clone by the next
+        # dispatch. Stamping (hidden and trashed in one query) hands the copy to the
+        # garbage-collector, which performs the deletion alone: deleting it here as well
+        # would race the collector over the uuid and could wipe a clone recreated under it.
+        # The stamp is shielded, so an abort of this task cannot interrupt it.
+        await _safe_stamp_copy_for_immediate_deletion(
+            app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
+        )
         raise
 
 
