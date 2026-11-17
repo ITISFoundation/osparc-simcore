@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from types import ModuleType
-from typing import Any, Final, TypeAlias
+from typing import Any, Final
 
 from aiohttp import web
 from socketio import AsyncServer  # type: ignore[import-untyped]
@@ -20,20 +20,24 @@ def get_socket_server(app: web.Application) -> AsyncServer:
 
 
 # The socket ID that was assigned to the client
-SocketID: TypeAlias = str
+type SocketID = str
 
-# The environ argument is a dictionary in standard WSGI format containing the request information, including HTTP headers
-EnvironDict: TypeAlias = dict[str, Any]
+# The environ argument is a dictionary in standard WSGI format containing the request
+# information, including HTTP headers
+type EnvironDict = dict[str, Any]
 
-# Connect event
-SocketioConnectEventHandler: TypeAlias = Callable[[SocketID, EnvironDict, web.Application], Awaitable[None]]
+# Connect event. `auth` is the payload the client puts in the CONNECT packet (Socket.IO v4):
+# python-socketio passes None when the client sends nothing, and forwards the decoded payload
+# unchanged otherwise, so the handler must validate it before using it
+type SocketioAuthData = Any
+type SocketioConnectEventHandler = Callable[[SocketID, EnvironDict, SocketioAuthData, web.Application], Awaitable[None]]
 
 # Disconnect event
-SocketioDisconnectEventHandler: TypeAlias = Callable[[SocketID, web.Application], Awaitable[None]]
+type SocketioDisconnectEventHandler = Callable[[SocketID, web.Application], Awaitable[None]]
 
 # Event
-AnyData: TypeAlias = Any
-SocketioEventHandler: TypeAlias = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
+type AnyData = Any
+type SocketioEventHandler = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
 
 _socketio_handlers_registry: list[
     (SocketioEventHandler | SocketioConnectEventHandler | SocketioDisconnectEventHandler)
