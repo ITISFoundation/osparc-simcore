@@ -448,8 +448,9 @@ async def test_dispatch_retries_a_clone_that_failed_after_the_copy_was_inserted(
     The copy's uuid is derived from (template, user) and a dispatch that finds it calls the
     clone done, while `clone_project_data` commits the copy before copying its data and
     creating its pipeline. Deleting the copy here as well as in the collector would race over
-    the uuid, so the dispatch only stamps: the copy stays invisible, later dispatches answer
-    503, and only after the collector removed it can the study be cloned again.
+    the uuid, so the dispatch only stamps and reports 503: the copy stays invisible, later
+    dispatches answer 503 as well, and only after the collector removed the copy can the study
+    be cloned again.
     """
     assert client.app
 
@@ -463,7 +464,7 @@ async def test_dispatch_retries_a_clone_that_failed_after_the_copy_was_inserted(
     dispatch_url = _dispatch_url(client, published_project["uuid"])
 
     result_status, _ = await _dispatch_and_get_result(client, dispatch_url)
-    assert result_status != status.HTTP_200_OK, "a failed clone must not report success"
+    assert result_status == status.HTTP_503_SERVICE_UNAVAILABLE, "a failed clone reports its copy as being deleted"
     create_pipeline.assert_called_once()
 
     # the copy is stamped for the collector and hidden from the user

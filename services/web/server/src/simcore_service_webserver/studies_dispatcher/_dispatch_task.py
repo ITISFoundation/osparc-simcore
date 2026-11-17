@@ -20,6 +20,7 @@ from uuid import UUID, uuid5
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.logging_utils import log_catch
@@ -39,6 +40,7 @@ from ..projects.exceptions import ProjectNotFoundError
 from ..projects.projects_trash_service import trash_project_for_immediate_deletion
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users.users_service import get_user
+from ._errors import StudyCopyBeingDeletedError
 
 _logger = logging.getLogger(__name__)
 
@@ -87,14 +89,15 @@ async def _copy_exists(app: web.Application, *, project_uuid: str, user_id: User
 
     A hidden copy is a deletion in flight: the garbage-collector removing a copy a failed
     clone stamped, or somebody deleting it. It is left to that deleter and the answer is
-    503 — the uuid stays taken until the row is gone, and cloning over it would let those
-    deleters remove the new clone by uuid. A hidden copy nobody stamped is stamped here.
+    that the copy is being deleted — the uuid stays taken until the row is gone, and cloning
+    over it would let those deleters remove the new clone by uuid. A hidden copy nobody
+    stamped is stamped here.
 
     `hidden` and `trashed` are read from the same row, and deleters delete the row last,
     so a deletion in flight is always seen as a hidden row.
 
     Raises:
-        web.HTTPServiceUnavailable: the copy is being deleted
+        StudyCopyBeingDeletedError: the copy is being deleted
     """
     try:
         copy = await _projects_repository.get_project(app, project_uuid=ProjectID(project_uuid))
@@ -106,7 +109,7 @@ async def _copy_exists(app: web.Application, *, project_uuid: str, user_id: User
             await _safe_stamp_copy_for_immediate_deletion(
                 app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
             )
-        raise web.HTTPServiceUnavailable(reason="A previous clone of this study is being cleaned up, try again shortly")
+        raise StudyCopyBeingDeletedError(project_id=project_uuid)
     return True
 
 
@@ -148,7 +151,7 @@ async def _clone_study_with_gc_lock(
             from_project_uuid=template_project["uuid"],
             to_project_uuid=new_project["uuid"],
         )
-    except Exception, asyncio.CancelledError:
+    except (Exception, asyncio.CancelledError) as exc:
         # `clone_project_data` commits the copy before its later steps and its uuid is
         # deterministic: a partial copy would be taken for a finished clone by the next
         # dispatch. Stamping (hidden and trashed in one query) hands the copy to the
@@ -158,7 +161,22 @@ async def _clone_study_with_gc_lock(
         await _safe_stamp_copy_for_immediate_deletion(
             app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
         )
-        raise
+        if isinstance(exc, asyncio.CancelledError):
+            raise
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Failed cloning the study, its copy is stamped for the garbage-collector",
+                error=exc,
+                error_context={
+                    "template_project_uuid": template_project["uuid"],
+                    "copy_project_id": project_uuid,
+                    "user_id": user_id,
+                    "product_name": product_name,
+                },
+                tip="The next dispatch answers that the copy is being deleted until the garbage-collector removes it",
+            )
+        )
+        raise StudyCopyBeingDeletedError(project_id=project_uuid) from exc
 
 
 async def dispatch_study(  # pylint: disable=too-many-arguments
@@ -180,7 +198,8 @@ async def dispatch_study(  # pylint: disable=too-many-arguments
 
     Raises:
         web.HTTPNotFound: if the study was deleted between controller check and task execution
-        web.HTTPServiceUnavailable: if a copy left by a failed clone is being deleted
+        web.HTTPServiceUnavailable: a copy of the study is being deleted — a clone that fails
+            after its copy was inserted reports this once the copy is stamped
     """
     await progress.update(message="loading study...")
 
@@ -202,17 +221,20 @@ async def dispatch_study(  # pylint: disable=too-many-arguments
     # Deterministic copy UUID — idempotent re-dispatch for the same (template, user) pair
     project_uuid = _compose_uuid(template_project["uuid"], user_id, str(template_parameters))
 
-    await _clone_study_with_gc_lock(
-        app,
-        user["name"],
-        progress=progress,
-        template_project=template_project,
-        project_uuid=project_uuid,
-        template_parameters=template_parameters,
-        user_id=user_id,
-        product_name=product_name,
-        product_api_base_url=product_api_base_url,
-    )
+    try:
+        await _clone_study_with_gc_lock(
+            app,
+            user["name"],
+            progress=progress,
+            template_project=template_project,
+            project_uuid=project_uuid,
+            template_parameters=template_parameters,
+            user_id=user_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+        )
+    except StudyCopyBeingDeletedError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
     await progress.update(message="done", percent=1.0)
 

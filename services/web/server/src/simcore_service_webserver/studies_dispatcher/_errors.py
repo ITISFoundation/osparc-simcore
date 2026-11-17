@@ -38,3 +38,10 @@ class ProjectWorkbenchMismatchError(StudyDispatcherError):
         "Project {project_uuid} appears to be corrupted and cannot be accessed properly.",
         _version=1,
     )
+
+
+class StudyCopyBeingDeletedError(StudyDispatcherError):
+    msg_template = user_message(
+        "A previous clone of study {project_id} is being cleaned up. Try again shortly.",
+        _version=1,
+    )
