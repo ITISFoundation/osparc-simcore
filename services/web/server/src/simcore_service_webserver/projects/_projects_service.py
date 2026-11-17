@@ -23,6 +23,7 @@ from aiohttp import web
 from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationRunStateRpcGet,
 )
@@ -75,6 +76,8 @@ from models_library.resource_tracker import (
     PricingAndHardwareInfoTuple,
     PricingInfo,
     PricingPlanAndUnitIdsTuple,
+    PricingPlanId,
+    PricingUnitId,
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_constants import FRONTEND_SERVICE_KEY_PREFIX
@@ -751,14 +754,22 @@ async def patch_project_for_user(
     )
 
 
-# NOTE: the lease must outlast a resource-usage-tracker request (2 s timeout), or concurrent lookups stop sharing it
-_TTL_CACHE_PRICING_LOOKUPS: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
+_TTL_CACHE_PRICING_LOOKUPS: Final[
+    Annotated[
+        datetime.timedelta,
+        doc(
+            "lifetime of a cached pricing lookup, and how long concurrent lookups wait for the first one:"
+            " it must outlast a resource-usage-tracker request (2 s timeout)"
+        ),
+    ]
+] = datetime.timedelta(seconds=5)
 
 
 @cached_stampede(
     ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
     lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
-    # the ids only report a failure: they stay out of the key so nodes of one service share it
+    # project_id and node_id only identify the node in the error: they stay out of the key so that
+    # the nodes running the same service version share one lookup
     key_builder=lambda fn, *_args, **kw: (
         f"{fn.__name__}_{kw['product_name']}_{kw['service_key']}_{kw['service_version']}"
     ),
@@ -767,7 +778,7 @@ async def _get_default_pricing_and_hardware_info(
     app: web.Application,
     # keyword-only: the cache key is built out of the arguments' names
     *,
-    product_name: str,
+    product_name: ProductName,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     project_id: ProjectID,
@@ -865,31 +876,24 @@ async def update_project_node_resources_from_hardware_info(
         raise ClustersKeeperNotAvailableError from exc
 
     db = ProjectDBAPI.get_from_app_context(app)
-    required_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
-        new_node_resources, mode="json"
-    )
     persisted_resources = (await db.get_project_node(project_id, node_id)).required_resources
-    if _db_needs_update(persisted_resources, required_resources):
+    if _db_needs_update(persisted_resources, new_node_resources):
         await db.update_project_node(
             user_id,
             project_id,
             node_id,
             product_name,
-            required_resources=required_resources,
+            required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                new_node_resources, mode="json"
+            ),
             check_update_allowed=False,
         )
 
 
-def _db_needs_update(persisted: Any, sized: dict[str, Any]) -> bool:
-    """True when the node's persisted resources are not yet the sizing result
-
-    A node that was never sized (empty resources) always needs the write.
-    """
-    if not persisted:
-        return True
-    adapter = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict)
+def _db_needs_update(persisted: dict[str, Any], sized: ServiceResourcesDict) -> bool:
+    """True when the node's persisted resources are not yet the sizing result"""
     try:
-        return bool(adapter.dump_python(adapter.validate_python(persisted), mode="json") != sized)
+        return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(persisted) != sized
     except ValidationError:
         return True
 
@@ -917,9 +921,9 @@ def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
 async def _aws_ec2_instances_of_pricing_link(
     app: web.Application,
     *,
-    product_name: str,
-    pricing_plan_id: int,
-    pricing_unit_id: int,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+    pricing_unit_id: PricingUnitId,
 ) -> list[str] | None:
     """The machine types of a pricing link, or None when the resource-usage-tracker does not
     know that plan/unit in this product.
@@ -941,7 +945,7 @@ async def _link_pricing_unit_and_size_node(
     node_id: NodeID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    product_name: str,
+    product_name: ProductName,
 ) -> None:
     """Ensures the node has a pricing link and that its ``required_resources`` are sized
     for the machine of the unit that ends up linked.
@@ -998,7 +1002,7 @@ async def _link_pricing_unit_and_size_node(
     )
 
 
-async def _best_effort_link_pricing_unit_and_size_node(
+async def _safe_link_pricing_unit_and_size_node(
     app: web.Application,
     *,
     user_id: UserID,
@@ -1006,7 +1010,7 @@ async def _best_effort_link_pricing_unit_and_size_node(
     node_id: NodeID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    product_name: str,
+    product_name: ProductName,
 ) -> None:
     """Never fails: an unreachable resource-usage-tracker or director-v2 must not
     break project/node creation. The node is then left to the repair that the next
@@ -1021,11 +1025,20 @@ async def _best_effort_link_pricing_unit_and_size_node(
             service_version=service_version,
             product_name=product_name,
         )
-    except Exception:  # pylint: disable=broad-exception-caught
-        _logger.exception(
-            "Could not link a pricing unit to node %s of project %s: it will be repaired later",
-            node_id,
-            project_id,
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                f"Could not link a pricing unit to node {node_id} of project {project_id}: "
+                "it will be repaired at the next billed start",
+                error=exc,
+                error_context={
+                    "user_id": user_id,
+                    "project_id": project_id,
+                    "node_id": node_id,
+                    "product_name": product_name,
+                },
+                tip="Check that the resource-usage-tracker and director-v2 are reachable",
+            )
         )
 
 
@@ -1037,7 +1050,7 @@ async def link_default_pricing_units_and_size_computational_nodes(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    product_name: str,
+    product_name: ProductName,
 ) -> None:
     """Links the default pricing unit and sizes every not-yet-linked computational
     node of the project. Call after the project's nodes were inserted (creation
@@ -1060,7 +1073,7 @@ async def link_default_pricing_units_and_size_computational_nodes(
 
     await limited_gather(
         *[
-            _best_effort_link_pricing_unit_and_size_node(
+            _safe_link_pricing_unit_and_size_node(
                 app,
                 user_id=user_id,
                 project_id=project_id,
@@ -1081,19 +1094,24 @@ async def repair_projects_nodes_pricing_and_resources(
     *,
     user_id: UserID,
     project_ids: list[ProjectID],
-    product_name: str,
+    product_name: ProductName,
 ) -> None:
-    """Brings every node of the runnable projects that runs on a machine up to date before
-    the computation starts: it gets a pricing unit (its linked one, or the default) and is
-    resized for that unit's machine.
+    """Links and sizes the nodes of the runnable projects that run on a machine, before the computation starts
 
-    Raises when a node cannot be brought up to date, which fails the start. An unlinked node
-    runs on the catalog's default machine and is billed for nothing, and the web-server is
-    the only writer of this state left, so a node left behind here stays that way.
+    A node keeps its pricing unit or gets the service's default one, and is resized for that unit's machine.
+    Dynamic services are included: they may have started before the product became billed.
+    Nothing is written on a product that does not pay for its nodes.
 
-    On a product that does not pay for these nodes, nothing is written, as on the creation
-    and copy paths. Unlike the creation path, a dynamic service is repaired here: it may
-    have started before this product became billed.
+    Every node is processed before the first failure is raised, so that the nodes that could be
+    repaired keep their writes. A node left unlinked would run on the catalog's default machine
+    and be billed for nothing, hence the start fails.
+
+    Raises:
+        DefaultPricingPlanNotFoundError: the resource-usage-tracker has no default plan for a service
+        DefaultPricingUnitNotFoundError: the default plan of a service has no default unit
+        ProjectNodeResourcesInvalidError: the sizing does not fit the node's specs
+        ClustersKeeperNotAvailableError: the sizing could not be computed
+        web.HTTPServiceUnavailable: the resource-usage-tracker is unreachable
     """
     if not _is_product_billed(app, product_name):
         return
@@ -1131,16 +1149,18 @@ async def copy_pricing_links(
     source_project_id: ProjectID,
     destination_project_id: ProjectID,
     nodes_map: NodesMap,
-    product_name: str,
+    product_name: ProductName,
 ) -> None:
     """Copies the source project's pricing links onto the copied nodes.
 
-    A link is dropped when the resource-usage-tracker does not know that plan/unit in the
-    destination product (e.g. cross-product template instantiation); when it cannot be
-    reached, the link is copied unvalidated rather than lost. Only the
-    resource-usage-tracker is best-effort here: a database error fails the copy, as it
-    does every other step of it. Removing the project the copy already created is the
-    caller's job.
+    A link the resource-usage-tracker does not know in the destination product (e.g. a template
+    of another product) is dropped. A link it cannot be asked about is copied unvalidated.
+    Nothing is written on a product that does not pay for its nodes.
+
+    The caller removes the copied project when this raises.
+
+    Raises:
+        ProjectNodesNodeNotFoundError: a destination node is not in the destination project
     """
     if not _is_product_billed(app, product_name):
         # the product does not pay for these nodes: the copy keeps their resources
@@ -1184,7 +1204,7 @@ async def _validate_pricing_link_for_copy(
     source_project_id: ProjectID,
     source_node_id: NodeID,
     link: PricingPlanAndUnitIdsTuple,
-    product_name: str,
+    product_name: ProductName,
 ) -> bool | None:
     """True when the resource-usage-tracker knows ``link`` in this product, False when it
     does not and None when it could not be asked."""
@@ -1511,7 +1531,7 @@ async def add_project_node(
     )
 
     if is_node_computational(service_key) and _is_product_billed(request.app, product_name):
-        await _best_effort_link_pricing_unit_and_size_node(
+        await _safe_link_pricing_unit_and_size_node(
             request.app,
             user_id=user_id,
             project_id=project_id,
