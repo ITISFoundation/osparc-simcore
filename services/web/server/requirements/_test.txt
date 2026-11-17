@@ -486,7 +486,7 @@ uvloop==0.23.0
     #   uvicorn
 watchfiles==1.1.1
     # via uvicorn
-websockets==17.1
+websockets==17.4
     # via
     #   -r requirements/_test.in
     #   uvicorn
