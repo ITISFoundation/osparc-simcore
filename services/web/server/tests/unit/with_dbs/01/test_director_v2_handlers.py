@@ -4,6 +4,7 @@
 
 
 import base64
+import re
 from collections.abc import AsyncIterator, Callable
 from copy import deepcopy
 from decimal import Decimal
@@ -29,6 +30,9 @@ from models_library.api_schemas_directorv2.encryption import (
     KMS_CIPHERTEXT_MAX_BYTES,
     JobEncryptionContextMetadata,
 )
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    RutPricingPlanGet,
+)
 from models_library.api_schemas_webserver.computations import (
     ComputationCollectionRunRestGet,
     ComputationCollectionRunTaskRestGet,
@@ -40,13 +44,18 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID, WalletInfo
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
-from pytest_simcore.helpers.project_nodes_pricing import get_node_pricing_state
+from pytest_simcore.helpers.project_nodes_pricing import (
+    T3_MEDIUM_NAME,
+    get_node_pricing_state,
+    make_pricing_unit,
+)
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -64,6 +73,9 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.resource_usage.settings import (
+    get_plugin_settings as get_rut_plugin_settings,
+)
 from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import PreferredWalletIdFrontendUserPreference
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -992,6 +1004,83 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
             assert node_state == state_before[node_id]
 
     assert mocked_director_v2_node_sizing.call_count == 2
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "pricing_failure,expected_status,expected_msg",
+    [
+        pytest.param(
+            "sizing_unavailable",
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "The clusters-keeper service is currently unavailable.",
+            id="director-v2-unreachable",
+        ),
+        pytest.param(
+            "no_default_unit",
+            status.HTTP_404_NOT_FOUND,
+            "The default pricing unit could not be found.",
+            id="no-default-pricing-unit",
+        ),
+    ],
+)
+async def test_start_computation_is_not_forwarded_when_a_node_cannot_be_priced(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    aioresponses_mocker: AioResponsesMock,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+    with_billed_product: None,
+    pricing_failure: str,
+    expected_status: int,
+    expected_msg: str,
+):
+    """A node whose pricing cannot be brought up to date fails the start instead of
+    forwarding it, so the run never starts unbilled.
+
+    `expected_status`/`expected_msg` are what the web-server answers for the reason the node
+    cannot be priced: 503 when director-v2 (and with it clusters-keeper) is unreachable, 404
+    when the product has no DEFAULT pricing unit for the service.
+    """
+    assert client.app
+    mocked_start = mocker.patch.object(
+        DirectorV2RestClient,
+        "start_computation",
+        autospec=True,
+        return_value=(user_project["uuid"], status.HTTP_201_CREATED),
+    )
+    # the wallet is resolved before the pricing repair, so it must not be what fails here
+    mocker.patch(
+        "simcore_service_webserver.director_v2._controller.rest._director_v2_service.get_wallet_info",
+        autospec=True,
+        return_value=WalletInfo(wallet_id=WalletID(1), wallet_name="Test Wallet", wallet_credit_amount=Decimal(100)),
+    )
+    unit = make_pricing_unit(
+        pricing_unit_id=1,
+        default=pricing_failure != "no_default_unit",
+        aws_ec2_instance=T3_MEDIUM_NAME,
+    )
+    plan = RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0]).model_copy(
+        update={"pricing_plan_id": 1, "pricing_units": [unit]}
+    )
+    settings = get_rut_plugin_settings(client.app)
+    aioresponses_mocker.get(
+        re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$"),
+        payload=jsonable_encoder(plan),
+        repeat=True,
+    )
+    if pricing_failure == "sizing_unavailable":
+        mocked_director_v2_node_sizing.side_effect = TimeoutError("clusters-keeper unreachable")
+
+    url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
+    rsp = await client.post(f"{url}")
+    _, error = await assert_status(rsp, expected_status)
+
+    # not just any 404/503: the one of the node that could not be priced
+    assert error["message"] == expected_msg
+    mocked_start.assert_not_called()
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

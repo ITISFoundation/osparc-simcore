@@ -1080,7 +1080,7 @@ async def _link_pricing_unit_and_size_node(
     )
 
 
-async def _safe_link_pricing_unit_and_size_node(
+async def _best_effort_link_pricing_unit_and_size_node(
     app: web.Application,
     *,
     lookups: _PricingLookups,
@@ -1092,7 +1092,8 @@ async def _safe_link_pricing_unit_and_size_node(
     product_name: str,
 ) -> None:
     """Never fails: an unreachable resource-usage-tracker or director-v2 must not
-    break project/node creation. The node is then left to a later repair."""
+    break project/node creation. The node is then left to the repair that the next
+    billed start runs."""
     try:
         await _link_pricing_unit_and_size_node(
             app,
@@ -1144,7 +1145,7 @@ async def link_default_pricing_units_and_size_computational_nodes(
     lookups = _PricingLookups(app, product_name)
     await limited_gather(
         *[
-            _safe_link_pricing_unit_and_size_node(
+            _best_effort_link_pricing_unit_and_size_node(
                 app,
                 lookups=lookups,
                 user_id=user_id,
@@ -1168,9 +1169,13 @@ async def repair_projects_nodes_pricing_and_resources(
     project_ids: list[ProjectID],
     product_name: str,
 ) -> None:
-    """Best-effort repair before starting computations: every node of the runnable
-    projects that runs on a machine gets a pricing unit (its linked one, or the
-    default) and is resized for that unit's machine.
+    """Brings every node of the runnable projects that runs on a machine up to date before
+    the computation starts: it gets a pricing unit (its linked one, or the default) and is
+    resized for that unit's machine.
+
+    Raises when a node cannot be brought up to date, which fails the start. An unlinked node
+    runs on the catalog's default machine and is billed for nothing, and the web-server is
+    the only writer of this state left, so a node left behind here stays that way.
 
     On a product that does not pay for these nodes, nothing is written, as on the creation
     and copy paths. Unlike the creation path, a dynamic service is repaired here: it may
@@ -1188,7 +1193,7 @@ async def repair_projects_nodes_pricing_and_resources(
             if f"{node.key}".startswith(FRONTEND_SERVICE_KEY_PREFIX):
                 continue
             repairs.append(
-                _safe_link_pricing_unit_and_size_node(
+                _link_pricing_unit_and_size_node(
                     app,
                     lookups=lookups,
                     user_id=user_id,
@@ -1200,7 +1205,12 @@ async def repair_projects_nodes_pricing_and_resources(
                 )
             )
 
-    await limited_gather(*repairs, reraise=False, limit=_MAX_CONCURRENT_NODES_PRICED)
+    # not reraise=True: that abandons the repairs still pending, so a node that fails would
+    # leave its siblings half-repaired and the writes of a retry would race these
+    results = await limited_gather(*repairs, reraise=False, limit=_MAX_CONCURRENT_NODES_PRICED)
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
 
 
 async def copy_pricing_links(
@@ -1593,7 +1603,7 @@ async def add_project_node(
     )
 
     if _is_node_computational(service_key) and _is_product_billed(request.app, product_name):
-        await _safe_link_pricing_unit_and_size_node(
+        await _best_effort_link_pricing_unit_and_size_node(
             request.app,
             lookups=_PricingLookups(request.app, product_name),
             user_id=user_id,

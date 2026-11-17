@@ -18,7 +18,15 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from ...projects.exceptions import (
+    ClustersKeeperNotAvailableError,
+    DefaultPricingUnitNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNodeResourcesInvalidError,
+    ProjectNotFoundError,
+)
+from ...resource_usage._constants import MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
+from ...resource_usage.errors import DefaultPricingPlanNotFoundError
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
 from ...workspaces.errors import WorkspaceAccessForbiddenError
@@ -107,6 +115,29 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
             "Your wallet does not have sufficient credits to run this computation: {details}",
             _version=1,
         ),
+    ),
+    # the pricing repair the start runs before forwarding: same statuses as the nodes'
+    # endpoints, which link and size the same way
+    DefaultPricingPlanNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("The default pricing plan could not be found.", _version=1),
+    ),
+    DefaultPricingUnitNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("The default pricing unit could not be found.", _version=1),
+    ),
+    ProjectNodeResourcesInvalidError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        user_message("{message}", _version=1),
+    ),
+    ClustersKeeperNotAvailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        user_message("The clusters-keeper service is currently unavailable.", _version=1),
+    ),
+    # raised by the resource-usage-tracker client when it is unreachable or answers with an error
+    web.HTTPServiceUnavailable: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
     ),
 }
 
