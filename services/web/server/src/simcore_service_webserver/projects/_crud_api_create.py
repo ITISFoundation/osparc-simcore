@@ -317,12 +317,6 @@ async def _compose_project_data(
     new_project: ProjectDict,
     predefined_project: ProjectDict,
 ) -> tuple[ProjectDict, dict[NodeID, ProjectNodeCreate] | None]:
-    """Applies the request body on top of ``new_project``
-
-    Returns the project fields and the nodes it declares, or None as nodes when the body
-    only overrides fields of a copy (its name, e.g.): that says nothing about the nodes,
-    so the caller keeps the ones it already prepared.
-    """
     project_nodes: dict[NodeID, ProjectNodeCreate] | None = None
     if new_project:  # creates from a copy, just override fields
         # when predefined_project is ProjectCopyOverride
@@ -509,8 +503,8 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
             await progress.update()
 
-            # 3.2 pricing/resources: keep the source project's pricing choices
-            # (when copying) and link + size every remaining computational node
+            # 3.2 pricing/resources: keep the source project's pricing choices (when copying) and link + size
+            # the computational nodes. Dynamic services are linked and sized when they start
             if from_study is not None and nodes_map is not None:
                 await _projects_service.copy_pricing_links(
                     app,
