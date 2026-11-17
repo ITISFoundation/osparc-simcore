@@ -47,6 +47,31 @@ github-workflow-job: ## Runs a github workflow job using act locally, run using 
 	# running job "${job}"
 	$(SCRIPTS_DIR)/act.bash ../.. ${job}
 
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Variable $* not set. Please, set it."; \
+		exit 1; \
+	fi
+
+# $(1) command, $(2) expected version, $(3) version command
+define verify_tool_installation
+	@if ! command -v $(1) >/dev/null 2>&1; then \
+		echo "'$(1)' is not installed. Install version $(2) to continue."; \
+		exit 1; \
+	fi
+	@installed_version=$$($(3)); \
+	if ! echo "$$installed_version" | grep "$(2)"; then \
+		echo "WARNING: installed $(1) version does not match" >&2; \
+		echo "Expected:'$(2)'. Installed: '$$installed_version'. Please, update!"  >&2; \
+		sleep 3s; \
+	fi
+endef
 
 .PHONY: info
 inf%: ## Displays basic info

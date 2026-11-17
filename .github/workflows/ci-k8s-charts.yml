@@ -20,9 +20,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  k8s-unit-tests:
+  kubernetes-unit-tests:
     timeout-minutes: 10
-    name: "[unit] k8s ${{ matrix.kubernetes-version }}"
+    name: "[unit] kubernetes ${{ matrix.kubernetes-version }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -58,4 +58,7 @@ jobs:
       - name: kubeconform
         env:
           KUBERNETES_VERSION: ${{ matrix.kubernetes-version }}
-        run: make -C k8s kubeconform KUBERNETES_VERSION="${KUBERNETES_VERSION}"
+          TEMPLATES_DIR: /tmp/templates
+        run: |
+          make -C k8s helmfile-simcore-template HELMFILE_COMMAND_FLAGS="--output-dir=${TEMPLATES_DIR}"
+          make -C k8s kubeconform KUBERNETES_VERSION="${KUBERNETES_VERSION}" TEMPLATES_DIR="${TEMPLATES_DIR}"

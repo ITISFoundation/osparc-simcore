@@ -5,9 +5,7 @@
 
 .DEFAULT_GOAL := help
 
-_K8S_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
-include $(_K8S_DIR)../scripts/makefiles/globals.mk
-include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
+include $(CURDIR)/../scripts/makefiles/common.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/k8s.mk
 
 # VARIABLES ----------------------------------------------
@@ -20,7 +18,7 @@ KIND_CLUSTER_NAME := simcore
 
 .PHONY: create-cluster
 create-cluster: _require-valid-kind .init-swarm ## Creates Kubernetes cluster
-	@cd $(_K8S_DIR) && \
+	@cd $(CURDIR) && \
 	kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
 
 .PHONY: delete-cluster
@@ -63,15 +61,15 @@ helmfile-simcore-diff: .helmfile-simcore-diff ## Shows changes in simcore servic
 
 ##@ Tests
 
-kubeconform: TEMPLATES_DIR ?= $(CURDIR)/.helmfile-templates
-kubeconform: _require-valid-kubeconform ## Validates Kubernetes manifests with kubeconform
-	@$(MAKE) helmfile-simcore-template HELMFILE_COMMAND_FLAGS="--output-dir=$(TEMPLATES_DIR)"
+kubeconform: KUBERNETES_VERSION ?= 1.36.1
+kubeconform: guard-TEMPLATES_DIR _require-valid-kubeconform
+kubeconform: ## Validates Kubernetes manifests with kubeconform
 	@kubeconform \
 		-schema-location default \
 		-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
 		-kubernetes-version $(KUBERNETES_VERSION) \
 		-strict \
-		$(TEMPLATES_DIR)/
+		$(TEMPLATES_DIR)
 
 ##@ Lint
 
