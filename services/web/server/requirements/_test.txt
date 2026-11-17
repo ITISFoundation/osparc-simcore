@@ -35,6 +35,8 @@ anyio==4.15.1
     #   httpx2
     #   starlette
     #   watchfiles
+ast-serialize==0.13.1
+    # via mypy
 asyncpg==0.32.0
     # via
     #   -c requirements/_base.txt
@@ -115,10 +117,6 @@ googleapis-common-protos==1.73.0
     # via
     #   -c requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-http
-greenlet==3.2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -182,7 +180,7 @@ jsonschema-specifications==2025.9.1
     #   openapi-schema-validator
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-librt==0.8.1
+librt==0.16.0
     # via mypy
 lupa==2.8
     # via fakeredis
@@ -209,7 +207,7 @@ multidict==6.9.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.19.1
+mypy==2.4.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -406,7 +404,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-sqlalchemy==2.0.51
+sqlalchemy==2.1.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -434,6 +432,8 @@ typer==0.27.3
     #   fastapi-cloud-cli
 types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
+types-greenlet==3.5.0.20260518
+    # via sqlalchemy
 types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
 types-openpyxl==3.1.5.20261017
