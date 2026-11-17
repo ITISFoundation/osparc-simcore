@@ -602,8 +602,7 @@ async def clone_project_data(
 
     new_project["accessRights"] = inserted_project["accessRights"]
 
-    # keep the source project's pricing choices: copy its links (when valid in
-    # this product), then link + size the remaining computational nodes
+    # keep the source project's pricing choices
     await copy_pricing_links(
         app,
         source_project_id=ProjectID(source_project["uuid"]),
@@ -756,13 +755,14 @@ async def patch_project_for_user(
 _TTL_CACHE_PRICING_LOOKUPS: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 
 
-def _pricing_lookup_cache_key(function: Any, *_args: Any, **kwargs: Any) -> str:
-    """aiocache key of a pricing lookup: the lookup's name and the arguments it was asked with"""
-    return f"{function.__name__}_{sorted(kwargs.items())}"
-
-
 @run_sequentially_in_context(target_args=["product_name", "service_key", "service_version"])
-@cached(ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(), key_builder=_pricing_lookup_cache_key)
+@cached(
+    ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
+    # the ids only report a failure: they stay out of the key so nodes of one service share it
+    key_builder=lambda fn, *_args, **kw: (
+        f"{fn.__name__}_{kw['product_name']}_{kw['service_key']}_{kw['service_version']}"
+    ),
+)
 async def _get_default_pricing_and_hardware_info(
     app: web.Application,
     # keyword-only: both decorators build their key out of the arguments' names
@@ -770,14 +770,17 @@ async def _get_default_pricing_and_hardware_info(
     product_name: str,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> PricingAndHardwareInfoTuple | None:
-    """The service's DEFAULT pricing unit in this product, None when it has none.
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> PricingAndHardwareInfoTuple:
+    """The service's DEFAULT pricing unit in this product.
+
+    Raises DefaultPricingUnitNotFoundError when the service has no default unit in this product.
 
     A project's nodes typically share a service and an operation handles them concurrently, so a
     lookup is cached for `_TTL_CACHE_PRICING_LOOKUPS` and concurrent lookups of one key run one at
     a time: the cache only holds an answer once its lookup returned, so without that serialization
-    every node of a service would ask before the first answer lands. Neither a None answer nor a
-    failure is reused.
+    every node of a service would ask before the first answer lands. A failure is not reused.
     """
     service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
         app,
@@ -793,7 +796,7 @@ async def _get_default_pricing_and_hardware_info(
                 unit.current_cost_per_unit_id,
                 unit.specific_info.aws_ec2_instances,
             )
-    return None
+    raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
 
 
 async def update_project_node_resources_from_hardware_info(
@@ -905,7 +908,12 @@ def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
 
 
 @run_sequentially_in_context(target_args=["product_name", "pricing_plan_id", "pricing_unit_id"])
-@cached(ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(), key_builder=_pricing_lookup_cache_key)
+@cached(
+    ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
+    key_builder=lambda fn, *_args, **kw: (
+        f"{fn.__name__}_{kw['product_name']}_{kw['pricing_plan_id']}_{kw['pricing_unit_id']}"
+    ),
+)
 async def _aws_ec2_instances_of_pricing_link(
     app: web.Application,
     *,
@@ -944,11 +952,14 @@ async def _link_default_pricing_unit(
     overwritten, and its machine types are the ones returned.
     """
     # NOTE: `cached` erases the return type of the lookups, hence the annotations at the call sites
-    default_info: PricingAndHardwareInfoTuple | None = await _get_default_pricing_and_hardware_info(
-        app, product_name=product_name, service_key=service_key, service_version=service_version
+    default_info: PricingAndHardwareInfoTuple = await _get_default_pricing_and_hardware_info(
+        app,
+        product_name=product_name,
+        service_key=service_key,
+        service_version=service_version,
+        project_id=project_id,
+        node_id=node_id,
     )
-    if default_info is None:
-        raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
     pricing_plan_id, pricing_unit_id, _, aws_ec2_instances = default_info
 
     if current_link is not None:
@@ -1423,14 +1434,14 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
             if output:
                 pricing_plan_id, pricing_unit_id = output
             else:
-                default_info: PricingAndHardwareInfoTuple | None = await _get_default_pricing_and_hardware_info(
+                default_info: PricingAndHardwareInfoTuple = await _get_default_pricing_and_hardware_info(
                     request.app,
                     product_name=product_name,
                     service_key=service_key,
                     service_version=service_version,
+                    project_id=project_uuid,
+                    node_id=node_uuid,
                 )
-                if default_info is None:
-                    raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}")
                 pricing_plan_id, pricing_unit_id, _, _ = default_info
                 await db.connect_pricing_unit_to_project_node(
                     project_uuid,

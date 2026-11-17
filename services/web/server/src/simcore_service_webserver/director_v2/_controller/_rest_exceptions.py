@@ -135,7 +135,8 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message("The clusters-keeper service is currently unavailable.", _version=1),
     ),
-    # raised by the resource-usage-tracker client when it is unreachable or answers with an error
+    # the resource-usage-tracker client turns an unreachable tracker into this aiohttp error, which
+    # the pricing repair lets propagate; without the entry, aiohttp answers with the exception
     web.HTTPServiceUnavailable: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,

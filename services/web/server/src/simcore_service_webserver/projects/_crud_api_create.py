@@ -529,7 +529,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
             await progress.update()
 
-            # 3.1.bis pricing/resources: keep the source project's pricing choices
+            # 3.2 pricing/resources: keep the source project's pricing choices
             # (when copying) and link + size every remaining computational node
             if from_study is not None and nodes_map is not None:
                 await _projects_service.copy_pricing_links(
@@ -546,7 +546,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 product_name=product_name,
             )
 
-            # 3.2 move project to proper folder
+            # 3.3 move project to proper folder
             if folder_id:
                 await _folders_repository.insert_project_to_folder(
                     app,
