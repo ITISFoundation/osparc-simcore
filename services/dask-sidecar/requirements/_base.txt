@@ -139,9 +139,9 @@ h2==4.4.1
     # via httpx2
 hpack==4.2.0
     # via h2
-httpcore2==2.16.0
+httpcore2==2.16.2
     # via httpx2
-httpx2==2.16.0
+httpx2==2.16.2
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 hyperframe==6.1.0
     # via h2
