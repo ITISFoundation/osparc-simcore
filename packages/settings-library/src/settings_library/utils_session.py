@@ -32,7 +32,7 @@ def _check_valid_fernet_key(v: SecretStr) -> SecretStr:
     return v
 
 
-SessionSecretKey = Annotated[
+type SessionSecretKey = Annotated[
     SecretStr,
     AfterValidator(_check_valid_fernet_key),
     BeforeValidator(_to_secret_str),
