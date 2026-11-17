@@ -187,9 +187,9 @@ python-dotenv==1.2.4
     # via
     #   -r requirements/_test.in
     #   pydantic-settings
-python-engineio==4.13.5
+python-engineio==4.15.1
     # via python-socketio
-python-socketio==5.16.4
+python-socketio==5.18.1
     # via -r requirements/_test.in
 pyyaml==6.0.3
     # via
