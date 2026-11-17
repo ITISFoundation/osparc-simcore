@@ -27,6 +27,8 @@ asgi-lifespan==2.1.0
     #   -r requirements/_test.in
 ast-serialize==0.13.1
     # via mypy
+asyncpg==0.32.0
+    # via sqlalchemy
 attrs==26.1.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -283,7 +285,6 @@ typing-extensions==4.16.0
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
-    #   anyio
     #   mypy
     #   sqlalchemy
 urllib3==2.8.0

@@ -17,6 +17,6 @@ httpx2
 packaging
 pint
 pydantic[email]
-sqlalchemy[asyncio]
+sqlalchemy[postgresql_asyncpg] # also installs the asyncio extra (greenlet) alongside asyncpg
 tenacity
 tqdm

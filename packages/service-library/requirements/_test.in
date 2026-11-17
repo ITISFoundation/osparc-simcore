@@ -37,7 +37,7 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 respx
-sqlalchemy[asyncio,mypy]
+sqlalchemy[mypy,postgresql_asyncpg] # the mypy extra adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types_aiofiles
 types_tqdm
 types-psutil
