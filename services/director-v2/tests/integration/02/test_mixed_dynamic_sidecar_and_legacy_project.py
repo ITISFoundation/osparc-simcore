@@ -48,7 +48,9 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "redis",
+    "static-webserver",
     "storage",
+    "webserver",
 ]
 
 pytest_simcore_ops_services_selection = ["adminer", "s3-storage", "portainer"]

@@ -6,11 +6,12 @@
 
 
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, TypedDict, cast
 
 import pytest
 from fastapi import FastAPI
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
@@ -30,6 +31,18 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
+
+
+class _PaymentsUserRow(TypedDict):
+    id: UserID
+    primary_gid: GroupID
+    first_name: str
+    last_name: str
+    email: str
+
+
+class _PaymentsProductRow(TypedDict):
+    name: ProductName
 
 
 @pytest.fixture
@@ -58,7 +71,7 @@ async def user(
     app: FastAPI,
     user: dict[str, Any],
     user_id: UserID,
-) -> AsyncIterator[dict[str, Any]]:
+) -> AsyncIterator[_PaymentsUserRow]:
     """
     injects a user in db
     """
@@ -66,17 +79,17 @@ async def user(
     async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         get_engine(app), **{**user, "language": "es_ES"}
     ) as user_row:
-        yield user_row
+        yield cast(_PaymentsUserRow, user_row)
 
 
 @pytest.fixture
-def user_primary_group_id(user: dict[str, Any]) -> GroupID:
+def user_primary_group_id(user: _PaymentsUserRow) -> GroupID:
     # Overrides `user_primary_group_id` since new user triggers an automatic creation of a primary group
     return user["primary_gid"]
 
 
 @pytest.fixture
-async def product(app: FastAPI, product: dict[str, Any]) -> AsyncIterator[dict[str, Any]]:
+async def product(app: FastAPI, product: dict[str, Any]) -> AsyncIterator[_PaymentsProductRow]:
     """
     injects product in db
     """
@@ -89,15 +102,15 @@ async def product(app: FastAPI, product: dict[str, Any]) -> AsyncIterator[dict[s
         pk_col=products.c.name,
         pk_value=product["name"],
     ) as row:
-        yield row
+        yield cast(_PaymentsProductRow, row)
 
 
 @pytest.fixture
 async def successful_transaction(
     app: FastAPI,
     successful_transaction: dict[str, Any],
-    user: dict[str, Any],
-    product: dict[str, Any],
+    user: _PaymentsUserRow,
+    product: _PaymentsProductRow,
 ) -> AsyncIterator[dict[str, Any]]:
     """
     injects transaction in db
@@ -127,8 +140,8 @@ async def test_payments_user_repo(app: FastAPI, user_id: UserID, user_primary_gr
 
 async def test_get_notification_data(
     app: FastAPI,
-    user: dict[str, Any],
-    product: dict[str, Any],
+    user: _PaymentsUserRow,
+    product: _PaymentsProductRow,
     successful_transaction: dict[str, Any],
 ):
     repo = PaymentsUsersRepo(get_engine(app))
