@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=protected-access
 
+import asyncio
 import random
 import re
 import textwrap
@@ -87,6 +88,7 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.director_v2 import director_v2_service
 from simcore_service_webserver.notifications import _service
 from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
+from simcore_service_webserver.projects import _projects_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.resource_usage.settings import (
@@ -560,10 +562,8 @@ def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
 def mocked_conditionally_unsubscribe_project_logs(
     mocker: MockerFixture,
 ) -> MockType:
-    import simcore_service_webserver.projects._projects_service  # noqa: PLC0415
-
     return mocker.patch.object(
-        simcore_service_webserver.projects._projects_service,  # noqa: SLF001
+        _projects_service,
         "conditionally_unsubscribe_project_logs_across_replicas",
         autospec=True,
     )
@@ -575,6 +575,18 @@ def mocked_conditionally_unsubscribe_project_logs(
 
 DEFAULT_PRICING_PLAN_ID: Final[int] = 1
 DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the unit's machine is t3.medium")]] = 1
+
+
+@pytest.fixture(autouse=True)
+def clear_pricing_lookup_caches() -> None:
+    """The pricing lookups in `_projects_service` are cached per process for
+    `_TTL_CACHE_PRICING_LOOKUPS_S` seconds. Empty them so one test's answers cannot serve
+    another's."""
+    for lookup in (
+        _projects_service._default_pricing_and_hardware_info,  # noqa: SLF001
+        _projects_service._aws_ec2_instances_of_pricing_link,  # noqa: SLF001
+    ):
+        asyncio.run(lookup.cache.clear())
 
 
 @pytest.fixture

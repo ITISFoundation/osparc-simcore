@@ -301,8 +301,7 @@ class ProjectNodesRepo:
             )
         )
         if project_node_id is None:
-            # project_node_id is a foreign key to projects_nodes: linking an unknown node
-            # would fail with an IntegrityError on it instead of naming the missing node
+            # NOTE: without this check the insert fails on the foreign key, not naming the missing node
             raise ProjectNodesNodeNotFoundError(node_id=node_uuid, project_uuid=self.project_uuid)
 
         return pg_insert(projects_node_to_pricing_unit).values(
