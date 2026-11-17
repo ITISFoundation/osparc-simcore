@@ -50,10 +50,9 @@ _COPY_CLEANUP_TIMEOUT_S: Final[
     Annotated[
         int,
         doc(
-            "time budget of the best-effort deletion of a copy whose clone failed, awaited by the "
-            "dispatch task the browser polls: keep it well below the garbage-collector sweep "
-            "interval, since exceeding it only means the collector deletes the stamped copy on "
-            "its next pass"
+            "seconds the best-effort delete of a failed clone's copy may hold up the dispatch "
+            "task; past the timeout the garbage-collector deletes the already-stamped copy on "
+            "its next sweep, so keep it below the sweep interval"
         ),
     ]
 ] = 10
@@ -84,8 +83,8 @@ async def _safe_stamp_copy_for_immediate_deletion(
     app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
 ) -> None:
     with log_catch(_logger, reraise=False):
-        # the stamp is what hands the copy to the garbage-collector: shielded, so that cancelling
-        # the caller — a task abort or the web-server shutting down — cannot interrupt the query
+        # the collector only deletes stamped copies: shield the stamp so a task abort or a
+        # shutdown cannot interrupt it
         await asyncio.shield(
             trash_project_for_immediate_deletion(
                 app,
@@ -101,13 +100,12 @@ async def _delete_copy_or_leave_it_to_gc(
 ) -> None:
     """Deletes a copy whose clone did not finish, or leaves it to the garbage-collector.
 
-    The copy is stamped first — hidden and trashed in a single query: from then on it is
-    invisible to dispatch and the garbage-collector deletes it even if this function does not
-    complete; neither a timeout here nor a web-server shutdown interrupts that deletion. The
-    direct delete below only frees the uuid sooner.
+    Stamping (hidden and trashed in one query) comes first: from then on the
+    garbage-collector owns the copy, so neither a timeout here nor a shutdown can strand
+    it. The direct delete below only frees the uuid sooner.
 
-    A copy somebody already hid belongs to their deletion: it is only stamped here, never
-    deleted, since two deleters of the same uuid can remove a clone recreated under it.
+    A copy that is already hidden belongs to another deletion: stamp it and leave it —
+    deleting the same uuid twice can remove a clone recreated under it.
     """
     try:
         copy = await _projects_repository.get_project(app, project_uuid=ProjectID(project_uuid))
@@ -131,15 +129,13 @@ async def _delete_copy_or_leave_it_to_gc(
 async def _copy_exists(app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str) -> bool:
     """Tells whether the copy already exists as a complete clone.
 
-    A hidden copy is one whose deletion started and did not complete: the garbage-collector is
-    deleting a copy a failed clone stamped, or somebody else is deleting the copy. Both are left
-    to their deletion and the answer is 503: the uuid stays taken until the row is gone, and
-    recreating the copy meanwhile would let those deleters remove the new clone by uuid. A hidden
-    copy nobody stamped is stamped here, so the garbage-collector picks it up even if whoever hid
-    it never returns.
+    A hidden copy is a deletion in flight: the garbage-collector removing a copy a failed
+    clone stamped, or somebody deleting it. It is left to that deleter and the answer is
+    503 — the uuid stays taken until the row is gone, and cloning over it would let those
+    deleters remove the new clone by uuid. A hidden copy nobody stamped is stamped here.
 
-    The copy is read once: `hidden` and `trashed` come from the same row, and the garbage-collector
-    deletes the row as its last step, so a deletion in flight is always seen as a hidden row.
+    `hidden` and `trashed` are read from the same row, and deleters delete the row last,
+    so a deletion in flight is always seen as a hidden row.
 
     Raises:
         web.HTTPServiceUnavailable: the copy is being deleted
@@ -205,9 +201,8 @@ async def _clone_study_with_gc_lock(
                     app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
                 )
         except asyncio.CancelledError:
-            # the cancellation landed mid-cleanup, possibly before the stamp was even attempted;
-            # ask for the stamp again — it is shielded and runs to completion even while this
-            # task is being cancelled, so the copy always ends up owned by the garbage-collector
+            # the cancellation may have landed before the stamp was attempted; request it
+            # again — the shield lets the stamp finish while this task unwinds
             await _safe_stamp_copy_for_immediate_deletion(
                 app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
             )

@@ -444,10 +444,10 @@ async def test_dispatch_retries_a_clone_that_failed_after_the_copy_was_inserted(
 ):
     """A dispatch that fails half way through the clone must leave nothing behind.
 
-    The copy's uuid is derived from (template, user) and a dispatch that finds it considers the
-    clone done, while `clone_project_data` commits the copy before copying its data and creating
-    its pipeline. Therefore the incomplete copy has to be removed, otherwise re-dispatching the
-    same study keeps handing the user a project without data or pipeline.
+    The copy's uuid is derived from (template, user) and a dispatch that finds it calls the
+    clone done, while `clone_project_data` commits the copy before copying its data and
+    creating its pipeline: an incomplete copy left behind would be handed to the user as a
+    finished study on every re-dispatch.
     """
     assert client.app
 
@@ -455,7 +455,7 @@ async def test_dispatch_retries_a_clone_that_failed_after_the_copy_was_inserted(
     await client.get(f"{study_url}")
     assert _is_user_authenticated(client.session)
 
-    # the first clone dies after the copy was committed and its data copied, i.e. at its pipeline
+    # the first clone dies at pipeline creation, after the copy and its data were committed
     create_pipeline = mocked_dynamic_services_interface["director_v2.api.create_or_update_pipeline"]
     create_pipeline.side_effect = OSError("director-v2 is down")
     dispatch_url = _dispatch_url(client, published_project["uuid"])
@@ -501,9 +501,9 @@ async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
 ):
     """The clone fails and so does the deletion of its copy (e.g. director-v2 is down).
 
-    The copy must then be stamped for the garbage-collector, which owns its deletion: a dispatch
-    meanwhile must neither take it for a finished clone nor delete it, since the collector deletes
-    by uuid without the guest-user lock and would remove the clone recreated under that uuid.
+    The copy is left stamped for the garbage-collector, which owns its deletion: the next
+    dispatch neither takes it for a finished clone nor deletes it — the collector deletes by
+    uuid without the guest-user lock and would remove a clone recreated under that uuid.
     """
     assert client.app
 
@@ -529,7 +529,7 @@ async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
     result_resp = await client.get(urllib.parse.urlparse(task_data["result_href"]).path)
     assert result_resp.status != status.HTTP_200_OK
 
-    # the copy is still there but stamped for the garbage-collector, and not shown to the user
+    # the copy is stamped for the garbage-collector and hidden from the user
     delete_project.assert_called_once()
     copy_id = delete_project.call_args.kwargs["project_uuid"]
     copy = await projects_repository.get_project(client.app, project_uuid=copy_id)
@@ -537,8 +537,8 @@ async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
     assert copy.trashed is not None
     assert await _get_user_projects(client) == []
 
-    # director-v2 is back, but the stamped copy belongs to the garbage-collector: the dispatch
-    # asks to retry and leaves the copy, and the clone, alone
+    # director-v2 is back: the dispatch answers 503 and leaves the stamped copy to the
+    # collector instead of deleting it or cloning over its uuid
     delete_project.side_effect = original_delete_project
     create_pipeline.side_effect = None
     create_pipeline.reset_mock()
@@ -581,11 +581,12 @@ async def test_dispatch_hands_a_hidden_copy_to_the_garbage_collector(
     mocker: MockerFixture,
     osparc_product_name: str,
 ):
-    """The clone fails, its deletion fails after hiding the copy and so does stamping it.
+    """The clone fails and both cleanup steps fail: stamping raises, and the delete hides
+    the copy before raising.
 
-    The next dispatch neither deletes nor recreates that uuid — a stalled deletion of the same
-    uuid would remove a clone recreated under it — it stamps the copy for the garbage-collector
-    and answers 503 until the copy is gone.
+    The next dispatch stamps the copy for the garbage-collector and answers 503. It neither
+    deletes the uuid nor clones over it — a stalled deletion of the same uuid would remove a
+    clone recreated under it.
     """
     assert client.app
 
@@ -615,15 +616,15 @@ async def test_dispatch_hands_a_hidden_copy_to_the_garbage_collector(
     result_status, _ = await _dispatch_and_get_result(client, dispatch_url)
     assert result_status != status.HTTP_200_OK
 
-    # hidden by the failed cleanup and not stamped, since stamping failed too
+    # the delete hid the copy and the stamping mock raised: hidden, unstamped
     assert await _get_user_projects(client) == []
     copy_id = create_pipeline.call_args.args[2]
     copy = await projects_repository.get_project(client.app, project_uuid=copy_id)
     assert copy.hidden
     assert copy.trashed is None
 
-    # the database is back: the dispatch stamps the copy for the garbage-collector and asks to
-    # retry, leaving the copy and not cloning over its uuid
+    # stamping works again: the dispatch stamps the copy and answers 503, without cloning
+    # over its uuid
     async def _stamp_the_copy(*args, **kwargs) -> None:
         await real_trash(*args, **kwargs)
 
