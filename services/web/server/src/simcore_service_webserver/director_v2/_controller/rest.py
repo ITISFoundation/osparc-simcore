@@ -159,8 +159,7 @@ async def start_computation(request: web.Request) -> web.Response:
         len(running_project_ids) == len(project_vc_commits) if project_vc_commits else True
     )
 
-    # a node that cannot be priced fails the start rather than running unbilled. On a product
-    # that does not pay, it writes nothing and the pricing state stays writable by the user
+    # a node that cannot be priced fails the start rather than running unbilled
     await repair_projects_nodes_pricing_and_resources(
         request.app,
         user_id=req_ctx.user_id,

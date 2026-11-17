@@ -15,6 +15,7 @@ from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from aiohttp import ClientConnectionError
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_directorv2.comp_runs import (
@@ -74,6 +75,9 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.resource_usage._constants import (
+    MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
+)
 from simcore_service_webserver.resource_usage.settings import (
     get_plugin_settings as get_rut_plugin_settings,
 )
@@ -1023,6 +1027,12 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
             "The default pricing unit could not be found.",
             id="no-default-pricing-unit",
         ),
+        pytest.param(
+            "tracker_unreachable",
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
+            id="resource-usage-tracker-unreachable",
+        ),
     ],
 )
 async def test_start_computation_is_not_forwarded_when_a_node_cannot_be_priced(
@@ -1042,8 +1052,9 @@ async def test_start_computation_is_not_forwarded_when_a_node_cannot_be_priced(
     forwarding it, so the run never starts unbilled.
 
     `expected_status`/`expected_msg` are what the web-server answers for the reason the node
-    cannot be priced: 503 when director-v2 (and with it clusters-keeper) is unreachable, 404
-    when the product has no DEFAULT pricing unit for the service.
+    cannot be priced: 503 when director-v2 (and with it clusters-keeper) or the
+    resource-usage-tracker is unreachable, 404 when the product has no DEFAULT pricing unit
+    for the service.
     """
     assert client.app
     mocked_start = mocker.patch.object(
@@ -1067,11 +1078,14 @@ async def test_start_computation_is_not_forwarded_when_a_node_cannot_be_priced(
         update={"pricing_plan_id": 1, "pricing_units": [unit]}
     )
     settings = get_rut_plugin_settings(client.app)
-    aioresponses_mocker.get(
-        re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$"),
-        payload=jsonable_encoder(plan),
-        repeat=True,
-    )
+    pricing_plan_url = re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$")
+    if pricing_failure == "tracker_unreachable":
+        # the client converts a connection error into web.HTTPServiceUnavailable
+        aioresponses_mocker.get(
+            pricing_plan_url, exception=ClientConnectionError("resource usage tracker unreachable"), repeat=True
+        )
+    else:
+        aioresponses_mocker.get(pricing_plan_url, payload=jsonable_encoder(plan), repeat=True)
     if pricing_failure == "sizing_unavailable":
         mocked_director_v2_node_sizing.side_effect = TimeoutError("clusters-keeper unreachable")
 
