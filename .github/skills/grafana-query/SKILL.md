@@ -4,6 +4,9 @@ description: "Query Grafana for logs, metrics, traces, and alerts from an osparc
 argument-hint: "Describe what you want to investigate (e.g., 'errors in webserver last hour', 'memory usage of director-v2')"
 ---
 
+<!-- markdownlint-disable -->
+<!-- model-facing instructions; repo-wide markdownlint rollout deferred -->
+
 # Grafana Query
 
 ## When to Use
@@ -26,13 +29,20 @@ Datasource UIDs differ per deployment. **Always discover them dynamically** at t
 
 Expected datasource types in a typical deployment:
 
-| Name pattern | Type | Purpose |
-|--------------|------|---------|
-| loki | Loki | Log aggregation (all service logs) |
+| Name pattern          | Type       | Purpose                                            |
+| --------------------- | ---------- | -------------------------------------------------- |
+| loki                  | Loki       | Log aggregation (all service logs)                 |
 | prometheus-federation | Prometheus | Federated metrics (usually the default datasource) |
-| prometheus-catchall | Prometheus | Catchall Prometheus metrics |
-| tempo | Tempo | Distributed tracing |
-| cloudwatch | CloudWatch | AWS infrastructure metrics (RDS, etc.) |
+| prometheus-catchall   | Prometheus | Catchall Prometheus metrics                        |
+| tempo                 | Tempo      | Distributed tracing                                |
+| cloudwatch            | CloudWatch | AWS infrastructure metrics (RDS, etc.)             |
+
+Do not assume the listed types are what a deployment uses: some stacks expose logs
+through VictoriaMetrics-family datasources (type
+`victoriametrics-logs-datasource`) instead of Loki, with PromQL-compatible datasources
+for metrics. Check the listed types before querying; if the logs datasource is not Loki,
+LogQL pipeline stages (`| json |`, `|~ regex`) can silently return zero hits — see
+Query Patterns.
 
 ## Dashboards
 
@@ -41,32 +51,35 @@ Dashboard UIDs differ per deployment. **Always discover them dynamically**:
 Typical dashboard folders and their contents:
 
 ### simcore folder
-| Title | Purpose |
-|-------|---------|
-| Metrics | Core simcore service metrics |
-| Services | Service-level overview |
-| Requests load overview | HTTP request load |
-| autoscaling overview | Autoscaling status |
-| API server log streaming queues | API server queues |
-| s4l-lite admin overview | Sim4Life Lite admin |
+
+| Title                           | Purpose                      |
+| ------------------------------- | ---------------------------- |
+| Metrics                         | Core simcore service metrics |
+| Services                        | Service-level overview       |
+| Requests load overview          | HTTP request load            |
+| autoscaling overview            | Autoscaling status           |
+| API server log streaming queues | API server queues            |
+| s4l-lite admin overview         | Sim4Life Lite admin          |
 
 The Metrics dashboard contains panels for core simcore services. It contains metrics related to resources usage (e.g. RAM and CPU), HTTP request handling statistics and RPC request handling statistics. This is a very useful dashboard to investigate once it has been determined that an error happened within a specific simcore service.
 
 ### ops folder
-| Title | Purpose |
-|-------|---------|
-| Traefik2 | Reverse proxy metrics |
-| RabbitMQ Overview | Message broker |
-| Redis Overview | Cache/queue |
-| Postgres Overview | Database metrics |
-| Docker Registries | Registry health |
-| AWS RDS Metrics | RDS database |
+
+| Title             | Purpose               |
+| ----------------- | --------------------- |
+| Traefik2          | Reverse proxy metrics |
+| RabbitMQ Overview | Message broker        |
+| Redis Overview    | Cache/queue           |
+| Postgres Overview | Database metrics      |
+| Docker Registries | Registry health       |
+| AWS RDS Metrics   | RDS database          |
 
 ### system folder
-| Title | Purpose |
-|-------|---------|
-| Docker Swarm Overview | Cluster overview |
-| Nodes - Overview | Host nodes |
+
+| Title                     | Purpose            |
+| ------------------------- | ------------------ |
+| Docker Swarm Overview     | Cluster overview   |
+| Nodes - Overview          | Host nodes         |
 | Nodes - Detailed Insights | Per-node deep dive |
 
 ## Procedure
@@ -81,6 +94,7 @@ Determine which service(s) to investigate. The simcore platform services use the
 **Discover the naming pattern** by listing Loki label values.
 
 Common service name patterns:
+
 - **Core services**: `<stack>_<prefix>_<service>` (e.g., `*_webserver`, `*_api-server`, `*_director-v2`)
 - **Dynamic proxies**: `dy-proxy_<node-uuid>`
 - **Dynamic sidecars**: `dy-sidecar_<node-uuid>`
@@ -92,6 +106,7 @@ Core simcore services:
 ### 2. Query Logs (Loki)
 
 Use the Loki datasource UID discovered in step 0. Available Loki labels:
+
 - `service_name` — service identifier (see naming patterns above)
 - `container_name` — Docker container name with replica info
 - `host` — host node name
@@ -102,6 +117,7 @@ See [Log Structure Reference](./references/log-structure.md) for JSON field deta
 ### 3. Query Metrics (Prometheus)
 
 Use the `prometheus-federation` datasource UID discovered in step 0. Common metric patterns:
+
 - HTTP request metrics from gunicorn/aiohttp
 - Service-specific business metrics
 - Docker/container resource metrics
@@ -115,4 +131,5 @@ Use the Tempo datasource UID discovered in step 0. Traces are correlated with lo
 See [Query Patterns Reference](./references/query-patterns.md) for ready-to-use LogQL and PromQL queries.
 
 ---
-*Last updated: 2026-05-04*
+
+<!-- Last updated: 2026-11-17 -->

@@ -1,8 +1,28 @@
 # Common Query Patterns
 
+<!-- markdownlint-disable -->
+<!-- model-facing instructions; repo-wide markdownlint rollout deferred -->
+
 All queries below use `<LOKI_UID>` and `<PROM_UID>` as placeholders. Resolve these first by listing the available datasources.
 
-The service name prefix `<PREFIX>` (e.g., `simcore_staging`, `simcore_production`) varies by deployment. Discover it by listing the Loki label values and look for the pattern used by core services like `*_webserver`.
+The service name prefix `<PREFIX>` varies by deployment. Discover it by listing the Loki label values and look for the pattern used by core services like `*_webserver`. Some log streams (e.g. dockerd/libnetwork events) can be ingested without a `service_name` label.
+
+## When the logs datasource is not Loki (LogsQL backends, e.g. VictoriaMetrics)
+
+The MCP sends the query to a LogsQL backend and only a subset of LogQL syntax survives:
+
+- Works: `{service_name="..."}` exact selector, `{service_name=~"..."}` regex selector,
+  `"full quoted phrase"` (e.g. a whole UUID) as the base query, `"phrase"` /
+  `log_level:ERROR` / `NOT "service-name"` appended with `AND`/`NOT` **after** a label
+  selector (e.g. `{service_name=~".*simcore.*"} AND log_level:ERROR` is the error-search
+  idiom here). Full-text phrases are case-sensitive: match `error`, not `ERROR`; `=` is a
+  token delimiter so `log_level=ERROR` as a phrase does NOT match the level token.
+- Does NOT work (silently returns zero hits, no error): `AND "word"` with no label
+  selector, `|~ "(?i)regex"`, `| json |` / `| log_level = ...` pipe pipelines.
+- Practical pattern: query `{service_name="..."} AND "<uuid>"` with `limit` 60-100 over a
+  narrow window, then filter levels/keywords client-side on the returned JSON
+  (`.parsed.log_level`, `.line`). A plain `"<uuid>"` query across the whole stack is the
+  fastest way to find which services mention an entity.
 
 ## LogQL (Loki)
 
@@ -11,6 +31,7 @@ The service name prefix `<PREFIX>` (e.g., `simcore_staging`, `simcore_production
 ```logql
 {service_name=~".*simcore.*"} | json | log_level = `ERROR`
 ```
+
 Replace `ERROR` by `WARNING`, `INFO`, `DEBUG` to change the log level.
 
 ### To get error logs from a specific simcore service
@@ -20,7 +41,6 @@ Replace `ERROR` by `WARNING`, `INFO`, `DEBUG` to change the log level.
 ```
 
 Replace `webserver` with: `api-server`, `director-v2`, `catalog`, `dynamic-schdlr`, `agent`, `autoscaling`, `wb-garbage-collector`, etc.
-
 
 ### Logs from Simcore services with a Specific Trace ID
 
@@ -78,10 +98,13 @@ rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_
 ## Workflow: Investigating an Error
 
 1. **Start by checking for errors in simcore services** — query errors across all simcore services:
+
    ```logql
    {service_name=".*simcore.*"} | json | log_level = `ERROR`
    ```
+
    Only if this doesn't return any results, search more broadly for errors among all services
+
    ```logql
    {source="vector"} |~ "(?i)error|ERR"
    ```
@@ -89,11 +112,13 @@ rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_
 2. **Narrow down**
    If an error log is found and the log is emitted while handling a request, a simcore service log will have a `log_trace_id` field.
    narrow down by investigating all simcore service logs from that trace
+
    ```logql
    {service_name=".*simcore.*"} | json | log_trace_id=<trace id>
    ```
 
   If the error log does not have a trace id it is typically because it was not emitted while handling a request. In that case filter to the specific service:
+
    ```logql
    {service_name="<PREFIX>_<service>"} | json | log_level = `ERROR`
    ```
