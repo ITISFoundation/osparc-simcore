@@ -714,7 +714,7 @@ watchfiles==1.1.1
     # via uvicorn
 wcwidth==0.2.13
     # via prompt-toolkit
-websockets==17.1
+websockets==17.4
     # via uvicorn
 wrapt==1.17.3
     # via
