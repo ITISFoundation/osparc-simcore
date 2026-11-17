@@ -85,7 +85,7 @@ pydantic-settings==2.15.0
     #   openapi-spec-validator
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements.in
     #   pytest-asyncio
