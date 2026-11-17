@@ -29,9 +29,7 @@ from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import RedisClientSDK, exclusive
-from servicelib.utils import fire_and_forget_task
 
-from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
 from ..projects import _projects_repository
 from ..projects.api import (
@@ -84,11 +82,15 @@ async def _safe_stamp_copy_for_immediate_deletion(
     app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
 ) -> None:
     with log_catch(_logger, reraise=False):
-        await trash_project_for_immediate_deletion(
-            app,
-            product_name=product_name,
-            user_id=user_id,
-            project_id=ProjectID(project_uuid),
+        # the stamp is what hands the copy to the garbage-collector: shielded, so that cancelling
+        # the caller — a task abort or the web-server shutting down — cannot interrupt the query
+        await asyncio.shield(
+            trash_project_for_immediate_deletion(
+                app,
+                product_name=product_name,
+                user_id=user_id,
+                project_id=ProjectID(project_uuid),
+            )
         )
 
 
@@ -124,8 +126,8 @@ async def _delete_copy_or_leave_it_to_gc(
         _logger.warning("Left copy %s to the garbage-collector after its deletion did not complete", project_uuid)
 
 
-async def _is_copy_finished(app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str) -> bool:
-    """Tells whether the copy exists and is a complete clone.
+async def _copy_exists(app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str) -> bool:
+    """Tells whether the copy already exists as a complete clone.
 
     A hidden copy is one whose deletion started and did not complete: the garbage-collector is
     deleting a copy a failed clone stamped, or somebody else is deleting the copy. Both are left
@@ -169,7 +171,7 @@ async def _clone_study_with_gc_lock(
 ) -> None:
     """Performs the actual clone while holding the guest-user GC lock."""
     # Check if copy already exists (idempotent) — access already validated by the controller
-    if await _is_copy_finished(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name):
+    if await _copy_exists(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name):
         _logger.debug("Study copy %s already exists for user %s, skipping clone", project_uuid, user_id)
         return
 
@@ -195,16 +197,19 @@ async def _clone_study_with_gc_lock(
     except Exception, asyncio.CancelledError:
         # `clone_project_data` commits the copy before its later steps and its uuid is
         # deterministic: a partial copy would be taken for a finished clone by the next dispatch.
-        # The cleanup is shielded, so a cancellation of this task cannot interrupt it half way and
-        # leave the copy visible; if this task is cancelled again, the cleanup keeps running in
-        # the background and the app's fire-and-forget collection drains it.
-        cleanup = fire_and_forget_task(
-            _delete_copy_or_leave_it_to_gc(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name),
-            task_suffix_name=f"dispatch_copy_cleanup_{project_uuid}",
-            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
-        )
-        with log_catch(_logger, reraise=False):
-            await asyncio.shield(cleanup)
+        try:
+            with log_catch(_logger, reraise=False):
+                await _delete_copy_or_leave_it_to_gc(
+                    app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
+                )
+        except asyncio.CancelledError:
+            # the cancellation landed mid-cleanup, possibly before the stamp was even attempted;
+            # ask for the stamp again — it is shielded and runs to completion even while this
+            # task is being cancelled, so the copy always ends up owned by the garbage-collector
+            await _safe_stamp_copy_for_immediate_deletion(
+                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
+            )
+            raise
         raise
 
 
