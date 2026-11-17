@@ -241,7 +241,7 @@ multidict==6.9.1
     #   aiohttp
     #   nicegui
     #   yarl
-nicegui==3.18.0
+nicegui==3.19.0
     # via -r requirements/_base.in
 opentelemetry-api==1.45.2
     # via
