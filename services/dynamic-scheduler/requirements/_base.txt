@@ -539,7 +539,7 @@ stream-zip==0.0.84
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in

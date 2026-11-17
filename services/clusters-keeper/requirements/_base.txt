@@ -585,7 +585,7 @@ tblib==3.2.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
