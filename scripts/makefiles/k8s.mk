@@ -3,11 +3,18 @@
 #
 
 KUBECTL_VERSION := 1.36.1
+KUBERNETES_VERSION := $(KUBECTL_VERSION)
 KIND_VERSION := 0.32.0
 HELMFILE_VERSION := 1.1.6
 HELM_VERSION := 3.20.2
 
-HELMFILE := HELM_DIFF_OUTPUT_CONTEXT=5 helmfile --environment local
+# run_helmfile <helmfile_file> <command>
+# Example: $(call run_helmfile,services/helmfile.yaml.gotmpl,lint)
+define run_helmfile
+    cd $(REPO_BASE_DIR) || exit 1; \
+    set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
+    HELM_DIFF_OUTPUT_CONTEXT=5 helmfile --environment local -f $(1) $(2)
+endef
 
 .PHONY: _require-valid-helm
 _require-valid-helm:
@@ -26,10 +33,14 @@ _require-valid-kind:
 	$(call verify_tool_installation,kind,$(KIND_VERSION),kind --version)
 
 .helmfile-%: _require-valid-helm _require-valid-helmfile _require-valid-kubectl
-	cd $(REPO_BASE_DIR) || exit 1; \
-	set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
-	$(HELMFILE) -f services/helmfile.local-ops.yaml.gotmpl $* && \
-	$(HELMFILE) -f services/helmfile.yaml.gotmpl $*
+	@$(MAKE) .helmfile-ops-$*
+	@$(MAKE) .helmfile-simcore-$*
+
+.helmfile-ops-%: _require-valid-helm _require-valid-helmfile _require-valid-kubectl
+	@$(call run_helmfile,services/helmfile.local-ops.yaml.gotmpl,$*)
+
+.helmfile-simcore-%: _require-valid-helm _require-valid-helmfile _require-valid-kubectl
+	@$(call run_helmfile,services/helmfile.yaml.gotmpl,$*)
 
 .PHONY: .init-swarm
 .init-swarm:

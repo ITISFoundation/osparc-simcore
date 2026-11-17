@@ -41,30 +41,44 @@ load-images-into-cluster: _require-valid-kind ## Loads simcore images into Kuber
 ##@ Development
 
 .PHONY: down-devel up-devel
-down-devel: helmfile-destroy ## Destroy services
+down-devel: helmfile-destroy ## Destroys services
 up-devel: ## Deploys services
 	@$(MAKE) load-images-into-cluster
 	@$(MAKE) helmfile-apply
 
 ##@ Helmfile
 
-.PHONY: helmfile-apply
-helmfile-apply: .helmfile-apply ## Deploy services
+.PHONY: helmfile-apply helmfile-ops-apply helmfile-simcore-apply
+helmfile-apply: .helmfile-apply ## Deploys all services
+helmfile-ops-apply: .helmfile-ops-apply ## Deploys ops services
+helmfile-simcore-apply: .helmfile-simcore-apply ## Deploys simcore services
 
-.PHONY: helmfile-destroy
-helmfile-destroy: .helmfile-destroy ## Destroy services
+.PHONY: helmfile-destroy helmfile-ops-destroy helmfile-simcore-destroy
+helmfile-destroy: .helmfile-destroy ## Destroys all services
+helmfile-ops-destroy: .helmfile-ops-destroy ## Destroys ops services
+helmfile-simcore-destroy: .helmfile-simcore-destroy ## Destroys simcore services
 
-.PHONY: helmfile-diff
-helmfile-diff: .helmfile-diff ## Shows changes in services
+.PHONY: helmfile-diff helmfile-ops-diff helmfile-simcore-diff
+helmfile-diff: .helmfile-diff ## Shows changes in all services
+helmfile-ops-diff: .helmfile-ops-diff ## Shows changes in ops services
+helmfile-simcore-diff: .helmfile-simcore-diff ## Shows changes in simcore services
 
-.PHONY: helmfile-lint
+.PHONY: helmfile-lint helmfile-ops-lint helmfile-simcore-lint
 helmfile-lint: .helmfile-lint ## Lints all services
+helmfile-ops-lint: .helmfile-ops-lint ## Lints ops services
+helmfile-simcore-lint: .helmfile-simcore-lint ## Lints simcore services
 
-.PHONY: helmfile-list
+.PHONY: helmfile-list helmfile-ops-list helmfile-simcore-list
 helmfile-list: .helmfile-list ## Lists all services
+helmfile-ops-list: .helmfile-ops-list ## Lists ops services
+helmfile-simcore-list: .helmfile-simcore-list ## Lists simcore services
 
-.PHONY: helmfile-sync
+.PHONY: helmfile-sync helmfile-ops-sync helmfile-simcore-sync
 helmfile-sync: .helmfile-sync # Only use if you know why
+helmfile-ops-sync: .helmfile-ops-sync # Only use if you know why
+helmfile-simcore-sync: .helmfile-simcore-sync # Only use if you know why
 
-.PHONY: helmfile-template
+.PHONY: helmfile-template helmfile-ops-template helmfile-simcore-template
 helmfile-template: .helmfile-template ## Renders manifests of all services
+helmfile-ops-template: .helmfile-ops-template ## Renders manifests of ops services
+helmfile-simcore-template: .helmfile-simcore-template ## Renders manifests of simcore services
