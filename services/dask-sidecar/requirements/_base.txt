@@ -396,7 +396,7 @@ s3transfer==0.14.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   boto3
-sh==2.3.0
+sh==2.4.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 shellingham==1.5.4
     # via typer
