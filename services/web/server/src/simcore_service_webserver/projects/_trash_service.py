@@ -306,6 +306,7 @@ async def batch_delete_trashed_projects_as_admin(
                         app,
                         project_uuid=project.uuid,
                         product_name=project.product_name,
+                        expected_creation_date=project.creation_date,
                     )
                     deleted_project_ids.append(project.uuid)
                 except Exception as err:  # pylint: disable=broad-exception-caught
@@ -371,6 +372,7 @@ async def batch_delete_projects_in_root_workspace_as_admin(
                         app,
                         project_uuid=project.uuid,
                         product_name=project.product_name,
+                        expected_creation_date=project.creation_date,
                     )
                     deleted_project_ids.append(project.uuid)
                 except Exception as err:  # pylint: disable=broad-exception-caught

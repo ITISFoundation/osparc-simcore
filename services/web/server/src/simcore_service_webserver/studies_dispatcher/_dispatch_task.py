@@ -27,7 +27,7 @@ from servicelib.logging_utils import log_catch
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.redis import RedisClientSDK, exclusive
+from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK, exclusive
 
 from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
 from ..projects import _projects_repository
@@ -37,7 +37,10 @@ from ..projects.api import (
     get_project_dict_and_type,
 )
 from ..projects.exceptions import ProjectNotFoundError
-from ..projects.projects_trash_service import trash_project_for_immediate_deletion
+from ..projects.projects_trash_service import (
+    PROJECT_DELETE_REDIS_LOCK_KEY,
+    trash_project_for_immediate_deletion,
+)
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users.users_service import get_user
 from ._errors import StudyCopyBeingDeletedError
@@ -126,56 +129,79 @@ async def _clone_study_with_gc_lock(
     product_name: str,
     product_api_base_url: str,
 ) -> None:
-    """Performs the actual clone while holding the guest-user GC lock."""
-    # Check if copy already exists (idempotent) — access already validated by the controller
-    if await _copy_exists(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name):
-        _logger.debug("Study copy %s already exists for user %s, skipping clone", project_uuid, user_id)
-        return
+    """Performs the actual clone while holding the guest-user GC lock.
 
-    # New project cloned from template
-    await progress.update(message="cloning study document...", percent=0.05)
-    try:
-        new_project = await clone_project_data(
-            app,
-            source_project=template_project,
-            forced_copy_project_id=ProjectID(project_uuid),
-            user_id=user_id,
-            product_name=product_name,
-            product_api_base_url=product_api_base_url,
-            task_progress=progress,
-            template_parameters=template_parameters,
-        )
+    The copy check, the stamping and the clone itself additionally run under the project's
+    delete lock, shared with every deletion of the copy (garbage-collector sweeps, folder
+    and workspace deletions): while one of them is in flight the copy must be neither
+    stamped nor recreated.
+    """
 
-        await copy_allow_guests_to_push_states_and_output_ports(
-            app,
-            from_project_uuid=template_project["uuid"],
-            to_project_uuid=new_project["uuid"],
-        )
-    except (Exception, asyncio.CancelledError) as exc:
-        # `clone_project_data` commits the copy before its later steps and its uuid is
-        # deterministic: a partial copy would be taken for a finished clone by the next
-        # dispatch. Stamping (hidden and trashed in one query) hands the copy to the
-        # garbage-collector, which performs the deletion alone: deleting it here as well
-        # would race the collector over the uuid and could wipe a clone recreated under it.
-        # The stamp is shielded, so an abort of this task cannot interrupt it.
-        await _safe_stamp_copy_for_immediate_deletion(
-            app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
-        )
-        if isinstance(exc, asyncio.CancelledError):
-            raise
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                "Failed cloning the study, its copy is stamped for the garbage-collector",
-                error=exc,
-                error_context={
-                    "template_project_uuid": template_project["uuid"],
-                    "copy_project_id": project_uuid,
-                    "user_id": user_id,
-                    "product_name": product_name,
-                },
-                tip="The next dispatch answers that the copy is being deleted until the garbage-collector removes it",
+    @exclusive(
+        get_redis_lock_manager_client_sdk(app),
+        lock_key=PROJECT_DELETE_REDIS_LOCK_KEY.format(project_uuid=project_uuid),
+        blocking=False,
+    )
+    async def _check_or_clone() -> None:
+        # Check if copy already exists (idempotent) — access already validated by the controller
+        if await _copy_exists(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name):
+            _logger.debug("Study copy %s already exists for user %s, skipping clone", project_uuid, user_id)
+            return
+
+        # New project cloned from template
+        await progress.update(message="cloning study document...", percent=0.05)
+        try:
+            new_project = await clone_project_data(
+                app,
+                source_project=template_project,
+                forced_copy_project_id=ProjectID(project_uuid),
+                user_id=user_id,
+                product_name=product_name,
+                product_api_base_url=product_api_base_url,
+                task_progress=progress,
+                template_parameters=template_parameters,
             )
-        )
+
+            await copy_allow_guests_to_push_states_and_output_ports(
+                app,
+                from_project_uuid=template_project["uuid"],
+                to_project_uuid=new_project["uuid"],
+            )
+        except (Exception, asyncio.CancelledError) as exc:
+            # `clone_project_data` commits the copy before its later steps and its uuid is
+            # deterministic: a partial copy would be taken for a finished clone by the next
+            # dispatch. Stamping (hidden and trashed in one query) hands the copy to the
+            # garbage-collector, which performs the deletion alone: deleting it here as well
+            # would race the collector over the uuid and could wipe a clone recreated under it.
+            # The stamp is shielded, so an abort of this task cannot interrupt it.
+            await _safe_stamp_copy_for_immediate_deletion(
+                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
+            )
+            if isinstance(exc, asyncio.CancelledError):
+                raise
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Failed cloning the study, its copy is stamped for the garbage-collector",
+                    error=exc,
+                    error_context={
+                        "template_project_uuid": template_project["uuid"],
+                        "copy_project_id": project_uuid,
+                        "user_id": user_id,
+                        "product_name": product_name,
+                    },
+                    tip="The next dispatch answers that the copy is being deleted"
+                    " until the garbage-collector removes it",
+                )
+            )
+            raise StudyCopyBeingDeletedError(project_id=project_uuid) from exc
+
+    try:
+        await _check_or_clone()
+    except CouldNotAcquireLockError as exc:
+        # a deletion of the copy (a garbage-collector sweep, or a folder or workspace
+        # deletion) is in flight: stamping it would arm the sweep against a clone recreated
+        # under its deterministic uuid, and cloning would let the deletion's uuid-keyed
+        # steps hit that clone
         raise StudyCopyBeingDeletedError(project_id=project_uuid) from exc
 
 

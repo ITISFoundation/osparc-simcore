@@ -14,6 +14,7 @@ New workflow (fixes 2+4 hybrid):
 These tests are the completion gate (Phase 0): implementation is done when this suite passes.
 """
 
+import asyncio
 import re
 import urllib.parse
 from collections.abc import AsyncIterator
@@ -31,6 +32,7 @@ from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.progress_bar import ProgressReport
+from models_library.projects import ProjectID
 from models_library.projects_state import ProjectShareState, ProjectStatus
 from models_library.users import UserID
 from pytest_mock import MockerFixture
@@ -42,7 +44,7 @@ from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.projects import _projects_repository as projects_repository
-from simcore_service_webserver.projects.exceptions import ProjectDeleteError
+from simcore_service_webserver.projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_trash_service import delete_project_as_admin
 from simcore_service_webserver.projects.utils import NodesMap
@@ -556,3 +558,141 @@ async def test_dispatch_stamps_a_copy_hidden_by_another_deletion(
     assert result["project_id"] == f"{copy_id}"
     assert [project["uuid"] for project in await _get_user_projects(client)] == [result["project_id"]]
     create_pipeline.assert_called_once()
+
+
+async def test_dispatch_leaves_a_copy_with_a_deletion_in_flight_alone(
+    studies_dispatcher_enabled: bool,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+    mock_dynamic_scheduler: None,
+    director_v2_service_mock: AioResponsesMock,
+    mocks_on_projects_api: None,
+    redis_locks_client: AsyncIterator[aioredis.Redis],
+    osparc_product_name: str,
+    mocker: MockerFixture,
+):
+    """A dispatch running while a deletion of the copy is in flight must not touch the copy.
+
+    The deletion (a folder or workspace removal, for instance) hides the copy and only then
+    removes its pipeline, storage and row. Stamping the copy here would let the
+    garbage-collector delete the same uuid alongside that deletion: whichever finishes first
+    frees the uuid, a dispatch recreates the copy under it, and the remaining deletion's
+    by-uuid steps then hit that clone. Both hold the same per-project lock, so while the
+    deletion is in flight the dispatch can neither stamp nor clone.
+    """
+    assert client.app
+
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    await client.get(f"{study_url}")
+    assert _is_user_authenticated(client.session)
+    dispatch_url = _dispatch_url(client, published_project["uuid"])
+
+    result_status, result = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_200_OK, result
+    copy_id = ProjectID(result["project_id"])
+
+    # a deletion is paused with the copy hidden and the row still there
+    deletion_reached_storage = asyncio.Event()
+    resume_deletion = asyncio.Event()
+
+    async def _pause_at_storage_cleanup(*args, **kwargs) -> None:
+        deletion_reached_storage.set()
+        await resume_deletion.wait()
+
+    # the storage api is already mocked by fixtures, so no autospec here
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.storage_service.delete_project_data_folders",
+        side_effect=_pause_at_storage_cleanup,
+    )
+    deletion = asyncio.create_task(
+        delete_project_as_admin(client.app, project_uuid=copy_id, product_name=osparc_product_name)
+    )
+    await asyncio.wait_for(deletion_reached_storage.wait(), timeout=30)
+
+    copy = await projects_repository.get_project(client.app, project_uuid=copy_id)
+    assert copy.hidden
+    assert copy.trashed is None
+
+    # the dispatch cannot take the lock the deletion holds: it answers 503 and stamps nothing
+    create_pipeline = mocked_dynamic_services_interface["director_v2.api.create_or_update_pipeline"]
+    create_pipeline.reset_mock()
+
+    result_status, _ = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_503_SERVICE_UNAVAILABLE
+    create_pipeline.assert_not_called()
+    copy = await projects_repository.get_project(client.app, project_uuid=copy_id)
+    assert copy.trashed is None, "a deletion in flight owns the copy, the dispatch must not arm the collector"
+
+    # the deletion finishes: the copy is gone and the study can be cloned again
+    resume_deletion.set()
+    await deletion
+    with pytest.raises(ProjectNotFoundError):
+        await projects_repository.get_project(client.app, project_uuid=copy_id)
+
+    result_status, result = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_200_OK, result
+    assert result["project_id"] == f"{copy_id}"
+    create_pipeline.assert_called_once()
+
+
+async def test_admin_deletion_skips_a_copy_recreated_under_the_same_uuid(
+    studies_dispatcher_enabled: bool,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+    mock_dynamic_scheduler: None,
+    director_v2_service_mock: AioResponsesMock,
+    mocks_on_projects_api: None,
+    redis_locks_client: AsyncIterator[aioredis.Redis],
+    osparc_product_name: str,
+):
+    """A selection that went stale must not delete the project that took its uuid.
+
+    The collector selects by trashed date and deletes later, and a copy's uuid is
+    deterministic, so in between the copy can be deleted and cloned again under that uuid.
+    Deletion then re-checks the creation date it selected under the project lock and skips a
+    newer project.
+    """
+    assert client.app
+
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    await client.get(f"{study_url}")
+    assert _is_user_authenticated(client.session)
+    dispatch_url = _dispatch_url(client, published_project["uuid"])
+
+    result_status, result = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_200_OK, result
+    copy_id = ProjectID(result["project_id"])
+
+    # the collector selects the copy
+    selected = await projects_repository.get_project(client.app, project_uuid=copy_id)
+
+    # the copy is deleted and cloned again under the same uuid before the collector gets to it
+    await delete_project_as_admin(client.app, project_uuid=copy_id, product_name=osparc_product_name)
+    result_status, result = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_200_OK, result
+    assert result["project_id"] == f"{copy_id}"
+
+    # deleting with the stale selection skips the recreated copy
+    await delete_project_as_admin(
+        client.app,
+        project_uuid=copy_id,
+        product_name=osparc_product_name,
+        expected_creation_date=selected.creation_date,
+    )
+    clone = await projects_repository.get_project(client.app, project_uuid=copy_id)
+    assert not clone.hidden
+    assert clone.creation_date > selected.creation_date
+
+    # with a fresh selection the copy is deleted
+    await delete_project_as_admin(
+        client.app,
+        project_uuid=copy_id,
+        product_name=osparc_product_name,
+        expected_creation_date=clone.creation_date,
+    )
+    with pytest.raises(ProjectNotFoundError):
+        await projects_repository.get_project(client.app, project_uuid=copy_id)
