@@ -7,9 +7,9 @@ image:
 containerSecurityContext:
   readOnlyRootFilesystem: false
 
-containerPort: {{ requiredEnv "STORAGE_PORT" | quote }}
+containerPort: {{ requiredEnv "STORAGE_PORT" }}
 service:
-  port: {{ requiredEnv "STORAGE_PORT" | quote }}
+  port: {{ requiredEnv "STORAGE_PORT" }}
 
 resources:
   requests:

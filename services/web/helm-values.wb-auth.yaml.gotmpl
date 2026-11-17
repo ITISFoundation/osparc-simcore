@@ -7,9 +7,9 @@ containerSecurityContext:
   readOnlyRootFilesystem: false
 
 # gunicorn binds 8080 (services/web/server/docker/boot.sh)
-containerPort: {{ requiredEnv "WB_AUTH_WEBSERVER_PORT" | quote }}
+containerPort: {{ requiredEnv "WB_AUTH_WEBSERVER_PORT" }}
 service:
-  port: {{ requiredEnv "WB_AUTH_WEBSERVER_PORT" | quote }}
+  port: {{ requiredEnv "WB_AUTH_WEBSERVER_PORT" }}
 
 resources:
   requests:
