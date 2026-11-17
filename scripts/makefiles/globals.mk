@@ -63,7 +63,7 @@ define verify_tool_installation
 	fi
 	@if ! $(3) | grep -q "$(2)"; then \
 		echo "WARNING: installed $(1) version does not match" >&2; \
-		echo "Expected $(1) version:'$(2)'. Please, update!" >&2; \
+		echo "Expected $(1) version:'$(2)', got: '$(3)'. Please, update!" >&2; \
 		sleep 3s; \
 	fi
 endef
