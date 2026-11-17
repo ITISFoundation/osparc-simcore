@@ -3,18 +3,17 @@ from typing import Annotated, Final
 from aiohttp import web
 from pydantic import AliasChoices, PositiveInt, field_validator
 from pydantic.fields import Field
-from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
-from settings_library.utils_session import MixinSessionSettings
+from settings_library.utils_session import SessionSecretKey
 
 from ..application_keys import APP_SETTINGS_APPKEY
 
 _MINUTE: Final[int] = 60  # secs
 
 
-class SessionSettings(BaseCustomSettings, MixinSessionSettings):
+class SessionSettings(BaseCustomSettings):
     SESSION_SECRET_KEY: Annotated[
-        SecretStr,
+        SessionSecretKey,
         Field(
             ...,
             description="Secret key to encrypt cookies. "
@@ -38,7 +37,10 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         PositiveInt | None,
         Field(
             default=None,
-            description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
+            description=(
+                "Max-Age attribute. Maximum age for session data, int seconds or None for "
+                "“session cookie” which last until you close your browser."
+            ),
         ),
     ]
     SESSION_COOKIE_SAMESITE: str | None = Field(
@@ -54,11 +56,6 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         default=True,
         description="This prevents JavaScript from accessing the session cookie",
     )
-
-    @field_validator("SESSION_SECRET_KEY")
-    @classmethod
-    def check_valid_fernet_key(cls, v):
-        return cls.do_check_valid_fernet_key(v)
 
     @field_validator("SESSION_COOKIE_SAMESITE")
     @classmethod
