@@ -18,7 +18,7 @@ from decimal import Decimal
 from typing import Annotated, Any, Final, cast
 from uuid import uuid4
 
-from aiocache import cached  # type: ignore[import-untyped]
+from aiocache import cached_stampede  # type: ignore[import-untyped]
 from aiohttp import web
 from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from common_library.json_serialization import json_dumps
@@ -88,7 +88,6 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import PositiveInt, TypeAdapter, ValidationError
-from servicelib.async_utils import run_sequentially_in_context
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
@@ -744,12 +743,13 @@ async def patch_project_for_user(
     )
 
 
+# NOTE: the lease must outlast a resource-usage-tracker request (2 s timeout), or concurrent lookups stop sharing it
 _TTL_CACHE_PRICING_LOOKUPS: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 
 
-@run_sequentially_in_context(target_args=["product_name", "service_key", "service_version"])
-@cached(
+@cached_stampede(
     ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
+    lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
     # the ids only report a failure: they stay out of the key so nodes of one service share it
     key_builder=lambda fn, *_args, **kw: (
         f"{fn.__name__}_{kw['product_name']}_{kw['service_key']}_{kw['service_version']}"
@@ -757,7 +757,7 @@ _TTL_CACHE_PRICING_LOOKUPS: Final[datetime.timedelta] = datetime.timedelta(secon
 )
 async def _get_default_pricing_and_hardware_info(
     app: web.Application,
-    # keyword-only: both decorators build their key out of the arguments' names
+    # keyword-only: the cache key is built out of the arguments' names
     *,
     product_name: str,
     service_key: ServiceKey,
@@ -770,9 +770,9 @@ async def _get_default_pricing_and_hardware_info(
     Raises DefaultPricingUnitNotFoundError when the service has no default unit in this product.
 
     A project's nodes typically share a service and an operation handles them concurrently, so a
-    lookup is cached for `_TTL_CACHE_PRICING_LOOKUPS` and concurrent lookups of one key run one at
-    a time: the cache only holds an answer once its lookup returned, so without that serialization
-    every node of a service would ask before the first answer lands. A failure is not reused.
+    lookup is cached for `_TTL_CACHE_PRICING_LOOKUPS` and concurrent lookups of one key wait for the
+    first one instead of each asking: the cache only holds an answer once its lookup returned. A
+    failure is not reused.
     """
     service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
         app,
@@ -899,9 +899,9 @@ def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
     return products_service.is_credit_computation_enabled(app, product=product)
 
 
-@run_sequentially_in_context(target_args=["product_name", "pricing_plan_id", "pricing_unit_id"])
-@cached(
+@cached_stampede(
     ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
+    lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
     key_builder=lambda fn, *_args, **kw: (
         f"{fn.__name__}_{kw['product_name']}_{kw['pricing_plan_id']}_{kw['pricing_unit_id']}"
     ),
@@ -923,62 +923,6 @@ async def _aws_ec2_instances_of_pricing_link(
     except web.HTTPNotFound:
         return None
     return pricing_unit_get.specific_info.aws_ec2_instances
-
-
-async def _link_default_pricing_unit(
-    *,
-    app: web.Application,
-    product_name: str,
-    db: ProjectDBAPI,
-    current_link: PricingPlanAndUnitIdsTuple | None,
-    project_id: ProjectID,
-    node_id: NodeID,
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-) -> list[str]:
-    """Links the service's DEFAULT pricing unit to the node and returns its machine types.
-
-    ``current_link`` is the link the node has (None when it has none, or when that link
-    is unusable in this product and shall be replaced). A link that appears while the
-    default is looked up (e.g. the user selecting a unit) is kept rather than
-    overwritten, and its machine types are the ones returned.
-    """
-    # NOTE: `cached` erases the return type of the lookups, hence the annotations at the call sites
-    default_info: PricingAndHardwareInfoTuple = await _get_default_pricing_and_hardware_info(
-        app,
-        product_name=product_name,
-        service_key=service_key,
-        service_version=service_version,
-        project_id=project_id,
-        node_id=node_id,
-    )
-    pricing_plan_id, pricing_unit_id, _, aws_ec2_instances = default_info
-
-    if current_link is not None:
-        await db.connect_pricing_unit_to_project_node(project_id, node_id, pricing_plan_id, pricing_unit_id)
-        return aws_ec2_instances
-
-    default_link = PricingPlanAndUnitIdsTuple(pricing_plan_id, pricing_unit_id)
-    link = await db.connect_pricing_unit_to_project_node_if_not_linked(
-        project_id, node_id, pricing_plan_id, pricing_unit_id
-    )
-    if link != default_link:
-        # someone else linked another unit while the default was looked up: it wins
-        machines: list[str] | None = await _aws_ec2_instances_of_pricing_link(
-            app, product_name=product_name, pricing_plan_id=link[0], pricing_unit_id=link[1]
-        )
-        if machines is None:
-            _logger.warning(
-                "Pricing plan %s/unit %s of node %s of project %s is unknown in product %s: not sizing the node",
-                link[0],
-                link[1],
-                node_id,
-                project_id,
-                product_name,
-            )
-            return []
-        return machines
-    return aws_ec2_instances
 
 
 async def _link_pricing_unit_and_size_node(
@@ -1020,16 +964,19 @@ async def _link_pricing_unit_and_size_node(
                 project_id,
                 product_name,
             )
-        aws_ec2_instances = await _link_default_pricing_unit(
-            app=app,
+        # NOTE: `cached_stampede` erases the return type of the lookups, hence the annotations at the call sites
+        default_info: PricingAndHardwareInfoTuple = await _get_default_pricing_and_hardware_info(
+            app,
             product_name=product_name,
-            db=db,
-            current_link=link,
-            project_id=project_id,
-            node_id=node_id,
             service_key=service_key,
             service_version=service_version,
+            project_id=project_id,
+            node_id=node_id,
         )
+        await db.connect_pricing_unit_to_project_node(
+            project_id, node_id, default_info.pricing_plan_id, default_info.pricing_unit_id
+        )
+        aws_ec2_instances = default_info.aws_ec2_instances
 
     await update_project_node_resources_from_hardware_info(
         app,
