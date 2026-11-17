@@ -858,18 +858,15 @@ async def update_project_node_resources_from_hardware_info(
         new_node_resources, mode="json"
     )
     persisted_resources = (await db.get_project_node(project_id, node_id)).required_resources
-    if not _db_needs_update(persisted_resources, required_resources):
-        # the node is already sized for this machine, no need to write it again
-        return
-
-    await db.update_project_node(
-        user_id,
-        project_id,
-        node_id,
-        product_name,
-        required_resources=required_resources,
-        check_update_allowed=False,
-    )
+    if _db_needs_update(persisted_resources, required_resources):
+        await db.update_project_node(
+            user_id,
+            project_id,
+            node_id,
+            product_name,
+            required_resources=required_resources,
+            check_update_allowed=False,
+        )
 
 
 def _db_needs_update(persisted: Any, sized: dict[str, Any]) -> bool:
