@@ -621,7 +621,7 @@ tornado==6.6.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-tqdm==4.67.3
+tqdm==4.70.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in

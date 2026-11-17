@@ -424,7 +424,7 @@ tornado==6.6.1
     # via
     #   bokeh
     #   distributed
-tqdm==4.67.1
+tqdm==4.70.1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 truststore==0.10.5
     # via
