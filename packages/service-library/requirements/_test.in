@@ -37,9 +37,8 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 respx
-sqlalchemy[mypy]
+sqlalchemy[asyncio,mypy]
 types_aiofiles
 types_tqdm
 types-psutil
-types-psycopg2
 uvloop

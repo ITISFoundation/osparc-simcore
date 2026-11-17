@@ -83,7 +83,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
         # Ensure the projects_to_jobs table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.select(sa.func.count()).select_from(projects_to_jobs)).scalar()
-        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        assert "psycopg.errors.UndefinedTable" in f"{exc_info.value}"
         conn.rollback()
 
         # INSERT data (emulates data in-place)

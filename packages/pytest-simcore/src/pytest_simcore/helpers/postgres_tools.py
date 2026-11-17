@@ -53,7 +53,7 @@ class PgTemplateState(TypedDict):
 
 def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
     url = PostgresDsn.build(
-        scheme="postgresql+psycopg2",
+        scheme="postgresql+psycopg",
         username=postgres_config["user"],
         password=postgres_config["password"],
         host=postgres_config["host"],
@@ -346,7 +346,7 @@ def migrated_pg_tables_context(
 
     user = quote_plus(postgres_config["user"])
     password = quote_plus(postgres_config["password"])
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+    dsn = "postgresql+psycopg://{user}:{password}@{host}:{port}/{database}".format(
         user=user,
         password=password,
         host=postgres_config["host"],
@@ -415,6 +415,7 @@ async def _async_insert_and_get_row(
             raise ValueError(msg)
         returning_cols = pk_cols
     else:
+        assert pk_col is not None, "Primary key column must be provided to build the RETURNING clause"
         returning_cols = [pk_col]
 
     result = await conn.execute(table.insert().values(**values).returning(*returning_cols))
@@ -467,6 +468,7 @@ def _sync_insert_and_get_row(
             raise ValueError(msg)
         returning_cols = pk_cols
     else:
+        assert pk_col is not None, "Primary key column must be provided to build the RETURNING clause"
         returning_cols = [pk_col]
 
     result = conn.execute(table.insert().values(**values).returning(*returning_cols))

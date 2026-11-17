@@ -61,7 +61,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
 
     user = quote_plus(environ["POSTGRES_USER"])
     password = quote_plus(environ["POSTGRES_PASSWORD"])
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+    dsn = "postgresql+psycopg://{user}:{password}@{host}:{port}/{database}".format(
         user=user,
         password=password,
         host=docker_ip,
@@ -88,7 +88,7 @@ def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
 @pytest.fixture
 def _make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
     # NOTE: users is responsible of `await engine.dispose()`
-    dsn = postgres_service.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+    dsn = postgres_service.replace("postgresql+psycopg://", "postgresql+asyncpg://")
     minsize = 2
     maxsize = 50
 

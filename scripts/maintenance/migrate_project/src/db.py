@@ -24,7 +24,7 @@ def db_connection(db_config: DBConfig) -> Iterator[Connection]:
     user = quote_plus(db_config.user)
     password = quote_plus(db_config.password.get_secret_value())
     engine = create_engine(
-        f"postgresql+psycopg2://{user}:{password}@{db_config.address}/{db_config.database}",
+        f"postgresql+psycopg://{user}:{password}@{db_config.address}/{db_config.database}",
         echo=True,
     )
     with engine.connect() as con:

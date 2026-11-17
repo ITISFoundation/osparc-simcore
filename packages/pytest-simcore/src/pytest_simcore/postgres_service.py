@@ -76,7 +76,7 @@ _MINUTE: Final[int] = 60
 def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
     dsn = str(
         PostgresDsn.build(
-            scheme="postgresql+psycopg2",
+            scheme="postgresql+psycopg",
             username=postgres_dsn["user"],
             password=postgres_dsn["password"],
             host=postgres_dsn["host"],
@@ -193,7 +193,7 @@ async def sqlalchemy_async_engine(
     # NOTE: prevent having to import this if latest sqlalchemy not installed
 
     sync_dsn = postgres_db.url.render_as_string(hide_password=False)
-    engine = create_async_engine(sync_dsn.replace("postgresql+psycopg2://", "postgresql+asyncpg://"))
+    engine = create_async_engine(sync_dsn.replace("postgresql+psycopg://", "postgresql+asyncpg://"))
     assert engine
     yield engine
 

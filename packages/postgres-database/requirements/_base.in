@@ -7,5 +7,5 @@
 
 alembic
 pydantic
-sqlalchemy[postgresql_psycopg2binary,postgresql_asyncpg] # SEE extras in https://github.com/sqlalchemy/sqlalchemy/blob/main/setup.cfg#L43
+sqlalchemy[postgresql_asyncpg] # async driver only: the sync psycopg (3) driver is needed by the CLI (see _migration.in) and by the test envs
 yarl
