@@ -430,7 +430,6 @@ async def test_dispatch_endpoint_requires_authentication(
     ), f"Anonymous POST must be rejected, got {resp.status}"
 
 
-# Test: a clone that fails after its copy was inserted gets removed and cloned again
 async def test_dispatch_retries_a_clone_that_failed_after_the_copy_was_inserted(
     studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -487,7 +486,6 @@ async def test_dispatch_retries_a_clone_that_failed_after_the_copy_was_inserted(
     create_pipeline.assert_called_once()
 
 
-# Test: a copy whose cleanup failed is left to the garbage-collector and cloned again
 async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
     studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -570,7 +568,6 @@ async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
     create_pipeline.assert_called_once()
 
 
-# Test: a hidden copy is handed to the garbage-collector, cloned again once it is gone
 async def test_dispatch_hands_a_hidden_copy_to_the_garbage_collector(
     studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
