@@ -205,8 +205,8 @@ jobs:
           REPO: ${{ github.repository }}
           BOT: osparc-simcore-renovate[bot]
           FAIL_COOLDOWN_HOURS: 3
-          # the owners a pull request held for a person is assigned to, round-robin by pull
-          # request number. Kept equal to the owners of the files Renovate writes in
-          # .github/CODEOWNERS by tests/environment-setup/test_renovate_review_gate.py
+          # owners a held pull request is assigned to, one of them per pull request number.
+          # Equal to the owners of the files Renovate writes in .github/CODEOWNERS, which
+          # tests/environment-setup/test_renovate_review_gate.py checks
           TAKEOVER_ASSIGNEES: sanderegg,pcrespov,GitHK,giancarloromeo
         run: ./.github/renovate/review_gate.py

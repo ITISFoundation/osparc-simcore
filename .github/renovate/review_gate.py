@@ -16,13 +16,11 @@ requested on its own:
   Mergify queue merges on the checks alone;
 - checks all passed without that label: marked ready, so the code-owner review is what
   the pull request waits for;
-- checks failed: the fast-lane label removed and 🙋-needs-takeover added, one owner of
-  TAKEOVER_ASSIGNEES assigned round-robin, marked ready and a comment naming the failing
-  checks and the commands to take the update over, but only after FAIL_COOLDOWN_HOURS on
-  the last commit so that Renovate can push its own fix first;
-- 🙋-needs-takeover says a person has to act on that pull request. The same poll takes it
-  off the ready pull requests whose checks turned green, which is what happens when
-  Renovate rebases one onto a master that carries the fix;
+- checks failed: 🤖-renovate-fast-lane removed and 🙋-needs-takeover added, one owner of
+  TAKEOVER_ASSIGNEES assigned, marked ready and a comment naming the failing checks and
+  the commands to take the update over, but only after FAIL_COOLDOWN_HOURS on the last
+  commit so that Renovate can push its own fix first;
+- 🙋-needs-takeover removed from a ready pull request whose checks are green again;
 - a draft whose reviewers were already requested, or which has reviews, is left alone;
 - every draft gets the pins its diff moved besides the dependency of its title
   commented, each with what carried the new version, edited in place on later runs.
@@ -35,10 +33,11 @@ cool-down, which keeps a green draft a draft but must not hide checks that alrea
 moved_pins parses the `# via` blocks of pip-compile.
 
 Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS, TAKEOVER_ASSIGNEES (the owners a
-held pull request is assigned to, round-robin; a test keeps it equal to the CODEOWNERS of
-the files Renovate writes), plus GH_TOKEN of the Renovate App (a GitHub App cannot mark a
-pull request opened by another App ready, so a github-actions token fails on that call).
-DRIFT_LIST_LIMIT, 40 by default, caps the packages the comment lists.
+held pull request is assigned to, one of them per pull request number; a test keeps the
+list equal to the CODEOWNERS of the files Renovate writes), plus GH_TOKEN of the Renovate
+App (a GitHub App cannot mark a pull request opened by another App ready, so a
+github-actions token fails on that call). DRIFT_LIST_LIMIT, 40 by default, caps the
+packages the comment lists.
 """
 
 from __future__ import annotations
@@ -80,10 +79,9 @@ TAKEOVER_LABEL: Final[
     Annotated[
         str,
         doc(
-            "Label of the pull requests whose checks kept failing and that wait for a person: it makes"
-            " the state listable instead of only readable in a comment, and the gate takes it off again"
-            " once the checks are green. Mergify reads no label here, so a stale one cannot hold a merge"
-            " back; 🤖-do-not-merge stays the one that does"
+            "Label of the pull requests whose checks kept failing and that wait for a person, so the"
+            " state can be listed. No Mergify condition reads it: 🤖-do-not-merge stays the label that"
+            " holds a merge back"
         ),
     ]
 ] = "🙋-needs-takeover"
@@ -259,9 +257,8 @@ class PullRequest:
 
 
 def takeover_assignee(number: int, assignees: Sequence[str]) -> str:
-    """The owner a held pull request gets. The number decides, not the clock: it is fixed
-    when the pull request opens, so the same one keeps the same owner however often the
-    poll runs, and consecutive pull requests walk the list"""
+    """The owner a held pull request gets. The number picks it, so one pull request keeps
+    its owner across polls and consecutive ones walk the list"""
     return assignees[number % len(assignees)]
 
 
@@ -558,9 +555,8 @@ def take_over_recipe(repo: str, branch: str) -> str:
 
 
 def hold_comment(repo: str, branch: str, age_hours: int, failing: list[str], assignee: str) -> str:
-    """The comment of a pull request that stopped being Renovate's to fix: what failed, who
-    owns it now, and what to do about it. The owner is named without an `@`, because the
-    assignment already notified them"""
+    """What a held pull request reports: the checks that failed, who is assigned, and what
+    to do. The owner is named without an `@` because the assignment notified them"""
     failed = "\n".join(f"- {name}" for name in failing)
     return (
         "> [!WARNING]\n"
@@ -578,9 +574,9 @@ def hold_comment(repo: str, branch: str, age_hours: int, failing: list[str], ass
 
 
 def hold_for_review(pr: PullRequest, age_hours: int, failing: list[str], assignees: Sequence[str]) -> None:
-    """Takes a pull request that kept failing past the cool-down out of the fast lane, says
-    in 🙋-needs-takeover and in an assignee that a person owns it now, and marks it ready, so
-    it waits for reviews; 🤖-do-not-merge stays a lever only a person sets"""
+    """Holds a pull request that kept failing past the cool-down: out of the fast lane, one
+    owner named, ready so it waits for reviews; 🤖-do-not-merge stays a lever only a person
+    sets"""
     assignee = takeover_assignee(pr.number, assignees)
     pr.set_labels(
         add=TAKEOVER_LABEL if TAKEOVER_LABEL not in pr.labels else "",
@@ -625,11 +621,9 @@ def open_drafts(repo: str, bot: str) -> list[int]:
 
 
 def clear_taken_over(repo: str, bot: str) -> None:
-    """Takes 🙋-needs-takeover off the ready pull requests whose checks are green again.
-    Renovate rebases a ready pull request onto a master that moved, so the commit that fails
-    is often not the one a person has to look at: once the rebase is green nobody needs the
-    marker, and nothing else would say so. Nothing is added back: a person puts
-    🤖-renovate-fast-lane on a pull request they want through the fast lane"""
+    """Takes 🙋-needs-takeover off the ready pull requests whose checks are green again, the
+    usual outcome of a Renovate rebase onto a master that carries the fix. Nothing is added
+    back: 🤖-renovate-fast-lane is a label a person sets"""
     for number, is_draft in open_pull_requests(repo, bot, label=TAKEOVER_LABEL):
         if is_draft:
             # a pull request turned back into a draft is decided again by gate_draft
@@ -691,8 +685,7 @@ def run(
     takeover_assignees: Sequence[str],
     drift_list_limit: int,
 ) -> None:
-    """One pass of the poll over the bot's draft pull requests, then over the pull requests
-    the marker outlived"""
+    """One pass over the bot's drafts, then over the labeled pull requests that are green"""
     drafts = open_drafts(repo, bot)
     if not drafts:
         print(f"no draft {bot} pull requests open")

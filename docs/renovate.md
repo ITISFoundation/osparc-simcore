@@ -266,33 +266,30 @@ dependency merge.
 
 A Renovate pull request needs someone when it carries `🙋-needs-takeover`: its
 checks have been failing for 3 h on the last commit and Renovate did not fix
-them. The review gate sets that label, removes `🤖-renovate-fast-lane`, assigns
-one of the four owners of the files Renovate writes, and marks the pull request
-ready. What to do with it is in
+them. The review gate adds the label, assigns one owner, and marks the pull
+request ready. What to do with it is in
 [Fixing a failing Renovate pull request](#fixing-a-failing-renovate-pull-request).
 
 To list them:
 [is:pr is:open label:"🙋-needs-takeover"](https://github.com/ITISFoundation/osparc-simcore/issues?q=is%3Apr+is%3Aopen+label%3A%22%F0%9F%99%8B-needs-takeover%22).
 
-The assignee comes from `TAKEOVER_ASSIGNEES` in the `review-gate` job, indexed
-by the pull request number, so the same pull request always names the same
-person and consecutive ones walk the list. That person owns it until it merges
-or closes. A test compares the pool with the owners of the last
-[CODEOWNERS](../.github/CODEOWNERS) block, so the two cannot drift.
+The assignee comes from `TAKEOVER_ASSIGNEES` in the `review-gate` job, picked by
+the pull request number, so one pull request keeps its owner and consecutive
+ones walk the list. That person owns it until it merges or closes. A test keeps
+that list equal to the owners of the last
+[CODEOWNERS](../.github/CODEOWNERS) block.
+
+The gate removes the label once the checks of a ready pull request are green
+again, which is what a Renovate rebase onto a `master` carrying the fix
+produces. It adds nothing back: `🤖-renovate-fast-lane` is a label a person puts
+on.
 
 Two states that are *not* a takeover:
 
-- a green pull request waiting for a code-owner review needs a review, and
-  anyone may approve it — the two approvals and the code-owner approval are all
-  it waits for;
-- `🤖-do-not-merge` says a person is holding a pull request back on purpose,
-  which is theirs to remove.
-
-The gate takes `🙋-needs-takeover` off again on a later pass, once the checks of
-a ready pull request are green: Renovate rebases a pull request onto a `master`
-that moved, and the commit that failed is then not the one anybody has to look
-at. Nothing is added back with it; `🤖-renovate-fast-lane` is a label a person
-puts on deliberately.
+- a green pull request waiting for a code-owner review needs a review, not a
+  fix;
+- `🤖-do-not-merge` is a person holding a pull request back, and theirs to
+  remove.
 
 ## Fixing a failing Renovate pull request
 
@@ -336,11 +333,10 @@ stops following `master`. Instead:
 4. **The version cannot be used for now**: close the pull request, or exclude
    the version in `.renovaterc.jsonc` (`allowedVersions`, `ignoreDeps`).
 
-A pull request the review gate held lost `🤖-renovate-fast-lane` and carries
-`🙋-needs-takeover`. The reviewed path does not need the first label: the pull
-request merges once its checks pass and two reviewers approve, and the gate
-takes the second off when they do. Re-adding `🤖-renovate-fast-lane` sends it
-through the fast lane again.
+A pull request the review gate held lost `🤖-renovate-fast-lane`. The reviewed
+path does not need it: the pull request merges once its checks pass and two
+reviewers approve. Re-adding it sends the pull request through the fast lane
+again.
 
 ## Adding something new for Renovate to manage
 
