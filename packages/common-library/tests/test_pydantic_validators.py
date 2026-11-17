@@ -4,10 +4,11 @@ from typing import Annotated
 import pytest
 from common_library.pydantic_validators import (
     _validate_legacy_timedelta_str,
+    to_secret_str,
     validate_numeric_string_as_timedelta,
 )
 from faker import Faker
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
@@ -64,3 +65,15 @@ def test_validate_timedelta_in_legacy_mode(monkeypatch: pytest.MonkeyPatch, fake
     print(settings.model_dump())
     assert app_name == settings.APP_NAME
     assert timedelta(seconds=5555) == settings.REQUEST_TIMEOUT
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param("s3cr3t", SecretStr("s3cr3t"), id="str-wrapped"),
+        pytest.param(123, 123, id="int-passthrough"),
+        pytest.param(None, None, id="none-passthrough"),
+    ],
+)
+def test_to_secret_str(value: object, expected: object):
+    assert to_secret_str(value) == expected

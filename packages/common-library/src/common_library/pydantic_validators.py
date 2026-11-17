@@ -2,7 +2,7 @@ import datetime as dt
 import re
 import warnings
 
-from pydantic import TypeAdapter, field_validator
+from pydantic import SecretStr, TypeAdapter, field_validator
 
 
 def _validate_legacy_timedelta_str(time_str: str | dt.timedelta) -> str | dt.timedelta:
@@ -57,3 +57,13 @@ def validate_numeric_string_as_timedelta(field: str):
         return v
 
     return field_validator(field, mode="before")(_numeric_string_as_timedelta)
+
+
+def to_secret_str[T](value: T) -> SecretStr | T:
+    """Wraps a string in SecretStr so validation errors never report it verbatim
+
+    Pydantic records the value seen by the failing validator as the error input, and
+    SecretStr reports itself as "**********". Non-strings pass through unchanged so
+    type errors keep reporting their (non-secret) input.
+    """
+    return SecretStr(value) if isinstance(value, str) else value

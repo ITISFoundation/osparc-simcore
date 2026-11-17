@@ -3,6 +3,7 @@ from typing import Annotated, Any, Self
 from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
+from common_library.pydantic_validators import to_secret_str
 from models_library.basic_types import LogLevel
 from models_library.notifications.errors import (
     NotificationsProductSMTPSettingsNotFoundError,
@@ -54,8 +55,8 @@ class SMTPSettings(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _keep_password_out_of_validation_errors(cls, data: Any) -> Any:
-        if isinstance(data, dict) and isinstance(data.get("password"), str):
-            data["password"] = SecretStr(data["password"])
+        if isinstance(data, dict) and "password" in data:
+            data["password"] = to_secret_str(data["password"])
         return data
 
     @model_validator(mode="after")
