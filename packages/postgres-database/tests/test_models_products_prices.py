@@ -159,9 +159,8 @@ async def test_delete_price_constraints(connection: AsyncConnection, fake_produc
         with pytest.raises(sqlalchemy.exc.IntegrityError, match="delete") as exc_info:
             await connection.execute(products.delete())
 
-        # NOTE: that asyncpg.exceptions are converted to sqlalchemy.exc, keeping the
-        # asyncpg error as the cause. Since sqlalchemy 2.1 the asyncpg error is first
-        # wrapped in a per-violation dialect exception, so it is no longer the direct cause.
+        # NOTE: asyncpg.exceptions are converted to sqlalchemy.exc, with the asyncpg error
+        # kept as the cause. Since 2.1 it is wrapped in a per-violation dialect exception first.
         cause_chain: list[BaseException] = []
         cause: BaseException | None = exc_info.value.__cause__
         while cause is not None:

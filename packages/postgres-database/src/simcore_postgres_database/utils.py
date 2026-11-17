@@ -21,9 +21,7 @@ def build_url(
     """
     Safe build pg url as 'postgresql+psycopg://{user}:{password}@{host}:{port}/{database}'
 
-    Uses the psycopg (3) dialect, which sqlalchemy 2.1 also selects for a bare
-    'postgresql://' url. The scheme is spelled out so a driver change upstream
-    cannot silently move this url.
+    The scheme is spelled out so a driver change upstream cannot move this url.
     """
     return URL.build(
         scheme="postgresql+psycopg",

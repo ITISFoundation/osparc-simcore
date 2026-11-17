@@ -85,7 +85,7 @@ def _is_retryable_error(error: BaseException) -> bool:
 def _is_database_missing_error(error: BaseException) -> bool:
     if not isinstance(error, sa_exc.ProgrammingError):
         return False
-    # psycopg 3 names the SQLSTATE sqlstate, psycopg 2 named it pgcode
+    # psycopg 3 renamed pgcode to sqlstate
     orig = error.orig
     code = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
     return code == _UNDEFINED_DATABASE_SQLSTATE
@@ -421,7 +421,7 @@ async def _async_insert_and_get_row(
             raise ValueError(msg)
         returning_cols = pk_cols
     else:
-        assert pk_col is not None, "Primary key column must be provided to build the RETURNING clause"
+        assert pk_col is not None
         returning_cols = [pk_col]
 
     result = await conn.execute(table.insert().values(**values).returning(*returning_cols))
@@ -474,7 +474,7 @@ def _sync_insert_and_get_row(
             raise ValueError(msg)
         returning_cols = pk_cols
     else:
-        assert pk_col is not None, "Primary key column must be provided to build the RETURNING clause"
+        assert pk_col is not None
         returning_cols = [pk_col]
 
     result = conn.execute(table.insert().values(**values).returning(*returning_cols))

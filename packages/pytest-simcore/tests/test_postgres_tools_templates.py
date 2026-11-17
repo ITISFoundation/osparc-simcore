@@ -83,11 +83,11 @@ def _count_rows(engine: sa.engine.Engine, table: sa.Table) -> int:
 
 
 class _Psycopg3MissingDatabaseError(Exception):
-    sqlstate = "3D000"  # psycopg 3 names the SQLSTATE sqlstate
+    sqlstate = "3D000"
 
 
 class _Psycopg2MissingDatabaseError(Exception):
-    pgcode = "3D000"  # psycopg 2 named it pgcode
+    pgcode = "3D000"
 
 
 @pytest.mark.parametrize(

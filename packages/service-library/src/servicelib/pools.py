@@ -42,7 +42,7 @@ def non_blocking_process_pool_executor(**kwargs) -> Iterator[ProcessPoolExecutor
     try:
         yield executor
     finally:
-        # the pool is shared for the whole application lifetime, so it is left running here
+        # the shared pool stays running for the whole application lifetime
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3829
         pass
 
@@ -57,6 +57,6 @@ def non_blocking_thread_pool_executor(**kwargs) -> Iterator[ThreadPoolExecutor]:
     try:
         yield executor
     finally:
-        # the pool is shared for the whole application lifetime, so it is left running here
+        # the shared pool stays running for the whole application lifetime
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3829
         pass

@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 
 type PaymentID = str
-# runtime class alias: used in isinstance(...) checks, so it must not become a PEP 695 `type ... = ...` alias
+# runtime alias: used in isinstance() checks, so not a PEP 695 `type ... = ...` alias
 PaymentTransactionRow: TypeAlias = Row  # noqa: UP040
 
 

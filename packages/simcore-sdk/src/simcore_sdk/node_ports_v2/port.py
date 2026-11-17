@@ -42,7 +42,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-# converters from ItemValue to the port's concrete type, keyed by property_type
 TYPE_TO_PYTYPE: dict[str, Callable[[Any], ItemConcreteValue]] = {
     "integer": int,
     "number": float,

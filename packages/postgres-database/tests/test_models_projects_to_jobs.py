@@ -73,10 +73,7 @@ def _prepare_data(
 
 
 def _bindparams(data: dict[str, Any]) -> list[sa.BindParameter]:
-    # Bind parameters without a type. A parameter with no explicit type defaults to
-    # String, which the psycopg dialect renders as "$1::VARCHAR", and PostgreSQL does
-    # not assign a varchar to the enum, jsonb or uuid columns of these statements.
-    # Untyped, the value reaches the server as an untyped literal instead.
+    # a String-typed parameter is sent as "$1::VARCHAR", which enum/jsonb/uuid columns reject
     return [sa.bindparam(name, value=value, type_=sa.types.NULLTYPE) for name, value in data.items()]
 
 
