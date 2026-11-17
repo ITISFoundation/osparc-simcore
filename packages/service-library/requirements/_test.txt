@@ -240,7 +240,7 @@ requests==2.34.2
     #   -c requirements/_fastapi.txt
     #   docker
     #   jsonschema-path
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
