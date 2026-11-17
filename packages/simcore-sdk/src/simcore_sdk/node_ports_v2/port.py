@@ -1,10 +1,9 @@
 import logging
-import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.services_io import BaseServiceIOModel
@@ -37,10 +36,14 @@ from .links import (
 )
 from .port_validation import validate_port_content
 
+if TYPE_CHECKING:
+    from .nodeports_v2 import Nodeports
+
 log = logging.getLogger(__name__)
 
 
-TYPE_TO_PYTYPE: dict[str, type[ItemConcreteValue]] = {
+# converters from ItemValue to the port's concrete type, keyed by property_type
+TYPE_TO_PYTYPE: dict[str, Callable[[Any], ItemConcreteValue]] = {
     "integer": int,
     "number": float,
     "boolean": bool,
@@ -52,7 +55,7 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
     if not symlink.is_symlink():
         return
 
-    symlink_target_path = Path(os.readlink(symlink))
+    symlink_target_path = symlink.readlink()
     if symlink_target_path.is_symlink():
         raise SymlinkToSymlinkIsNotUploadableError(symlink, symlink_target_path)
 
@@ -92,10 +95,10 @@ class Port(BaseServiceIOModel):
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
     # Reference to the `NodePorts` instance that contains this port
-    _node_ports = PrivateAttr()
+    _node_ports: Nodeports = PrivateAttr()
 
     # flags
-    _used_default_value: bool = PrivateAttr(False)
+    _used_default_value: bool = PrivateAttr(default=False)
 
     model_config = ConfigDict(validate_assignment=True)
 
@@ -105,7 +108,10 @@ class Port(BaseServiceIOModel):
         if v is not None and (property_type := info.data.get("property_type")) and not isinstance(v, PortLink):
             if port_utils.is_file_type(property_type):
                 if not isinstance(v, FileLink | DownloadLink):
-                    msg = f"{property_type!r} value does not validate against any of FileLink, DownloadLink or PortLink schemas"
+                    msg = (
+                        f"{property_type!r} value does not validate against any of "
+                        "FileLink, DownloadLink or PortLink schemas"
+                    )
                     raise ValueError(msg)
             elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(
@@ -186,7 +192,7 @@ class Port(BaseServiceIOModel):
                 other_port_itemvalue: ItemValue | None = await port_utils.get_value_link_from_port_link(
                     self.value,
                     # pylint: disable=protected-access
-                    self._node_ports._node_ports_creator_cb,
+                    self._node_ports._node_ports_creator_cb,  # noqa: SLF001
                     file_link_type=file_link_type,
                 )
 
@@ -275,8 +281,7 @@ class Port(BaseServiceIOModel):
             if value is None:
                 return None
 
-            concrete_value = self._py_value_converter(value)
-            return concrete_value
+            return self._py_value_converter(value)
 
         # assigns to validate result
         v = await _evaluate()
