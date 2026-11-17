@@ -20,10 +20,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  helmfile:
+  k8s-unit-tests:
     timeout-minutes: 10
-    name: "[unit] helmfile"
+    name: "[unit] k8s ${{ matrix.kubernetes-version }}"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kubernetes-version: ["1.36.1", "1.37.1"]
+      fail-fast: false
     steps:
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -38,8 +42,20 @@ jobs:
           helmfile-auto-init: "false" # avoid https://github.com/helmfile/helmfile-action/issues/816
           helmfile-args: --version
 
+      - name: Setup kubeconform
+        env:
+          KUBECONFORM_VERSION: v0.8.0 # keep in sync with scripts/makefiles/k8s.mk
+        run: |
+          go install "github.com/yannh/kubeconform/cmd/kubeconform@${KUBECONFORM_VERSION}"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
       - name: helmfile-lint
         run: make -C k8s helmfile-lint
 
       - name: helmfile-template
         run: make -C k8s helmfile-template
+
+      - name: kubeconform
+        env:
+          KUBERNETES_VERSION: ${{ matrix.kubernetes-version }}
+        run: make -C k8s kubeconform KUBERNETES_VERSION="${KUBERNETES_VERSION}"

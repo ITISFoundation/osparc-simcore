@@ -16,7 +16,7 @@ KIND_CLUSTER_NAME := simcore
 
 # TARGETS ------------------------------------------------
 
-##@ Cluster
+##@ Environment
 
 .PHONY: create-cluster
 create-cluster: _require-valid-kind .init-swarm ## Creates Kubernetes cluster
@@ -46,8 +46,6 @@ up-devel: ## Deploys services
 	@$(MAKE) load-images-into-cluster
 	@$(MAKE) helmfile-apply
 
-##@ Helmfile
-
 .PHONY: helmfile-apply helmfile-ops-apply helmfile-simcore-apply
 helmfile-apply: .helmfile-apply ## Deploys all services
 helmfile-ops-apply: .helmfile-ops-apply ## Deploys ops services
@@ -63,10 +61,26 @@ helmfile-diff: .helmfile-diff ## Shows changes in all services
 helmfile-ops-diff: .helmfile-ops-diff ## Shows changes in ops services
 helmfile-simcore-diff: .helmfile-simcore-diff ## Shows changes in simcore services
 
+##@ Tests
+
+kubeconform: TEMPLATES_DIR ?= $(CURDIR)/.helmfile-templates
+kubeconform: _require-valid-kubeconform ## Validates Kubernetes manifests with kubeconform
+	@$(MAKE) helmfile-simcore-template HELMFILE_COMMAND_FLAGS="--output-dir=$(TEMPLATES_DIR)"
+	@kubeconform \
+		-schema-location default \
+		-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+		-kubernetes-version $(KUBERNETES_VERSION) \
+		-strict \
+		$(TEMPLATES_DIR)/
+
+##@ Lint
+
 .PHONY: helmfile-lint helmfile-ops-lint helmfile-simcore-lint
 helmfile-lint: .helmfile-lint ## Lints all services
 helmfile-ops-lint: .helmfile-ops-lint ## Lints ops services
 helmfile-simcore-lint: .helmfile-simcore-lint ## Lints simcore services
+
+##@ Misc
 
 .PHONY: helmfile-list helmfile-ops-list helmfile-simcore-list
 helmfile-list: .helmfile-list ## Lists all services
