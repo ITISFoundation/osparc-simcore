@@ -580,10 +580,9 @@ DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the unit's machine is t3.medi
 @pytest.fixture(autouse=True)
 def clear_pricing_lookup_caches() -> None:
     """The pricing lookups in `_projects_service` are cached per process for
-    `_TTL_CACHE_PRICING_LOOKUPS_S` seconds. Empty them so one test's answers cannot serve
-    another's."""
+    `_TTL_CACHE_PRICING_LOOKUPS`. Empty them so one test's answers cannot serve another's."""
     for lookup in (
-        _projects_service._default_pricing_and_hardware_info,  # noqa: SLF001
+        _projects_service._get_default_pricing_and_hardware_info,  # noqa: SLF001
         _projects_service._aws_ec2_instances_of_pricing_link,  # noqa: SLF001
     ):
         asyncio.run(lookup.cache.clear())

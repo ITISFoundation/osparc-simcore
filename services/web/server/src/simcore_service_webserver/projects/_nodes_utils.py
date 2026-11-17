@@ -1,9 +1,20 @@
+from models_library.services import ServiceKey
+from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from models_library.services_resources import ServiceResourcesDict
 
 from .exceptions import (
     InvalidContainerInResourcesSpecsError,
     InvalidImageInResourcesSpecsError,
 )
+
+
+def is_node_computational(service_key: ServiceKey) -> bool:
+    """True for a node that runs on a machine the product pays for at creation time.
+
+    A dynamic service is excluded: it is sized when it starts. The frontend is excluded because it
+    runs on no machine.
+    """
+    return bool(COMPUTATIONAL_SERVICE_KEY_RE.fullmatch(f"{service_key}"))
 
 
 def validate_new_service_resources(resources: ServiceResourcesDict, *, new_resources: ServiceResourcesDict) -> None:
