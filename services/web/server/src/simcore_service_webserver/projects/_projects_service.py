@@ -144,6 +144,7 @@ from ..resource_manager.resource_manager_service import (
     managed_resource,
 )
 from ..resource_usage import resource_usage_service as rut_api
+from ..resource_usage.errors import ResourceUsageTrackerNotAvailableError
 from ..socketio import socketio_service
 from ..socketio.constants import (
     SOCKET_IO_NODE_UPDATED_EVENT,
@@ -760,8 +761,6 @@ _TTL_CACHE_PRICING_LOOKUPS: Final[
 @cached_stampede(
     ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
     lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
-    # project_id and node_id only identify the node in the error: they stay out of the key so that
-    # the nodes running the same service version share one lookup
     key_builder=lambda fn, *_args, **kw: (
         f"{fn.__name__}_{kw['product_name']}_{kw['service_key']}_{kw['service_version']}"
     ),
@@ -949,38 +948,42 @@ async def _link_pricing_unit_and_size_node(
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
-    link = await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id)
-    aws_ec2_instances: list[str] | None = (
-        await _aws_ec2_instances_of_pricing_link(
-            app, product_name=product_name, pricing_plan_id=link[0], pricing_unit_id=link[1]
-        )
-        if link is not None
-        else None
-    )
-
-    if aws_ec2_instances is None:
-        if link is not None:
-            _logger.warning(
-                "Pricing plan %s/unit %s of node %s of project %s is unknown in product %s: linking the default unit",
-                link[0],
-                link[1],
-                node_id,
-                project_id,
-                product_name,
+    try:
+        link = await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id)
+        aws_ec2_instances: list[str] | None = (
+            await _aws_ec2_instances_of_pricing_link(
+                app, product_name=product_name, pricing_plan_id=link[0], pricing_unit_id=link[1]
             )
-        # NOTE: `cached_stampede` erases the return type of the lookups, hence the annotations at the call sites
-        default_info: PricingAndHardwareInfoTuple = await _get_default_pricing_and_hardware_info(
-            app,
-            product_name=product_name,
-            service_key=service_key,
-            service_version=service_version,
-            project_id=project_id,
-            node_id=node_id,
+            if link is not None
+            else None
         )
-        await db.connect_pricing_unit_to_project_node(
-            project_id, node_id, default_info.pricing_plan_id, default_info.pricing_unit_id
-        )
-        aws_ec2_instances = default_info.aws_ec2_instances
+
+        if aws_ec2_instances is None:
+            if link is not None:
+                _logger.warning(
+                    "Pricing plan %s/unit %s of node %s of project %s is unknown in product %s: "
+                    "linking the default unit",
+                    link[0],
+                    link[1],
+                    node_id,
+                    project_id,
+                    product_name,
+                )
+            # NOTE: `cached_stampede` erases the return type of the lookups, hence the annotations at the call sites
+            default_info: PricingAndHardwareInfoTuple = await _get_default_pricing_and_hardware_info(
+                app,
+                product_name=product_name,
+                service_key=service_key,
+                service_version=service_version,
+                project_id=project_id,
+                node_id=node_id,
+            )
+            await db.connect_pricing_unit_to_project_node(
+                project_id, node_id, default_info.pricing_plan_id, default_info.pricing_unit_id
+            )
+            aws_ec2_instances = default_info.aws_ec2_instances
+    except web.HTTPServiceUnavailable as exc:
+        raise ResourceUsageTrackerNotAvailableError from exc
 
     await update_project_node_resources_from_hardware_info(
         app,
@@ -1103,7 +1106,7 @@ async def repair_projects_nodes_pricing_and_resources(
         DefaultPricingUnitNotFoundError: the default plan of a service has no default unit
         ProjectNodeResourcesInvalidError: the sizing does not fit the node's specs
         ClustersKeeperNotAvailableError: the sizing could not be computed
-        web.HTTPServiceUnavailable: the resource-usage-tracker is unreachable
+        ResourceUsageTrackerNotAvailableError: the resource-usage-tracker is unreachable
     """
     if not _is_product_billed(app, product_name):
         return

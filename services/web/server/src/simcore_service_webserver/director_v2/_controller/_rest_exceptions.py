@@ -26,7 +26,10 @@ from ...projects.exceptions import (
     ProjectNotFoundError,
 )
 from ...resource_usage._constants import MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
-from ...resource_usage.errors import DefaultPricingPlanNotFoundError
+from ...resource_usage.errors import (
+    DefaultPricingPlanNotFoundError,
+    ResourceUsageTrackerNotAvailableError,
+)
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
 from ...workspaces.errors import WorkspaceAccessForbiddenError
@@ -134,9 +137,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message("The clusters-keeper service is currently unavailable.", _version=1),
     ),
-    # the resource-usage-tracker client turns an unreachable tracker into this aiohttp error, which
-    # the pricing repair lets propagate; without the entry, aiohttp answers with the exception
-    web.HTTPServiceUnavailable: HttpErrorInfo(
+    ResourceUsageTrackerNotAvailableError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
     ),

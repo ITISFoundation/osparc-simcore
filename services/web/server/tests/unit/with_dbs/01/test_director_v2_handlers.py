@@ -1080,7 +1080,8 @@ async def test_start_computation_is_not_forwarded_when_a_node_cannot_be_priced(
     settings = get_rut_plugin_settings(client.app)
     pricing_plan_url = re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$")
     if pricing_failure == "tracker_unreachable":
-        # the client converts a connection error into web.HTTPServiceUnavailable
+        # the client turns a connection error into web.HTTPServiceUnavailable, which the repair raises as
+        # ResourceUsageTrackerNotAvailableError
         aioresponses_mocker.get(
             pricing_plan_url, exception=ClientConnectionError("resource usage tracker unreachable"), repeat=True
         )
