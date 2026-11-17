@@ -497,11 +497,11 @@ python-dotenv==1.2.4
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   pydantic-settings
-python-engineio==4.13.5
+python-engineio==4.15.1
     # via python-socketio
 python-magic==0.4.27
     # via -r requirements/_base.in
-python-socketio==5.16.4
+python-socketio==5.18.0
     # via -r requirements/_base.in
 pytz==2022.1
     # via twilio
