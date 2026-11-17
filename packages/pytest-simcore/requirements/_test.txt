@@ -47,8 +47,10 @@ coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-dnspython==2.9.0
-    # via email-validator
+dnspython==2.9.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   email-validator
 docker==7.2.0
     # via -r requirements/_test.in
 email-validator==2.3.0
@@ -158,7 +160,7 @@ pyee==13.0.1
     # via playwright
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
