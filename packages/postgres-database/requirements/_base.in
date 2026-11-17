@@ -7,5 +7,5 @@
 
 alembic
 pydantic
-sqlalchemy[postgresql_asyncpg] # async driver only: the sync psycopg (3) driver is needed by the CLI (see _migration.in) and by the test envs
+sqlalchemy[postgresql_asyncpg] # the asyncpg driver, which also brings the asyncio extra (greenlet). No sync driver here: only the sc-pg CLI (see _migration.in) and the test envs open sync connections
 yarl
