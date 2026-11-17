@@ -21,13 +21,15 @@ concurrency:
 
 jobs:
   kubernetes-unit-tests:
-    timeout-minutes: 10
     name: "[unit] kubernetes ${{ matrix.kubernetes-version }}"
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     strategy:
       matrix:
         kubernetes-version: ["1.36.1", "1.37.1"]
       fail-fast: false
+    env:
+      TEMPLATES_DIR: /tmp/templates
     steps:
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,9 +38,9 @@ jobs:
 
       - name: Setup helmfile
         uses: helmfile/helmfile-action@1f44bcb43e5fb17ecb2685d8b6081ec5f6aa5fcf # v2.4.7
-        with:
-          helmfile-version: v1.1.6 # keep in sync with scripts/makefiles/k8s.mk
-          helm-version: v3.20.2 # keep in sync with scripts/makefiles/k8s.mk
+        with: # keep versions in sync with scripts/makefiles/k8s.mk
+          helmfile-version: v1.1.6
+          helm-version: v3.22.1
           helmfile-auto-init: "false" # avoid https://github.com/helmfile/helmfile-action/issues/816
           helmfile-args: --version
 
@@ -53,12 +55,10 @@ jobs:
         run: make -C k8s helmfile-lint
 
       - name: helmfile-template
-        run: make -C k8s helmfile-template
+        run: make -C k8s helmfile-template HELMFILE_COMMAND_FLAGS="--output-dir=${TEMPLATES_DIR}"
 
       - name: kubeconform
-        env:
+        env: # makefile variables explicit
           KUBERNETES_VERSION: ${{ matrix.kubernetes-version }}
-          TEMPLATES_DIR: /tmp/templates
-        run: |
-          make -C k8s helmfile-simcore-template HELMFILE_COMMAND_FLAGS="--output-dir=${TEMPLATES_DIR}"
-          make -C k8s kubeconform KUBERNETES_VERSION="${KUBERNETES_VERSION}" TEMPLATES_DIR="${TEMPLATES_DIR}"
+          TEMPLATES_DIR: ${{ env.TEMPLATES_DIR }}
+        run: make -C k8s kubeconform
