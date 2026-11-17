@@ -82,11 +82,23 @@ def _count_rows(engine: sa.engine.Engine, table: sa.Table) -> int:
         return int(conn.execute(sa.select(sa.func.count()).select_from(table)).scalar_one())
 
 
-def test_is_database_missing_error_only_matches_postgres_undefined_database():
-    class _DatabaseMissingError(Exception):
-        pgcode = "3D000"
+class _Psycopg3MissingDatabaseError(Exception):
+    sqlstate = "3D000"  # psycopg 3 names the SQLSTATE sqlstate
 
-    missing = ProgrammingError("statement", {}, _DatabaseMissingError())
+
+class _Psycopg2MissingDatabaseError(Exception):
+    pgcode = "3D000"  # psycopg 2 named it pgcode
+
+
+@pytest.mark.parametrize(
+    "missing_database_error",
+    [_Psycopg3MissingDatabaseError, _Psycopg2MissingDatabaseError],
+    ids=["psycopg3", "psycopg2"],
+)
+def test_is_database_missing_error_only_matches_postgres_undefined_database(
+    missing_database_error: type[Exception],
+):
+    missing = ProgrammingError("statement", {}, missing_database_error())
     other = ProgrammingError("statement", {}, RuntimeError("other error"))
 
     assert _is_database_missing_error(missing)

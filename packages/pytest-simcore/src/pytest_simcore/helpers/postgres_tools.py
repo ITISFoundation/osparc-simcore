@@ -22,6 +22,7 @@ _logger = logging.getLogger(__name__)
 _RETRY_WAIT: Final[wait_fixed] = wait_fixed(0.1)
 _RETRY_TIMEOUT: Final[float] = 5  # seconds
 _CONNECT_READY_TIMEOUT: Final[float] = 5  # seconds
+_UNDEFINED_DATABASE_SQLSTATE: Final[str] = "3D000"
 
 
 def wait_engine_ready(engine: sa.engine.Engine, *, timeout: float) -> None:
@@ -82,7 +83,12 @@ def _is_retryable_error(error: BaseException) -> bool:
 
 
 def _is_database_missing_error(error: BaseException) -> bool:
-    return isinstance(error, sa_exc.ProgrammingError) and getattr(error.orig, "pgcode", None) == "3D000"
+    if not isinstance(error, sa_exc.ProgrammingError):
+        return False
+    # psycopg 3 names the SQLSTATE sqlstate, psycopg 2 named it pgcode
+    orig = error.orig
+    code = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
+    return code == _UNDEFINED_DATABASE_SQLSTATE
 
 
 def _log_statement_retry(retry_state: RetryCallState, statement: str) -> None:
