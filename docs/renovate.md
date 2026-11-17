@@ -76,7 +76,7 @@ flowchart TD
     other["Renovate: major,<br/>non-Python minor"]
     gate{"review gate, every 15 min:<br/>checks of the draft"}
     ready["ready: GitHub requests<br/>the code owners"]
-    held["ready,<br/>fast-lane label removed"]
+    held["ready, 🙋-needs-takeover,<br/>one owner assigned"]
     fastq["renovate-fast queue:<br/>checks only"]
     defq["default queue: 2 approvals,<br/>one by a code owner, checks"]
     merge["Mergify merges master in,<br/>CI runs again, squash-merge"]
@@ -133,10 +133,12 @@ only after the checks have finished:
    - **all passed, no label** (majors, other minors): the requested
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
-     commit is still failing, the pull request loses `🤖-renovate-fast-lane`, is
-     marked ready (which requests the code owners), and a warning comment lists
-     the failing checks and how to take the update over. From then on it goes
-     through the reviewed path.
+     commit is still failing, the pull request loses `🤖-renovate-fast-lane` and
+     gets `🙋-needs-takeover`, one of its owners is assigned, it is marked ready
+     (which requests the code owners), and a warning comment lists the failing
+     checks, names the assignee and says how to take the update over. From then
+     on it goes through the reviewed path. See
+     [When a pull request needs a person](#when-a-pull-request-needs-a-person).
 
    The gate leaves a draft alone once it has requested reviewers or reviews, so
    a pull request turned back into a draft stays a draft.
@@ -260,6 +262,38 @@ A pull request that waits for reviews is only updated by Renovate's runs. The
 push trigger of the `renovate` job makes that happen within minutes of every
 dependency merge.
 
+## When a pull request needs a person
+
+A Renovate pull request needs someone when it carries `🙋-needs-takeover`: its
+checks have been failing for 3 h on the last commit and Renovate did not fix
+them. The review gate sets that label, removes `🤖-renovate-fast-lane`, assigns
+one of the four owners of the files Renovate writes, and marks the pull request
+ready. What to do with it is in
+[Fixing a failing Renovate pull request](#fixing-a-failing-renovate-pull-request).
+
+To list them:
+[is:pr is:open label:"🙋-needs-takeover"](https://github.com/ITISFoundation/osparc-simcore/issues?q=is%3Apr+is%3Aopen+label%3A%22%F0%9F%99%8B-needs-takeover%22).
+
+The assignee comes from `TAKEOVER_ASSIGNEES` in the `review-gate` job, indexed
+by the pull request number, so the same pull request always names the same
+person and consecutive ones walk the list. That person owns it until it merges
+or closes. A test compares the pool with the owners of the last
+[CODEOWNERS](../.github/CODEOWNERS) block, so the two cannot drift.
+
+Two states that are *not* a takeover:
+
+- a green pull request waiting for a code-owner review needs a review, and
+  anyone may approve it — the two approvals and the code-owner approval are all
+  it waits for;
+- `🤖-do-not-merge` says a person is holding a pull request back on purpose,
+  which is theirs to remove.
+
+The gate takes `🙋-needs-takeover` off again on a later pass, once the checks of
+a ready pull request are green: Renovate rebases a pull request onto a `master`
+that moved, and the commit that failed is then not the one anybody has to look
+at. Nothing is added back with it; `🤖-renovate-fast-lane` is a label a person
+puts on deliberately.
+
 ## Fixing a failing Renovate pull request
 
 Do not push to a `renovate/*` branch: Renovate makes no further commits to a
@@ -302,9 +336,11 @@ stops following `master`. Instead:
 4. **The version cannot be used for now**: close the pull request, or exclude
    the version in `.renovaterc.jsonc` (`allowedVersions`, `ignoreDeps`).
 
-A pull request the review gate held lost `🤖-renovate-fast-lane`. The reviewed
-path does not need that label: the pull request merges once its checks pass and
-two reviewers approve. Re-adding the label sends it through the fast lane again.
+A pull request the review gate held lost `🤖-renovate-fast-lane` and carries
+`🙋-needs-takeover`. The reviewed path does not need the first label: the pull
+request merges once its checks pass and two reviewers approve, and the gate
+takes the second off when they do. Re-adding `🤖-renovate-fast-lane` sends it
+through the fast lane again.
 
 ## Adding something new for Renovate to manage
 
