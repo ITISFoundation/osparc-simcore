@@ -16,6 +16,7 @@ Flow:
 import asyncio
 import logging
 from functools import lru_cache
+from typing import Final
 from uuid import UUID, uuid5
 
 from aiohttp import web
@@ -27,13 +28,15 @@ from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import RedisClientSDK, exclusive
+from servicelib.utils import fire_and_forget_task
 
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
+from ..projects import _projects_repository
 from ..projects.api import (
     clone_project_data,
     copy_allow_guests_to_push_states_and_output_ports,
     get_project_dict_and_type,
-    is_project_hidden,
 )
 from ..projects.exceptions import ProjectNotFoundError
 from ..projects.projects_trash_service import delete_project_as_admin, trash_project_for_immediate_deletion
@@ -43,6 +46,10 @@ from ..users.users_service import get_user
 _logger = logging.getLogger(__name__)
 
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
+
+# bounds the cleanup of a copy whose clone failed, so an abandoned cleanup cannot hang on a
+# stalled service; the copy stays hidden and a later dispatch hands it to the garbage-collector
+_COPY_CLEANUP_TIMEOUT_S: Final = 120
 
 
 @lru_cache
@@ -66,50 +73,93 @@ def _lock_key(_app: web.Application, user_name: str, *_args, **_kwargs) -> str:
     return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_name)
 
 
+async def _stamp_copy_for_garbage_collector(
+    app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
+) -> None:
+    """Stamps the copy as trashed for immediate deletion and leaves it to the garbage-collector.
+
+    Errors are logged, not raised: the copy keeps its hidden marker and a later dispatch stamps
+    it again.
+    """
+    with log_catch(_logger, reraise=False):
+        await trash_project_for_immediate_deletion(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            project_id=ProjectID(project_uuid),
+        )
+
+
 async def _delete_copy_or_leave_it_to_gc(
     app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
 ) -> None:
     """Deletes a copy whose clone did not finish.
 
+    The copy is hidden first, in a single query, so a later dispatch cannot take it for a
+    finished clone even if this function does not complete. A copy somebody already hid belongs
+    to their deletion: it is stamped for the garbage-collector and left alone, never deleted
+    here, since two deleters of the same uuid can remove a clone recreated under it.
+
     If the deletion fails (e.g. director-v2 or storage are down), the copy is stamped as trashed
     so that the garbage-collector keeps retrying it, and the deletion error is raised.
     """
-    try:
-        await delete_project_as_admin(app, project_uuid=ProjectID(project_uuid), product_name=product_name)
-    except Exception, asyncio.CancelledError:
-        with log_catch(_logger, reraise=False):
-            await trash_project_for_immediate_deletion(
-                app,
-                product_name=product_name,
-                user_id=user_id,
-                project_id=ProjectID(project_uuid),
+    async with asyncio.timeout(_COPY_CLEANUP_TIMEOUT_S):
+        try:
+            copy = await _projects_repository.get_project(app, project_uuid=ProjectID(project_uuid))
+        except ProjectNotFoundError:
+            return
+
+        if copy.hidden:
+            await _stamp_copy_for_garbage_collector(
+                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
             )
-        raise
+            return
+
+        try:
+            await _projects_repository.patch_project(
+                app,
+                project_uuid=ProjectID(project_uuid),
+                new_partial_project_data={"hidden": True},
+            )
+        except ProjectNotFoundError:
+            return
+
+        try:
+            await delete_project_as_admin(app, project_uuid=ProjectID(project_uuid), product_name=product_name)
+        except Exception, asyncio.CancelledError:
+            await _stamp_copy_for_garbage_collector(
+                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
+            )
+            raise
 
 
 async def _is_copy_finished(app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str) -> bool:
     """Tells whether the copy exists and is a complete clone.
 
-    A hidden copy is one whose deletion started (and did not complete) after its clone failed.
-    It is deleted here so that the clone can start over under the same uuid, unless it is also
-    stamped as trashed: the garbage-collector then owns its deletion. It deletes by uuid without
-    taking the guest-user lock, so recreating the copy meanwhile would let it delete the new one.
+    A hidden copy is one whose deletion started and did not complete: the garbage-collector is
+    deleting a copy a failed clone stamped, or somebody else is deleting the copy. Both are left
+    to their deletion and the answer is 503: the uuid stays taken until the row is gone, and
+    recreating the copy meanwhile would let those deleters remove the new clone by uuid. A hidden
+    copy nobody stamped is stamped here, so the garbage-collector picks it up even if whoever hid
+    it never returns.
+
+    The copy is read once: `hidden` and `trashed` come from the same row, and the garbage-collector
+    deletes the row as its last step, so a deletion in flight is always seen as a hidden row.
 
     Raises:
-        web.HTTPServiceUnavailable: the copy is waiting for the garbage-collector to delete it
+        web.HTTPServiceUnavailable: the copy is being deleted
     """
     try:
-        project, _ = await get_project_dict_and_type(app, project_uuid)
+        copy = await _projects_repository.get_project(app, project_uuid=ProjectID(project_uuid))
     except ProjectNotFoundError:
         return False
 
-    if await is_project_hidden(app, ProjectID(project_uuid)):
-        if project.get("trashed") is not None:
-            raise web.HTTPServiceUnavailable(
-                reason="A previous clone of this study is being cleaned up, try again shortly"
+    if copy.hidden:
+        if copy.trashed is None:
+            await _stamp_copy_for_garbage_collector(
+                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
             )
-        await _delete_copy_or_leave_it_to_gc(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name)
-        return False
+        raise web.HTTPServiceUnavailable(reason="A previous clone of this study is being cleaned up, try again shortly")
     return True
 
 
@@ -153,11 +203,17 @@ async def _clone_study_with_gc_lock(
         )
     except Exception, asyncio.CancelledError:
         # `clone_project_data` commits the copy before its later steps and its uuid is
-        # deterministic: a partial copy would be taken for a finished clone by the next dispatch
+        # deterministic: a partial copy would be taken for a finished clone by the next dispatch.
+        # The cleanup is shielded, so a cancellation of this task cannot interrupt it half way and
+        # leave the copy visible; if this task is cancelled again, the cleanup keeps running in
+        # the background and the app's fire-and-forget collection drains it.
+        cleanup = fire_and_forget_task(
+            _delete_copy_or_leave_it_to_gc(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name),
+            task_suffix_name=f"dispatch_copy_cleanup_{project_uuid}",
+            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
         with log_catch(_logger, reraise=False):
-            await _delete_copy_or_leave_it_to_gc(
-                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
-            )
+            await asyncio.shield(cleanup)
         raise
 
 
@@ -180,7 +236,7 @@ async def dispatch_study(  # pylint: disable=too-many-arguments
 
     Raises:
         web.HTTPNotFound: if the study was deleted between controller check and task execution
-        web.HTTPServiceUnavailable: if a copy left by a failed clone is waiting for the garbage-collector
+        web.HTTPServiceUnavailable: if a copy left by a failed clone is being deleted
     """
     await progress.update(message="loading study...")
 

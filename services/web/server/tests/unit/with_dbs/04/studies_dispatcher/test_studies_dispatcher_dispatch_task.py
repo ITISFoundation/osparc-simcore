@@ -109,6 +109,16 @@ async def _poll_lr_task_until_done(client: TestClient, status_href: str) -> None
             assert task_status.get("done"), "task incomplete"
 
 
+async def _dispatch_and_get_result(client: TestClient, dispatch_url: str) -> tuple[int, dict]:
+    """Dispatches the study, waits for the task and returns the result status and body."""
+    resp = await client.post(dispatch_url)
+    assert resp.status == status.HTTP_202_ACCEPTED
+    task_data = (await resp.json()).get("data") or (await resp.json())
+    await _poll_lr_task_until_done(client, task_data["status_href"])
+    result_resp = await client.get(urllib.parse.urlparse(task_data["result_href"]).path)
+    return result_resp.status, (await result_resp.json()).get("data") or (await result_resp.json())
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -560,8 +570,8 @@ async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
     create_pipeline.assert_called_once()
 
 
-# Phase 0 — Test: a hidden copy nobody stamped is deleted by the dispatch, which clones again
-async def test_dispatch_deletes_a_hidden_copy_that_is_not_stamped_and_clones_again(
+# Phase 0 — Test: a hidden copy is handed to the garbage-collector, cloned again once it is gone
+async def test_dispatch_hands_a_hidden_copy_to_the_garbage_collector(
     studies_dispatcher_enabled: bool,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -572,10 +582,13 @@ async def test_dispatch_deletes_a_hidden_copy_that_is_not_stamped_and_clones_aga
     mocks_on_projects_api: None,
     redis_locks_client: AsyncIterator[aioredis.Redis],
     mocker: MockerFixture,
+    osparc_product_name: str,
 ):
     """The clone fails, its deletion fails after hiding the copy and so does stamping it.
 
-    Nothing else owns that copy, so the next dispatch deletes it itself and clones again.
+    The next dispatch neither deletes nor recreates that uuid — a stalled deletion of the same
+    uuid would remove a clone recreated under it — it stamps the copy for the garbage-collector
+    and answers 503 until the copy is gone.
     """
     assert client.app
 
@@ -587,39 +600,58 @@ async def test_dispatch_deletes_a_hidden_copy_that_is_not_stamped_and_clones_aga
     delete_pipeline = mocked_dynamic_services_interface["director_v2.api.delete_pipeline"]
     create_pipeline.side_effect = OSError("director-v2 is down")
     delete_pipeline.side_effect = OSError("director-v2 is down")
-    mocker.patch.object(
+    real_trash = dispatch_task.trash_project_for_immediate_deletion
+
+    _database_down = OSError("database is down")
+
+    async def _stamping_fails(*args, **kwargs) -> None:
+        raise _database_down
+
+    stamp_project = mocker.patch.object(
         dispatch_task,
         "trash_project_for_immediate_deletion",
         autospec=True,
-        side_effect=OSError("database is down"),
+        side_effect=_stamping_fails,
     )
     dispatch_url = _dispatch_url(client, published_project["uuid"])
 
-    resp = await client.post(dispatch_url)
-    assert resp.status == status.HTTP_202_ACCEPTED
-    task_data = (await resp.json()).get("data") or (await resp.json())
-    await _poll_lr_task_until_done(client, task_data["status_href"])
-    result_resp = await client.get(urllib.parse.urlparse(task_data["result_href"]).path)
-    assert result_resp.status != status.HTTP_200_OK
+    result_status, _ = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status != status.HTTP_200_OK
 
-    # hidden by the failed deletion and not stamped, so not shown and not waiting for the collector
+    # hidden by the failed cleanup and not stamped, since stamping failed too
     assert await _get_user_projects(client) == []
     copy_id = create_pipeline.call_args.args[2]
     copy = await projects_repository.get_project(client.app, project_uuid=copy_id)
     assert copy.hidden
     assert copy.trashed is None
 
+    # the database is back: the dispatch stamps the copy for the garbage-collector and asks to
+    # retry, leaving the copy and not cloning over its uuid
+    async def _stamp_the_copy(*args, **kwargs) -> None:
+        await real_trash(*args, **kwargs)
+
+    stamp_project.side_effect = _stamp_the_copy
+    stamp_project.reset_mock()
     create_pipeline.side_effect = None
     create_pipeline.reset_mock()
-    delete_pipeline.side_effect = None
 
-    resp = await client.post(dispatch_url)
-    assert resp.status == status.HTTP_202_ACCEPTED
-    task_data = (await resp.json()).get("data") or (await resp.json())
-    await _poll_lr_task_until_done(client, task_data["status_href"])
-    result_resp = await client.get(urllib.parse.urlparse(task_data["result_href"]).path)
-    result = (await result_resp.json()).get("data") or (await result_resp.json())
-    assert result_resp.status == status.HTTP_200_OK, result
+    result_status, _ = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_503_SERVICE_UNAVAILABLE
+    stamp_project.assert_awaited_once()
+    create_pipeline.assert_not_called()
+    assert (await projects_repository.get_project(client.app, project_uuid=copy_id)).trashed is not None
+
+    # a later dispatch finds the copy stamped and leaves it alone, without stamping it again
+    result_status, _ = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_503_SERVICE_UNAVAILABLE
+    stamp_project.assert_awaited_once()
+
+    # once the collector removed the copy, the next dispatch clones again under the same uuid
+    delete_pipeline.side_effect = None
+    await dispatch_task.delete_project_as_admin(client.app, project_uuid=copy_id, product_name=osparc_product_name)
+
+    result_status, result = await _dispatch_and_get_result(client, dispatch_url)
+    assert result_status == status.HTTP_200_OK, result
     assert result["project_id"] == f"{copy_id}"
     assert [project["uuid"] for project in await _get_user_projects(client)] == [result["project_id"]]
     create_pipeline.assert_called_once()
