@@ -94,7 +94,7 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-tenacity==9.1.4
+tenacity==9.2.1
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via anyio

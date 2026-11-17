@@ -394,7 +394,7 @@ sqlalchemy==2.0.51
     #   alembic
 sympy==1.14.0
     # via cfn-lint
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
