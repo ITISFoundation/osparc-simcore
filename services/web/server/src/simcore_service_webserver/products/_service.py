@@ -113,10 +113,6 @@ def is_credit_computation_enabled(app: web.Application, *, product: Product) -> 
 
     The product opts in through ``is_payment_enabled``, and the web-server-wide switch
     lets a deployment turn computation off without touching the products table.
-
-    The settings are read through ``APP_SETTINGS_APPKEY`` rather than
-    ``get_application_settings``: that module imports every plugin, and one of them
-    (``fogbugz``) imports this package back.
     """
     credit_computation_enabled = app[APP_SETTINGS_APPKEY].WEBSERVER_CREDIT_COMPUTATION_ENABLED
     return bool(product.is_payment_enabled and credit_computation_enabled)
