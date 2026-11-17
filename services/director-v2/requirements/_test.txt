@@ -258,7 +258,7 @@ types-networkx==3.6.1.20261031
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
