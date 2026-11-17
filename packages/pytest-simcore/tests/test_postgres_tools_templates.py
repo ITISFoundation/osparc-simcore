@@ -18,6 +18,7 @@ from pytest_simcore.helpers.postgres_tools import (
     reset_database_from_template,
     wait_engine_ready,
 )
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from sqlalchemy.exc import ProgrammingError
 
 postgres_config = {
@@ -47,7 +48,7 @@ def postgres_container() -> Iterator[PostgresTestConfig]:
         bindings = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"]
         port = str(bindings[0]["HostPort"])
 
-        dsn = f"postgresql+psycopg://{postgres_config['user']}:{postgres_config['password']}@{postgres_config['host']}:{port}/{postgres_config['database']}"
+        dsn = f"{POSTGRES_SYNC_DSN_SCHEME}://{postgres_config['user']}:{postgres_config['password']}@{postgres_config['host']}:{port}/{postgres_config['database']}"
         engine = sa.create_engine(dsn)
         wait_engine_ready(engine, timeout=60)
         engine.dispose()
@@ -66,7 +67,7 @@ def postgres_container() -> Iterator[PostgresTestConfig]:
 def _engine_to(config: PostgresTestConfig, database: str) -> sa.engine.Engine:
     dsn = str(
         PostgresDsn.build(
-            scheme="postgresql+psycopg",
+            scheme=POSTGRES_SYNC_DSN_SCHEME,
             username=config["user"],
             password=config["password"],
             host=config["host"],

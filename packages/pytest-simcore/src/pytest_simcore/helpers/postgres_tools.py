@@ -9,6 +9,7 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 import tenacity
 from pydantic import PostgresDsn
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from tenacity import RetryCallState, retry_if_exception
@@ -54,7 +55,7 @@ class PgTemplateState(TypedDict):
 
 def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
     url = PostgresDsn.build(
-        scheme="postgresql+psycopg",
+        scheme=POSTGRES_SYNC_DSN_SCHEME,
         username=postgres_config["user"],
         password=postgres_config["password"],
         host=postgres_config["host"],
@@ -352,7 +353,8 @@ def migrated_pg_tables_context(
 
     user = quote_plus(postgres_config["user"])
     password = quote_plus(postgres_config["password"])
-    dsn = "postgresql+psycopg://{user}:{password}@{host}:{port}/{database}".format(
+    dsn = "{scheme}://{user}:{password}@{host}:{port}/{database}".format(
+        scheme=POSTGRES_SYNC_DSN_SCHEME,
         user=user,
         password=password,
         host=postgres_config["host"],
