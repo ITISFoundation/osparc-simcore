@@ -65,7 +65,7 @@ click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -339,7 +339,7 @@ types-awscrt==0.28.4
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
