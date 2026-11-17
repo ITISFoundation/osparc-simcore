@@ -397,7 +397,7 @@ async def test_multiple_users_login_logout_concurrently(
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # long enough for a slow run not to outlive the back-off between two requests
-    return app_environment | setenvs_from_dict(monkeypatch, {"LOGIN_THROTTLE_BASE_DELAY_SEC": "60"})
+    return app_environment | setenvs_from_dict(monkeypatch, {"LOGIN_THROTTLE_BASE_DELAY": "PT1M"})
 
 
 def _free_failed_login_attempts(client: TestClient) -> int:

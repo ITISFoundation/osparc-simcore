@@ -3,6 +3,7 @@ from ipaddress import IPv4Network, IPv6Network
 from typing import Annotated, Final, Literal
 
 from aiohttp import web
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.products import ProductName
 from pydantic import BaseModel, ValidationInfo, field_validator, model_validator
 from pydantic.fields import Field
@@ -25,22 +26,23 @@ class LoginThrottleSettings(BaseCustomSettings):
         Field(description="Failed logins per email before the back-off delays start"),
     ] = 5
 
-    LOGIN_THROTTLE_BASE_DELAY_SEC: Annotated[
-        PositiveInt,
+    LOGIN_THROTTLE_BASE_DELAY: Annotated[
+        timedelta,
         Field(
-            description="Delay [sec] after the first failure above the free ones. It doubles with each further failure"
+            gt=timedelta(0),
+            description="Delay after the first failure above the free ones. It doubles with each further failure",
         ),
-    ] = 2
+    ] = timedelta(seconds=2)
 
-    LOGIN_THROTTLE_MAX_DELAY_SEC: Annotated[
-        PositiveInt,
-        Field(description="Upper bound [sec] of the back-off delay"),
-    ] = 900
+    LOGIN_THROTTLE_MAX_DELAY: Annotated[
+        timedelta,
+        Field(gt=timedelta(0), description="Upper bound of the back-off delay"),
+    ] = timedelta(minutes=15)
 
-    LOGIN_THROTTLE_WINDOW_SEC: Annotated[
-        PositiveInt,
-        Field(description="Failed logins are forgotten after this time [sec] without new failures"),
-    ] = 3600
+    LOGIN_THROTTLE_WINDOW: Annotated[
+        timedelta,
+        Field(gt=timedelta(0), description="Failed logins are forgotten after this time without new failures"),
+    ] = timedelta(hours=1)
 
     LOGIN_THROTTLE_CLIENT_IP_DEPTH: Annotated[
         PositiveInt,
@@ -57,10 +59,14 @@ class LoginThrottleSettings(BaseCustomSettings):
         description="Clients in these networks (JSON list of CIDRs) are never throttled",
     )
 
+    _validate_base_delay = validate_numeric_string_as_timedelta("LOGIN_THROTTLE_BASE_DELAY")
+    _validate_max_delay = validate_numeric_string_as_timedelta("LOGIN_THROTTLE_MAX_DELAY")
+    _validate_window = validate_numeric_string_as_timedelta("LOGIN_THROTTLE_WINDOW")
+
     @model_validator(mode="after")
     def _max_delay_not_below_base(self):
-        if self.LOGIN_THROTTLE_MAX_DELAY_SEC < self.LOGIN_THROTTLE_BASE_DELAY_SEC:
-            msg = "LOGIN_THROTTLE_MAX_DELAY_SEC must not be smaller than LOGIN_THROTTLE_BASE_DELAY_SEC"
+        if self.LOGIN_THROTTLE_MAX_DELAY < self.LOGIN_THROTTLE_BASE_DELAY:
+            msg = "LOGIN_THROTTLE_MAX_DELAY must not be smaller than LOGIN_THROTTLE_BASE_DELAY"
             raise ValueError(msg)
         return self
 

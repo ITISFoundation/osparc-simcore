@@ -55,7 +55,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         {
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
-            "LOGIN_THROTTLE_BASE_DELAY_SEC": "60",
+            "LOGIN_THROTTLE_BASE_DELAY": "PT1M",
         },
     )
 

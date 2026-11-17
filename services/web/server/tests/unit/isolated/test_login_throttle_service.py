@@ -5,6 +5,7 @@
 import asyncio
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable
+from datetime import timedelta
 from ipaddress import ip_network
 from unittest.mock import MagicMock
 
@@ -18,7 +19,7 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 from simcore_service_webserver.login import _auth_service, _login_throttle_repository, _login_throttle_service
 from simcore_service_webserver.login._login_throttle_service import (
     clear_failed_logins,
-    compute_delay_sec,
+    compute_delay,
     get_login_retry_after_sec,
     is_trusted_client,
     parse_client_ip,
@@ -44,9 +45,9 @@ _TRUSTED_NETWORKS = [ip_network("10.0.0.0/8"), ip_network("2001:db8::/32")]
 def throttle_settings() -> LoginThrottleSettings:
     return LoginThrottleSettings(
         LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS=3,
-        LOGIN_THROTTLE_BASE_DELAY_SEC=2,
-        LOGIN_THROTTLE_MAX_DELAY_SEC=60,
-        LOGIN_THROTTLE_WINDOW_SEC=3600,
+        LOGIN_THROTTLE_BASE_DELAY=timedelta(seconds=2),
+        LOGIN_THROTTLE_MAX_DELAY=timedelta(seconds=60),
+        LOGIN_THROTTLE_WINDOW=timedelta(hours=1),
         LOGIN_THROTTLE_TRUSTED_NETWORKS=_TRUSTED_NETWORKS,
     )
 
@@ -76,15 +77,15 @@ async def fake_redis(mocker: MockerFixture) -> AsyncIterator[FakeAsyncRedis]:
 def test_compute_delay_doubles_until_the_maximum(
     throttle_settings: LoginThrottleSettings, failures: int, expected_delay_sec: int
 ):
-    assert compute_delay_sec(failures, settings=throttle_settings) == expected_delay_sec
+    assert compute_delay(failures, settings=throttle_settings) == timedelta(seconds=expected_delay_sec)
 
 
-@pytest.mark.parametrize("base_delay_sec,max_delay_sec", [(10, 5)])
-def test_settings_reject_maximum_delay_below_base_delay(base_delay_sec: int, max_delay_sec: int):
-    with pytest.raises(ValueError, match="LOGIN_THROTTLE_MAX_DELAY_SEC"):
+@pytest.mark.parametrize("base_delay,max_delay", [(timedelta(seconds=10), timedelta(seconds=5))])
+def test_settings_reject_maximum_delay_below_base_delay(base_delay: timedelta, max_delay: timedelta):
+    with pytest.raises(ValueError, match="LOGIN_THROTTLE_MAX_DELAY"):
         LoginThrottleSettings(
-            LOGIN_THROTTLE_BASE_DELAY_SEC=base_delay_sec,
-            LOGIN_THROTTLE_MAX_DELAY_SEC=max_delay_sec,
+            LOGIN_THROTTLE_BASE_DELAY=base_delay,
+            LOGIN_THROTTLE_MAX_DELAY=max_delay,
         )
 
 
@@ -102,7 +103,7 @@ async def test_not_throttled_until_free_attempts_are_used(
     await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
     retry_after_sec = await get_login_retry_after_sec(app, email=_EMAIL)
-    assert 0 < retry_after_sec <= throttle_settings.LOGIN_THROTTLE_BASE_DELAY_SEC
+    assert 0 < retry_after_sec <= throttle_settings.LOGIN_THROTTLE_BASE_DELAY.total_seconds()
 
     with pytest.raises(LoginThrottledError) as exc_info:
         await raise_if_login_throttled(app, email=_EMAIL)
@@ -236,13 +237,13 @@ async def test_overlapping_failures_never_shorten_the_back_off(
 ):
     # failure #7 is handled before the slower failure #6 writes its block
     mocker.patch.object(_login_throttle_repository, "increment_failures", side_effect=[7, 6])
-    longest_delay_sec = compute_delay_sec(7, settings=throttle_settings)
-    assert compute_delay_sec(6, settings=throttle_settings) < longest_delay_sec
+    longest_delay = compute_delay(7, settings=throttle_settings)
+    assert compute_delay(6, settings=throttle_settings) < longest_delay
 
     await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
     await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
-    assert await get_login_retry_after_sec(app, email=_EMAIL) == longest_delay_sec
+    assert await get_login_retry_after_sec(app, email=_EMAIL) == longest_delay.total_seconds()
 
 
 @pytest.fixture
@@ -250,7 +251,7 @@ def unresponsive_redis(fake_redis: FakeAsyncRedis, mocker: MockerFixture) -> Non
     async def _never_replies(*args, **kwargs):
         await asyncio.sleep(3600)
 
-    mocker.patch.object(_login_throttle_service, "_REDIS_TIMEOUT_SEC", 0.05)
+    mocker.patch.object(_login_throttle_service, "_REDIS_TIMEOUT", timedelta(seconds=0.05))
     for command in ("pttl", "delete"):
         mocker.patch.object(fake_redis, command, side_effect=_never_replies)
     mocker.patch.object(_login_throttle_repository, "increment_failures", side_effect=_never_replies)
@@ -326,9 +327,9 @@ async def test_attempt_is_rejected_when_the_email_lock_is_not_released_in_time(
     mocker: MockerFixture,
     product: Product,
 ):
-    mocker.patch.object(_login_throttle_service, "_LOGIN_ATTEMPT_LOCK_WAIT_SEC", 0.2)
+    mocker.patch.object(_login_throttle_service, "_LOGIN_ATTEMPT_LOCK_WAIT", timedelta(seconds=0.2))
     held = _login_throttle_repository.get_login_attempt_lock(
-        app, digest=hashlib.sha256(_EMAIL.encode()).hexdigest(), ttl_sec=30, wait_sec=1
+        app, digest=hashlib.sha256(_EMAIL.encode()).hexdigest(), ttl=timedelta(seconds=30), wait=timedelta(seconds=1)
     )
     assert await held.acquire()
 

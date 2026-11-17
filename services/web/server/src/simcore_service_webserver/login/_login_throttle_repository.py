@@ -1,5 +1,6 @@
 """Redis storage of failed-login counters and temporary blocks, keyed by an email digest"""
 
+from datetime import timedelta
 from typing import Final
 
 from aiohttp import web
@@ -12,12 +13,12 @@ _BLOCK_KEY_FORMAT: Final[str] = "login-throttle:blocked:{digest}"
 _LOCK_KEY_FORMAT: Final[str] = "login-throttle:lock:{digest}"
 
 
-def get_login_attempt_lock(app: web.Application, *, digest: str, ttl_sec: float, wait_sec: float) -> Lock:
+def get_login_attempt_lock(app: web.Application, *, digest: str, ttl: timedelta, wait: timedelta) -> Lock:
     redis_client = get_redis_login_throttle_client(app)
     return redis_client.lock(
         _LOCK_KEY_FORMAT.format(digest=digest),
-        timeout=ttl_sec,
-        blocking_timeout=wait_sec,
+        timeout=ttl.total_seconds(),
+        blocking_timeout=wait.total_seconds(),
         thread_local=False,  # many asyncio tasks share the thread
     )
 
@@ -29,24 +30,24 @@ async def get_block_ttl_ms(app: web.Application, *, digest: str) -> int:
     return max(ttl_ms, 0)
 
 
-async def increment_failures(app: web.Application, *, digest: str, window_sec: int) -> int:
-    """Counts one more failure; the counter is forgotten after `window_sec` without new failures"""
+async def increment_failures(app: web.Application, *, digest: str, window: timedelta) -> int:
+    """Counts one more failure; the counter is forgotten after `window` without new failures"""
     redis_client = get_redis_login_throttle_client(app)
     key = _FAILURES_KEY_FORMAT.format(digest=digest)
     async with redis_client.pipeline(transaction=True) as pipe:
         pipe.incr(key)
-        pipe.expire(key, window_sec)
+        pipe.expire(key, window)
         failures, _ = await pipe.execute()
     return int(failures)
 
 
-async def block(app: web.Application, *, digest: str, duration_ms: int) -> None:
-    """Blocks for at least `duration_ms`; an existing longer block is never shortened"""
+async def block(app: web.Application, *, digest: str, duration: timedelta) -> None:
+    """Blocks for at least `duration`; an existing longer block is never shortened"""
     redis_client = get_redis_login_throttle_client(app)
     key = _BLOCK_KEY_FORMAT.format(digest=digest)
     async with redis_client.pipeline(transaction=True) as pipe:
-        pipe.set(key, 1, px=duration_ms, nx=True)
-        pipe.pexpire(key, duration_ms, gt=True)
+        pipe.set(key, 1, px=duration, nx=True)
+        pipe.pexpire(key, duration, gt=True)
         await pipe.execute()
 
 

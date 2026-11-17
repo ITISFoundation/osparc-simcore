@@ -11,6 +11,7 @@ import ipaddress
 import logging
 import math
 from collections.abc import AsyncIterator
+from datetime import timedelta
 from typing import Final
 
 from aiohttp import web
@@ -25,9 +26,9 @@ from .settings import LoginThrottleSettings
 _logger = logging.getLogger(__name__)
 
 _MAX_BACKOFF_EXPONENT: Final[int] = 32
-_REDIS_TIMEOUT_SEC: Final[int] = 5
-_LOGIN_ATTEMPT_LOCK_TTL_SEC: Final[int] = 30
-_LOGIN_ATTEMPT_LOCK_WAIT_SEC: Final[int] = 3  # below _REDIS_TIMEOUT_SEC
+_REDIS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+_LOGIN_ATTEMPT_LOCK_TTL: Final[timedelta] = timedelta(seconds=30)
+_LOGIN_ATTEMPT_LOCK_WAIT: Final[timedelta] = timedelta(seconds=3)  # below _REDIS_TIMEOUT
 
 type ClientIP = ipaddress.IPv4Address | ipaddress.IPv6Address
 
@@ -56,7 +57,7 @@ def is_trusted_client(client_ip: ClientIP | None, *, settings: LoginThrottleSett
 @contextlib.asynccontextmanager
 async def _handle_redis_errors() -> AsyncIterator[None]:
     try:
-        async with asyncio.timeout(_REDIS_TIMEOUT_SEC):
+        async with asyncio.timeout(_REDIS_TIMEOUT.total_seconds()):
             yield
     except (RedisError, TimeoutError) as err:
         _logger.exception(
@@ -81,8 +82,8 @@ async def exclusive_login_attempt(app: web.Application, *, email: str) -> AsyncI
     lock = _repository.get_login_attempt_lock(
         app,
         digest=_get_digest(email),
-        ttl_sec=_LOGIN_ATTEMPT_LOCK_TTL_SEC,
-        wait_sec=_LOGIN_ATTEMPT_LOCK_WAIT_SEC,
+        ttl=_LOGIN_ATTEMPT_LOCK_TTL,
+        wait=_LOGIN_ATTEMPT_LOCK_WAIT,
     )
     async with _handle_redis_errors():
         acquired = await lock.acquire()
@@ -93,7 +94,7 @@ async def exclusive_login_attempt(app: web.Application, *, email: str) -> AsyncI
         yield
     finally:
         try:
-            async with asyncio.timeout(_REDIS_TIMEOUT_SEC):
+            async with asyncio.timeout(_REDIS_TIMEOUT.total_seconds()):
                 await lock.release()
         except (LockError, RedisError, TimeoutError) as err:
             _logger.exception(
@@ -109,14 +110,14 @@ def _get_digest(email: str) -> str:
     return hashlib.sha256(email.strip().lower().encode()).hexdigest()
 
 
-def compute_delay_sec(failures: int, *, settings: LoginThrottleSettings) -> int:
+def compute_delay(failures: int, *, settings: LoginThrottleSettings) -> timedelta:
     """Delay after the `failures`-th consecutive failure: doubles with each failure, up to the maximum"""
     excess = failures - settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
     if excess <= 0:
-        return 0
+        return timedelta(0)
     return min(
-        settings.LOGIN_THROTTLE_MAX_DELAY_SEC,
-        settings.LOGIN_THROTTLE_BASE_DELAY_SEC * (1 << min(excess - 1, _MAX_BACKOFF_EXPONENT)),
+        settings.LOGIN_THROTTLE_MAX_DELAY,
+        settings.LOGIN_THROTTLE_BASE_DELAY * (1 << min(excess - 1, _MAX_BACKOFF_EXPONENT)),
     )
 
 
@@ -143,19 +144,17 @@ async def register_failed_login(
 ) -> None:
     digest = _get_digest(email)
     async with _handle_redis_errors():
-        failures = await _repository.increment_failures(
-            app, digest=digest, window_sec=settings.LOGIN_THROTTLE_WINDOW_SEC
-        )
-        delay_sec = compute_delay_sec(failures, settings=settings)
-        if delay_sec > 0:
-            await _repository.block(app, digest=digest, duration_ms=delay_sec * 1000)
+        failures = await _repository.increment_failures(app, digest=digest, window=settings.LOGIN_THROTTLE_WINDOW)
+        delay = compute_delay(failures, settings=settings)
+        if delay > timedelta(0):
+            await _repository.block(app, digest=digest, duration=delay)
             # user_id is logged (not stored) only to help ops identify an account under
             # attack; it does not affect the throttle key or the response to the caller,
             # so known and unknown emails remain indistinguishable from the outside
             _logger.warning(
-                "Login back-off applied: failures=%d delay_sec=%d digest=%s user_id=%s",
+                "Login back-off applied: failures=%d delay=%s digest=%s user_id=%s",
                 failures,
-                delay_sec,
+                delay,
                 digest[:8],
                 user_id if user_id is not None else "unknown",
             )
@@ -164,7 +163,7 @@ async def register_failed_login(
 async def clear_failed_logins(app: web.Application, *, email: str) -> None:
     """Best effort: the user is already authenticated and a stale counter expires by itself"""
     try:
-        async with asyncio.timeout(_REDIS_TIMEOUT_SEC):
+        async with asyncio.timeout(_REDIS_TIMEOUT.total_seconds()):
             await _repository.clear(app, digest=_get_digest(email))
     except (RedisError, TimeoutError) as err:
         _logger.exception(
