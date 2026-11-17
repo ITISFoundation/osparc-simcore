@@ -16,10 +16,11 @@ Flow:
 import asyncio
 import logging
 from functools import lru_cache
-from typing import Final
+from typing import Annotated, Final
 from uuid import UUID, uuid5
 
 from aiohttp import web
+from annotated_types import doc
 from common_library.json_serialization import json_dumps
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -47,9 +48,15 @@ _logger = logging.getLogger(__name__)
 
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
-# bounds the cleanup of a copy whose clone failed, so an abandoned cleanup cannot hang on a
-# stalled service; the copy stays hidden and a later dispatch hands it to the garbage-collector
-_COPY_CLEANUP_TIMEOUT_S: Final = 120
+_COPY_CLEANUP_TIMEOUT_S: Final[
+    Annotated[
+        int,
+        doc(
+            "time budget of the best-effort deletion of a copy whose clone failed; the copy is "
+            "stamped for the garbage-collector before it and the stamp survives a timeout"
+        ),
+    ]
+] = 120
 
 
 @lru_cache
@@ -73,14 +80,9 @@ def _lock_key(_app: web.Application, user_name: str, *_args, **_kwargs) -> str:
     return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_name)
 
 
-async def _stamp_copy_for_garbage_collector(
+async def _safe_stamp_copy_for_immediate_deletion(
     app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
 ) -> None:
-    """Stamps the copy as trashed for immediate deletion and leaves it to the garbage-collector.
-
-    Errors are logged, not raised: the copy keeps its hidden marker and a later dispatch stamps
-    it again.
-    """
     with log_catch(_logger, reraise=False):
         await trash_project_for_immediate_deletion(
             app,
@@ -93,44 +95,33 @@ async def _stamp_copy_for_garbage_collector(
 async def _delete_copy_or_leave_it_to_gc(
     app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
 ) -> None:
-    """Deletes a copy whose clone did not finish.
+    """Deletes a copy whose clone did not finish, or leaves it to the garbage-collector.
 
-    The copy is hidden first, in a single query, so a later dispatch cannot take it for a
-    finished clone even if this function does not complete. A copy somebody already hid belongs
-    to their deletion: it is stamped for the garbage-collector and left alone, never deleted
-    here, since two deleters of the same uuid can remove a clone recreated under it.
+    The copy is stamped first — hidden and trashed in a single query: from then on it is
+    invisible to dispatch and the garbage-collector deletes it even if this function does not
+    complete; neither a timeout here nor a web-server shutdown interrupts that deletion. The
+    direct delete below only frees the uuid sooner.
 
-    If the deletion fails (e.g. director-v2 or storage are down), the copy is stamped as trashed
-    so that the garbage-collector keeps retrying it, and the deletion error is raised.
+    A copy somebody already hid belongs to their deletion: it is only stamped here, never
+    deleted, since two deleters of the same uuid can remove a clone recreated under it.
     """
-    async with asyncio.timeout(_COPY_CLEANUP_TIMEOUT_S):
-        try:
-            copy = await _projects_repository.get_project(app, project_uuid=ProjectID(project_uuid))
-        except ProjectNotFoundError:
-            return
+    try:
+        copy = await _projects_repository.get_project(app, project_uuid=ProjectID(project_uuid))
+    except ProjectNotFoundError:
+        return
 
-        if copy.hidden:
-            await _stamp_copy_for_garbage_collector(
-                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
-            )
-            return
+    await _safe_stamp_copy_for_immediate_deletion(
+        app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
+    )
+    if copy.hidden:
+        return
 
-        try:
-            await _projects_repository.patch_project(
-                app,
-                project_uuid=ProjectID(project_uuid),
-                new_partial_project_data={"hidden": True},
-            )
-        except ProjectNotFoundError:
-            return
-
-        try:
+    try:
+        async with asyncio.timeout(_COPY_CLEANUP_TIMEOUT_S):
             await delete_project_as_admin(app, project_uuid=ProjectID(project_uuid), product_name=product_name)
-        except Exception, asyncio.CancelledError:
-            await _stamp_copy_for_garbage_collector(
-                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
-            )
-            raise
+    except Exception, asyncio.CancelledError:  # pylint: disable=broad-exception-caught
+        # stamped above: the garbage-collector retries the deletion on its next sweep
+        _logger.warning("Left copy %s to the garbage-collector after its deletion did not complete", project_uuid)
 
 
 async def _is_copy_finished(app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str) -> bool:
@@ -156,7 +147,7 @@ async def _is_copy_finished(app: web.Application, *, project_uuid: str, user_id:
 
     if copy.hidden:
         if copy.trashed is None:
-            await _stamp_copy_for_garbage_collector(
+            await _safe_stamp_copy_for_immediate_deletion(
                 app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
             )
         raise web.HTTPServiceUnavailable(reason="A previous clone of this study is being cleaned up, try again shortly")
