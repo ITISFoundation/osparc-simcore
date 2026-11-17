@@ -575,7 +575,7 @@ toolz==1.2.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.67.3
+tqdm==4.70.1
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
