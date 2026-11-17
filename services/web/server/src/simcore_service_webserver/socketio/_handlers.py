@@ -113,7 +113,7 @@ async def _set_user_in_project_rooms(
 async def connect(
     socket_id: SocketID,
     environ: EnvironDict,
-    auth: SocketioAuthData,  # noqa: ARG001
+    auth: SocketioAuthData,  # noqa: ARG001  # pylint: disable=unused-argument
     app: web.Application,
 ) -> bool:
     """socketio reserved handler for when the frontend connects through socket.io
