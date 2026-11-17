@@ -329,7 +329,7 @@ types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-awscrt==0.31.3
     # via botocore-stubs
-types-tqdm==4.70.0.20260906
+types-tqdm==4.70.0.20261102
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

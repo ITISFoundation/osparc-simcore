@@ -12,12 +12,17 @@ import httpx2
 import pytest
 from common_library.gettext_support import DEFAULT_LOCALE
 from faker import Faker
+from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.products import ProductName
+from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
 from models_library.users import UserID
+from models_library.wallets import WalletIDAdapter
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import UserPreferencesRpcApi
+from simcore_postgres_database.models.payments_transactions import PaymentTransactionState
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.services import notifier_email
@@ -51,7 +56,9 @@ def transaction(faker: Faker, successful_transaction: dict[str, Any]) -> Payment
 
 @pytest.fixture
 def mock_rabbitmq_rpc_client() -> AsyncMock:
-    return AsyncMock()
+    client = AsyncMock()
+    client.request.return_value = None
+    return client
 
 
 @pytest.fixture
@@ -60,6 +67,11 @@ def mock_send_message_from_template(mocker: MockerFixture) -> AsyncMock:
         f"{notifier_email.__name__}.send_message_from_template",
         new_callable=AsyncMock,
     )
+
+
+@pytest.fixture
+def users_repo(mocker: MockerFixture) -> PaymentsUsersRepo:
+    return PaymentsUsersRepo(MagicMock())
 
 
 async def test_email_provider_sends_on_success(
@@ -74,8 +86,8 @@ async def test_email_provider_sends_on_success(
     transaction: PaymentsTransactionsDB,
     mock_rabbitmq_rpc_client: AsyncMock,
     mock_send_message_from_template: AsyncMock,
+    users_repo: PaymentsUsersRepo,
 ):
-    users_repo = PaymentsUsersRepo(MagicMock())
     mocker.patch.object(
         users_repo,
         "get_notification_data",
@@ -118,11 +130,11 @@ async def test_email_provider_uses_user_language_when_set(
     transaction: PaymentsTransactionsDB,
     mock_rabbitmq_rpc_client: AsyncMock,
     mock_send_message_from_template: AsyncMock,
+    users_repo: PaymentsUsersRepo,
 ):
     """The recipient's persisted `users.language` (returned by get_notification_data)
     must be forwarded as the RPC `locale`, not silently dropped to DEFAULT_LOCALE.
     """
-    users_repo = PaymentsUsersRepo(MagicMock())
     mocker.patch.object(
         users_repo,
         "get_notification_data",
@@ -160,20 +172,20 @@ async def test_email_provider_skips_non_success(
     provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
 
     pending_transaction = PaymentsTransactionsDB(
-        payment_id=f"pt_{faker.pyint()}",
+        payment_id=PaymentID(f"pt_{faker.pyint()}"),
         price_dollars=faker.pydecimal(left_digits=3, right_digits=2, positive=True),
         osparc_credits=faker.pydecimal(left_digits=3, right_digits=2, positive=True),
         product_name="osparc",
         user_id=user_id,
         user_email=faker.email(),
-        wallet_id=faker.pyint(),
+        wallet_id=WalletIDAdapter.validate_python(faker.pyint()),
         comment=None,
         invoice_url=None,
         stripe_invoice_id=None,
         invoice_pdf_url=None,
         initiated_at=faker.date_time(),
         completed_at=None,
-        state="PENDING",
+        state=PaymentTransactionState.PENDING,
         state_message=None,
     )
 
@@ -214,9 +226,9 @@ async def test_email_provider_logs_on_rpc_failure(
     product: dict[str, Any],
     transaction: PaymentsTransactionsDB,
     mock_rabbitmq_rpc_client: AsyncMock,
+    users_repo: PaymentsUsersRepo,
     caplog: pytest.LogCaptureFixture,
 ):
-    users_repo = PaymentsUsersRepo(MagicMock())
     mocker.patch.object(
         users_repo,
         "get_notification_data",
@@ -260,6 +272,7 @@ async def test_email_provider_attaches_invoice_pdf(
     transaction: PaymentsTransactionsDB,
     mock_rabbitmq_rpc_client: AsyncMock,
     mock_send_message_from_template: AsyncMock,
+    users_repo: PaymentsUsersRepo,
 ):
     # transaction fixture has invoice_pdf_url set; stub the PDF download
     pdf_bytes = b"%PDF-1.4 fake-pdf-content \x00\x01\xff"
@@ -270,7 +283,6 @@ async def test_email_provider_attaches_invoice_pdf(
         return_value=(pdf_bytes, pdf_filename),
     )
 
-    users_repo = PaymentsUsersRepo(MagicMock())
     mocker.patch.object(
         users_repo,
         "get_notification_data",
@@ -308,7 +320,9 @@ async def test_email_provider_attaches_invoice_pdf(
     assert type(addressing).model_validate(dumped).attachments[0].content == pdf_bytes
 
 
+@pytest.mark.parametrize("lookup_fails", [False, True], ids=["no-extra-recipients", "recipient-lookup-fails"])
 async def test_email_provider_propagates_bcc(
+    *,
     app_environment: EnvVarsDict,
     mocker: MockerFixture,
     user_id: UserID,
@@ -320,8 +334,10 @@ async def test_email_provider_propagates_bcc(
     transaction: PaymentsTransactionsDB,
     mock_rabbitmq_rpc_client: AsyncMock,
     mock_send_message_from_template: AsyncMock,
+    users_repo: PaymentsUsersRepo,
+    lookup_fails: bool,
+    caplog: pytest.LogCaptureFixture,
 ):
-    users_repo = PaymentsUsersRepo(MagicMock())
     mocker.patch.object(
         users_repo,
         "get_notification_data",
@@ -341,13 +357,86 @@ async def test_email_provider_propagates_bcc(
 
     bcc = "billing@example.com"
     provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo, bcc_email=bcc)
+    if lookup_fails:
+        mocker.patch.object(
+            UserPreferencesRpcApi,
+            "get_frontend_user_preference",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("Preference lookup failed"),
+        )
+
+    with caplog.at_level(logging.WARNING, logger=notifier_email.__name__):
+        await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+
+    mock_send_message_from_template.assert_awaited_once()
+    addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
+    assert [contact.email for contact in addressing.to] == [user_email]
+    assert addressing.bcc is not None
+    assert [contact.email for contact in addressing.bcc] == [bcc]
+    if lookup_fails:
+        assert any(
+            record.name == notifier_email.__name__
+            and record.levelno == logging.WARNING
+            and "Failed to list additional invoice email recipients" in record.getMessage()
+            for record in caplog.records
+        )
+
+
+async def test_email_provider_sends_additional_recipients_without_repeating_bcc(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
+    transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+    users_repo: PaymentsUsersRepo,
+):
+    mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=SimpleNamespace(
+            payment_id=transaction.payment_id,
+            user_name="jdoe",
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+            language=None,
+        ),
+    )
+    extra_emails = [
+        "billing@example.com",
+        "accounts@example.com",
+        "BILLING@example.com",
+        "FINANCE@example.com",
+        str(user_email),
+    ]
+    mocker.patch.object(
+        UserPreferencesRpcApi,
+        "get_frontend_user_preference",
+        new_callable=AsyncMock,
+        return_value=InvoiceEmailRecipientsFrontendUserPreference(value=extra_emails),
+    )
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo, bcc_email="finance@example.com")
 
     await provider.notify_payment_completed(user_id=user_id, payment=transaction)
 
-    assert mock_send_message_from_template.called
-    addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
-    assert addressing.bcc is not None
-    assert addressing.bcc[0].email == bcc
+    assert mock_send_message_from_template.await_count == 2
+    primary_addressing = mock_send_message_from_template.await_args_list[0].kwargs["addressing"]
+    additional_addressing = mock_send_message_from_template.await_args_list[1].kwargs["addressing"]
+    assert [contact.email for contact in primary_addressing.to] == [user_email]
+    assert primary_addressing.bcc is not None
+    assert [contact.email for contact in primary_addressing.bcc] == ["finance@example.com"]
+    assert [contact.email for contact in additional_addressing.to] == extra_emails[:2]
+    assert additional_addressing.bcc is None
 
 
 @pytest.mark.parametrize(
@@ -387,6 +476,7 @@ def test_extract_file_name(url: str, content_disposition: str, expected: str):
 async def test_download_invoice_pdf_returns_none_on_http_error(
     mocker: MockerFixture,
     faker: Faker,
+    user_id: UserID,
 ):
     mocker.patch.object(
         notifier_email,
@@ -397,7 +487,7 @@ async def test_download_invoice_pdf_returns_none_on_http_error(
     assert (
         await _download_invoice_pdf(
             faker.url(),
-            user_id=1,
+            user_id=user_id,
             payment_id="pt_test",
             product_name="osparc",
         )
@@ -407,6 +497,7 @@ async def test_download_invoice_pdf_returns_none_on_http_error(
 
 async def test_download_invoice_pdf_returns_content_and_filename(
     mocker: MockerFixture,
+    user_id: UserID,
 ):
     pdf_bytes = b"%PDF-1.4 ..."
     response = httpx2.Response(
@@ -423,7 +514,7 @@ async def test_download_invoice_pdf_returns_content_and_filename(
 
     downloaded = await _download_invoice_pdf(
         "https://example.com/x",
-        user_id=1,
+        user_id=user_id,
         payment_id="pt_test",
         product_name="osparc",
     )

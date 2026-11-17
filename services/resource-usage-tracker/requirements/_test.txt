@@ -280,7 +280,7 @@ requests-mock==1.12.1
     # via -r requirements/_test.in
 responses==0.26.0
     # via moto
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator

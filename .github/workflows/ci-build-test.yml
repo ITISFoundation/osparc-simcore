@@ -1519,10 +1519,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
+          package-manager-cache: false
       - name: Test
         working-directory: services/static-webserver/client/tests
         run: node --test
@@ -1892,7 +1895,7 @@ jobs:
       - name: Download and load Docker images
         uses: $/.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: "backend"
+          artifact-name-pattern: "*"
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
