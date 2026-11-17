@@ -1,19 +1,21 @@
 import base64
 import traceback
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Final
 
 import pytest
+from annotated_types import doc
 from pydantic import AfterValidator, BaseModel, Field, SecretStr, ValidationError
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import SessionSecretKey
 
-# unique enough not to appear in an error report by accident
-_PLAINTEXT: str = "s3cr3t-SENTINEL"
-# >= min_length so the fernet check itself runs; "!" fails base64 decoding
-_INVALID_BASE64_KEY: str = "A" * 43 + "!" + _PLAINTEXT
-# valid base64 (44 chars) decoding to 31 bytes; the string doubles as the sentinel
-_INVALID_LENGTH_KEY: str = base64.urlsafe_b64encode(b"K" * 31).decode()
+_PLAINTEXT: Final[Annotated[str, doc("unique enough not to appear by accident in an error report")]] = "s3cr3t-SENTINEL"
+_INVALID_BASE64_KEY: Final[Annotated[str, doc(">= min_length so the fernet check runs; '!' fails base64 decoding")]] = (
+    "A" * 43 + "!" + _PLAINTEXT
+)
+_INVALID_LENGTH_KEY: Final[
+    Annotated[str, doc("valid base64 (44 chars) decoding to 31 bytes; doubles as the sentinel")]
+] = base64.urlsafe_b64encode(b"K" * 31).decode()
 
 
 class _SessionSettings(BaseCustomSettings):
@@ -24,7 +26,7 @@ class _SessionSettings(BaseCustomSettings):
     SESSION_PORT: int = Field(default=8080)
 
 
-_RENDERERS: dict[str, Callable[[ValidationError], str]] = {
+_RENDERERS: Final[dict[str, Callable[[ValidationError], str]]] = {
     "str": str,
     "repr": repr,
     "errors": lambda e: repr(e.errors()),
