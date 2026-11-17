@@ -25,6 +25,7 @@ from .settings import LoginThrottleSettings
 
 _logger = logging.getLogger(__name__)
 
+_CHECK_REDIS_TIP: Final[str] = "Check redis connection"
 _MAX_BACKOFF_EXPONENT: Final[int] = 32
 _REDIS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 _LOGIN_ATTEMPT_LOCK_TTL: Final[timedelta] = timedelta(seconds=30)
@@ -64,7 +65,7 @@ async def _handle_redis_errors() -> AsyncIterator[None]:
             **create_troubleshooting_log_kwargs(
                 "Login throttle unavailable due to redis error",
                 error=err,
-                tip="Check redis connection",
+                tip=_CHECK_REDIS_TIP,
             )
         )
         raise LoginThrottleUnavailableError from err
@@ -101,7 +102,7 @@ async def exclusive_login_attempt(app: web.Application, *, email: str) -> AsyncI
                 **create_troubleshooting_log_kwargs(
                     "Could not release the login attempt lock, it expires by itself",
                     error=err,
-                    tip="Check redis connection",
+                    tip=_CHECK_REDIS_TIP,
                 )
             )
 
@@ -170,6 +171,6 @@ async def clear_failed_logins(app: web.Application, *, email: str) -> None:
             **create_troubleshooting_log_kwargs(
                 "Could not clear failed login counter after a successful login",
                 error=err,
-                tip="Check redis connection",
+                tip=_CHECK_REDIS_TIP,
             )
         )
