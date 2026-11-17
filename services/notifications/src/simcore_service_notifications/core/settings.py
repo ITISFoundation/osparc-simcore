@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
@@ -50,6 +50,18 @@ class SMTPSettings(BaseModel):
 
     username: Annotated[str | None, Field(min_length=1)] = None
     password: Annotated[SecretStr | None, Field(min_length=1)] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _password_never_in_error_input(cls, data: Any) -> Any:
+        # pydantic reports the failed input verbatim in str(error), errors() and
+        # json(), including for the model-level validators below. Replacing the raw
+        # password with SecretStr at validation entry keeps the plaintext out of them.
+        # NOTE: the replacement is in-place on purpose: pydantic reports the original
+        # input object, so a modified copy would still leak
+        if isinstance(data, dict) and isinstance(data.get("password"), str):
+            data["password"] = SecretStr(data["password"])
+        return data
 
     @model_validator(mode="after")
     def _both_credentials_must_be_set(self) -> Self:
@@ -287,7 +299,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return LogLevel(cls.validate_log_level(value))
 
     @model_validator(mode="after")
-    def _worker_requires_smtp_settings(self) -> "ApplicationSettings":
+    def _worker_requires_smtp_settings(self) -> ApplicationSettings:
         if (
             self.NOTIFICATIONS_BOOT_SERVER_MODE is BootServerMode.AS_CELERY_WORKER
             and self.NOTIFICATIONS_SMTP_SETTINGS is None
