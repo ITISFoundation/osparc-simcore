@@ -10,6 +10,12 @@ from pytest_simcore.helpers.webserver_users import MixedUserTestData
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.users import _accounts_repository
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(
     "email_pattern,expected_count",
@@ -26,10 +32,10 @@ async def test_search_merged_users_by_email(
     expected_count: int,
 ):
     """Test searching merged users by email pattern."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     rows = await _accounts_repository.search_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_email_like=email_pattern,
         product_name=product_name,
     )
@@ -59,12 +65,12 @@ async def test_search_merged_users_by_username(
     expected_count: int,
 ):
     """Test searching merged users by username pattern."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     username_pattern = f"{product_owner_user['name']}" if use_valid_username else "%nonexistent_username%"
 
     rows = await _accounts_repository.search_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_user_name_like=username_pattern,
         product_name=product_name,
     )
@@ -96,12 +102,12 @@ async def test_search_merged_users_by_primary_group_id(
     expected_count: int,
 ):
     """Test searching merged users by primary group ID."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     primary_group_id = product_owner_user["primary_gid"] if use_valid_group_id else 99999
 
     results = await _accounts_repository.search_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_primary_group_id=primary_group_id,
         product_name=product_name,
     )

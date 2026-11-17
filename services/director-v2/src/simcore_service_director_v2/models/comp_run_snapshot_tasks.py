@@ -113,6 +113,10 @@ class CompRunSnapshotTaskDBGet(BaseModel):
     ended_at: datetime | None
     iteration: Iteration
 
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
     @field_validator("state", mode="before")
     @classmethod
     def convert_result_from_state_type_enum_if_needed(cls, v):

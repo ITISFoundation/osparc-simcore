@@ -8,12 +8,13 @@ import functools
 import io
 import json
 import textwrap
+import warnings
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypedDict
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi.encoders import jsonable_encoder
@@ -34,7 +35,7 @@ def _handle_http_status_error(func):
         try:
             return await func(self, *args, **kwargs)
 
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             msg = exc.response.text
             # rewrite exception's message
             with suppress(Exception), io.StringIO() as sio:
@@ -43,13 +44,13 @@ def _handle_http_status_error(func):
                     print("\t", e, file=sio)
                 msg = sio.getvalue()
 
-            raise httpx.HTTPStatusError(message=msg, request=exc.request, response=exc.response) from exc
+            raise httpx2.HTTPStatusError(message=msg, request=exc.request, response=exc.response) from exc
 
     return _handler
 
 
 class _BaseTestApi:
-    def __init__(self, client: httpx.AsyncClient, tmp_path: Path | None = None, **request_kwargs):
+    def __init__(self, client: httpx2.AsyncClient, tmp_path: Path | None = None, **request_kwargs):
         self._client = client
         self._request_kwargs = request_kwargs
         self._tmp_path = tmp_path
@@ -232,8 +233,8 @@ def mocked_backend(
     "Reproduces https://github.com/wvangeit/osparc-pyapi-tests/blob/master/noninter1/run_study.py"
 )
 async def test_run_study_workflow(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_backend: MockedBackendApiDict,
     tmp_path: Path,
     input_json_path: Path,
@@ -272,10 +273,14 @@ async def test_run_study_workflow(
         "InputFile": test_json_file,
     }
 
-    new_job: Job = await studies_api.create_study_job(
-        study_id=template_id,
-        job_inputs={"values": input_values},
-    )
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        new_job: Job = await studies_api.create_study_job(
+            study_id=template_id,
+            job_inputs={"values": input_values},
+        )
+    serializer_warnings = [w for w in caught_warnings if "Pydantic serializer" in str(w.message)]
+    assert not serializer_warnings, f"response serialization must be warning-free: {serializer_warnings}"
 
     # start & inspect job until done
     await studies_api.start_study_job(study_id=template_id, job_id=new_job.id)

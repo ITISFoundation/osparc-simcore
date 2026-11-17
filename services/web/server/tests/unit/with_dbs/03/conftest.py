@@ -4,23 +4,45 @@
 # pylint: disable=too-many-arguments
 
 
+import contextlib
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Final
 
 import pytest
 import sqlalchemy as sa
+from faker import Faker
+from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_postgres_database.models.groups import groups
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.user_preferences import user_preferences_frontend
+from simcore_service_webserver.users._controller.rest._rest_schemas import CountryNameStr
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+_COUNTRY_NAME: Final[TypeAdapter[CountryNameStr]] = TypeAdapter(CountryNameStr)
+
+
+@pytest.fixture
+def country_name(faker: Faker) -> str:
+    """Draws a country accepted by the web-server.
+
+    The web-server resolves country names with pycountry, which does not know
+    every name faker draws, e.g. "Micronesia" or "Turkey".
+    """
+    for _ in range(10):
+        with contextlib.suppress(ValidationError):
+            return _COUNTRY_NAME.validate_python(faker.country())
+    pytest.fail("faker drew no country accepted by the web-server")
 
 
 @pytest.fixture
 async def drop_all_preferences(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[None]:
     yield
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(user_preferences_frontend.delete())
 
 
@@ -44,17 +66,13 @@ def app_environment(
 
 @pytest.fixture
 async def support_group_before_app_starts(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     product_name: str,
 ) -> AsyncIterator[dict[str, Any]]:
     """Creates a standard support group and assigns it to the current product
 
     NOTE: this has to be added BEFORE any client fixture in the tests
     """
-    from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
-    from simcore_postgres_database.models.groups import groups
-    from simcore_postgres_database.models.products import products
-
     # Create support group using direct database insertion
     group_values = {
         "name": "Support Group",
@@ -64,7 +82,7 @@ async def support_group_before_app_starts(
 
     # pylint: disable=contextmanager-generator-missing-cleanup
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=groups,
         values=group_values,
         pk_col=groups.c.gid,
@@ -72,7 +90,7 @@ async def support_group_before_app_starts(
         group_id = group_row["gid"]
 
         # Update product to set support_standard_group_id
-        async with asyncpg_engine.begin() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(
                 sa.update(products).where(products.c.name == product_name).values(support_standard_group_id=group_id)
             )

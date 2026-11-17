@@ -9,7 +9,7 @@ from typing import Any, Final, Self, overload
 
 import pyinstrument
 import pyinstrument.renderers
-from httpx import AsyncClient, Client
+from httpx2 import AsyncClient, Client
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -18,9 +18,10 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
-from opentelemetry import trace
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry import metrics, trace
+from opentelemetry.instrumentation.httpx import HTTPX2ClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.metrics import NoOpMeterProvider
 from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -38,7 +39,7 @@ _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 # NOTE: holds the TracingConfig set up for this process/context so that utilities such as
 # `log_context` can automatically create spans without threading `TracingConfig` through every
 # call site. Set once by `setup_log_tracing()` (see `logging_utils.setup_loggers`/`async_loggers`).
-_current_tracing_config: ContextVar["TracingConfig | None"] = ContextVar("current_tracing_config", default=None)
+_current_tracing_config: ContextVar[TracingConfig | None] = ContextVar("current_tracing_config", default=None)
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
 _OTEL_NAMESPACE: Final[str] = "simcore"
@@ -106,7 +107,26 @@ class TracingConfig(BaseModel):
 
 
 def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
-    HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
+    # upstream annotates the client with whichever httpx namespace it imported first,
+    # so an httpx2 client is rejected even though instrumentation only needs its attributes
+    HTTPX2ClientInstrumentor.instrument_client(
+        client,  # type: ignore[arg-type]
+        tracer_provider=tracing_config.tracer_provider,
+    )
+
+
+def setup_meter_provider() -> None:
+    """Installs a no-op global `MeterProvider` to stop unbounded meter retention.
+
+    Instrumentors call `get_meter()` on every client construction (e.g.
+    `aiohttp.ClientSession.__init__`). While the global provider is the default
+    proxy, each call appends to `_ProxyMeterProvider._meters`, which is never
+    pruned, so every client ever built stays referenced for the process lifetime.
+    OpenTelemetry metrics are unused here: metrics are exposed via prometheus_client.
+    """
+    if isinstance(metrics.get_meter_provider(), NoOpMeterProvider):
+        return
+    metrics.set_meter_provider(NoOpMeterProvider())
 
 
 def get_current_tracing_config() -> TracingConfig | None:
@@ -190,7 +210,7 @@ def extract_span_link_from_trace_carrier(
             }
         )
 
-        _logger.info(
+        _logger.debug(
             "Created span link from trace_id=%s, span_id=%s",
             trace.format_trace_id(span_context.trace_id),
             trace.format_span_id(span_context.span_id),
@@ -339,7 +359,7 @@ def _resolve_tracing_config_aiohttp(app: Any) -> TracingConfig | None:
         config = app[AIOHTTP_TRACING_CONFIG_KEY]
         assert isinstance(config, TracingConfig)  # nosec
         return config
-    except (KeyError, TypeError):
+    except KeyError, TypeError:
         return None
 
 

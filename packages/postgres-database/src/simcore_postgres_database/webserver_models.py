@@ -8,9 +8,15 @@ the  webserver service
 from .models.api_keys import api_keys
 from .models.classifiers import group_classifiers
 from .models.comp_pipeline import StateType
-from .models.comp_tasks import DB_CHANNEL_NAME, NodeClass, comp_tasks
+from .models.comp_tasks import (
+    DB_CHANNEL_NAME,
+    DB_OUTBOX_KIND_COMP_TASK_SYNC,
+    NodeClass,
+    comp_tasks,
+)
 from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
+from .models.outbox_events import outbox_events
 from .models.products import products
 from .models.projects import ProjectTemplateType, ProjectType, projects
 from .models.projects_nodes import projects_nodes
@@ -23,6 +29,7 @@ from .models.users import UserRole, UserStatus, users
 
 __all__ = (
     "DB_CHANNEL_NAME",
+    "DB_OUTBOX_KIND_COMP_TASK_SYNC",
     "ConfirmationAction",
     "GroupType",
     "NodeClass",
@@ -36,6 +43,7 @@ __all__ = (
     "confirmations",
     "group_classifiers",
     "groups",
+    "outbox_events",
     "products",
     "projects",
     "projects_nodes",

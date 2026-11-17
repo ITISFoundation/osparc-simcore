@@ -12,7 +12,7 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import status
-from httpx import Response
+from httpx2 import Response
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -55,7 +55,7 @@ def mock_env(
 
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())
@@ -233,6 +233,45 @@ async def test_409_response(
     )
     assert response.status_code == status.HTTP_409_CONFLICT
     assert "must be unique" in response.text
+
+
+@pytest.fixture
+async def alternative_observed_service(
+    mock_user_extra_properties_repo: None,
+    dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
+    dynamic_service_create: DynamicServiceCreate,
+    simcore_service_labels: SimcoreServiceLabels,
+    dynamic_sidecar_port: PortInt,
+    request_dns: str,
+    request_scheme: str,
+    can_save: bool,
+) -> str:
+    alternative_node_uuid = "123e4567-e89b-12d3-a456-426614174001"
+    alternative_service = dynamic_service_create.model_copy(update={"node_uuid": alternative_node_uuid})
+    await dynamic_sidecar_scheduler.add_service(
+        service=alternative_service,
+        simcore_service_labels=simcore_service_labels,
+        port=dynamic_sidecar_port,
+        request_dns=request_dns,
+        request_scheme=request_scheme,
+        request_simcore_user_agent="",
+        can_save=can_save,
+    )
+    return alternative_node_uuid
+
+
+async def test_dynamic_scheduler_tasks_are_unique_per_node_uuid(
+    mock_apply_observation_cycle: None,
+    mock_scheduler_service_shutdown_tasks: None,
+    client: TestClient,
+    observed_service: SchedulerData,
+    alternative_observed_service: str,
+):
+    response = client.post(f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/outputs:push")
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    response = client.post(f"/v2/dynamic_scheduler/services/{alternative_observed_service}/outputs:push")
+    assert response.status_code == status.HTTP_202_ACCEPTED
 
 
 async def test_free_reserved_disk_space(

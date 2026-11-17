@@ -30,12 +30,18 @@ def exclusive_periodic(
 
     Returns:
         Nothing, a periodic method does not return anything as it runs forever.
+
+    NOTE: the outer periodic loop retries acquiring the lock and, while the lock is
+    held, its iteration never returns. It therefore runs with tracing disabled
+    (`trace_iterations=False`), because tracing it would keep one trace open for the
+    whole lifetime of the replica. The inner periodic loop opens one span per
+    iteration instead.
     """
 
     def _decorator(
         coro: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
-        @periodic(interval=retry_after)
+        @periodic(interval=retry_after, trace_iterations=False)
         @suppress_exceptions(
             # Replicas will raise CouldNotAcquireLockError
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7574

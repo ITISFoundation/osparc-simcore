@@ -15,13 +15,22 @@ from pydantic import AnyUrl
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture
-async def dask_scheduler_service(simcore_services_ready: None, monkeypatch: pytest.MonkeyPatch) -> str:
+async def dask_scheduler_service(
+    simcore_services_ready: None,
+    env_vars_for_docker_compose: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> str:
     # the dask scheduler has a UI for the dashboard and a secondary port for the API
     # simcore_services fixture already ensure the dask-scheduler is up and running
-    dask_scheduler_api_port = get_service_published_port("dask-scheduler", target_ports=[8786])
+    dask_scheduler_api_port = get_service_published_port(
+        "dask-scheduler",
+        target_ports=[8786],
+        stack_name=env_vars_for_docker_compose["SWARM_STACK_NAME"],
+    )
     # override the port
     monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{dask_scheduler_api_port}")
     url = AnyUrl.build(scheme="tls", host=get_localhost_ip(), port=int(dask_scheduler_api_port))

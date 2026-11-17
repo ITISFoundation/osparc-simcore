@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# ruff: noqa
 
 import asyncio
 import datetime
@@ -154,18 +155,19 @@ def with_valid_time_before_termination(
 
 
 @pytest.fixture
-async def drained_host_node(host_node: Node, async_docker_client: aiodocker.Docker) -> AsyncIterator[Node]:
+async def drained_host_node(
+    host_node: Node,
+    async_docker_client: aiodocker.Docker,
+    update_node_spec_with_retry: Callable[..., Awaitable[None]],
+) -> AsyncIterator[Node]:
     assert host_node.id
-    assert host_node.version
-    assert host_node.version.index
     assert host_node.spec
     assert host_node.spec.availability
     assert host_node.spec.role
 
     old_availability = host_node.spec.availability
-    await async_docker_client.nodes.update(
+    await update_node_spec_with_retry(
         node_id=host_node.id,
-        version=host_node.version.index,
         spec={
             "Availability": "drain",
             "Labels": host_node.spec.labels,
@@ -178,13 +180,10 @@ async def drained_host_node(host_node: Node, async_docker_client: aiodocker.Dock
     # NOTE: getting the node again as the version might have changed
     drained_node = TypeAdapter(Node).validate_python(await async_docker_client.nodes.inspect(node_id=host_node.id))
     assert drained_node.id
-    assert drained_node.version
-    assert drained_node.version.index
     assert drained_node.spec
     assert drained_node.spec.role
-    await async_docker_client.nodes.update(
+    await update_node_spec_with_retry(
         node_id=drained_node.id,
-        version=drained_node.version.index,
         spec={
             "Availability": old_availability.value,
             "Labels": drained_node.spec.labels,
@@ -271,13 +270,17 @@ class _ScaleUpParams:
 
 @pytest.fixture
 async def create_services_batch(
-    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str | list[str], list[str]], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int, dict], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: SimcoreContainerLabels,
 ) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
     async def _(scale_up_params: _ScaleUpParams) -> list[Service]:
+        acceptable_initial_states = ["pending", "running"] if scale_up_params.num_services > 1 else ["pending"]
+
         return await asyncio.gather(
             *(
                 create_service(
@@ -288,7 +291,7 @@ async def create_services_batch(
                         scale_up_params.service_resources.generic_resources,
                     ),
                     service_monitored_labels | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
-                    "pending",
+                    acceptable_initial_states,
                     (
                         [
                             f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
@@ -1105,7 +1108,7 @@ async def test_cluster_scaling_up_and_down(
 )
 async def test_cluster_scaling_up_and_down_against_aws(
     skip_if_no_external_envfile: None,
-    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
+    external_ec2_instances_allowed_types: dict[str, EC2InstanceBootSpecific] | None,
     with_labelize_drain_nodes: EnvVarsDict,
     app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
@@ -1696,6 +1699,10 @@ async def test__find_terminateable_nodes_with_no_hosts(
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
 )
+@pytest.mark.docker_exclusive(
+    reason="the drained_host_node fixture drains the single shared swarm node, so swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
+)
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1732,6 +1739,10 @@ async def test__try_scale_down_cluster_with_no_nodes(
     "with_drain_nodes_labelled",
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
+)
+@pytest.mark.docker_exclusive(
+    reason="the drained_host_node fixture drains the single shared swarm node, so swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
 )
 async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
@@ -1818,6 +1829,10 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
     "with_drain_nodes_labelled",
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
+)
+@pytest.mark.docker_exclusive(
+    reason="the drained_host_node fixture drains the single shared swarm node, so swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
 )
 async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
@@ -2283,7 +2298,7 @@ async def with_multiple_small_subnet_ids(
     [
         pytest.param(
             _ScaleUpParams(
-                imposed_instance_type=None,
+                imposed_instance_type="r5n.4xlarge",
                 service_resources=Resources(cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",  # 1 GPU, 16 CPUs, 128GiB

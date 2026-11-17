@@ -28,6 +28,22 @@ from faker import Faker
 DEFAULT_FAKER: Final = Faker()
 
 
+def deterministic_faker(seed: int = 0) -> Faker:
+    """Returns a NEW faker instance that always generates the SAME sequence (fixed seed).
+
+    Use this for fake values computed at COLLECTION time, e.g. `@pytest.mark.parametrize`
+    arguments: pytest-xdist collects once per worker and every worker must collect identical
+    test IDs, so those values may not differ between workers. The shared `DEFAULT_FAKER` and the
+    `faker` pytest fixture cannot be used there -- the latter is deliberately re-seeded per worker
+    to make workers DIVERGE (see `_xdist_reseed_faker` in `pytest_simcore/__init__.py`).
+
+    For values generated INSIDE test bodies, use the `faker` fixture instead.
+    """
+    fake = Faker()
+    fake.seed_instance(seed)
+    return fake
+
+
 def random_service_key(fake: Faker = DEFAULT_FAKER, *, name: str | None = None) -> str:
     suffix = fake.unique.pystr(min_chars=2) if name is None else name
     return f"simcore/services/{fake.random_element(['dynamic', 'comp', 'frontend'])}/{suffix.lower()}"

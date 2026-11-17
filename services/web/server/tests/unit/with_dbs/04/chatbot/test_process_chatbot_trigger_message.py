@@ -29,6 +29,12 @@ from simcore_service_webserver.chatbot._process_chatbot_trigger_service import (
 )
 from simcore_service_webserver.conversations import conversations_service
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mocked_conversations_service(

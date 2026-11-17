@@ -14,12 +14,12 @@ aioresponses
 docker
 faker
 fakeredis[lua]
+filelock
 jsonref
 pytest
 pytest-asyncio
 pytest-benchmark
 pytest-cov
-pytest-docker
 pytest-instafail
 pytest-mock
 pytest-runner

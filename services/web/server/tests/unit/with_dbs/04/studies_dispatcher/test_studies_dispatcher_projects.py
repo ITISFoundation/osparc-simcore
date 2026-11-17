@@ -30,6 +30,8 @@ from simcore_service_webserver.studies_dispatcher._projects import (
 from simcore_service_webserver.users.users_service import get_user
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

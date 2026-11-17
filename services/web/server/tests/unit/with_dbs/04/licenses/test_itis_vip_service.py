@@ -10,7 +10,7 @@ import pytest
 import respx
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.licenses import LicensedResourceType
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
@@ -31,6 +31,12 @@ from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSetting
 from simcore_service_webserver.licenses._licensed_resources_service import (
     RegistrationState,
 )
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.fixture(scope="session")

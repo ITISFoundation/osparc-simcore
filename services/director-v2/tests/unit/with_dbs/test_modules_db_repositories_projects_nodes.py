@@ -91,35 +91,35 @@ async def test_exists(initialized_app: FastAPI, with_project: ProjectAtDB, faker
     repository = get_repository(initialized_app, ProjectsNodesRepository)
 
     for node_uuid in with_project.workbench:
-        assert await repository.exists(with_project.uuid, NodeID(node_uuid)) is True
+        assert await repository.exists(project_id=with_project.uuid, node_id=NodeID(node_uuid)) is True
 
     not_existing_node = faker.uuid4(cast_to=None)
     assert not_existing_node not in with_project.workbench
-    assert await repository.exists(with_project.uuid, not_existing_node) is False
+    assert await repository.exists(project_id=with_project.uuid, node_id=not_existing_node) is False
 
     not_existing_project = faker.uuid4(cast_to=None)
     assert not_existing_project != with_project.uuid
-    assert await repository.exists(not_existing_project, not_existing_node) is False
+    assert await repository.exists(project_id=not_existing_project, node_id=not_existing_node) is False
 
 
 async def test_get(initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker):
     repository = get_repository(initialized_app, ProjectsNodesRepository)
 
     for node_uuid, node_data in with_project.workbench.items():
-        node = await repository.get(with_project.uuid, NodeID(node_uuid))
+        node = await repository.get(project_id=with_project.uuid, node_id=NodeID(node_uuid))
         assert isinstance(node, Node)
         assert node.key == node_data.key
         assert node.version == node_data.version
 
     not_existing_node = faker.uuid4(cast_to=None)
     with pytest.raises(ProjectNodeNotFoundError):
-        await repository.get(with_project.uuid, not_existing_node)
+        await repository.get(project_id=with_project.uuid, node_id=not_existing_node)
 
 
 async def test_list_nodes_ids(initialized_app: FastAPI, with_project: ProjectAtDB):
     repository = get_repository(initialized_app, ProjectsNodesRepository)
 
-    node_ids = await repository.list_nodes_ids(with_project.uuid)
+    node_ids = await repository.list_nodes_ids(project_id=with_project.uuid)
 
     assert sorted(node_ids) == sorted(NodeID(node_uuid) for node_uuid in with_project.workbench)
 
@@ -127,7 +127,7 @@ async def test_list_nodes_ids(initialized_app: FastAPI, with_project: ProjectAtD
 async def test_get_all(initialized_app: FastAPI, with_project: ProjectAtDB):
     repository = get_repository(initialized_app, ProjectsNodesRepository)
 
-    nodes = await repository.get_all(with_project.uuid)
+    nodes = await repository.get_all(project_id=with_project.uuid)
 
     assert set(nodes) == set(with_project.workbench)
     for node_uuid, node in nodes.items():

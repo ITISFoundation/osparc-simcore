@@ -24,6 +24,10 @@ class ProjectAccessRightError(DatabaseAccessError):
     msg_template: str = "Insufficient access rights to {access_right} project {project_id}"
 
 
+class ProjectNodeAccessRightError(ProjectAccessRightError):
+    msg_template: str = "Insufficient access rights to {access_right} node {node_id} of project {project_id}"
+
+
 class ProjectNotFoundError(DatabaseAccessError):
     msg_template: str = "Project {project_id} was not found"
 

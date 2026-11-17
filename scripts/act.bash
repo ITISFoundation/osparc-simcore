@@ -5,9 +5,9 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-# points to root soruce directory of this project, usually ../../
+# points to root source directory of this project, usually ../../
 ROOT_PROJECT_DIR=$1
-# name of the job, usually defined in the .github/workflows/ci-testing-deploy.yaml
+# name of the job, usually defined in the .github/workflows/ci-build-test.yaml
 JOB_TO_RUN=$2
 
 DOCKER_IMAGE_NAME=dind-act-runner

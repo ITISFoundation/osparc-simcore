@@ -1,11 +1,21 @@
+import asyncio
 import logging
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from datetime import timedelta
+from pathlib import Path
+from typing import Final
 
 from aiodocker.networks import DockerNetwork
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.services import ServiceOutput
+from servicelib.container_utils import run_command_in_container
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
+from ..core.utils import get_self_container_name
 from ..modules.inputs import disable_inputs_pulling, enable_inputs_pulling
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import (
@@ -15,6 +25,8 @@ from ..modules.outputs import (
 )
 
 _logger = logging.getLogger(__name__)
+
+_TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 
 
 async def toggle_ports_io(app: FastAPI, *, enable_outputs: bool, enable_inputs: bool) -> None:
@@ -48,6 +60,78 @@ async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceO
     _logger.debug("Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}")
     await outputs_context.set_file_type_port_keys(file_type_port_keys)
     outputs_context.non_file_type_port_keys = non_file_port_keys
+
+
+def _create_deny_write_access_command(inputs_path: Path) -> str:
+    return f"chmod -R a-w '{inputs_path}'"
+
+
+def _create_grant_write_access_command(inputs_path: Path) -> str:
+    return f"chmod -R a+w '{inputs_path}'"
+
+
+async def deny_write_access_to_inputs(app: FastAPI) -> None:
+    mounted_volumes: MountedVolumes = app.state.mounted_volumes
+
+    await run_command_in_container(
+        get_self_container_name(),
+        command=_create_deny_write_access_command(mounted_volumes.disk_inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+async def grant_write_access_to_inputs(app: FastAPI) -> None:
+    mounted_volumes: MountedVolumes = app.state.mounted_volumes
+
+    await run_command_in_container(
+        get_self_container_name(),
+        command=_create_grant_write_access_command(mounted_volumes.disk_inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+@dataclass
+class _WritableInputsState:
+    io_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    active_count: int = 0
+    # whether the inputs folder is currently writable, guarded by io_lock
+    is_writable: bool = False
+
+
+async def _input_permissions_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.writable_inputs_state = _WritableInputsState()
+    # inputs are read-only by default, see writable_inputs for granting access
+    await deny_write_access_to_inputs(app)
+    yield
+
+
+def configure_input_permissions(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_input_permissions_lifespan)
+
+
+@asynccontextmanager
+async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
+    state: _WritableInputsState = app.state.writable_inputs_state
+
+    state.active_count += 1
+    try:
+        async with state.io_lock:
+            # NOTE: is_writable is checked instead of relying on active_count:
+            # a previous entrant's grant may have failed or been cancelled,
+            # in which case the inputs are still read-only and must be granted here
+            if not state.is_writable:
+                await grant_write_access_to_inputs(app)
+                state.is_writable = True
+        yield
+    finally:
+        state.active_count -= 1
+        last = state.active_count == 0
+        async with state.io_lock:
+            if last and state.is_writable:
+                try:
+                    await deny_write_access_to_inputs(app)
+                finally:
+                    state.is_writable = False
 
 
 async def attach_container_to_network(*, container_id: str, network_id: str, network_aliases: list[str]) -> None:

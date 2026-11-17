@@ -2,7 +2,7 @@ import logging
 import shutil
 from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
@@ -23,7 +23,20 @@ from ..node_ports_common.file_io_utils import LogRedirectCB
 from ..node_ports_common.filemanager import UploadedFile, UploadedFolder
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
+if TYPE_CHECKING:
+    from .port import Port
+    from .ports_mapping import InputsList, OutputsList
+
 log = logging.getLogger(__name__)
+
+
+def find_port(port_key: ServicePortKey, inputs: InputsList, outputs: OutputsList) -> Port | None:
+    """Return the input or output port registered under `port_key`"""
+    if port_key in outputs.root:
+        return outputs.root[port_key]
+    if port_key in inputs.root:
+        return inputs.root[port_key]
+    return None
 
 
 async def get_value_link_from_port_link(

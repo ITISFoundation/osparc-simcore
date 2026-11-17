@@ -7,13 +7,13 @@
 
 from collections.abc import AsyncIterator
 
-import httpx
+import httpx2
 import pytest
 from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
 from celery_library.errors import TaskManagerError, TaskOrGroupNotFoundError
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import ValidationError
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from simcore_service_storage.exceptions.errors import (
@@ -41,7 +41,7 @@ def initialized_app() -> FastAPI:
 @pytest.fixture
 async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
     async with AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url="http://test",
         headers={"Content-Type": "application/json"},
     ) as client:
@@ -53,7 +53,7 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
     [
         (
             InvalidFileIdentifierError(identifier="pytest file identifier", details="pytest details"),
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             FileMetaDataNotFoundError(file_id="pytest file ID"),
@@ -81,7 +81,7 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
         ),
         (
             LinkAlreadyExistsError(file_id="pytest file ID"),
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             DBAPIError.instance(
@@ -144,11 +144,11 @@ async def test_request_validation_error_handler(initialized_app: FastAPI, client
     response = await client.get("/test")
     assert_status(
         response,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         None,
         expected_msg=_error_msg,
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 async def test_validation_error_handler(initialized_app: FastAPI, client: AsyncClient):

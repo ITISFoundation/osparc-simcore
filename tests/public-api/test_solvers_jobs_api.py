@@ -15,6 +15,7 @@ from operator import attrgetter
 from pathlib import Path
 from typing import Final
 from urllib.parse import quote_plus
+from uuid import UUID
 from zipfile import ZipFile
 
 import osparc
@@ -246,7 +247,8 @@ def test_run_job(
     # check solver outputs
     outputs: osparc.JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
     assert isinstance(outputs, osparc.JobOutputs)
-    assert outputs.job_id == job.id
+
+    assert UUID(outputs.job_id) == job.id
     assert len(outputs.results) == 2
 
     output_file = outputs.results["output_1"]
@@ -255,7 +257,7 @@ def test_run_job(
     assert status.state == expected_outcome
 
     assert isinstance(output_file, osparc.File)
-    assert isinstance(number, float)
+    assert isinstance(number, int | float)
 
     # output file exists
     assert files_api.get_file(output_file.id) == output_file

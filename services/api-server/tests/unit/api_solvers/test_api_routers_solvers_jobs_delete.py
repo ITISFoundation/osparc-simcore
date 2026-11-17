@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import TypedDict
 from uuid import UUID
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import jinja2
 import pytest
 from faker import Faker
@@ -57,8 +60,8 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4111")
 async def test_delete_non_existing_solver_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     faker: Faker,
@@ -114,8 +117,8 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4111")
 async def test_create_and_delete_solver_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_catalog_rpc_api: dict[str, MockType],
@@ -162,8 +165,8 @@ async def test_create_and_delete_solver_job(
 )
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
@@ -263,8 +266,8 @@ def mocked_backend_services_apis_for_delete_job_assets(
     indirect=True,
 )
 async def test_delete_job_assets_endpoint(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],
@@ -296,8 +299,8 @@ async def test_delete_job_assets_endpoint(
     indirect=True,
 )
 async def test_delete_job_assets_endpoint_computation_running(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],

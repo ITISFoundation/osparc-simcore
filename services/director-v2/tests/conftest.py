@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock
 
-import httpx
+import httpx2
 import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
@@ -48,7 +48,8 @@ pytest_plugins = [
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.logging",
-    "pytest_simcore.minio_service",
+    "pytest_simcore.s3_storage_service",
+    "pytest_simcore.postgres_live_stack_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -60,6 +61,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.socketio",
+    "pytest_simcore.xdist_docker_daemon",
 ]
 
 logger = logging.getLogger(__name__)
@@ -155,6 +157,7 @@ def dynamic_sidecar_docker_image_name() -> str:
 def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
+    env_vars_for_docker_compose: EnvVarsDict,
     faker: Faker,
 ) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
@@ -176,7 +179,7 @@ def mock_env(
             "POSTGRES_HOST": "test",
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_USER": "test",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "RABBIT_HOST": "mocked_host",
             "RABBIT_PASSWORD": "mocked_password",
             "RABBIT_SECURE": "false",
@@ -188,7 +191,9 @@ def mock_env(
             "REGISTRY_URL": faker.url(),
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
-            "SWARM_STACK_NAME": "pytest-simcore",
+            # NOTE: the checkout-scoped stack name, so that swarm services created by tests
+            # (fake sidecars, ...) are observed/cleaned per checkout and never per branch
+            "SWARM_STACK_NAME": env_vars_for_docker_compose["SWARM_STACK_NAME"],
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
             "DIRECTOR_V2_TRACING": "null",
         },
@@ -217,9 +222,9 @@ async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
 
 
 @pytest.fixture()
-async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url="http://director-v2.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

@@ -17,18 +17,20 @@ runs:
   steps:
     - name: download docker images (single artifact)
       if: inputs.artifact-name-pattern != '*'
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-${{ inputs.artifact-name-pattern }}
         path: ${{ inputs.download-path }}
 
     - name: download docker images (all artifacts)
       if: inputs.artifact-name-pattern == '*'
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
         path: ${{ inputs.download-path }}
 
     - name: load docker images
       shell: bash
-      run: make load-images local-src=${{ inputs.download-path }}
+      run: make load-images local-src="${INPUTS_DOWNLOAD_PATH}"
+      env:
+        INPUTS_DOWNLOAD_PATH: ${{ inputs.download-path }}

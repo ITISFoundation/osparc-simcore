@@ -16,6 +16,12 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import ApplicationSettings
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):

@@ -80,6 +80,167 @@ TRANSLATOR_TAG: Final = "@TRANSLATOR"
 # Step 1a: xgettext extraction for source files (Python, C++, MFC .rc)
 # ---------------------------------------------------------------------------
 
+# xgettext wide-literal truncation workaround ---------------------------------
+# GNU xgettext's C/C++ scanner merges a run of adjacent string literals into one
+# msgid only while EVERY fragment is narrow. The run truncates at the first
+# wide-prefixed fragment (L"/u8"/u"/U"): only the fragments BEFORE it are
+# extracted, silently (exit 0, no warning). C++ itself concatenates the whole run,
+# so a marker like tr(L"a " L"b") extracts msgid "a " while the runtime string is
+# "a b" -- the catalog key can never match and the message is untranslatable.
+# The fold below rewrites such a run to the equivalent, xgettext-mergeable shape
+# (tr(L"a " "b"): wide-first + narrow continuations concatenate to the same wide
+# type per [lex.concats]) -- as an in-memory COPY only; real sources are never
+# modified, and every edit stays within one line, so `#: line` references in the
+# .pot remain exact.
+_CPP_LITERAL_RE: Final = re.compile(r'(?<![LUu])(?P<prefix>u8|U|u|L)?"(?:\\[\s\S]|[^"\\])*"')
+# Separator legal between adjacent literals in C++ (concatenation ignores comments).
+_CPP_LIT_SEP_RE: Final = re.compile(r"(?://[^\n]*\n|/\*.*?\*/|\s)+")
+# Keyword-call opener as xgettext matches it (optional namespace qualification).
+# The lookbehind keeps `mytr(...)`-style identifiers from matching.
+_CPP_TR_OPEN_RE: Final = re.compile(r"(?<![\w])(?:[A-Za-z_]\w*::)*(?:tr|QT_TR_NOOP)\s*\(\s*")
+# A fold applies only to runs of at least this many adjacent literals.
+_MIN_MULTI_LITERAL_RUN: Final = 2
+
+
+def _mask_cpp_comments(text: str) -> str:
+    """Blank out // and /* */ comments, length-preserving (newlines kept), so
+    scans can match code without tripping over commented-out markers."""
+
+    def blank(m: re.Match[str]) -> str:
+        return "".join(c if c == "\n" else " " for c in m.group(0))
+
+    # DOTALL so /* */ comments spanning several lines are masked too
+    return re.sub(r"//[^\n]*|/\*.*?\*/", blank, text, flags=re.DOTALL)
+
+
+def _literal_run_at(masked: str, pos: int) -> list[re.Match[str]]:
+    """Every adjacent string literal starting at `pos`; whitespace and comments
+    between fragments are legal C++ concatenation separators."""
+    literals: list[re.Match[str]] = []
+    while True:
+        m = _CPP_LITERAL_RE.match(masked, pos)
+        if not m:
+            break
+        literals.append(m)
+        sep = _CPP_LIT_SEP_RE.match(masked, m.end())
+        if not sep:
+            break
+        pos = sep.end()
+    return literals
+
+
+def _fold_edits_for_run(literals: list[re.Match[str]], offset: int) -> list[tuple[int, int, str]]:
+    """Edits that make the literal run xgettext-mergeable ([] if it already is).
+
+    Only `L`-prefixed runs are folded: narrow + L"" concatenate to the wide type,
+    so moving the single wide prefix to fragment 0 preserves the literal's C++
+    type exactly. u8""/u""/U"" fragments would need a type-preserving retype
+    rather than a prefix move -- and cannot bind the
+    tr(std::string)/tr(std::wstring) overloads anyway -- so they are reported and
+    left for a human.
+    """
+    prefixes = [m.group("prefix") or "" for m in literals]
+    if len(literals) < _MIN_MULTI_LITERAL_RUN:
+        return []
+    if not any(p and i > 0 for i, p in enumerate(prefixes)):
+        return []  # already mergeable: no wide fragment beyond the first
+    if any(p and p != "L" for p in prefixes):
+        console.print(
+            f"  [warn] non-L wide literal run at offset {offset} left unfolded "
+            '(fix the source: keep L"" on the first tr() literal only)'
+        )
+        return []
+    edits: list[tuple[int, int, str]] = []
+    first = literals[0]
+    if not prefixes[0]:
+        edits.append((first.start(), first.start(), "L"))
+    edits.extend((m.start("prefix"), m.end("prefix"), "") for m in literals[1:] if m.group("prefix"))
+    return edits
+
+
+def _apply_edits(text: str, edits: list[tuple[int, int, str]]) -> str:
+    out = text
+    for start, end, repl in sorted(edits, key=lambda e: e[0], reverse=True):
+        out = out[:start] + repl + out[end:]
+    return out
+
+
+def _fold_wide_literal_runs(text: str) -> tuple[str, int]:
+    """Return (folded_text, n_runs). Each tr()/QT_TR_NOOP() first argument that is
+    a run of adjacent literals containing a wide prefix at any index other than 0
+    is rewritten so ONLY the first fragment carries the (L) wide prefix. Text
+    outside such runs -- and the line count -- are never touched.
+
+    This is a heuristic like the rest of this file's C/C++ handling (xgettext's
+    own scanner is likewise regex-grade): raw string literals (R"...") and
+    trigraphs are not tokenized; a run in a real source using those is left
+    unfolded.
+    """
+    masked = _mask_cpp_comments(text)
+    edits: list[tuple[int, int, str]] = []
+    n_runs = 0
+    for opener in _CPP_TR_OPEN_RE.finditer(masked):
+        run_edits = _fold_edits_for_run(_literal_run_at(masked, opener.end()), opener.start())
+        if run_edits:
+            edits += run_edits
+            n_runs += 1
+    if not edits:
+        return text, 0
+    return _apply_edits(text, edits), n_runs
+
+
+def _read_text_lenient(path: Path) -> str | None:
+    """Read a source file with surrogateescape so non-UTF-8 bytes round-trip;
+    None if unreadable."""
+    try:
+        return path.read_text(encoding="utf-8", errors="surrogateescape")
+    except OSError:
+        return None
+
+
+def _mirror_path(root: Path, source: Path) -> Path:
+    """Mirror location for `source` under `root` (absolute sources lose their
+    leading '/' so they land INSIDE the mirror root, not over it)."""
+    return root / str(source).lstrip("/")
+
+
+def _prepare_folded_mirrors(files: list[Path], mirror_root: Path, mirror_to_orig: dict[str, str]) -> list[Path]:
+    """Return the file list to hand xgettext: unchanged paths plus folded COPY
+    paths for sources whose tr() runs would extract truncated. Registers each
+    copy's mirror->original mapping for the post-run `#: ` reference rewrite.
+
+    Raises:
+        OSError: if a folded mirror copy cannot be created under mirror_root.
+    """
+    swapped: list[Path] = []
+    for f in files:
+        text = _read_text_lenient(f)
+        folded, n_folds = ("", 0) if text is None else _fold_wide_literal_runs(text)
+        if not n_folds:
+            swapped.append(f)
+            continue
+        mirror = _mirror_path(mirror_root, f)
+        mirror.parent.mkdir(parents=True, exist_ok=True)
+        mirror.write_text(folded, encoding="utf-8", errors="surrogateescape")
+        mirror_to_orig[str(mirror)] = str(f)
+        console.print(f"  [wide-fold] {f}: {n_folds} wide-literal run(s) folded")
+        swapped.append(mirror)
+    return swapped
+
+
+def _rewrite_pot_references(out_pot: Path, mirror_to_orig: dict[str, str]) -> None:
+    """Replace folded-mirror paths with the real source paths in the .pot's `#: `
+    reference comments (xgettext records paths exactly as they were passed)."""
+    if not mirror_to_orig:
+        return
+    pot_text = _read_text_lenient(out_pot)
+    if pot_text is None:
+        return
+    # longest keys first: a short mirror path can be a prefix of a longer one
+    for mirror, orig in sorted(mirror_to_orig.items(), key=lambda kv: -len(kv[0])):
+        pot_text = pot_text.replace(mirror, orig)
+    out_pot.write_text(pot_text, encoding="utf-8", errors="surrogateescape")
+
 
 class XgetextExtractor:
     """Extract translatable strings from source files using GNU xgettext.
@@ -145,6 +306,37 @@ class XgetextExtractor:
             console.print("[extract] No files with supported extensions.")
             return False
 
+        # Work around xgettext's silent wide-literal truncation (see
+        # _fold_wide_literal_runs). For each C/C++ source whose tr()/QT_TR_NOOP()
+        # arguments would be extracted truncated, xgettext is pointed at a folded
+        # COPY in a temp dir instead of the real file; the real file is never
+        # touched. The fold is strictly within-line (identical line count), so the
+        # only difference in the .pot is that the copy's path appears in `#: `
+        # references -- rewritten back to the original path after extraction, so
+        # line numbers and the enrich step are unaffected.
+        tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
+        mirror_to_orig: dict[str, str] = {}
+        if by_lang.get("C") or by_lang.get("C++"):
+            tmp_ctx = tempfile.TemporaryDirectory(prefix="i18n-fold-")
+            for lang in ("C", "C++"):
+                if lang in by_lang:
+                    by_lang[lang] = _prepare_folded_mirrors(by_lang[lang], Path(tmp_ctx.name), mirror_to_orig)
+
+        ok = False
+        try:
+            ok = self._run_batches(base_cmd, by_lang)
+        finally:
+            if tmp_ctx is not None:
+                # Restore real source paths in the #: references before the temp
+                # dir disappears, so downstream merge/enrich see the true files.
+                if ok and mirror_to_orig and out_pot.exists():
+                    _rewrite_pot_references(out_pot, mirror_to_orig)
+                tmp_ctx.cleanup()
+
+        return ok
+
+    def _run_batches(self, base_cmd: list[str], by_lang: dict[str, list[Path]]) -> bool:
+        """One xgettext invocation per language batch, joined into one .pot."""
         first = True
         for lang, files in by_lang.items():
             batch_cmd = [*base_cmd, f"--language={lang}", *(str(f) for f in files)]
@@ -157,7 +349,6 @@ class XgetextExtractor:
                 console.print(f"[xgettext ERROR] {result.stderr.strip()}")
                 return False
             console.print(f"  [xgettext] {lang}: {len(files)} file(s)")
-
         return True
 
 

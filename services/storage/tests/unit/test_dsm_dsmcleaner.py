@@ -21,6 +21,7 @@ from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from pytest_simcore.helpers.faker_factories import deterministic_faker
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import (
     file_meta_data as file_meta_data_table,
@@ -38,6 +39,9 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 _faker: Faker = Faker()
+
+# fake values in @pytest.mark.parametrize must be worker-identical (see deterministic_faker)
+_collection_faker: Faker = deterministic_faker()
 
 
 @pytest.fixture
@@ -61,7 +65,7 @@ def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
         (LinkType.PRESIGNED, False),
     ],
 )
-@pytest.mark.parametrize("checksum", [None, _faker.sha256()], ids=str)
+@pytest.mark.parametrize("checksum", [None, _collection_faker.sha256()], ids=str)
 async def test_regression_collaborator_creates_file_upload_links(  # pylint:disable=too-many-positional-arguments
     disable_all_dsm_cleaner_tasks: None,
     sqlalchemy_async_engine: AsyncEngine,
@@ -130,7 +134,7 @@ async def test_regression_collaborator_creates_file_upload_links(  # pylint:disa
         (LinkType.PRESIGNED, False),
     ],
 )
-@pytest.mark.parametrize("checksum", [None, _faker.sha256()])
+@pytest.mark.parametrize("checksum", [None, _collection_faker.sha256()])
 async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     disable_all_dsm_cleaner_tasks: None,
     sqlalchemy_async_engine: AsyncEngine,
@@ -184,7 +188,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         await conn.execute(
             file_meta_data_table.update()
             .where(file_meta_data_table.c.file_id == file_or_directory_id)
-            .values(upload_expires_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None))
+            .values(upload_expires_at=datetime.datetime.now(datetime.UTC))
         )
     await asyncio.sleep(5)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -211,7 +215,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
-@pytest.mark.parametrize("checksum", [_faker.sha256(), None])
+@pytest.mark.parametrize("checksum", [_collection_faker.sha256(), None])
 async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pending_uploads(
     disable_all_dsm_cleaner_tasks: None,
     upload_file: Callable[
@@ -273,7 +277,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         await conn.execute(
             file_meta_data_table.update()
             .where(file_meta_data_table.c.file_id == file_id)
-            .values(upload_expires_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None))
+            .values(upload_expires_at=datetime.datetime.now(datetime.UTC))
         )
     await asyncio.sleep(1)
     await simcore_s3_dsm.clean_expired_uploads()
@@ -294,7 +298,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("is_directory", [True, False])
-@pytest.mark.parametrize("checksum", [_faker.sha256(), None])
+@pytest.mark.parametrize("checksum", [_collection_faker.sha256(), None])
 async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation(
     disable_all_dsm_cleaner_tasks: None,
     sqlalchemy_async_engine: AsyncEngine,
@@ -312,7 +316,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     the cleaner in between to ensure the cleaner does not break the mechanism"""
 
     file_or_directory_id = simcore_directory_id if is_directory else simcore_file_id
-    later_than_now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) + datetime.timedelta(minutes=5)
+    later_than_now = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(
         user_id,
         file_or_directory_id,

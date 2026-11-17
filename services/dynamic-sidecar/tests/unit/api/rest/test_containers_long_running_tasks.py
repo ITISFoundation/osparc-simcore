@@ -4,7 +4,7 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncGenerator, AsyncIterable, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 from typing import Any, Final, NamedTuple
@@ -20,7 +20,7 @@ from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
     ContainersCreate,
@@ -117,7 +117,7 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
 
 
 @asynccontextmanager
-async def auto_remove_task(http_client: HttpClient, task_id: TaskId) -> AsyncIterator[None]:
+async def auto_remove_task(http_client: HttpClient, task_id: TaskId) -> AsyncGenerator[None]:
     """cleanup pending tasks"""
     try:
         yield

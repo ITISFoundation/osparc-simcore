@@ -6,10 +6,13 @@
 from pathlib import Path
 from typing import Any
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import pytest
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -25,7 +28,7 @@ async def test_get_wallet(
     client: AsyncClient,
     mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     capture: str,
 ):
@@ -65,7 +68,7 @@ async def test_get_default_wallet(
     client: AsyncClient,
     mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
 ):
     create_respx_mock_from_capture(

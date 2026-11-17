@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -31,6 +31,12 @@ from simcore_service_webserver.users.users_service import (
     set_user_as_deleted,
     update_expired_users,
 )
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.fixture
@@ -126,7 +132,7 @@ async def test_deleting_a_user(
         await get_user(client.app, user_id=user_id)
 
 
-_NOW = datetime.now()  # WARNING: UTC affects here since expires is not defined as UTC  # noqa: DTZ005
+_NOW = datetime.now(UTC)
 YESTERDAY = _NOW - timedelta(days=1)
 TOMORROW = _NOW + timedelta(days=1)
 

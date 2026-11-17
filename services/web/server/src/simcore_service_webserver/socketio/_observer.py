@@ -15,6 +15,7 @@ from socketio import AsyncServer  # type: ignore[import-untyped]
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..resource_manager.resource_manager_service import managed_resource
+from ..signals import SIGNAL_USER_LOGOUT
 from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
@@ -67,4 +68,4 @@ def setup_socketio_observer_events(app: web.Application):
     # ensures registry in place
     setup_observer_registry(app)
     # registers
-    register_observer(app, _on_user_logout, event="SIGNAL_USER_LOGOUT")
+    register_observer(app, _on_user_logout, event=SIGNAL_USER_LOGOUT)

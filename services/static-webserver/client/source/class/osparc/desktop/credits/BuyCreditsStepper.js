@@ -114,6 +114,10 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
             break;
         }
       }
+      // The payment is closed on the server side as soon as we get here, so forget its id:
+      // closing this view listens for "close" to cancel a pending payment and cancelling
+      // an already acked one fails with a 409
+      this.setPaymentId(null);
       this.fireEvent("completed");
     },
 

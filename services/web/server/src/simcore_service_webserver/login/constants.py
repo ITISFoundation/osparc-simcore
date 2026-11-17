@@ -33,6 +33,10 @@ MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
     _version=1,
 )
 MSG_EMAIL_SENT: Final[str] = user_message("We've sent an email to {email} with further instructions.", _version=1)
+MSG_INVALID_CREDENTIALS: Final[str] = user_message(
+    "The email address or password is incorrect. Please try again.",
+    _version=1,
+)
 MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
 MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
 MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
@@ -50,6 +54,10 @@ MSG_PASSWORD_MISMATCH: Final[str] = user_message(
     "Password and confirmation do not match. Please try again.", _version=1
 )
 MSG_PHONE_MISSING: Final[str] = user_message("No phone number is associated with this account.", _version=1)
+MSG_PHONE_REGISTER_2FA_REQUIRED: Final[str] = user_message(
+    "Please sign in with your verification code before changing the phone number of this account.",
+    _version=1,
+)
 MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
     "You can no longer resend the verification code. Please restart the verification process.",
     _version=2,

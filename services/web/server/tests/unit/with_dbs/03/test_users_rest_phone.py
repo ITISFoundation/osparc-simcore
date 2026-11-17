@@ -23,6 +23,12 @@ from simcore_service_webserver.users._controller.rest.users_rest import (
     _REGISTRATION_CODE_VALUE_FAKE,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
@@ -355,7 +361,7 @@ async def test_phone_confirm_with_invalid_code_format(
             "code": "123-456",  # Invalid format according to pattern
         },
     )
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -374,7 +380,7 @@ async def test_phone_register_with_empty_phone(
             "phone": "",  # Empty phone number
         },
     )
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Try to register with whitespace-only phone number
     url = client.app.router["my_phone_register"].url_for()
@@ -384,7 +390,7 @@ async def test_phone_register_with_empty_phone(
             "phone": "   ",  # Whitespace only
         },
     )
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -415,7 +421,7 @@ async def test_phone_confirm_with_empty_code(
             "code": "",  # Empty code
         },
     )
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize(

@@ -4,7 +4,11 @@
 
 import asyncio
 import logging
-from collections.abc import AsyncIterable, AsyncIterator
+import multiprocessing
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
+from multiprocessing.queues import Queue
+from threading import Barrier, Thread
+from typing import Final
 from unittest.mock import AsyncMock
 
 import pytest
@@ -12,6 +16,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
+from pydantic import PositiveFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
@@ -23,12 +28,18 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
+from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from tenacity import retry
 from tenacity.after import after_log
+from tenacity.asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
+
+_CONCURRENT_RUN_TIMEOUT_S: Final[float] = 10
+_COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
 
 
 #
@@ -150,3 +161,63 @@ def mock_ensure_read_permissions_on_user_service_data(mocker: MockerFixture) -> 
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.long_running_tasks.ensure_read_permissions_on_user_service_data",
     )
+
+
+@pytest.fixture
+def health_check_queue() -> Queue[int | None]:
+    return multiprocessing.Queue()
+
+
+@pytest.fixture
+def heart_beat_interval_s() -> PositiveFloat:
+    return 0.01
+
+
+@pytest.fixture
+def wait_for_command_delivered() -> Callable[[OutputsContext], Awaitable[None]]:
+    async def _(outputs_context: OutputsContext) -> None:
+        # NOTE: commands (port keys registration / propagation toggles) are applied
+        # by a thread running inside a separate process. Filesystem writes must wait
+        # until the last command was consumed there, otherwise the generated events
+        # are silently discarded by the watchdog handler
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+            wait=wait_fixed(0.01),
+            stop=stop_after_delay(10),
+        ):
+            with attempt:
+                assert outputs_context.file_system_event_handler_queue.qsize() == 0
+
+        # NOTE: the consumer thread dequeues the message just a moment before
+        # applying it, let it land before generating filesystem events
+        await asyncio.sleep(_COMMAND_DELIVERY_SETTLEMENT_S)
+
+    return _
+
+
+@pytest.fixture
+def run_concurrently() -> Callable[[list[Callable[[], None]]], list[BaseException]]:
+    """runs the given callables in threads started at the same time and returns the raised errors"""
+
+    def _(targets: list[Callable[[], None]]) -> list[BaseException]:
+        errors: list[BaseException] = []
+        start_together = Barrier(len(targets))
+
+        def _run(target: Callable[[], None]) -> None:
+            start_together.wait(timeout=_CONCURRENT_RUN_TIMEOUT_S)
+            try:
+                target()
+            except BaseException as exc:  # pylint: disable=broad-except
+                errors.append(exc)
+
+        threads = [Thread(target=_run, args=(target,)) for target in targets]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=_CONCURRENT_RUN_TIMEOUT_S)
+
+        assert not [t for t in threads if t.is_alive()], "threads did not complete (deadlock?)"
+        return errors
+
+    return _

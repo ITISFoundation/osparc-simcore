@@ -6,18 +6,56 @@
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 from faker import Faker
+from models_library.projects_nodes_io import NodeIDStr
 from pydantic import ValidationError
 from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
+from simcore_sdk.node_ports_common.dbmanager import DBManager
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
+from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
-from utils_port_v2 import create_valid_port_mapping
+from utils_port_v2 import create_valid_port_config, create_valid_port_mapping
+
+# an error raised by the storage client that is not part of the NodeportsError hierarchy
+_UNMAPPED_STORAGE_ERROR: Final[RuntimeError] = RuntimeError("Unhandled control flow reached, please report this issue")
+
+
+def _create_node_ports(
+    *,
+    db_manager: DBManager,
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    inputs: InputsList,
+    outputs: OutputsList,
+) -> Nodeports:
+    """Nodeports with no-op database and creator callbacks"""
+
+    async def _save_to_db_cb(_node_ports: Nodeports) -> None:
+        pass
+
+    async def _node_port_creator_cb(_node_uuid: NodeIDStr) -> None:
+        return None
+
+    return Nodeports(
+        inputs=inputs,
+        outputs=outputs,
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        io_log_redirect_cb=None,
+        save_to_db_cb=_save_to_db_cb,
+        node_port_creator_cb=_node_port_creator_cb,
+        auto_update=False,
+    )
 
 
 @pytest.mark.parametrize(
@@ -28,7 +66,7 @@ from utils_port_v2 import create_valid_port_mapping
     ],
 )
 async def test_nodeports_auto_updates(
-    mock_db_manager: Callable,
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
     default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
@@ -84,7 +122,7 @@ async def test_nodeports_auto_updates(
 
 
 async def test_node_ports_accessors(
-    mock_db_manager: Callable,
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
     default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
@@ -162,7 +200,7 @@ async def mock_upload_path(mocker: MockFixture, e_tag: str) -> MockFixture:
 
 
 async def test_node_ports_set_file_by_keymap(
-    mock_db_manager: Callable,
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
     default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
@@ -211,7 +249,7 @@ async def test_node_ports_set_file_by_keymap(
 
 
 async def test_node_ports_v2_packages(
-    mock_db_manager: Callable,
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
     default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
@@ -231,7 +269,7 @@ def mock_port_set(mocker: MockFixture) -> None:
 
 async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
     mock_port_set: None,
-    mock_db_manager: Callable,
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
     default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
@@ -268,3 +306,238 @@ async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
                 progress_bar=progress_bar,
                 outputs_callbacks=None,
             )
+
+
+async def test_set_multiple_deletes_replaced_output_files(
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
+    default_configuration: dict[str, Any],
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mock_upload_path: MockFixture,
+    mocker: MockFixture,
+    faker: Faker,
+    tmp_path: Path,
+):
+    db_manager = mock_db_manager(default_configuration)
+    mock_delete_file = mocker.patch("simcore_sdk.node_ports_common.filemanager.delete_file", autospec=True)
+
+    original_inputs = create_valid_port_mapping(InputsList, suffix="delete")
+    original_outputs = create_valid_port_mapping(OutputsList, suffix="delete")
+
+    # output port replaced by a new file
+    replaced_port_key = "output_file_delete"
+    old_replaced_path = f"{project_id}/{node_uuid}/output_file_delete/old_single_file.txt"
+    original_outputs.root[replaced_port_key].value = {"store": 0, "path": old_replaced_path, "eTag": "some-etag"}
+
+    # output port cleared (all files removed from the output folder)
+    cleared_port_key = "output_cleared_delete"
+    old_cleared_path = f"{project_id}/{node_uuid}/output_cleared_delete/output_cleared_delete.zip"
+    original_outputs.root[cleared_port_key] = Port(
+        **create_valid_port_config("data:*/*", key=cleared_port_key, value={"store": 0, "path": old_cleared_path})
+    )
+
+    # input port holding a file link owned by another node must not delete anything
+    input_port_key = "input_file_delete"
+    upstream_path = f"{uuid4()}/{uuid4()}/output_file_upstream/file.txt"
+    original_inputs.root[input_port_key].value = {"store": 0, "path": upstream_path, "eTag": "some-etag"}
+
+    node_ports = _create_node_ports(
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        inputs=original_inputs,
+        outputs=original_outputs,
+    )
+
+    new_file = tmp_path / "output_cleared_delete.zip"
+    new_file.write_text("some data")
+
+    port_values: dict[str, tuple[Any, Any]] = {
+        replaced_port_key: (new_file, None),
+        cleared_port_key: (None, None),
+        input_port_key: (None, None),
+    }
+    async with ProgressBarData(num_steps=len(port_values), description=faker.pystr()) as progress_bar:
+        await node_ports.set_multiple(
+            port_values,
+            progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
+        )
+
+    deleted_s3_objects = {call.kwargs["s3_object"] for call in mock_delete_file.await_args_list}
+    assert deleted_s3_objects == {old_replaced_path, old_cleared_path}
+    for call in mock_delete_file.await_args_list:
+        assert call.kwargs["user_id"] == user_id
+        assert call.kwargs["store_id"] == 0
+
+
+async def test_set_multiple_keeps_going_when_a_replaced_file_deletion_fails(
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
+    default_configuration: dict[str, Any],
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mock_upload_path: MockFixture,
+    mocker: MockFixture,
+    tmp_path: Path,
+):
+    """A cleanup error on one file must not abort the batch
+
+    Errors that the storage client does not map to the NodeportsError hierarchy
+    surface here as plain exceptions.
+    """
+    db_manager = mock_db_manager(default_configuration)
+
+    failing_key = "output_file_keepgoing"
+    failing_path = f"{project_id}/{node_uuid}/{failing_key}/old_file.txt"
+    other_key = "output_second_file_keepgoing"
+    other_path = f"{project_id}/{node_uuid}/{other_key}/old_file.txt"
+
+    def _delete_file(*args, **kwargs):
+        if kwargs["s3_object"] == failing_path:
+            raise _UNMAPPED_STORAGE_ERROR
+
+    mock_delete_file = mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager.delete_file", autospec=True, side_effect=_delete_file
+    )
+
+    original_inputs = create_valid_port_mapping(InputsList, suffix="keepgoing")
+    original_outputs = create_valid_port_mapping(OutputsList, suffix="keepgoing")
+    original_outputs.root[failing_key].value = {"store": 0, "path": failing_path, "eTag": "some-etag"}
+    original_outputs.root[other_key] = Port(
+        **create_valid_port_config("data:*/*", key=other_key, value={"store": 0, "path": other_path})
+    )
+
+    node_ports = _create_node_ports(
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        inputs=original_inputs,
+        outputs=original_outputs,
+    )
+
+    new_file_a = tmp_path / "new_a.txt"
+    new_file_a.write_text("a")
+    new_file_b = tmp_path / "new_b.txt"
+    new_file_b.write_text("b")
+
+    async with ProgressBarData(num_steps=2, description="set multiple keep going") as progress_bar:
+        await node_ports.set_multiple(
+            {failing_key: (new_file_a, None), other_key: (new_file_b, None)},
+            progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
+        )
+
+    deleted_s3_objects = {call.kwargs["s3_object"] for call in mock_delete_file.await_args_list}
+    assert deleted_s3_objects == {failing_path, other_path}
+
+
+async def test_set_multiple_deletes_shared_replaced_file_only_once(
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
+    default_configuration: dict[str, Any],
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mock_upload_path: MockFixture,
+    mocker: MockFixture,
+    tmp_path: Path,
+):
+    """two output ports holding the same FileLink, both replaced in one batch,
+    must delete the shared object once"""
+    db_manager = mock_db_manager(default_configuration)
+    mock_delete_file = mocker.patch("simcore_sdk.node_ports_common.filemanager.delete_file", autospec=True)
+
+    original_inputs = create_valid_port_mapping(InputsList, suffix="dedup")
+    shared_path = f"{project_id}/{node_uuid}/output_file_dedup/shared_file.txt"
+    shared_value = {"store": 0, "path": shared_path, "eTag": "some-etag"}
+
+    original_outputs = create_valid_port_mapping(OutputsList, suffix="dedup")
+    first_key = "output_file_dedup"
+    original_outputs.root[first_key].value = shared_value
+    second_key = "output_second_file_dedup"
+    original_outputs.root[second_key] = Port(**create_valid_port_config("data:*/*", key=second_key, value=shared_value))
+
+    node_ports = _create_node_ports(
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        inputs=original_inputs,
+        outputs=original_outputs,
+    )
+
+    new_file_a = tmp_path / "new_a.txt"
+    new_file_a.write_text("a")
+    new_file_b = tmp_path / "new_b.txt"
+    new_file_b.write_text("b")
+
+    async with ProgressBarData(num_steps=2, description="set multiple dedup") as progress_bar:
+        await node_ports.set_multiple(
+            {first_key: (new_file_a, None), second_key: (new_file_b, None)},
+            progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
+        )
+
+    mock_delete_file.assert_awaited_once_with(user_id=user_id, store_id=0, s3_object=shared_path)
+
+
+async def test_set_multiple_shared_path_reupload_keeps_object_when_other_port_replaced(
+    mock_db_manager: Callable[[dict[str, Any]], DBManager],
+    default_configuration: dict[str, Any],
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mock_upload_path: MockFixture,
+    mocker: MockFixture,
+    tmp_path: Path,
+):
+    """A same-path re-upload on one port keeps the object the other port drops
+
+    Two ports share a FileLink. The first is re-uploaded to the very same path,
+    so it still references the object after the batch; the second is replaced.
+    The object must survive, and this pins that outcome for the dedup/skip
+    interaction pcrespov flagged as untested.
+    """
+    db_manager = mock_db_manager(default_configuration)
+    mock_delete_file = mocker.patch("simcore_sdk.node_ports_common.filemanager.delete_file", autospec=True)
+
+    original_inputs = create_valid_port_mapping(InputsList, suffix="dedupskip")
+    shared_path = f"{project_id}/{node_uuid}/output_file_dedupskip/shared_file.txt"
+    shared_value = {"store": 0, "path": shared_path, "eTag": "some-etag"}
+
+    original_outputs = create_valid_port_mapping(OutputsList, suffix="dedupskip")
+    reupload_key = "output_file_dedupskip"
+    original_outputs.root[reupload_key].value = shared_value
+    replaced_key = "output_second_file_dedupskip"
+    original_outputs.root[replaced_key] = Port(
+        **create_valid_port_config("data:*/*", key=replaced_key, value=shared_value)
+    )
+
+    node_ports = _create_node_ports(
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        inputs=original_inputs,
+        outputs=original_outputs,
+    )
+
+    # uploading this file on `reupload_key` lands on `shared_path` itself: the
+    # file name matches the shared object name and the port folder matches its parent
+    reupload_file = tmp_path / "shared_file.txt"
+    reupload_file.write_text("same path")
+    new_file_b = tmp_path / "new_b.txt"
+    new_file_b.write_text("b")
+
+    async with ProgressBarData(num_steps=2, description="set multiple dedup skip") as progress_bar:
+        await node_ports.set_multiple(
+            {reupload_key: (reupload_file, None), replaced_key: (new_file_b, None)},
+            progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
+        )
+
+    # the re-upload left port `reupload_key` holding `shared_path`: the object stays
+    mock_delete_file.assert_not_awaited()

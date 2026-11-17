@@ -8,7 +8,7 @@ import logging
 from typing import Any, Final
 from urllib.parse import urljoin
 
-import httpx
+import httpx2
 from aiohttp import web
 from pydantic import AnyUrl, BaseModel, Field, SecretStr
 from servicelib.aiohttp import status
@@ -40,7 +40,7 @@ class FogbugzCaseCreate(BaseModel):
     description: str = Field(description="Case description/first comment")
 
 
-def _should_retry(response: httpx.Response | None) -> bool:
+def _should_retry(response: httpx2.Response | None) -> bool:
     if response is None:
         return True
     return (
@@ -53,22 +53,22 @@ class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
     def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
-        self._client = httpx.AsyncClient()
+        self._client = httpx2.AsyncClient()
         self._api_token = api_token
         self._base_url = base_url
 
-    async def _make_api_request(self, json_payload: dict[str, Any]) -> dict[str, Any]:
-        """Make a request to Fogbugz API with common formatting"""
+    async def _make_api_request(self, cmd_payload: dict[str, Any]) -> dict[str, Any]:
+        """Make a request to the Fogbugz JSON API"""
 
         @retry(
             retry=(
                 retry_if_result(_should_retry)
                 | retry_if_exception_type(
                     (
-                        httpx.ConnectError,
-                        httpx.TimeoutException,
-                        httpx.NetworkError,
-                        httpx.ProtocolError,
+                        httpx2.ConnectError,
+                        httpx2.TimeoutException,
+                        httpx2.NetworkError,
+                        httpx2.ProtocolError,
                     )
                 )
             ),
@@ -76,7 +76,8 @@ class FogbugzRestClient:
             wait=wait_exponential(multiplier=1, min=1, max=10),
             reraise=True,
         )
-        async def _request() -> httpx.Response:
+        async def _request() -> httpx2.Response:
+            json_payload = {**cmd_payload, "token": self._api_token.get_secret_value()}
             # Fogbugz requires multipart/form-data with stringified JSON
             files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
             url = urljoin(f"{self._base_url}", "f/api/0/jsonapi")
@@ -89,22 +90,19 @@ class FogbugzRestClient:
             response_data: dict[str, Any] = response.json()
             return response_data
         except Exception:
-            _logger.error(  # noqa: TRY400
-                "Failed to make API request to Fogbugz with payload: %s", json_payload
-            )
+            _logger.exception("Failed to make API request to Fogbugz with payload: %s", cmd_payload)
             raise
 
     async def create_case(self, data: FogbugzCaseCreate) -> str:
         """Create a new case in Fogbugz"""
-        json_payload = {
+        cmd_payload = {
             "cmd": "new",
-            "token": self._api_token.get_secret_value(),
             "ixProject": f"{data.fogbugz_project_id}",
             "sTitle": data.title,
             "sEvent": data.description,
         }
 
-        response_data = await self._make_api_request(json_payload)
+        response_data = await self._make_api_request(cmd_payload)
 
         # Fogbugz API returns case ID in the response
         case_id = response_data.get("data", {}).get("case", {}).get("ixBug", None)
@@ -116,13 +114,12 @@ class FogbugzRestClient:
 
     async def resolve_case(self, case_id: str) -> None:
         """Resolve a case in Fogbugz"""
-        json_payload = {
+        cmd_payload = {
             "cmd": "resolve",
-            "token": self._api_token.get_secret_value(),
             "ixBug": case_id,
         }
 
-        response_data = await self._make_api_request(json_payload)
+        response_data = await self._make_api_request(cmd_payload)
 
         # Check if the operation was successful
         if response_data.get("error"):
@@ -132,14 +129,13 @@ class FogbugzRestClient:
 
     async def get_case_status(self, case_id: str) -> str:
         """Get the status of a case in Fogbugz"""
-        json_payload = {
+        cmd_payload = {
             "cmd": "search",
-            "token": self._api_token.get_secret_value(),
             "q": case_id,
             "cols": "sStatus",
         }
 
-        response_data = await self._make_api_request(json_payload)
+        response_data = await self._make_api_request(cmd_payload)
 
         # Check if the operation was successful
         if response_data.get("error"):
@@ -192,15 +188,14 @@ class FogbugzRestClient:
             )
             raise FogbugzClientBaseError(msg)
 
-        json_payload = {
+        cmd_payload = {
             "cmd": cmd,
-            "token": self._api_token.get_secret_value(),
             "ixBug": case_id,
             "ixPersonAssignedTo": assigned_fogbugz_person_id,
             "sEvent": reopen_msg,
         }
 
-        response_data = await self._make_api_request(json_payload)
+        response_data = await self._make_api_request(cmd_payload)
 
         # Check if the operation was successful
         if response_data.get("error"):

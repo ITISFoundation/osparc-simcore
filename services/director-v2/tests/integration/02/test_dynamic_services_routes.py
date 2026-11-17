@@ -12,7 +12,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import aiodocker
-import httpx
+import httpx2
 import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
@@ -22,9 +22,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -52,7 +52,7 @@ DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 logger = logging.getLogger(__name__)
 
 
-class _TestClient(httpx.AsyncClient):
+class _TestClient(httpx2.AsyncClient):
     # NOTE: keeps the `.application` API previously provided by async_asgi_testclient.TestClient
     application: FastAPI
 
@@ -65,12 +65,13 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "redis",
-    "redis",
+    "static-webserver",
     "storage",
+    "webserver",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
-    "minio",
+    "s3-storage",
 ]
 
 
@@ -170,7 +171,9 @@ def start_request_data(
             "outputs_path": "/tmp/outputs",  # noqa: S108
             "inputs_path": "/tmp/inputs",  # noqa: S108
         },
-        "service_resources": ServiceResourcesDictHelpers.create_jsonable(service_resources),
+        "service_resources": TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+            service_resources, mode="json"
+        ),
     }
 
 
@@ -182,6 +185,9 @@ async def director_v2_client(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> AsyncIterable[_TestClient]:
+    redis_password = redis_settings.REDIS_PASSWORD
+    assert redis_password is not None
+
     setenvs_from_dict(
         monkeypatch,
         {
@@ -194,7 +200,7 @@ async def director_v2_client(
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "S3_ENDPOINT": faker.url(),
             "S3_ACCESS_KEY": faker.pystr(),
             "S3_REGION": faker.pystr(),
@@ -206,7 +212,7 @@ async def director_v2_client(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "REDIS_HOST": redis_settings.REDIS_HOST,
             "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
-            "REDIS_PASSWORD": f"{redis_settings.REDIS_PASSWORD.get_secret_value()}",
+            "REDIS_PASSWORD": redis_password.get_secret_value(),
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
         },
     )
@@ -216,12 +222,12 @@ async def director_v2_client(
 
     app = create_app(settings)
 
-    # NOTE: httpx.AsyncClient (unlike async_asgi_testclient) is ASGI-compliant and
+    # NOTE: httpx2.AsyncClient (unlike async_asgi_testclient) is ASGI-compliant and
     # supports the "state" key the app's lifespan manager writes to the scope
     async with (
         LifespanManager(app),
         _TestClient(
-            transport=httpx.ASGITransport(app=app),
+            transport=httpx2.ASGITransport(app=app),
             base_url="http://director-v2.testserver.io",
         ) as client,
     ):
@@ -327,7 +333,6 @@ async def key_version_expected(
     return results
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_start_status_stop(
     director_v2_client: _TestClient,
     node_uuid: str,
@@ -344,7 +349,7 @@ async def test_start_status_stop(
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 
     # starting the service
-    response: httpx.Response = await director_v2_client.post(
+    response: httpx2.Response = await director_v2_client.post(
         "/v2/dynamic_services",
         json=start_request_data,
         headers={
@@ -355,6 +360,7 @@ async def test_start_status_stop(
     )
     assert response.status_code == 201, response.text
     assert isinstance(director_v2_client.application, FastAPI)
+    # This is failing
     await patch_dynamic_service_url(app=director_v2_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running
@@ -367,7 +373,7 @@ async def test_start_status_stop(
     ):
         with attempt:
             print(f"--> getting service {node_uuid=} status... attempt {attempt.retry_state.attempt_number}")
-            response: httpx.Response = await director_v2_client.request(
+            response: httpx2.Response = await director_v2_client.request(
                 "GET", f"/v2/dynamic_services/{node_uuid}", json=start_request_data
             )
             print("-- sidecar status result %s", response.text)
@@ -384,7 +390,7 @@ async def test_start_status_stop(
     assert data["service_state"] == "running"
 
     # finally stopping the service
-    response: httpx.Response = await director_v2_client.request(
+    response: httpx2.Response = await director_v2_client.request(
         "DELETE", f"/v2/dynamic_services/{node_uuid}", json=start_request_data
     )
     assert response.status_code == 204, response.text

@@ -86,20 +86,18 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 async def create_node_labels(
     host_node: Node,
     async_docker_client: aiodocker.Docker,
+    update_node_spec_with_retry: Callable[..., Awaitable[None]],
 ) -> AsyncIterator[Callable[[list[str]], Awaitable[None]]]:
     assert host_node.spec
     old_labels = deepcopy(host_node.spec.labels)
 
     async def _creator(labels: list[str]) -> None:
-        assert host_node.id
-        assert host_node.version
-        assert host_node.version.index
         assert host_node.spec
+        assert host_node.id
         assert host_node.spec.role
         assert host_node.spec.availability
-        await async_docker_client.nodes.update(
+        await update_node_spec_with_retry(
             node_id=host_node.id,
-            version=host_node.version.index,
             spec={
                 "Name": "foo",
                 "Availability": host_node.spec.availability.value,
@@ -114,9 +112,8 @@ async def create_node_labels(
     assert nodes
     assert len(nodes) == 1
     current_node = nodes[0]
-    await async_docker_client.nodes.update(
+    await update_node_spec_with_retry(
         node_id=current_node["ID"],
-        version=current_node["Version"]["Index"],
         spec={
             "Availability": current_node["Spec"]["Availability"],
             "Role": current_node["Spec"]["Role"],
@@ -239,6 +236,10 @@ async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
     assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == []
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts on swarm-wide pending tasks: pending tasks of other xdist workers' "
+    "fake services leak into the unfiltered query",
+)
 async def test_pending_service_task_with_insufficient_resources_with_no_service(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -246,6 +247,10 @@ async def test_pending_service_task_with_insufficient_resources_with_no_service(
     assert await pending_service_tasks_with_insufficient_resources(autoscaling_docker, service_labels=[]) == []
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts on swarm-wide pending tasks: pending tasks of other xdist workers' "
+    "fake services leak into the unfiltered query",
+)
 @pytest.mark.parametrize(
     "placement_constraint, expected_pending_tasks",
     [
@@ -284,6 +289,10 @@ async def test_pending_service_task_with_placement_constrain_is_skipped(
         assert pending_tasks == []
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts on swarm-wide pending tasks: pending tasks of other xdist workers' "
+    "fake services leak into the unfiltered query",
+)
 async def test_pending_service_task_with_insufficient_resources_with_service_lacking_resource(
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
@@ -615,6 +624,10 @@ async def test_get_task_instance_restriction(
     assert instance_type_or_none == expected_instance_type
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts exact swarm-wide resource totals: services scheduled on the shared "
+    "node by other xdist workers leak into the computation",
+)
 async def test_compute_tasks_needed_resources(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -646,11 +659,19 @@ async def test_compute_tasks_needed_resources(
     assert compute_tasks_needed_resources(all_tasks) == Resources(cpus=host_cpu_count, ram=ByteSize(0))
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts exact swarm-wide resource totals: services scheduled on the shared "
+    "node by other xdist workers leak into the computation",
+)
 async def test_compute_node_used_resources_with_no_service(autoscaling_docker: AutoscalingDocker, host_node: Node):
     cluster_resources = await compute_node_used_resources(autoscaling_docker, host_node)
     assert cluster_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts exact swarm-wide resource totals: services scheduled on the shared "
+    "node by other xdist workers leak into the computation",
+)
 async def test_compute_node_used_resources_with_service(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -712,6 +733,10 @@ async def test_compute_cluster_used_resources_with_no_nodes_returns_0(
     assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts exact swarm-wide resource totals: services scheduled on the shared "
+    "node by other xdist workers leak into the computation",
+)
 async def test_compute_cluster_used_resources_with_no_services_running_returns_0(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -720,6 +745,10 @@ async def test_compute_cluster_used_resources_with_no_services_running_returns_0
     assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
+@pytest.mark.docker_exclusive(
+    reason="asserts exact swarm-wide resource totals: services scheduled on the shared "
+    "node by other xdist workers leak into the computation",
+)
 async def test_compute_cluster_used_resources_with_services_running(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -872,6 +901,10 @@ async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_no
     assert found_node is None
 
 
+@pytest.mark.docker_exclusive(
+    reason="mutates the shared swarm node's spec via product code (inspect-then-update): "
+    "other xdist workers bump the node version in between, causing 'update out of sequence'",
+)
 async def test_tag_node(autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker):
     assert host_node.description
     assert host_node.description.hostname
@@ -891,6 +924,10 @@ async def test_tag_node(autoscaling_docker: AutoscalingDocker, host_node: Node, 
     assert updated_node.spec.labels == {}
 
 
+@pytest.mark.docker_exclusive(
+    reason="mutates the shared swarm node's spec via product code (inspect-then-update): "
+    "other xdist workers bump the node version in between, causing 'update out of sequence'",
+)
 async def test_tag_node_out_of_sequence_error(autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker):
     assert host_node.description
     assert host_node.description.hostname
@@ -912,6 +949,10 @@ async def test_tag_node_out_of_sequence_error(autoscaling_docker: AutoscalingDoc
     assert updated_node2.version.index > updated_node.version.index
 
 
+@pytest.mark.docker_exclusive(
+    reason="mutates the shared swarm node's spec via product code (inspect-then-update): "
+    "other xdist workers bump the node version in between, causing 'update out of sequence'",
+)
 async def test_set_node_availability(autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker):
     assert is_node_ready_and_available(host_node, availability=Availability.active)
     updated_node = await set_node_availability(autoscaling_docker, host_node, available=False)
@@ -964,17 +1005,19 @@ def test_get_new_node_docker_tags(
     [
         (
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
-            'echo "services:\n  nginx:\n    image: nginx\n  service-23.5.5:\n    '
-            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"'
-            " > /docker-pull.compose.yml"
-            " && "
-            'echo "#!/bin/sh\necho Pulling started at \\$(date)\n'
-            "docker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml "
-            'pull --ignore-pull-failures" > /docker-pull-script.sh'
-            " && "
-            "chmod +x /docker-pull-script.sh"
-            " && "
-            "./docker-pull-script.sh",
+            (
+                'echo "services:\n  nginx:\n    image: nginx\n  service-23.5.5:\n    '
+                'image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"'
+                " > /docker-pull.compose.yml"
+                " && "
+                'echo "#!/bin/sh\necho Pulling started at \\$(date)\n'
+                "docker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml "
+                'pull --ignore-pull-failures" > /docker-pull-script.sh'
+                " && "
+                "chmod +x /docker-pull-script.sh"
+                " && "
+                "./docker-pull-script.sh"
+            ),
         ),
         (
             [],
@@ -1031,6 +1074,10 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
     assert is_node_osparc_ready(fake_node)
 
 
+@pytest.mark.docker_exclusive(
+    reason="mutates the shared swarm node's spec via product code (inspect-then-update): "
+    "other xdist workers bump the node version in between, causing 'update out of sequence'",
+)
 async def test_set_node_osparc_ready(
     disabled_rabbitmq: None,
     disabled_ec2: None,
@@ -1101,6 +1148,10 @@ async def test_set_node_osparc_ready(
         assert key not in updated_node.spec.labels
 
 
+@pytest.mark.docker_exclusive(
+    reason="mutates the shared swarm node's spec via product code (inspect-then-update): "
+    "other xdist workers bump the node version in between, causing 'update out of sequence'",
+)
 async def test_set_node_found_empty(
     disabled_rabbitmq: None,
     disabled_ec2: None,
@@ -1143,6 +1194,10 @@ async def test_set_node_found_empty(
     assert node_empty_since is None
 
 
+@pytest.mark.docker_exclusive(
+    reason="mutates the shared swarm node's spec via product code (inspect-then-update): "
+    "other xdist workers bump the node version in between, causing 'update out of sequence'",
+)
 async def test_set_node_begin_termination_process(
     disabled_rabbitmq: None,
     disabled_ec2: None,
@@ -1174,6 +1229,10 @@ async def test_set_node_begin_termination_process(
     assert arrow.utcnow().datetime > returned_termination_started_at
 
 
+@pytest.mark.docker_exclusive(
+    reason="drains and re-activates the single shared swarm node via product code: swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
+)
 async def test_attach_node(
     disabled_rabbitmq: None,
     disabled_ec2: None,

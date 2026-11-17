@@ -70,7 +70,7 @@ def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[Err
     errors = err.errors()
     for error in errors:
         assert error["loc"][-1] != (port_key,)
-        error["loc"] = error["loc"] + (port_key,)
+        error["loc"] += (port_key,)
     return list(errors)
 
 

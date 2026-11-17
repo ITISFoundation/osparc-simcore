@@ -1,5 +1,3 @@
-import logging
-
 from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
@@ -19,9 +17,6 @@ from .. import _trash_service
 from ..exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RemoveQueryParams
-
-_logger = logging.getLogger(__name__)
-
 
 _TRASH_ERRORS: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(

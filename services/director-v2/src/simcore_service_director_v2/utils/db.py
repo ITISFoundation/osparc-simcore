@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
 
-from ..api.dependencies.database import get_base_repository
 from ..modules.db.repositories import BaseRepository
 
 DB_TO_RUNNING_STATE = {
@@ -26,4 +25,4 @@ _logger = logging.getLogger(__name__)
 
 
 def get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
-    return get_base_repository(engine=app.state.engine, repo_type=repo_type)
+    return repo_type(db_engine=app.state.engine)

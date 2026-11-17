@@ -13,16 +13,22 @@ from simcore_service_webserver.groups._classifiers_repository import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
-async def group_classifier_in_db(asyncpg_engine: AsyncEngine):
+async def group_classifier_in_db(sqlalchemy_async_engine: AsyncEngine):
     """Pre-populate group_classifiers table with test data."""
     data = random_group_classifier(gid=EVERYONE_GROUP_ID)
 
     # pylint: disable=contextmanager-generator-missing-cleanup
     # NOTE: this code is safe since `@asynccontextmanager` takes care of the cleanup
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=group_classifiers,
         values=data,
         pk_col=group_classifiers.c.id,
@@ -33,10 +39,10 @@ async def group_classifier_in_db(asyncpg_engine: AsyncEngine):
 
 @pytest.fixture
 def group_classifier_repository(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> GroupClassifierRepository:
     """Create GroupClassifierRepository instance."""
-    return GroupClassifierRepository(engine=asyncpg_engine)
+    return GroupClassifierRepository(engine=sqlalchemy_async_engine)
 
 
 async def test_get_classifiers_from_bundle_returns_bundle(

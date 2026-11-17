@@ -7,14 +7,17 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes_io import NodeID
 from simcore_service_webserver.projects._crud_api_create import _remap_port_links
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.nodes_utils import project_get_depending_nodes
 from simcore_service_webserver.projects.utils import (
+    NodesMap,
     clone_project_document,
     default_copy_project_name,
+    remap_file_link_paths,
 )
 
 
@@ -140,3 +143,118 @@ def test_remap_port_links_unknown_uuid_is_preserved():
 def test_remap_port_links_none_and_empty():
     assert _remap_port_links(None, {}) is None
     assert _remap_port_links({}, {}) == {}
+
+
+#
+# remap_file_link_paths
+#
+
+
+def test_remap_file_link_paths_rewrites_simcore_links(faker: Faker):
+    src_uuid = f"{faker.uuid4()}"
+    dst_uuid = f"{faker.uuid4()}"
+    old_node = f"{faker.uuid4()}"
+    new_node = f"{faker.uuid4()}"
+    nodes_map: NodesMap = {old_node: new_node}
+
+    inputs = {
+        "input_1": {"store": 0, "path": f"{src_uuid}/{old_node}/input.dat", "label": "file"},
+        "in_2": 42,
+    }
+    outputs = {
+        "output_1": [
+            {"store": 0, "path": f"{src_uuid}/{old_node}/outputs/output_1/parameters.json"},
+        ],
+        "output_2": [[{"store": 0, "path": f"{src_uuid}/{old_node}/deep/b.dat"}]],
+    }
+
+    remapped_inputs = remap_file_link_paths(
+        inputs, source_project_uuid=src_uuid, destination_project_uuid=dst_uuid, nodes_map=nodes_map
+    )
+    remapped_outputs = remap_file_link_paths(
+        outputs, source_project_uuid=src_uuid, destination_project_uuid=dst_uuid, nodes_map=nodes_map
+    )
+
+    assert remapped_inputs is not None
+    assert remapped_inputs["input_1"]["path"] == f"{dst_uuid}/{new_node}/input.dat"
+    assert remapped_inputs["input_1"]["label"] == "file"  # other fields preserved
+    assert remapped_inputs["in_2"] == 42
+    assert remapped_outputs is not None
+    assert remapped_outputs["output_1"][0]["path"] == f"{dst_uuid}/{new_node}/outputs/output_1/parameters.json"
+    assert remapped_outputs["output_2"][0][0]["path"] == f"{dst_uuid}/{new_node}/deep/b.dat"
+
+    # input not mutated
+    assert inputs["input_1"]["path"] == f"{src_uuid}/{old_node}/input.dat"
+    assert outputs["output_1"][0]["path"] == f"{src_uuid}/{old_node}/outputs/output_1/parameters.json"
+    assert outputs["output_2"][0][0]["path"] == f"{src_uuid}/{old_node}/deep/b.dat"
+
+
+def test_remap_file_link_paths_accepts_legacy_str_store(faker: Faker):
+    src_uuid = f"{faker.uuid4()}"
+    dst_uuid = f"{faker.uuid4()}"
+    old_node = f"{faker.uuid4()}"
+    new_node = f"{faker.uuid4()}"
+    nodes_map: NodesMap = {old_node: new_node}
+
+    inputs = {"input_1": {"store": "0", "path": f"{src_uuid}/{old_node}/f.dat"}}
+    result = remap_file_link_paths(
+        inputs, source_project_uuid=src_uuid, destination_project_uuid=dst_uuid, nodes_map=nodes_map
+    )
+    assert result is not None
+    assert result["input_1"]["path"] == f"{dst_uuid}/{new_node}/f.dat"
+
+
+def test_remap_file_link_paths_leaves_other_references_untouched(faker: Faker):
+    src_uuid = f"{faker.uuid4()}"
+    other_project = f"{faker.uuid4()}"
+    old_node = f"{faker.uuid4()}"
+    unknown_node = f"{faker.uuid4()}"
+    nodes_map: NodesMap = {old_node: f"{faker.uuid4()}"}
+
+    inputs = {
+        "port_link": {"nodeUuid": old_node, "output": "output_1"},
+        "download_link": {"downloadLink": "https://example.com/f", "label": "f"},
+        "other_project_path": {"store": 0, "path": f"{other_project}/{old_node}/f.dat"},
+        "unknown_node_path": {"store": 0, "path": f"{src_uuid}/{unknown_node}/f.dat"},
+        "datcore_link": {"store": 1, "path": f"N:package:{faker.uuid4()}", "dataset": "ds"},
+        # a link is only rewritten at a port's top level or inside a list, never
+        # inside an opaque dict value: the storage copy does not relocate it there
+        "dict_nested_link": {"meta": {"store": 0, "path": f"{src_uuid}/{old_node}/f.dat"}},
+        # fewer than the 3 path sections means no remainder to carry over
+        "short_path": {"store": 0, "path": f"{src_uuid}/{old_node}"},
+        # object ports carry arbitrary JSON: a dict/list store must not raise
+        "object_port_dict_store": {"path": "settings.json", "store": {"region": "local"}},
+        "object_port_list_store": {"path": "settings.json", "store": ["a", "b"]},
+        "scalar": "text",
+    }
+
+    result = remap_file_link_paths(
+        inputs,
+        source_project_uuid=src_uuid,
+        destination_project_uuid=f"{faker.uuid4()}",
+        nodes_map=nodes_map,
+    )
+    assert result == inputs
+
+
+def test_remap_file_link_paths_none_and_empty(faker: Faker):
+    nodes_map: NodesMap = {f"{faker.uuid4()}": f"{faker.uuid4()}"}
+
+    assert (
+        remap_file_link_paths(
+            None,
+            source_project_uuid=f"{faker.uuid4()}",
+            destination_project_uuid=f"{faker.uuid4()}",
+            nodes_map=nodes_map,
+        )
+        is None
+    )
+    assert (
+        remap_file_link_paths(
+            {},
+            source_project_uuid=f"{faker.uuid4()}",
+            destination_project_uuid=f"{faker.uuid4()}",
+            nodes_map=nodes_map,
+        )
+        == {}
+    )

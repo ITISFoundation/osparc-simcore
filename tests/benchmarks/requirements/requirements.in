@@ -1,0 +1,12 @@
+#
+# Specifies dependencies required to run the CodSpeed benchmarks in 'tests/benchmarks'
+#
+--constraint ../../../requirements/constraints.txt
+
+# third-party dependencies of the benchmarked packages
+--requirement ../../../packages/common-library/requirements/_base.in
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+
+pytest
+pytest-codspeed

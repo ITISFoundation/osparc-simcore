@@ -8,6 +8,7 @@ from servicelib.aiohttp import observer
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import ConfirmationAction, UserStatus
+from ..signals import SIGNAL_ON_USER_CONFIRMATION, SIGNAL_USER_LOGOUT
 from .constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_USER_BANNED,
@@ -77,7 +78,7 @@ async def notify_user_confirmation(
     # NOTE: Follow up in https://github.com/ITISFoundation/osparc-simcore/issues/4822
     await observer.emit(
         app,
-        "SIGNAL_ON_USER_CONFIRMATION",
+        SIGNAL_ON_USER_CONFIRMATION,
         user_id=user_id,
         product_name=product_name,
         extra_credits_in_usd=extra_credits_in_usd,
@@ -93,7 +94,7 @@ async def notify_user_logout(app: web.Application, user_id: UserID, client_sessi
     """
     await observer.emit(
         app,
-        "SIGNAL_USER_LOGOUT",
+        SIGNAL_USER_LOGOUT,
         user_id,
         client_session_id,
         app,

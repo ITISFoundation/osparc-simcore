@@ -744,7 +744,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _trashFolderRequested: function(folderId) {
       const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
       let msg = this.tr("Are you sure you want to delete the Folder and all its content?");
-      msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
+      msg += "<br><br>" + this.tr("It will be permanently deleted after %1 days.", trashDays);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),

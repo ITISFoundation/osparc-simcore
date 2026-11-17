@@ -12,7 +12,10 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import pytest
 import respx
 from celery import Celery, Task  # type: ignore # pylint: disable=no-name-in-module
@@ -21,7 +24,7 @@ from celery_library.task import register_task
 from celery_library.types import register_pydantic_types
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth, HTTPStatusError
+from httpx2 import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from models_library.celery import TaskExecutionMetadata, TaskKey
@@ -357,9 +360,9 @@ async def test_celery_error_propagation(
 @pytest.mark.parametrize(
     "parent_project_uuid, parent_node_uuid, expected_status_code",
     [
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (None, None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_CONTENT),
         (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
         ("null", "null", status.HTTP_200_OK),
     ],
@@ -378,7 +381,7 @@ async def test_run_project_function_parent_info(
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,
@@ -490,9 +493,9 @@ async def test_run_project_function_parent_info(
 @pytest.mark.parametrize(
     "parent_project_uuid, parent_node_uuid, expected_status_code",
     [
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (None, None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_CONTENT),
         (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
         ("null", "null", status.HTTP_200_OK),
     ],
@@ -506,7 +509,7 @@ async def test_map_function_parent_info(
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,
@@ -634,7 +637,7 @@ async def test_map_function(
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,

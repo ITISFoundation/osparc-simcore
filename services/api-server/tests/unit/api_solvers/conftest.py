@@ -7,6 +7,8 @@ from collections.abc import AsyncIterable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import pytest
 from fastapi import FastAPI, status

@@ -21,7 +21,9 @@ from typing import Any, Final
 import arrow
 import pytest
 from faker import Faker
+from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
@@ -32,17 +34,41 @@ from pytest_simcore.helpers.playwright import (
     AutoRegisteredUser,
     RobustWebSocket,
     RunningState,
-    ServiceType,
     SocketIOEvent,
-    SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
+from pytest_simcore.playwright_tracking import context, page
+from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
-_PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
+__all__ = ["context", "page"]  # re-exported pytest fixtures
+
+_PROJECT_CLOSING_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(minutes=10)
 _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
 _OPENING_TUTORIAL_MAX_WAIT_TIME: Final[int] = 3 * MINUTE
+_LANDING_PAGE_MAX_WAIT_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=5)
+_LANDING_PAGE_RETRY_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
+
+
+class _LandingPageNotReadyError(Exception):
+    """The landing page answered with an error status"""
+
+
+@retry(
+    # services restarting during a redeploy abort or reject the page load
+    retry=retry_if_exception_type((PlaywrightError, _LandingPageNotReadyError)),
+    wait=wait_fixed(_LANDING_PAGE_RETRY_INTERVAL),
+    stop=stop_after_delay(_LANDING_PAGE_MAX_WAIT_TIME),
+    before_sleep=before_sleep_log(logging.getLogger(__name__), logging.WARNING),
+    reraise=True,
+)
+def _open_landing_page(page: Page, product_url: AnyUrl) -> None:
+    response = page.goto(f"{product_url}")
+    if response is None or not response.ok:
+        status = response.status if response else "no response"
+        msg = f"Landing page of {product_url} not ready: {status}"
+        raise _LandingPageNotReadyError(msg)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -411,9 +437,7 @@ def log_in_and_out(
         logging.INFO,
         f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {_browser_info}",
     ):
-        response = page.goto(f"{product_url}")
-        assert response
-        assert response.ok, response.body()
+        _open_landing_page(page, product_url)
 
     # The cookie-consent banner and the "new release" popup can appear at
     # unpredictable times (often a moment after page load)
@@ -520,7 +544,9 @@ def _open_project(  # noqa: C901
     timeout: int,
 ) -> dict[str, Any]:
     """Handles clicking open, waiting for responses, and returning project data."""
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+    # NOTE: the uuid is only known from the /projects/:open response below, i.e. possibly after
+    # this project's state updates were already received (see SocketIOProjectStateUpdatedWaiter)
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states, project_uuid=None)
 
     with log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND):
         with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND) as response_info:
@@ -578,6 +604,12 @@ def _open_project(  # noqa: C901
                 _open_with_resources(page, click_it=True)
 
         assert response_info.value.ok, f"{response_info.value.json()}"
+        project_uuid = response_info.value.json()["data"]["uuid"]
+        assert isinstance(project_uuid, str), (
+            f"Expected project uuid to be a string in /projects/:open response, got: {project_uuid!r}"
+        )
+        assert project_uuid, "Expected non-empty project uuid in /projects/:open response"
+        waiter.project_uuid = project_uuid
     project_data = response_info.value.json()
     assert project_data
     return project_data
@@ -647,11 +679,7 @@ def create_new_project_and_delete(
                 for project_uuid in created_project_uuids:
                     stack.enter_context(log_context(logging.INFO, f"Wait for closed project {project_uuid=}"))
                     stack.enter_context(
-                        log_in_and_out.expect_event(
-                            "framereceived",
-                            SocketIOProjectClosedWaiter(),
-                            timeout=_PROJECT_CLOSING_TIMEOUT,
-                        )
+                        log_in_and_out.expect_project_closed(project_uuid, timeout=_PROJECT_CLOSING_TIMEOUT)
                     )
                 if created_project_uuids:
                     page.get_by_test_id("dashboardBtn").click()
@@ -806,10 +834,10 @@ def start_and_stop_pipeline(
     page: Page,
     log_in_and_out: RobustWebSocket,
     api_request_context: APIRequestContext,
-) -> Iterator[Callable[[], SocketIOEvent]]:
+) -> Iterator[Callable[[str], SocketIOEvent]]:
     started_pipeline_ids = []
 
-    def _do() -> SocketIOEvent:
+    def _do(project_uuid: str) -> SocketIOEvent:
         with log_context(
             logging.INFO,
             f"Start computation in {product_url=} "
@@ -822,7 +850,8 @@ def start_and_stop_pipeline(
                     RunningState.WAITING_FOR_CLUSTER,
                     RunningState.WAITING_FOR_RESOURCES,
                     RunningState.STARTED,
-                )
+                ),
+                project_uuid=project_uuid,
             )
 
             # NOTE: Keep expect_request as an inner context. In case of timeout, we want

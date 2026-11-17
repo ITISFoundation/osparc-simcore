@@ -2,10 +2,6 @@
 
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
-)
-
-from ._models import (
-    ALL_FRONTEND_PREFERENCES,
     BillingCenterUsageColumnOrderFrontendUserPreference,
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteNodeFrontendUserPreference,
@@ -24,6 +20,10 @@ from ._models import (
     TwoFAFrontendUserPreference,
     UserInactivityThresholdFrontendUserPreference,
     WalletIndicatorVisibilityFrontendUserPreference,
+)
+
+from ._models import (
+    ALL_FRONTEND_PREFERENCES,
     get_preference_identifier,
     get_preference_name,
     overwrite_user_preferences_defaults,

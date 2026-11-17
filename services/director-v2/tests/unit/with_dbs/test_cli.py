@@ -11,7 +11,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 import respx
-from click.testing import Result
 from faker import Faker
 from fastapi import status
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
@@ -29,7 +28,7 @@ from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
 from simcore_service_director_v2.cli._close_and_save_service import (
     ThinDV2LocalhostClient,
 )
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -53,7 +52,7 @@ def minimal_configuration(
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())

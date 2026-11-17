@@ -10,9 +10,10 @@
 from collections.abc import Callable
 from typing import Any
 
+from models_library.services_enums import ServiceType
 from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import RobustWebSocket, ServiceType
+from pytest_simcore.helpers.playwright import RobustWebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -54,7 +55,13 @@ def test_sim4life(
     )
     s4l_websocket = resp["websocket"]
     s4l_iframe = resp["iframe"]
-    interact_with_s4l(page, s4l_iframe)
+    try:
+        interact_with_s4l(page, s4l_iframe)
 
-    if check_videostreaming:
-        check_video_streaming(page, s4l_iframe, s4l_websocket)
+        if check_videostreaming:
+            check_video_streaming(page, s4l_iframe, s4l_websocket)
+    finally:
+        # NOTE: the test is done with this websocket (also on failures): closing it during teardown
+        # (e.g. when the project is closed) is expected, so do not treat it as a disconnection
+        # needing a reconnect
+        s4l_websocket.auto_reconnect = False

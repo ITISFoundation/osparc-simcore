@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
 from collections.abc import Iterable
 
 import pytest
@@ -14,6 +17,15 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.rabbit_service",
 ]
+
+
+@pytest.fixture(scope="module")
+def postgres_db(postgres_live_stack_db: sa.engine.Engine) -> sa.engine.Engine:
+    """Shadows the template-clone `postgres_db` from `pytest_simcore.postgres_service`
+    with the in-place + teardown-reset variant required by live-stack integration
+    tests, see `pytest_simcore.postgres_live_stack_service`.
+    """
+    return postgres_live_stack_db
 
 
 @pytest.fixture

@@ -10,7 +10,7 @@ from settings_library.utils_service import MixinServiceSettings, URLPart
 from ..application_keys import APP_SETTINGS_APPKEY
 
 _CHATBOT_ARCHITECTURE = Literal["simple_rag", "multi_query_rag", "simple_agentic_rag"]
-_CHATBOT_MODELS = Literal["gpt-3.5-turbo", "gpt-4o-mini", "gpt-5.2", "gpt-4.1-nano"]
+_CHATBOT_MODELS = Literal["gpt-3.5-turbo", "gpt-4o-mini", "gpt-5.2", "gpt-4.1-nano", "gpt-6-luna"]
 
 
 class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):

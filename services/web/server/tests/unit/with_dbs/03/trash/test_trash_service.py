@@ -37,6 +37,12 @@ from simcore_service_webserver.workspaces import _workspaces_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import stop_after_attempt, wait_none
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(
@@ -119,7 +125,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_pro
     mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
     mocked_storage: None,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
     `batch_delete_trashed_projects_as_admin` used to raise a RuntimeError (aborting the whole
@@ -140,7 +146,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_pro
 
     # TRASH all projects directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
     already_expired = arrow.utcnow().shift(days=-1).datetime
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             projects_table.update()
             .where(projects_table.c.uuid.in_(created_project_ids))
@@ -151,7 +157,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_pro
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
     # ASSERT: none of the projects remain in the DB
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(projects_table.c.uuid).where(projects_table.c.uuid.in_(created_project_ids))
         )
@@ -162,7 +168,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_pro
 async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_folders(
     client: TestClient,
     logged_user: UserInfoDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
     `batch_delete_trashed_folders_as_admin` had the same multi-page pagination bug as
@@ -186,7 +192,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_fol
 
     # TRASH all folders directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
     already_expired = arrow.utcnow().shift(days=-1).datetime
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             folders_v2.update()
             .where(folders_v2.c.folder_id.in_(created_folder_ids))
@@ -197,7 +203,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_fol
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
     # ASSERT: none of the folders remain in the DB
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(folders_v2.c.folder_id).where(folders_v2.c.folder_id.in_(created_folder_ids))
         )
@@ -208,7 +214,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_fol
 async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_workspaces(
     client: TestClient,
     logged_user: UserInfoDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
     `batch_delete_trashed_workspaces_as_admin` had the same multi-page pagination bug as
@@ -232,7 +238,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_wor
 
     # TRASH all workspaces directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
     already_expired = arrow.utcnow().shift(days=-1).datetime
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             workspaces_table.update()
             .where(workspaces_table.c.workspace_id.in_(created_workspace_ids))
@@ -243,7 +249,7 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_wor
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
     # ASSERT: none of the workspaces remain in the DB
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(workspaces_table.c.workspace_id).where(workspaces_table.c.workspace_id.in_(created_workspace_ids))
         )
@@ -307,7 +313,7 @@ async def test_trash_service__delete_expired_trash_retries_across_gc_cycles_when
     mocked_dynamic_services_interface: dict[str, MagicMock],
     mocked_storage: None,
     mocker: MockerFixture,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """Regression test for the "eventually works" GC guarantee documented in
     `projects._trash_service` (NOTE above `trash_project_for_immediate_deletion`): if the pipeline
@@ -338,7 +344,7 @@ async def test_trash_service__delete_expired_trash_retries_across_gc_cycles_when
     )
 
     async def _project_exists_in_db() -> bool:
-        async with asyncpg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             result = await conn.execute(
                 sa.select(projects_table.c.uuid).where(projects_table.c.uuid == user_project_id)
             )
@@ -577,7 +583,7 @@ async def test_trash_service__delete_expired_trash_for_workspace_retries_across_
     mocked_catalog: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
     mocker: MockerFixture,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     fake_project: ProjectDict,
 ):
     """Regression test for the per-workspace guard in
@@ -629,14 +635,14 @@ async def test_trash_service__delete_expired_trash_for_workspace_retries_across_
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     async def _workspace_exists_in_db(workspace_id) -> bool:
-        async with asyncpg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             result = await conn.execute(
                 sa.select(workspaces_table.c.workspace_id).where(workspaces_table.c.workspace_id == int(workspace_id))
             )
             return result.one_or_none() is not None
 
     async def _project_exists_in_db(project_uuid) -> bool:
-        async with asyncpg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             result = await conn.execute(sa.select(projects_table.c.uuid).where(projects_table.c.uuid == project_uuid))
             return result.one_or_none() is not None
 

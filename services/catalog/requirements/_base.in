@@ -18,6 +18,7 @@
 
 aiocache[redis,msgpack]
 asyncpg # database
+httpx2 # director client
 packaging
 pydantic
 pyyaml

@@ -6,7 +6,11 @@
 
 
 import datetime
+import json
 from collections.abc import AsyncIterator, Awaitable, Callable
+from decimal import Decimal
+from pathlib import Path
+from random import choice
 from typing import Any, cast
 
 import arrow
@@ -16,10 +20,14 @@ from _helpers import CompRunSnapshotTaskAtDBGet, PublishedProject, RunningProjec
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from faker import Faker
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.computations import CollectionRunID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import PositiveInt
+from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services import ServiceMetaDataPublished
+from models_library.wallets import WalletInfo
+from pydantic import ByteSize, PositiveInt, TypeAdapter
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_run_snapshot_tasks import (
@@ -37,6 +45,48 @@ from simcore_service_director_v2.models.comp_runs import (
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+@pytest.fixture(scope="session")
+def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
+    fake_service_path = mocks_dir / "fake_service.json"
+    assert fake_service_path.exists()
+    fake_service_data = json.loads(fake_service_path.read_text())
+    return ServiceMetaDataPublished(**fake_service_data)
+
+
+@pytest.fixture
+def fake_service_extras() -> ServiceExtras:
+    extra_example = ServiceExtras.model_json_schema()["examples"][2]  # type: ignore
+    random_extras = ServiceExtras(**extra_example)  # type: ignore
+    assert random_extras is not None
+    return random_extras
+
+
+@pytest.fixture
+def fake_service_labels() -> dict[str, Any]:
+    return choice(  # noqa: S311
+        SimcoreServiceLabels.model_json_schema()["examples"]  # type: ignore
+    )
+
+
+@pytest.fixture
+def wallet_info(faker: Faker) -> WalletInfo:
+    return WalletInfo(
+        wallet_id=faker.pyint(),
+        wallet_name=faker.name(),
+        wallet_credit_amount=Decimal(faker.pyint(min_value=12, max_value=129312)),
+    )
+
+
+@pytest.fixture
+def fake_ec2_cpus() -> PositiveInt:
+    return 4
+
+
+@pytest.fixture
+def fake_ec2_ram() -> ByteSize:
+    return TypeAdapter(ByteSize).validate_python("4GiB")
 
 
 @pytest.fixture

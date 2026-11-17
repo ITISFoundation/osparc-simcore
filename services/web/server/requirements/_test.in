@@ -18,6 +18,7 @@ Faker
 fakeredis[lua]
 fastapi-pagination
 fastapi[standard]
+filelock
 flaky
 hypothesis
 jsonref
@@ -27,7 +28,6 @@ pytest
 pytest-asyncio
 pytest-benchmark
 pytest-cov
-pytest-docker
 pytest-icdiff
 pytest-instafail
 pytest-mock

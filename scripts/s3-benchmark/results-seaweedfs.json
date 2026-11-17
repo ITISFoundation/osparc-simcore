@@ -1,0 +1,111 @@
+{
+  "label": "seaweedfs",
+  "target": "http://172.17.0.1:9002",
+  "bucket": "s3-benchmark",
+  "workloads": [
+    {
+      "name": "small_put",
+      "ops": 2000,
+      "bytes_total": 102400000,
+      "duration_s": 2.147,
+      "ops_per_s": 931.33,
+      "mb_per_s": 45.48,
+      "p50_ms": 21.18,
+      "p95_ms": 26.34,
+      "error": null
+    },
+    {
+      "name": "small_get",
+      "ops": 2000,
+      "bytes_total": 0,
+      "duration_s": 1.855,
+      "ops_per_s": 1078.11,
+      "mb_per_s": 0.0,
+      "p50_ms": 15.82,
+      "p95_ms": 23.59,
+      "error": null
+    },
+    {
+      "name": "multipart",
+      "ops": 1,
+      "bytes_total": 67108864,
+      "duration_s": 0.27,
+      "ops_per_s": 3.7,
+      "mb_per_s": 237.04,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "error": null
+    },
+    {
+      "name": "download",
+      "ops": 1,
+      "bytes_total": 67108864,
+      "duration_s": 0.059,
+      "ops_per_s": 16.82,
+      "mb_per_s": 1076.34,
+      "p50_ms": 59.46,
+      "p95_ms": 59.46,
+      "error": null
+    },
+    {
+      "name": "listing",
+      "ops": 2000,
+      "bytes_total": 0,
+      "duration_s": 0.142,
+      "ops_per_s": 14130.84,
+      "mb_per_s": 0.0,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "error": null
+    },
+    {
+      "name": "copy",
+      "ops": 1,
+      "bytes_total": 67108864,
+      "duration_s": 0.33,
+      "ops_per_s": 3.03,
+      "mb_per_s": 193.66,
+      "p50_ms": 330.48,
+      "p95_ms": 330.48,
+      "error": null
+    },
+    {
+      "name": "presigned",
+      "ops": 2,
+      "bytes_total": 2097152,
+      "duration_s": 0.044,
+      "ops_per_s": 45.65,
+      "mb_per_s": 45.65,
+      "p50_ms": 43.81,
+      "p95_ms": 43.81,
+      "error": null
+    }
+  ],
+  "compat": [
+    {
+      "name": "versioning",
+      "passed": true,
+      "detail": "put x2, delete, list versions, remove marker OK"
+    },
+    {
+      "name": "multipart_listing",
+      "passed": true,
+      "detail": "no-prefix list + list_parts OK; dir_prefix_match=True full_key_prefix_match=True"
+    },
+    {
+      "name": "error_body",
+      "passed": true,
+      "detail": "ClientError Code=NoSuchKey"
+    },
+    {
+      "name": "checksum_mode",
+      "passed": true,
+      "detail": "ChecksumSHA256 present"
+    },
+    {
+      "name": "presigned_part",
+      "passed": true,
+      "detail": "presigned upload_part OK"
+    }
+  ]
+}

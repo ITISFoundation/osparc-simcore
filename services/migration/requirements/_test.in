@@ -12,6 +12,7 @@
 
 
 docker
+filelock
 jsonschema
 pytest
 pytest-asyncio

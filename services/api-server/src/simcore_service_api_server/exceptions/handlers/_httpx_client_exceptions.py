@@ -1,14 +1,14 @@
-"""General handling of httpx-based exceptions
+"""General handling of httpx2-based exceptions
 
-- httpx-based clients are used to communicate with other backend services
-- any exception raised by a httpx client will be handled here.
+- httpx2-based clients are used to communicate with other backend services
+- any exception raised by a httpx2 client will be handled here.
 """
 
 import logging
 from typing import Any
 
 from fastapi import Request, status
-from httpx import HTTPError, TimeoutException
+from httpx2 import HTTPError, TimeoutException
 
 from ._utils import create_error_json_response
 
@@ -17,9 +17,9 @@ _logger = logging.getLogger(__file__)
 
 async def handle_httpx_client_exceptions(request: Request, exc: Exception):
     """
-    Default httpx exception handler.
-    See https://www.python-httpx.org/exceptions/
-    With this in place only HTTPStatusErrors need to be customized closer to the httpx client itself.
+    Default httpx2 exception handler.
+    See https://pydantic.dev/docs/httpx2/exceptions/
+    With this in place only HTTPStatusErrors need to be customized closer to the httpx2 client itself.
     """
     assert request  # nosec
     assert isinstance(exc, HTTPError)

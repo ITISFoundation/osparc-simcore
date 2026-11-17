@@ -2,6 +2,8 @@
 --constraint ../../../packages/settings-library/requirements/_base.in
 --constraint ../../../packages/service-library/requirements/_base.in
 
+faker
+filelock
 pydantic
 pytest
 pytest-asyncio

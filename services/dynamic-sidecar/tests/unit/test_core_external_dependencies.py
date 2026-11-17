@@ -63,7 +63,7 @@ def mock_environment(
             "DY_SIDECAR_PROJECT_ID": f"{project_id}",
             "DY_SIDECAR_USER_ID": f"{2}",
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "RABBIT_HOST": "test",
             "RABBIT_PASSWORD": "test",
             "RABBIT_SECURE": "0",

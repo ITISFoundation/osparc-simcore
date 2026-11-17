@@ -62,6 +62,8 @@ from ..modules.outputs import (
     event_propagation_disabled,
 )
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
+from ..services.container_extensions import writable_inputs
+from ..services.container_restart_lock import container_restart_locked
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
@@ -505,19 +507,20 @@ async def pull_user_services_input_ports(
         description="pulling inputs",
     ) as root_progress:
         with log_directory_changes(mounted_volumes.disk_inputs_path, _logger, logging.INFO):
-            transferred_bytes = await nodeports.download_target_ports(
-                nodeports.PortTypeName.INPUTS,
-                mounted_volumes.disk_inputs_path,
-                port_keys=port_keys,
-                io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
-                progress_bar=root_progress,
-                port_notifier=PortNotifier(
-                    app,
-                    settings.DY_SIDECAR_USER_ID,
-                    settings.DY_SIDECAR_PROJECT_ID,
-                    settings.DY_SIDECAR_NODE_ID,
-                ),
-            )
+            async with writable_inputs(app):
+                transferred_bytes = await nodeports.download_target_ports(
+                    nodeports.PortTypeName.INPUTS,
+                    mounted_volumes.disk_inputs_path,
+                    port_keys=port_keys,
+                    io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
+                    progress_bar=root_progress,
+                    port_notifier=PortNotifier(
+                        app,
+                        settings.DY_SIDECAR_USER_ID,
+                        settings.DY_SIDECAR_PROJECT_ID,
+                        settings.DY_SIDECAR_NODE_ID,
+                    ),
+                )
     await post_sidecar_log_message(app, f"Finished pulling inputs: {port_keys}", log_level=logging.INFO)
     await progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
@@ -576,12 +579,10 @@ async def restart_user_services(
     settings: ApplicationSettings,
     shared_store: SharedStore,
 ) -> None:
-    assert app.state.container_restart_lock  # nosec
-
     # NOTE: if containers inspect reports that the containers are restarting
     # or some other state, the service will get shutdown, to prevent this
     # blocking status while containers are being restarted.
-    async with app.state.container_restart_lock:
+    async with container_restart_locked(app):
         await progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
             msg = "No spec for docker compose command was found"

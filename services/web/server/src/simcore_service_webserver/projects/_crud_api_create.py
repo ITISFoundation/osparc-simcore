@@ -15,6 +15,7 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.projects_state import ProjectStatus
+from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
@@ -53,7 +54,12 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import ProjectDict
-from .utils import NodesMap, clone_project_document, default_copy_project_name
+from .utils import (
+    NodesMap,
+    clone_project_document,
+    default_copy_project_name,
+    remap_file_link_paths_in_node_io,
+)
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -165,7 +171,11 @@ async def _prepare_project_copy(
     copy_project_nodes_coro = None
     if len(nodes_map) > 0:
         copy_project_nodes_coro = _copy_project_nodes_from_source_project(
-            app, source_project, nodes_map, clean_output_data=(deep_copy is False)
+            app,
+            source_project,
+            nodes_map,
+            clean_output_data=(deep_copy is False),
+            destination_project_uuid=new_project["uuid"],
         )
 
     copy_file_coro = None
@@ -211,6 +221,7 @@ async def _copy_project_nodes_from_source_project(
     nodes_map: NodesMap,
     *,
     clean_output_data: bool = False,
+    destination_project_uuid: str,
 ) -> dict[NodeID, ProjectNodeCreate]:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
@@ -231,6 +242,13 @@ async def _copy_project_nodes_from_source_project(
             node_data["inputs"] = _remap_port_links(node_data["inputs"], nodes_map)
         if node_data.get("input_nodes"):
             node_data["input_nodes"] = [nodes_map.get(f"{nid}", f"{nid}") for nid in node_data["input_nodes"]]
+        if not clean_output_data:
+            remap_file_link_paths_in_node_io(
+                node_data,
+                source_project_uuid=f"{source_project['uuid']}",
+                destination_project_uuid=destination_project_uuid,
+                nodes_map=nodes_map,
+            )
         new_node_id = _mapped_node_id(node)
         result[new_node_id] = ProjectNodeCreate(node_id=new_node_id, **node_data)
     return result
@@ -318,10 +336,11 @@ async def _compose_project_data(
                 for k, v in node_data.items()
                 if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
             }  # pyright: ignore[reportAssignmentType]
-            create_kwargs["required_resources"] = jsonable_encoder(
+            create_kwargs["required_resources"] = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
                 await catalog_service.get_service_resources(
                     app, user_id, node_data["key"], node_data["version"], product_name
-                )
+                ),
+                mode="json",
             )
             project_nodes[NodeID(node_id)] = ProjectNodeCreate(node_id=NodeID(node_id), **create_kwargs)
 

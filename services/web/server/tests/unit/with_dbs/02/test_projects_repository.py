@@ -24,6 +24,12 @@ from simcore_service_webserver.projects import (
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.models import ProjectDBGet, ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def user_role() -> UserRole:

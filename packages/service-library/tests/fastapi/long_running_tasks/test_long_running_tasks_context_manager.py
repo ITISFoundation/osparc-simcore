@@ -9,7 +9,7 @@ import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
@@ -43,6 +43,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
+TASK_LONG_SLEEP_INTERVAL: Final[PositiveFloat] = 2.0
 
 # UTILS
 
@@ -59,6 +60,15 @@ async def a_test_task(progress: TaskProgress) -> int:
 
 
 TaskRegistry.register(a_test_task)
+
+
+async def a_slow_test_task(progress: TaskProgress) -> int:
+    _ = progress
+    await asyncio.sleep(TASK_LONG_SLEEP_INTERVAL)
+    return 42
+
+
+TaskRegistry.register(a_slow_test_task)
 
 
 class _TestingError(Exception):
@@ -87,6 +97,16 @@ def user_routes() -> APIRouter:
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             a_test_task.__name__,
+        )
+
+    @router.get("/api/slow", status_code=status.HTTP_200_OK)
+    async def create_slow_task_user_defined_route(
+        long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
+    ) -> TaskId:
+        return await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            a_slow_test_task.__name__,
         )
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
@@ -139,6 +159,35 @@ def http_client(bg_task_app: FastAPI, async_client: AsyncClient) -> HttpClient:
     return HttpClient(app=bg_task_app, async_client=async_client, base_url=f"{url}")
 
 
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://background.testserver.io",
+        TypeAdapter(AnyHttpUrl).validate_python("http://background.testserver.io"),
+    ],
+    ids=["string-without-trailing-slash", "pydantic-any-http-url"],
+)
+async def test_task_result_with_base_url_without_trailing_slash(
+    bg_task_app: FastAPI,
+    async_client: AsyncClient,
+    base_url: str | AnyHttpUrl,
+) -> None:
+    task_id = await _create_and_get_taskid(async_client, endpoint="success")
+    http_client = HttpClient(
+        app=bg_task_app,
+        async_client=async_client,
+        base_url=base_url,
+    )
+
+    async with periodic_task_result(
+        http_client,
+        task_id,
+        task_timeout=10,
+        status_poll_interval=TASK_SLEEP_INTERVAL / 3,
+    ) as result:
+        assert result == 42
+
+
 async def _create_and_get_taskid(async_client: AsyncClient, *, endpoint: str) -> TaskId:
     result = await async_client.get(f"/api/{endpoint}")
     assert result.status_code == status.HTTP_200_OK, result.text
@@ -169,9 +218,13 @@ async def test_task_result_times_out(
     http_client: HttpClient,
     router_prefix: str,
 ) -> None:
-    task_id = await _create_and_get_taskid(async_client, endpoint="success")
+    # NOTE: awaiting a slow task (2 s) with a much shorter client timeout (0.1 s) keeps a
+    # ~20x margin so the timeout reliably wins the race against task completion, also on
+    # loaded CI runners where sub-100 ms scheduling delays would otherwise let a
+    # fast task finish before the deadline is delivered (see flaky `DID NOT RAISE` failures).
+    task_id = await _create_and_get_taskid(async_client, endpoint="slow")
 
-    timeout = TASK_SLEEP_INTERVAL / 10
+    timeout = TASK_SLEEP_INTERVAL
     with pytest.raises(TaskClientTimeoutError) as exec_info:
         async with periodic_task_result(
             http_client,

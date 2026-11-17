@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -70,7 +70,7 @@ def app_environment(
 async def test_successful_create_payment_method_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     faker: Faker,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,

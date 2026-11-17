@@ -19,15 +19,22 @@ import json
 import logging
 import re
 from collections.abc import Callable, Iterator
+from datetime import timedelta
 from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
 import pytest
+from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, ServiceType, wait_for_service_running
+from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
+    RobustWebSocket,
+    wait_for_service_running,
+)
 from tenacity import (
     RetryError,
     before_sleep_log,
@@ -38,6 +45,7 @@ from tenacity import (
     wait_fixed,
 )
 
+_PROJECT_CLOSING_TIMEOUT: Final[timedelta] = timedelta(minutes=2)
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_function_job_collections_for_functionid")
@@ -60,6 +68,9 @@ _LHS_SEED: Final[int] = 42
 _DEFAULT_NUM_SAMPLING_POINTS: Final[int] = 40
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
+_PARAMETER_PERSISTENCE_TIMEOUT: Final[timedelta] = timedelta(seconds=15)
+_PARAMETER_PERSISTENCE_POLL: Final[timedelta] = timedelta(seconds=1)
+_PARAMETER_SERVICE_KEY_PREFIX: Final[str] = "simcore/services/frontend/parameter/"
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
 _SELECT_FUNCTION_RETRY_WAIT_SECONDS: Final[int] = 2
 _SAMPLING_STATUS_POLL_SECONDS: Final[int] = 5
@@ -67,6 +78,7 @@ _TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
 _TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
 _TEARDOWN_FULL_WAIT_SECONDS: Final[float] = 10.0
 _TEARDOWN_FULL_ATTEMPTS: Final[int] = 3
+_LIST_PAGE_LIMIT: Final[int] = 50
 _EXPECTED_LHS_INPUT_VALUES_40: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
@@ -177,6 +189,40 @@ def _delete_with_retry(
         logging.exception("Gave up deleting %s after %d attempts", label, _TEARDOWN_MAX_ATTEMPTS)
 
 
+def _delete_all_items(
+    api_request_context: APIRequestContext,
+    list_url: str,
+    label: str,
+    delete_item: Callable[[dict[str, Any]], None],
+    *,
+    headers: dict[str, str] | None = None,
+) -> None:
+    """Delete everything a listing returns.
+
+    Offsets are unsafe while deleting, so the first page is re-read after each batch.
+    Pages are only walked forward past items whose deletion was already attempted.
+    """
+    attempted: set[str] = set()
+    offset = 0
+    while True:
+        resp = api_request_context.get(f"{list_url}&limit={_LIST_PAGE_LIMIT}&offset={offset}", headers=headers or {})
+        if not resp.ok:
+            if resp.status != 404:
+                logging.warning("Could not list %s: %s", label, resp.text()[:200])
+            return
+        payload = resp.json()
+        pending = [item for item in payload.get("items", []) if item["uid"] not in attempted]
+        if pending:
+            for item in pending:
+                attempted.add(item["uid"])
+                delete_item(item)
+            offset = 0
+        elif offset + _LIST_PAGE_LIMIT < payload.get("total", 0):
+            offset += _LIST_PAGE_LIMIT
+        else:
+            return
+
+
 def _get_api_server_url(product_url: AnyUrl) -> str:
     """Derive the API server URL from the product URL.
 
@@ -208,7 +254,7 @@ def num_sampling_points(request: pytest.FixtureRequest) -> int:
     before_sleep=before_sleep_log(logging.getLogger(__name__), logging.WARNING),
     reraise=True,
 )
-def _teardown_function(  # noqa: C901
+def _teardown_function(
     api_request_context: APIRequestContext,
     api_server_url: str,
     product_url: AnyUrl,
@@ -221,65 +267,43 @@ def _teardown_function(  # noqa: C901
     """
     function_uuid = function_data["uuid"]
     template_id = function_data.get("templateId")
-    limit = 50
 
     # 1. Delete all function_job_collections for this function
-    for offset in range(0, 100_000, limit):
-        collections_resp = api_request_context.get(
-            f"{api_server_url}v0/function_job_collections?has_function_id={function_uuid}&limit={limit}&offset={offset}",
+    _delete_all_items(
+        api_request_context,
+        f"{api_server_url}v0/function_job_collections?has_function_id={function_uuid}",
+        f"function_job_collections for {function_uuid}",
+        lambda collection: _delete_with_retry(
+            api_request_context,
+            f"{api_server_url}v0/function_job_collections/{collection['uid']}",
+            f"function_job_collection {collection['uid']}",
             headers=auth_headers,
-        )
-        if not collections_resp.ok:
-            if collections_resp.status != 404:
-                logging.warning(
-                    "Could not list function_job_collections for %s: %s",
-                    function_uuid,
-                    collections_resp.text()[:200],
-                )
-            break
-        collections = collections_resp.json().get("items", [])
-        for collection in collections:
-            _delete_with_retry(
-                api_request_context,
-                f"{api_server_url}v0/function_job_collections/{collection['uid']}",
-                f"function_job_collection {collection['uid']}",
-                headers=auth_headers,
-            )
-        if len(collections) < limit:
-            break
+        ),
+        headers=auth_headers,
+    )
 
     # 2. Delete all function_jobs and their associated comp projects
-    for offset in range(0, 100_000, limit):
-        jobs_resp = api_request_context.get(
-            f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+    def _delete_job(job: dict[str, Any]) -> None:
+        _delete_with_retry(
+            api_request_context,
+            f"{api_server_url}v0/function_jobs/{job['uid']}",
+            f"function_job {job['uid']}",
             headers=auth_headers,
         )
-        if not jobs_resp.ok:
-            if jobs_resp.status != 404:
-                logging.warning(
-                    "Could not list function_jobs for %s: %s",
-                    function_uuid,
-                    jobs_resp.text()[:200],
-                )
-            break
-        jobs = jobs_resp.json().get("items", [])
-        for job in jobs:
-            job_uid = job["uid"]
-            project_job_id = job.get("project_job_id")
+        if project_job_id := job.get("project_job_id"):
             _delete_with_retry(
                 api_request_context,
-                f"{api_server_url}v0/function_jobs/{job_uid}",
-                f"function_job {job_uid}",
-                headers=auth_headers,
+                f"{product_url}v0/projects/{project_job_id}",
+                f"comp project {project_job_id}",
             )
-            if project_job_id:
-                _delete_with_retry(
-                    api_request_context,
-                    f"{product_url}v0/projects/{project_job_id}",
-                    f"comp project {project_job_id}",
-                )
-        if len(jobs) < limit:
-            break
+
+    _delete_all_items(
+        api_request_context,
+        f"{api_server_url}v0/function_jobs?function_id={function_uuid}",
+        f"function_jobs for {function_uuid}",
+        _delete_job,
+        headers=auth_headers,
+    )
 
     # 3. Delete the function itself (functions live on the api-server, not web-server)
     _delete_with_retry(
@@ -395,6 +419,32 @@ def _assert_project_name_persisted(
     actual_project_name = get_prj_resp.json()["data"]["name"]
     assert actual_project_name == expected_project_name, (
         f"Project name was not persisted as '{expected_project_name}', server still reports '{actual_project_name}'"
+    )
+
+
+@retry(
+    wait=wait_fixed(_PARAMETER_PERSISTENCE_POLL),
+    stop=stop_after_delay(_PARAMETER_PERSISTENCE_TIMEOUT),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+)
+def _assert_parameter_connected(
+    *,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+    project_uuid: str,
+    node_id: str,
+    port_key: str,
+) -> None:
+    get_prj_resp = api_request_context.get(f"{product_url}v0/projects/{project_uuid}")
+    assert get_prj_resp.ok, f"Failed to GET project: {get_prj_resp.status} {get_prj_resp.text()}"
+    workbench = get_prj_resp.json()["data"]["workbench"]
+    connection = workbench[node_id].get("inputs", {}).get(port_key)
+    assert isinstance(connection, dict), f"Port {port_key} of {node_id} is not connected: {connection=}"
+    source_node = workbench.get(connection.get("nodeUuid"))
+    assert source_node is not None, f"Port {port_key} is connected to a node that does not exist: {connection=}"
+    assert source_node["key"].startswith(_PARAMETER_SERVICE_KEY_PREFIX), (
+        f"Port {port_key} is connected to {source_node['key']}, expected a parameter"
     )
 
 
@@ -518,22 +568,24 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
         with log_context(logging.INFO, "Create parameter on jsonifier_1.number_1"):
             page.get_by_test_id("connect_input_btn_number_1").click()
 
-            with (
-                page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}") and resp.request.method == "PATCH"
-                ) as patch_prj_param_ctx,
-                page.expect_response(
-                    lambda resp: (
-                        resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes") and resp.request.method == "POST"
-                    )
-                ) as create_param_ctx,
-            ):
+            # the project PATCH is not awaited: the frontend can send it before this click
+            with page.expect_response(
+                lambda resp: (
+                    resp.url.endswith(f"/projects/{jsonifier_prj_uuid}/nodes") and resp.request.method == "POST"
+                )
+            ) as create_param_ctx:
                 page.get_by_text("new parameter").click()
 
-            patch_prj_param_resp = patch_prj_param_ctx.value
-            assert patch_prj_param_resp.status == 204, f"Expected 204 from PATCH, got {patch_prj_param_resp.status}"
             create_param_resp = create_param_ctx.value
             assert create_param_resp.status == 201, f"Expected 201 from POST, got {create_param_resp.status}"
+
+            _assert_parameter_connected(
+                api_request_context=api_request_context,
+                product_url=product_url,
+                project_uuid=jsonifier_prj_uuid,
+                node_id=jsonifier_1_node_id,
+                port_key="number_1",
+            )
             page.wait_for_timeout(3 * SECOND)
 
         with log_context(logging.INFO, "Add second jsonifier node via API"):
@@ -650,6 +702,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     with (
         log_context(logging.INFO, "Go back to dashboard"),
         page.expect_response(re.compile(r"/projects\?.+")) as list_projects_response,
+        log_in_and_out.expect_project_closed(jsonifier_prj_uuid, timeout=_PROJECT_CLOSING_TIMEOUT),
     ):
         page.get_by_test_id("dashboardBtn").click()
         page.get_by_test_id("confirmDashboardBtn").click()

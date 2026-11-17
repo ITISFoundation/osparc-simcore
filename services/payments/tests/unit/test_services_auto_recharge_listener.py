@@ -23,6 +23,7 @@ from models_library.payments import InvoiceDataGet
 from models_library.products import ProductName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.users import UserID
+from models_library.wallets import get_autorecharge_min_balance_in_credits
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.faker_factories import (
     random_payment_autorecharge,
@@ -252,14 +253,46 @@ async def test_process_message__whole_autorecharge_flow_success(
     assert len(mock_resource_usage_tracker_service_api.calls) == 1
 
 
-@pytest.mark.parametrize("_credits,expected", [(Decimal(10001), True), (Decimal(9999), False)])
+@pytest.mark.parametrize(
+    "_credits,expected",
+    [(Decimal(101), True), (Decimal(100), False), (Decimal(99), False)],
+    ids=["above-threshold", "at-threshold", "below-threshold"],
+)
 async def test_check_wallet_credits_above_threshold(app: FastAPI, _credits: Decimal, expected: bool):
     settings: ApplicationSettings = app.state.settings
-    assert settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
+    threshold = settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
 
-    assert expected == await _check_wallet_credits_above_threshold(
-        settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT, _credits
-    )
+    assert expected == await _check_wallet_credits_above_threshold(threshold, _credits)
+
+
+@pytest.mark.parametrize(
+    "product_name,_credits,expected_skip_recharge",
+    [
+        ("tis", Decimal(501), True),
+        ("tis", Decimal(500), False),
+        ("tis", Decimal(499), False),
+        ("tiplite", Decimal(501), True),
+        ("tiplite", Decimal(500), False),
+        ("s4l", Decimal(101), True),
+        ("s4l", Decimal(100), False),
+    ],
+    ids=[
+        "tis-above-tip-threshold",
+        "tis-at-tip-threshold",
+        "tis-below-tip-threshold",
+        "tiplite-above-tip-threshold",
+        "tiplite-at-tip-threshold",
+        "other-product-above-configured-threshold",
+        "other-product-at-configured-threshold",
+    ],
+)
+async def test_tip_autorecharge_threshold_is_product_specific_and_inclusive(
+    product_name: str,
+    _credits: Decimal,
+    expected_skip_recharge: bool,
+):
+    threshold = get_autorecharge_min_balance_in_credits(product_name, Decimal(100))
+    assert (await _check_wallet_credits_above_threshold(threshold, _credits)) is expected_skip_recharge
 
 
 @pytest.mark.parametrize(

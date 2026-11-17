@@ -6,7 +6,6 @@ from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.folders import FolderID
-from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ClassifierID, NodesDict, ProjectID
 from models_library.users import UserID
@@ -27,7 +26,7 @@ class ProjectTypeAPI(str, Enum):
     user = "user"
 
     @classmethod
-    def to_project_type_db(cls, api_type: "ProjectTypeAPI") -> ProjectType | None:
+    def to_project_type_db(cls, api_type: ProjectTypeAPI) -> ProjectType | None:
         return {
             ProjectTypeAPI.all: None,
             ProjectTypeAPI.template: ProjectType.TEMPLATE,
@@ -79,11 +78,6 @@ class ProjectJobDBGet(ProjectDBGet):
 
     job_parent_resource_name: str
     storage_assets_deleted: bool
-
-
-class ProjectWithTrashExtra(ProjectDBGet):
-    # This field is not part of the tables
-    trashed_by_primary_gid: GroupID | None = None
 
 
 class UserSpecificProjectDataDBGet(ProjectDBGet):

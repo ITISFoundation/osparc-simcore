@@ -30,23 +30,10 @@ from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobInputs, JobPricingSpecification
 from ...services_rpc.wb_api_server import WbApiRpcClient
-from ..dependencies.authentication import (
-    Identity,
-    get_current_identity,
-    get_current_user_id,
-    get_product_name,
-)
-from ..dependencies.services import (
-    get_function_job_service,
-    get_function_job_task_client_service,
-    get_function_service,
-)
+from ..dependencies.authentication import Identity, get_current_identity, get_current_user_id, get_product_name
+from ..dependencies.services import get_function_job_service, get_function_job_task_client_service, get_function_service
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
-from ._constants import (
-    FMSG_CHANGELOG_ADDED_IN_VERSION,
-    FMSG_CHANGELOG_NEW_IN_VERSION,
-    create_route_description,
-)
+from ._constants import FMSG_CHANGELOG_ADDED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
 
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
@@ -288,7 +275,7 @@ async def get_function_outputschema(
     ),
 )
 async def validate_function_inputs(
-    function_id: FunctionID,  # pylint: disable=unused-argument
+    function_id: FunctionID,  # pylint: disable=unused-argument  # noqa: ARG001
     inputs: FunctionInputs,
     function: Annotated[RegisteredFunction, Depends(get_function)],
     function_job_service: Annotated[FunctionJobService, Depends(get_function_job_service)],
@@ -349,7 +336,13 @@ async def run_function(
 @function_router.delete(
     "/{function_id:uuid}",
     response_model=None,
-    responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
+    responses={
+        **_COMMON_FUNCTION_ERROR_RESPONSES,
+        status.HTTP_409_CONFLICT: {
+            "description": "Function has associated jobs and cannot be deleted",
+            "model": ErrorGet,
+        },
+    },
     description=create_route_description(
         base="Delete function",
         changelog=CHANGE_LOGS["delete_function"],

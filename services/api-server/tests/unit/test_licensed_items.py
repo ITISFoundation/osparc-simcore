@@ -12,7 +12,7 @@ from uuid import UUID
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
     LicensedItemCheckoutGet,
 )
@@ -168,58 +168,12 @@ async def test_get_licensed_items_502(
 @pytest.mark.parametrize(
     "exception_to_raise,expected_api_server_status_code",
     [
-        (NotImplementedError(), status.HTTP_501_NOT_IMPLEMENTED),
-    ],
-)
-async def test_get_licensed_items_for_wallet(
-    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
-    client: AsyncClient,
-    auth: BasicAuth,
-    exception_to_raise: Exception | None,
-    expected_api_server_status_code: int,
-    faker: Faker,
-):
-    _wallet_id = faker.pyint(min_value=1)
-
-    async def _side_effect(
-        product_name: str,
-        wallet_id: WalletID,
-        user_id: UserID,
-        offset: int,
-        limit: int,
-    ) -> LicensedItemRpcGetPage:
-        if exception_to_raise is not None:
-            raise exception_to_raise
-
-        assert _wallet_id == wallet_id
-        if exception_to_raise is not None:
-            raise exception_to_raise
-
-        examples = LicensedItemRpcGet.model_json_schema()["examples"]
-        assert isinstance(examples, list)
-        return LicensedItemRpcGetPage(
-            items=[LicensedItemRpcGet.model_validate(ex) for ex in examples],
-            total=len(examples),
-        )
-
-    mock_handler_in_licenses_rpc_interface(
-        handler_name="get_available_licensed_items_for_wallet",
-        side_effect=_side_effect,
-    )
-
-    resp = await client.get(f"{API_VTAG}/wallets/{_wallet_id}/licensed-items", auth=auth)
-    assert resp.status_code == expected_api_server_status_code
-
-
-@pytest.mark.parametrize(
-    "exception_to_raise,expected_api_server_status_code",
-    [
         (None, status.HTTP_200_OK),
         (NotEnoughAvailableSeatsError(), status.HTTP_409_CONFLICT),
         (CanNotCheckoutNotEnoughAvailableSeatsError(), status.HTTP_409_CONFLICT),
         (
             CanNotCheckoutServiceIsNotRunningError(),
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
     ],
 )
@@ -275,7 +229,7 @@ async def test_checkout_licensed_item(
         (LicensedItemCheckoutNotFoundError, None, status.HTTP_404_NOT_FOUND, True),
         (None, LicensedItemCheckoutNotFoundError, status.HTTP_404_NOT_FOUND, True),
         (None, None, status.HTTP_200_OK, True),
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY, False),
+        (None, None, status.HTTP_422_UNPROCESSABLE_CONTENT, False),
     ],
 )
 async def test_release_checked_out_licensed_item(

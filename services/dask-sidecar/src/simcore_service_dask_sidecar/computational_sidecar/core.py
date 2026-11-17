@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Final, Self, cast
+from typing import Any, Final, Self, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -53,6 +53,17 @@ from .task_shared_volume import TaskSharedVolumes
 _logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 _TASK_PROCESSING_PROGRESS_WEIGHT: Final[float] = 0.99
+_OOM_EXIT_CODE: Final[int] = 137  # 128 + SIGKILL(9), e.g. sent by the kernel memory-cgroup OOM killer
+
+
+def _is_oom_kill(container_state: dict[str, Any]) -> bool:
+    """Detects that the container's main process died from an out-of-memory kill.
+
+    Docker reports ``State.OOMKilled`` from the container memory-cgroup OOM event, but it
+    can be missing (reported as False) even when the kernel OOM killer SIGKILLed the main
+    process, in which case ``State.ExitCode`` is still 128 + SIGKILL = 137.
+    """
+    return bool(container_state.get("OOMKilled", False)) or container_state.get("ExitCode") == _OOM_EXIT_CODE
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -276,8 +287,8 @@ class ComputationalSidecar:
                         return last_logs
                     return ["Unexpected error: Could not retrieve logs."]
 
-                # Check for OOMKilled
-                if container_data["State"].get("OOMKilled", False):
+                # Check for OOM kill (OOMKilled flag or SIGKILL exit code when the flag is missing)
+                if _is_oom_kill(container_data["State"]):
                     raise ServiceOutOfMemoryError(
                         service_key=self.task_parameters.image,
                         service_version=self.task_parameters.tag,

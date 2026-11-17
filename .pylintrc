@@ -65,7 +65,7 @@ ignore-patterns=
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis). It
 # supports qualified module names, as well as Unix pattern matching.
-ignored-modules=psycopg2.errors
+ignored-modules=psycopg2.errors,opentelemetry
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
@@ -90,7 +90,7 @@ persistent=yes
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
-py-version=3.13
+py-version=3.14
 
 # Discover python modules and packages in the file system subtree.
 recursive=true

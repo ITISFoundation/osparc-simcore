@@ -1,0 +1,20 @@
+extends: relaxed
+
+rules:
+  # hand-written docker-compose and CI files commonly exceed 80 columns
+  line-length:
+    max: 160
+    level: warning
+  # many compose files use anchors/aliases on long lines
+  comments:
+    min-spaces-from-content: 1
+  trailing-spaces: enable
+  empty-lines:
+    max: 2
+
+ignore: |
+  .venv/
+  .cache/
+  .pytest_cache/
+  services/static-webserver/client/qx_libs/
+  node_modules/

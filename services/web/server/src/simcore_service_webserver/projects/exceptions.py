@@ -231,6 +231,13 @@ class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError): ...
 
 
+class ProjectNodeResourcesSetByPricingUnitError(BaseProjectError):
+    msg_template = (
+        "Resources of node '{node_uuid}' in project '{project_uuid}' are set by its pricing unit"
+        " (plan {pricing_plan_id}, unit {pricing_unit_id}) and cannot be overridden"
+    )
+
+
 class ProjectNodeRequiredInputsNotSetError(BaseProjectError): ...
 
 

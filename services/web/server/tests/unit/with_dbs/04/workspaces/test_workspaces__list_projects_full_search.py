@@ -22,6 +22,12 @@ from simcore_service_webserver.projects import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _SEARCH_NAME_1 = "Quantum Solutions"
 _SEARCH_NAME_2 = "Orion solution"
 _SEARCH_NAME_3 = "Skyline solutions"
@@ -411,7 +417,7 @@ async def test__list_projects_full_search_with_template_type_regular_and_none(
     # Test: Filter by template_type="template" --> Default type is "all"
     url = base_url.with_query({"text": "Project Test", "template_type": "TEMPLATE"})
     resp = await client.get(f"{url}")
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Test: Filter by type= template_type="null"
     url = base_url.with_query({"text": "Project Test", "type": "all", "template_type": "null"})

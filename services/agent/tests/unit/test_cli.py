@@ -4,10 +4,9 @@
 import traceback
 
 import pytest
-from click.testing import Result
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_agent.cli import main
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 
 @pytest.fixture

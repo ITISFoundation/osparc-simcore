@@ -6,7 +6,9 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast
 
 from common_library.json_serialization import json_loads
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes_io import NodeID
@@ -18,7 +20,6 @@ from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from opentelemetry import trace
 from opentelemetry.trace import Link
@@ -36,6 +37,7 @@ from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import UserPreferencesRpcApi
 from servicelib.tracing import (
     TracingConfig,
     create_standard_attributes,
@@ -59,13 +61,11 @@ from .....models.dynamic_services_scheduler import (
     DockerStatus,
     SchedulerData,
 )
+from .....modules.rabbitmq import get_rabbitmq_rpc_client
 from .....utils.db import get_repository
 from ....catalog import CatalogClient
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....db.repositories.projects_nodes import ProjectsNodesRepository
-from ....db.repositories.user_preferences_frontend import (
-    UserPreferencesFrontendRepository,
-)
 from ....director_v0 import DirectorV0Client
 from ....instrumentation import (
     get_instrumentation,
@@ -309,12 +309,26 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         swarm_stack_name=swarm_stack_name,
     )
     if scheduler_data.dynamic_sidecar.docker_node_id:
-        await force_container_cleanup(
-            rabbit_rpc_client,
-            docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-            swarm_stack_name=swarm_stack_name,
-            node_id=scheduler_data.node_uuid,
-        )
+        try:
+            await force_container_cleanup(
+                rabbit_rpc_client,
+                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                swarm_stack_name=swarm_stack_name,
+                node_id=scheduler_data.node_uuid,
+            )
+        except RemoteMethodNotRegisteredError as e:
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    f"Could not force container cleanup for {scheduler_data.service_name}",
+                    error=e,
+                    error_context={
+                        "node_uuid": f"{scheduler_data.node_uuid}",
+                        "service_name": scheduler_data.service_name,
+                        "docker_node_id": scheduler_data.dynamic_sidecar.docker_node_id,
+                    },
+                    tip=("The container might have not been removed and requires manual intervention."),
+                )
+            )
 
     await task_progress.update(message="removing network", percent=0.2)
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
@@ -334,7 +348,18 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 NoServiceVolumesFoundRPCError,
                 RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
             ) as e:
-                _logger.info("Could not remove volumes, because: '%s'", e)
+                _logger.warning(
+                    **create_troubleshooting_log_kwargs(
+                        f"Could not remove volumes for {scheduler_data.service_name}",
+                        error=e,
+                        error_context={
+                            "node_uuid": f"{scheduler_data.node_uuid}",
+                            "service_name": scheduler_data.service_name,
+                            "docker_node_id": scheduler_data.dynamic_sidecar.docker_node_id,
+                        },
+                        tip=("The volumes might have not been removed and require manual intervention."),
+                    )
+                )
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
@@ -602,8 +627,8 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
 
 
 async def get_allow_metrics_collection(app: FastAPI, user_id: UserID, product_name: ProductName) -> bool:
-    repo = get_repository(app, UserPreferencesFrontendRepository)
-    preference: FrontendUserPreference | None = await repo.get_user_preference(
+    preferences_rpc = UserPreferencesRpcApi(get_rabbitmq_rpc_client(app), DEFAULT_WEBSERVER_RPC_NAMESPACE)
+    preference = await preferences_rpc.get_frontend_user_preference(
         user_id=user_id,
         product_name=product_name,
         preference_class=AllowMetricsCollectionFrontendUserPreference,
@@ -612,5 +637,4 @@ async def get_allow_metrics_collection(app: FastAPI, user_id: UserID, product_na
     if preference is None:
         return cast(bool, AllowMetricsCollectionFrontendUserPreference.get_default_value())
 
-    allow_metrics_collection = AllowMetricsCollectionFrontendUserPreference.model_validate(preference)
-    return allow_metrics_collection.value
+    return preference.value

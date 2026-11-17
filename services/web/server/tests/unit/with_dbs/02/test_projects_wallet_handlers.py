@@ -29,6 +29,12 @@ from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 API_PREFIX = "/" + api_version_prefix
 
 
@@ -203,7 +209,7 @@ async def test_pay_project_debt(
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
     )
     resp = await client.post(f"{base_url}", json={"amount": 100})  # <-- Error input (must be negative!)
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Use endpoint properly
     base_url = client.app.router["pay_project_debt"].url_for(

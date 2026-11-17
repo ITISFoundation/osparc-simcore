@@ -38,14 +38,14 @@ from simcore_sdk.node_ports_common.storage_client import (
 )
 from simcore_sdk.node_ports_common.storage_endpoint import (
     get_base_url,
-    get_basic_auth,
+    get_basic_auth_headers,
     is_storage_secure,
 )
 
 
 def _clear_caches():
     get_base_url.cache_clear()
-    get_basic_auth.cache_clear()
+    get_basic_auth_headers.cache_clear()
 
 
 @pytest.fixture
@@ -309,7 +309,7 @@ def test_mode_ports_storage_with_auth(
     setenvs_from_dict(monkeypatch, envs)
 
     assert get_base_url() == expected_base_url
-    assert get_basic_auth() == aiohttp.BasicAuth(login="user", password="passwd", encoding="latin1")
+    assert get_basic_auth_headers() == {"Authorization": "Basic dXNlcjpwYXNzd2Q="}
 
 
 @pytest.mark.parametrize(
@@ -340,7 +340,7 @@ def test_mode_ports_storage_without_auth(
     setenvs_from_dict(monkeypatch, envs)
 
     assert get_base_url() == expected_base_url
-    assert get_basic_auth() is None
+    assert get_basic_auth_headers() == {}
 
 
 _HTTP_URL: Final[str] = "http://a"

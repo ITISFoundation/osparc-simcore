@@ -59,6 +59,13 @@ class EC2InstanceTypeNotFoundError(DirectorError):
     msg_template: str = "invalid EC2 instance type selected {ec2_instance_types}. TIP: adjust product configuration"
 
 
+class MultiContainerOverrideNotSupportedError(DirectorError):
+    msg_template: str = (
+        "Sizing the containers of a multi-container service {sub_service_names} from an EC2 "
+        "machine type is not supported (node {node_id} in project {project_id})"
+    )
+
+
 class PipelineNotFoundError(DirectorError):
     msg_template: str = "pipeline {pipeline_id} not found"
 

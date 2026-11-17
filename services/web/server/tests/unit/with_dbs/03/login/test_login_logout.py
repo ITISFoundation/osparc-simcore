@@ -10,6 +10,12 @@ from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_logout(client: TestClient, confirmation_repository: ConfirmationRepository):
     assert client.app

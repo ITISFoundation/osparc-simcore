@@ -19,6 +19,7 @@ from ...resource_manager.user_sessions import (
     PROJECT_ID_KEY,
     managed_resource,
 )
+from ...signals import SIGNAL_USER_CONNECTED, SIGNAL_USER_DISCONNECTED
 from .._projects_service import (
     conditionally_unsubscribe_project_logs_across_replicas,
     retrieve_and_notify_project_locked_state,
@@ -82,7 +83,7 @@ async def _on_user_disconnected(
 def setup_project_observer_events(app: web.Application) -> None:
     setup_observer_registry(app)
 
-    register_observer(app, _on_user_connected, event="SIGNAL_USER_CONNECTED")
-    register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
+    register_observer(app, _on_user_connected, event=SIGNAL_USER_CONNECTED)
+    register_observer(app, _on_user_disconnected, event=SIGNAL_USER_DISCONNECTED)
 
     _logger.info("App registered events (at this point):\n%s", registered_observers_report(app))

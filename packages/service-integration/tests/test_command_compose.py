@@ -8,9 +8,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 import yaml
-from click.testing import Result
 from service_integration.compose_spec_model import ComposeSpecification
 from service_integration.osparc_config import MetadataConfig
+from typer.testing import Result
 
 
 def _format_cli_error(result: Result) -> str:

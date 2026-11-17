@@ -6,31 +6,19 @@
 
 import asyncio
 import datetime
-from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager
 from itertools import chain
 from unittest import mock
 
 import arrow
-import pytest
 from common_library.async_tools import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.redis import RedisClientSDK
-from settings_library.redis import RedisDatabase
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
 )
-
-
-@pytest.fixture
-async def redis_client_sdk(
-    get_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
-) -> AsyncIterator[RedisClientSDK]:
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as client:
-        yield client
 
 
 async def _assert_on_sleep_done(on_sleep_events: mock.Mock, *, stop_after: float):

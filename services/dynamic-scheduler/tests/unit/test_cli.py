@@ -5,13 +5,12 @@ import os
 import traceback
 
 import pytest
-from click.testing import Result
 from pytest_simcore.helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_scheduler._meta import API_VERSION
 from simcore_service_dynamic_scheduler.cli import main as cli_main
 from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 
 def _format_cli_error(result: Result) -> str:

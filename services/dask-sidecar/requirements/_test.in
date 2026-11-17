@@ -11,6 +11,7 @@ aioboto3
 coverage
 docker
 faker
+filelock
 moto[server]
 pytest
 pytest-asyncio

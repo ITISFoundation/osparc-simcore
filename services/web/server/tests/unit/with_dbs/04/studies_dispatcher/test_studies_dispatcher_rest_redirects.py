@@ -26,6 +26,8 @@ from simcore_service_webserver.trash import trash_service
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
@@ -366,7 +368,7 @@ async def test_viewer_redirect_with_file_type_errors(
 
     message, status_code = assert_error_in_fragment(resp)
 
-    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "link" in message.lower()
 
 
@@ -396,7 +398,7 @@ async def test_viewer_redirect_with_client_errors(
 
     message, status_code = assert_error_in_fragment(resp)
     print(message)
-    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 @pytest.mark.parametrize("missing_parameter", ["file_type", "file_size", "download_link"])
@@ -424,7 +426,7 @@ async def test_missing_file_param(
     assert response.status == 200
 
     message, status_code = assert_error_in_fragment(response)
-    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got {message=}"
+    assert status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, f"Got {message=}"
 
 
 @pytest.mark.parametrize("studies_dispatcher_enabled", [False], indirect=True)

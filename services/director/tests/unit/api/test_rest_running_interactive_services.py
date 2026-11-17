@@ -5,7 +5,7 @@
 
 import uuid
 
-import httpx
+import httpx2
 import pytest
 import respx
 from faker import Faker
@@ -16,7 +16,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director.constants import LEGACY_SERVICES_PINNED_OSPARC_PRODUCT
 
 
-def _assert_response_and_unwrap_envelope(got: httpx.Response):
+def _assert_response_and_unwrap_envelope(got: httpx2.Response):
     assert got.headers["content-type"] == "application/json"
     assert got.encoding == "utf-8"
 
@@ -31,7 +31,7 @@ async def test_running_services_post_and_delete(  # noqa: PLR0915
     configure_swarm_stack_name: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     push_services,
     user_id: UserID,
     project_id: ProjectID,
@@ -45,7 +45,7 @@ async def test_running_services_post_and_delete(  # noqa: PLR0915
 ):
     params = {}
     resp = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     params = {
         "user_id": f"{faker.pyint(min_value=1)}",
@@ -57,7 +57,7 @@ async def test_running_services_post_and_delete(  # noqa: PLR0915
     }
     resp = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     data = resp.json()
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, data
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, data
 
     params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
     params["service_tag"] = "1.2.3"
@@ -158,11 +158,7 @@ async def test_running_services_post_and_delete(  # noqa: PLR0915
             assert_all_called=False,
             assert_all_mocked=False,
         ) as respx_mock:
-
-            def _save_me(request) -> httpx.Response:
-                return httpx.Response(status.HTTP_200_OK, json={})
-
-            respx_mock.post("/state", name="save_state").mock(side_effect=_save_me)
+            respx_mock.post("/state", name="save_state").respond(status.HTTP_200_OK, json={})
             respx_mock.route(host="127.0.0.1", name="host").pass_through()
             respx_mock.route(host="localhost", name="localhost").pass_through()
 
@@ -181,7 +177,7 @@ async def test_running_interactive_services_list_get(  # noqa: PLR0915
     configure_swarm_stack_name: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     push_services,
     x_simcore_user_agent_header: dict[str, str],
     api_version_prefix: str,

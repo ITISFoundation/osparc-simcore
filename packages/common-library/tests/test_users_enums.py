@@ -1,3 +1,4 @@
+# pylint: disable=comparison-with-itself
 # pylint: disable=no-value-for-parameter
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument

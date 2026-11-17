@@ -808,9 +808,13 @@ async def auto_add_user_to_groups(
         async for row in result:
             inclusion_rules = row.inclusion_rules
             for prop, rule_pattern in inclusion_rules.items():
-                if prop not in user:
+                value = user.get(prop)
+                if not isinstance(value, str):
+                    # rule targets a column the user lacks or whose value is
+                    # NULL/non-string (e.g. phone): it cannot match, so skip it
+                    # instead of raising from re.search
                     continue
-                if re.search(rule_pattern, user[prop]):
+                if re.search(rule_pattern, value):
                     possible_group_ids.add(row.gid)
 
         # now add the user to these groups if possible

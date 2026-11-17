@@ -16,7 +16,7 @@ coverage
 docker
 faker
 fakeredis
-httpx
+filelock
 pytest
 pytest-asyncio
 pytest-celery

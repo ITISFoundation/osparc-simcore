@@ -242,13 +242,13 @@ class BatchGetJobMetadataResponse(BaseModel):
 
 class Job(BaseModel):
     id: JobID
-    name: RelativeResourceName
+    name: Annotated[RelativeResourceName, Field(frozen=True)]
 
     inputs_checksum: str = Field(..., description="Input's checksum")
     created_at: datetime.datetime = Field(..., description="Job creation timestamp")
 
     # parent
-    runner_name: RelativeResourceName = Field(..., description="Runner that executes job")
+    runner_name: Annotated[RelativeResourceName, Field(frozen=True, description="Runner that executes job")]
 
     # Get links to other resources
     url: Annotated[HttpUrl, UriSchema()] | None = Field(..., description="Link to get this resource (self)")
@@ -281,7 +281,7 @@ class Job(BaseModel):
         cls,
         parent_name: RelativeResourceName,
         inputs_checksum: str,
-    ) -> "Job":
+    ) -> Job:
         global_uuid = uuid4()
 
         return cls(
@@ -371,7 +371,7 @@ class JobPricingSpecification(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     @classmethod
-    def create_from_headers(cls, headers: Headers) -> "JobPricingSpecification | None":
+    def create_from_headers(cls, headers: Headers) -> JobPricingSpecification | None:
         try:
             return TypeAdapter(cls).validate_python(headers)
         except ValidationError:

@@ -77,25 +77,40 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     mocked_get_image_labels: mock.Mock,
 ):
     # Configure the task to exceed memory limit
-    # NOTE: We allocate memory gradually (1MB chunks in a loop) instead of a single
-    # large bytearray to ensure pages are actually committed and the kernel OOM killer
-    # fires reliably. A single large malloc can fail with MemoryError (exit code 1)
-    # instead of triggering OOMKilled, depending on the host's overcommit settings.
-    memory_limit = TypeAdapter(ByteSize).validate_python("50MiB")
+    # NOTE: We allocate dirty pages (written-to bytearrays) in 1MiB chunks up to a bounded
+    # count, so the kernel memory-cgroup OOM killer fires reliably (untouched allocations
+    # may not be committed, and a single large malloc can fail with MemoryError -> exit 1
+    # depending on the host's overcommit settings). The bound also guarantees the
+    # container terminates even if the OOM kill never happens, so the test fails with
+    # service logs instead of hanging.
+    # NOTE: the limit (128MiB) is chosen well above the python:3.11-slim interpreter
+    # baseline (~20-30MiB RSS at startup, close to 50MiB once imports/heap are added).
+    # With a tight limit such as 50MiB the OOM boundary falls inside the interpreter's
+    # own footprint, so the death mode becomes a race: the kernel cgroup OOM kill
+    # (exit 137 / OOMKilled -> ServiceOutOfMemoryError) may instead lose against
+    # malloc returning NULL -> Python MemoryError (exit 1) or a kill during startup,
+    # which surfaces as a plain ServiceRuntimeError and fails this test. With 128MiB
+    # the loop comfortably survives startup and clearly overshoots the limit with
+    # committed pages, making the kernel OOM kill the dominant death mode. It also
+    # stays well within the 1GiB RAM the local test cluster worker advertises.
+    memory_limit = TypeAdapter(ByteSize).validate_python("128MiB")
+    memory_limit_mib = 128
     memory_exceeding_task = sidecar_task(
         service_key="python",
         service_version="3.11-slim",
         command=[
             "python",
             "-c",
-            "import sys; blocks = [];\n"
-            "while True:\n"
-            "    blocks.append(bytearray(1024*1024))\n"
-            "    print(f'Allocated {len(blocks)} MiB', flush=True)\n",
+            (
+                "blocks = [];\n"
+                f"for _ in range({4 * memory_limit_mib}):\n"
+                "    blocks.append(bytearray(b'\\xff' * (1024*1024)))\n"
+                "    print(f'Allocated {len(blocks)} MiB', flush=True)\n"
+            ),
         ],
     )
 
-    # Execute the task and expect a runtime error due to memory limit exceeded
+    # Execute the task and expect an out-of-memory error due to the memory limit exceeded
 
     future = dask_client.submit(
         run_computational_sidecar,
@@ -103,4 +118,4 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
         resources={"RAM": memory_limit},
     )
     with pytest.raises(ServiceOutOfMemoryError):
-        future.result()
+        future.result(timeout=120)

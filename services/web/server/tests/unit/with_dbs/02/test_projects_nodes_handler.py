@@ -23,23 +23,29 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     PresignedLink,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGetIdle
 from models_library.generics import Envelope
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeShareStatus
+from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.project_nodes_pricing import get_node_pricing_state
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -53,8 +59,10 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._controller.nodes_rest import (
     _ProjectNodePreview,
 )
+from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_NODE_UPDATED_EVENT
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import (
     AsyncRetrying,
     RetryError,
@@ -65,6 +73,8 @@ from tenacity import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
@@ -90,12 +100,12 @@ async def test_get_node_resources(
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {k: v.model_dump() for k, v in node_resources.items()} == next(
-                iter(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
-            )  # type: ignore
+            assert TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                node_resources, mode="json"
+            ) == next(iter(SERVICE_RESOURCES_DICT_EXAMPLES))
         else:
             assert not data
             assert error
@@ -155,17 +165,22 @@ async def test_replace_node_resources_is_forbidden_by_default(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    SERVICE_RESOURCES_DICT_EXAMPLES[0]
+                ),
+                mode="json",
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert node_resources == ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
+            assert node_resources == TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                SERVICE_RESOURCES_DICT_EXAMPLES[0]
+            )
 
 
 @pytest.mark.parametrize(
@@ -188,25 +203,69 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    SERVICE_RESOURCES_DICT_EXAMPLES[0]
+                ),
+                mode="json",
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {k: v.model_dump() for k, v in node_resources.items()} == ServiceResourcesDictHelpers.model_config[
-                "json_schema_extra"
-            ]["examples"][0]
+            assert (
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(node_resources, mode="json")
+                == SERVICE_RESOURCES_DICT_EXAMPLES[0]
+            )
 
 
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (UserRole.TESTER, status.HTTP_409_CONFLICT),
+    ],
+)
+async def test_replace_node_resources_raises_409_if_pricing_unit_is_connected(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: HTTPStatus,
+    with_permitted_override_services_specifications: None,
+):
+    assert client.app
+    db = ProjectDBAPI.get_from_app_context(client.app)
+    for node_id in user_project["workbench"]:
+        get_url = client.app.router["get_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
+        response = await client.get(f"{get_url}")
+        resources_before, _ = await assert_status(response, status.HTTP_200_OK)
+
+        await db.connect_pricing_unit_to_project_node(
+            ProjectID(user_project["uuid"]), NodeID(node_id), pricing_plan_id=1, pricing_unit_id=1
+        )
+
+        url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
+        response = await client.put(
+            f"{url}",
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    SERVICE_RESOURCES_DICT_EXAMPLES[0]
+                ),
+                mode="json",
+            ),
+        )
+        await assert_status(response, expected)
+
+        response = await client.get(f"{get_url}")
+        resources_after, _ = await assert_status(response, status.HTTP_200_OK)
+        assert resources_after == resources_before
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, status.HTTP_422_UNPROCESSABLE_CONTENT),
     ],
 )
 async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
@@ -219,9 +278,12 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                # NOTE: we apply a different resource set
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][1]
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    # NOTE: we apply a different resource set
+                    SERVICE_RESOURCES_DICT_EXAMPLES[1]
+                ),
+                mode="json",
             ),
         )
         await assert_status(response, expected)
@@ -295,6 +357,7 @@ async def test_create_node_returns_422_if_body_is_missing(
     mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
+@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize(
     "node_class, expect_run_service_call",
     [("dynamic", True), ("comp", False), ("frontend", False)],
@@ -310,7 +373,9 @@ async def test_create_node(
     faker: Faker,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
     postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
@@ -340,6 +405,19 @@ async def test_create_node(
                 .limit(1)
             )
         assert result.scalar() is not None
+
+        # CHARACTERIZATION of the pricing/resources state at node creation:
+        # creating a node NEVER links a pricing unit and stores the catalog's
+        # default resources untouched (director-v2 links the default unit and
+        # resizes later, during create_or_update_pipeline).
+        # ⚠️ For node_class == "comp" the pricing/resources ownership rework (PR 2)
+        # intends to link the default pricing unit and size with the dask formula
+        # AT CREATION; when that lands, update the expectations for "comp".
+        state = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
+        new_node_state = state[NodeID(node_id)]
+        assert new_node_state.pricing_plan_id is None
+        assert new_node_state.pricing_unit_id is None
+        assert new_node_state.required_resources == jsonable_encoder(mock_service_resources)
     else:
         assert error
 
@@ -351,6 +429,11 @@ def standard_user_role() -> tuple[str, tuple]:
 
 
 @pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.docker_exclusive(
+    reason="150 node creations and 150 deletions in parallel saturate this worker's event loop "
+    "and the shared services, which makes other workers lose their redis locks and socketio "
+    "notifications"
+)
 async def test_create_and_delete_many_nodes_in_parallel(
     mock_dynamic_scheduler: None,
     disable_max_number_of_running_dynamic_nodes: dict[str, str],
@@ -377,8 +460,8 @@ async def test_create_and_delete_many_nodes_in_parallel(
             **kwargs,  # noqa: ARG002
         ) -> list[DynamicServiceGet]:
             return [
-                DynamicServiceGet.model_validate(
-                    DynamicServiceGet.model_json_schema()["examples"][1]
+                RunningDynamicServiceDetails.model_validate(
+                    RunningDynamicServiceDetails.model_json_schema()["examples"][1]
                     | {"service_uuid": service_uuid, "project_id": user_project["uuid"]}
                 )
                 for service_uuid in self.running_services_uuids
@@ -674,8 +757,8 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
     # simulate that the dynamic service is running
     mocked_dynamic_services_interface[
         "dynamic_scheduler.api.get_dynamic_service"
-    ].return_value = DynamicServiceGet.model_validate(
-        DynamicServiceGet.model_json_schema()["examples"][0]
+    ].return_value = RunningDynamicServiceDetails.model_validate(
+        RunningDynamicServiceDetails.model_json_schema()["examples"][0]
         | {
             "user_id": logged_user["id"],
             "project_id": project["uuid"],
@@ -933,7 +1016,9 @@ def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
     aioresponses_mocker.get(
         _get_download_link,
         status=status.HTTP_200_OK,
-        payload=jsonable_encoder(Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))),
+        payload=jsonable_encoder(
+            Envelope[PresignedLink](data=PresignedLink(link=TypeAdapter(AnyUrl).validate_python(faker.image_url())))
+        ),
         repeat=True,
     )
 

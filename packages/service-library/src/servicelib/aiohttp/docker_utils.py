@@ -3,7 +3,7 @@ from typing import Final
 
 import aiodocker
 import aiohttp
-from aiohttp import web
+from aiohttp import hdrs, web
 from models_library.docker import DockerGenericTag
 from pydantic import TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
@@ -30,12 +30,6 @@ async def retrieve_image_layer_information(
     with log_catch(_logger, reraise=False):
         async with aiohttp.ClientSession() as session:
             image_complete_url = get_image_complete_url(image, registry_settings)
-            auth = None
-            if registry_settings.REGISTRY_URL in f"{image_complete_url}":
-                auth = aiohttp.BasicAuth(
-                    login=registry_settings.REGISTRY_USER,
-                    password=registry_settings.REGISTRY_PW.get_secret_value(),
-                )
             # NOTE: either of type ubuntu:latest or ubuntu@sha256:lksfdjlskfjsldkfj
             docker_image_name, docker_image_tag = get_image_name_and_tag(image_complete_url)
             manifest_url = image_complete_url.with_path(f"v2/{docker_image_name}/manifests/{docker_image_tag}")
@@ -51,6 +45,11 @@ async def retrieve_image_layer_information(
                     ]
                 )
             }
+            if registry_settings.REGISTRY_URL in f"{image_complete_url}":
+                headers[hdrs.AUTHORIZATION] = aiohttp.encode_basic_auth(
+                    login=registry_settings.REGISTRY_USER,
+                    password=registry_settings.REGISTRY_PW.get_secret_value(),
+                )
             if DOCKER_HUB_HOST in f"{image_complete_url}":
                 # we need the docker hub bearer code (https://stackoverflow.com/questions/57316115/get-manifest-of-a-public-docker-image-hosted-on-docker-hub-using-the-docker-regi)
                 bearer_url = URL("https://auth.docker.io/token").with_query(
@@ -67,7 +66,7 @@ async def retrieve_image_layer_information(
                         "Authorization": f"Bearer {bearer_code}",
                     }
 
-            async with session.get(manifest_url, headers=headers, auth=auth) as response:
+            async with session.get(manifest_url, headers=headers) as response:
                 # Check if the request was successful
                 response.raise_for_status()
                 assert response.status == status.HTTP_200_OK  # nosec
@@ -86,7 +85,7 @@ async def retrieve_image_layer_information(
                         digest = manifest["digest"]
                         break
                 manifest_url = image_complete_url.with_path(f"v2/{docker_image_name}/manifests/{digest}")
-                async with session.get(manifest_url, headers=headers, auth=auth) as response:
+                async with session.get(manifest_url, headers=headers) as response:
                     response.raise_for_status()
                     assert response.status == status.HTTP_200_OK  # nosec
                     json_response = await response.json()

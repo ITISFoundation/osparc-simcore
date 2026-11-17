@@ -118,8 +118,9 @@ def create_application(tracing_config: TracingConfig) -> web.Application:  # noq
     setup_session(app)
     setup_security(app)
     setup_rest(app)
-    setup_long_running_tasks(app)
     setup_rabbitmq(app)
+
+    setup_long_running_tasks(app)
 
     # front-end products
     setup_products(app)

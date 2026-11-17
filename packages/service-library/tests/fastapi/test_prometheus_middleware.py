@@ -6,7 +6,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from prometheus_client.openmetrics.exposition import CONTENT_TYPE_LATEST
 from servicelib.fastapi.monitoring import (
     create_prometheus_instrumentation_lifespan_manager,

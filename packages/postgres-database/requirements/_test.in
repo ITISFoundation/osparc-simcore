@@ -12,6 +12,7 @@
 arrow
 coverage
 faker
+filelock
 pytest
 pytest-asyncio
 pytest-cov

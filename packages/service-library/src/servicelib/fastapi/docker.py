@@ -7,7 +7,7 @@ from typing import Final
 import aiodocker
 import aiohttp
 import tenacity
-from aiohttp import ClientSession
+from aiohttp import ClientSession, hdrs
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from pydantic import NonNegativeInt
@@ -28,10 +28,12 @@ def _create_remote_docker_client_lifespan(settings: DockerApiProxysettings) -> P
         async with AsyncExitStack() as exit_stack:
             session = await exit_stack.enter_async_context(
                 ClientSession(
-                    auth=aiohttp.BasicAuth(
-                        login=settings.DOCKER_API_PROXY_USER,
-                        password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
-                    )
+                    headers={
+                        hdrs.AUTHORIZATION: aiohttp.encode_basic_auth(
+                            login=settings.DOCKER_API_PROXY_USER,
+                            password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+                        )
+                    }
                 )
             )
 
@@ -87,7 +89,7 @@ async def is_docker_api_proxy_ready(
 ) -> bool:
     try:
         await asyncio.wait_for(client.version(), timeout=timeout)
-    except (aiodocker.DockerError, TimeoutError):
+    except aiodocker.DockerError, TimeoutError:
         return False
     return True
 

@@ -26,6 +26,12 @@ from simcore_service_webserver.projects._groups_repository import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_folders_user_role_permissions(

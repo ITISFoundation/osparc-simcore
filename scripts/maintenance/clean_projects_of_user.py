@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.14"
 # dependencies = [
 #     "httpx",
 #     "pydantic[email]",
@@ -368,7 +368,8 @@ async def clean_all_projects(
 
     if not dry_run:
         console.print(
-            f"\n[bold yellow]Are you sure you want to delete ALL {total_projects} projects for {username}?[/bold yellow]"
+            f"\n[bold yellow]Are you sure you want to delete ALL {total_projects} "
+            f"projects for {username}?[/bold yellow]"
         )
         if not typer.confirm(""):
             _display_status_message("Deletion cancelled", "info")

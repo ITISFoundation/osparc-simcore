@@ -61,10 +61,19 @@ body:
         - Which important changes we might pay attention to?
         - How should we test them?
         - Is there anything in particular we should monitor?
-      placeholder: |
+      value: |
         - Regular sprint release
     validations:
       required: true
+  - type: textarea
+    attributes:
+      label: "Devops actions 👷"
+      description: |
+        Check the PRs marked with (⚠️ devops).
+        Determine and commit necessary changes required in the ``osparc-ops-*`` repos.
+        Log below completed steps and issues
+    validations:
+      required: false
   - type: textarea
     attributes:
       label: Changes
@@ -72,19 +81,6 @@ body:
         Changes introduced by this release.
         List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
         TIP: use the autogenerate changelog feature during the draft release. (TIP: use regex replace for better visualization ``\*.+ by (@[\w\[\]-]+) in (https:.*)`` -> ``* $2 by $1``)
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: "Devops check 👷"
-      description: |
-        Check the PRs marked with (⚠️ devops).
-        Determine and commit necessary changes required in the ``osparc-ops-*`` repos.
-        Log below completed steps and issues
-      value: |
-        - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
-        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (osparc.io & osparc.speag.com & tip.itis.swiss)
-        - [ ] ...
     validations:
       required: false
   - type: textarea
@@ -131,6 +127,7 @@ body:
         make release-prod version=<M.m.0>  git_sha=<commit_sha>
         ```
         - [ ] Draft [release changelog](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Update [release notes](https://github.com/ITISFoundation/osparc-issues/blob/master/scripts/run_after_hotfix_to_prod.py)
         - [ ] Announce maintenance ( ** ANNOUNCE AT LEAST 24 HOURS BEFORE ** )
         - redis add an entry in db `scheduled_maintenance` with key `maintenance` ``{"start": "2023-03-06T13:00:00.000Z", "end": "2023-03-06T15:00:00.000Z", "reason": "Release <vX.X.0>"}``. Note the time is in UTC, please adjust accordingly
             - [ ] sim4life.io

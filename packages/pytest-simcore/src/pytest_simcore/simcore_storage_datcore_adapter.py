@@ -5,7 +5,6 @@
 import re
 from collections.abc import Iterator
 
-import httpx
 import pytest
 import respx
 from faker import Faker
@@ -46,14 +45,10 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
             ),
         )
 
-        def _create_download_link(request, file_id):
-            return httpx.Response(
-                status.HTTP_404_NOT_FOUND,
-                json={"error": f"{file_id} not found!"},
-            )
-
-        respx_mocker.get(re.compile(r"/files/(?P<file_id>[^/]+)"), name="get_file_download_link").mock(
-            side_effect=_create_download_link
+        # every file id is unknown to this mock, so the download link always answers 404
+        # (the file id in the error message is added by the storage service itself)
+        respx_mocker.get(re.compile(r"/files/(?P<file_id>[^/]+)"), name="get_file_download_link").respond(
+            status.HTTP_404_NOT_FOUND, json={"error": "file not found"}
         )
 
         respx_mocker.get(

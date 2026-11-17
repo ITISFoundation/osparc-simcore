@@ -12,7 +12,7 @@ from typing import Any, cast
 from unittest import mock
 
 import aiodocker
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from faker import Faker
@@ -48,10 +48,12 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "redis",
+    "static-webserver",
     "storage",
+    "webserver",
 ]
 
-pytest_simcore_ops_services_selection = ["adminer", "minio", "portainer"]
+pytest_simcore_ops_services_selection = ["adminer", "s3-storage", "portainer"]
 
 
 @pytest.fixture()
@@ -62,7 +64,7 @@ def mock_env(
     rabbit_service: RabbitSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    minio_s3_settings_envs: EnvVarsDict,
+    s3_storage_settings_envs: EnvVarsDict,
     storage_service: URL,
     network_name: str,
     services_endpoint: dict[str, URL],
@@ -85,7 +87,6 @@ def mock_env(
         {
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-            "SWARM_STACK_NAME": "pytest-simcore",
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
@@ -95,7 +96,7 @@ def mock_env(
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
             "DIRECTOR_HOST": director_host,
             "DIRECTOR_PORT": f"{director_port}",
@@ -253,7 +254,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
     user_dict: dict[str, Any],
     services_endpoint: dict[str, URL],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     ensure_services_stopped: None,

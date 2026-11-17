@@ -19,12 +19,18 @@ services:
   #
   # NOTE: these targets are NOT part of SERVICES_NAMES_TO_BUILD, they are only built
   # when referenced (as a build context or explicitly via `make build-base`).
+  # UV_VERSION must match the requirements/UV_VERSION content that
+  # compute_base_image_tag.bash hashed into BASE_TAG (exported by the root
+  # Makefile). No fallback: a base image must never be built with a uv version
+  # that its tag does not describe.
   simcore-runtime-base:
     image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-runtime-base:${BASE_TAG:-latest}
     build:
       context: ../
       dockerfile: services/_base_images/Dockerfile
       target: runtime-base
+      args:
+        UV_VERSION: ${UV_VERSION:?UV_VERSION must be exported (see root Makefile)}
 
   simcore-build-base:
     image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-build-base:${BASE_TAG:-latest}
@@ -32,6 +38,8 @@ services:
       context: ../
       dockerfile: services/_base_images/Dockerfile
       target: build-base
+      args:
+        UV_VERSION: ${UV_VERSION:?UV_VERSION must be exported (see root Makefile)}
 
   service-integration:
     image: local/service-integration:${BUILD_TARGET:?build_target_required}

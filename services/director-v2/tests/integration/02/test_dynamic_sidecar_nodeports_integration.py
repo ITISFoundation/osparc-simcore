@@ -15,7 +15,7 @@ from typing import Any, NamedTuple, cast
 from uuid import uuid4
 
 import aiodocker
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
@@ -29,7 +29,6 @@ from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
 from models_library.products import ProductName
 from models_library.projects import (
-    Node,
     NodesDict,
     ProjectAtDB,
     ProjectID,
@@ -40,6 +39,7 @@ from models_library.projects_networks import (
     NetworksWithAliases,
     ProjectsNetworks,
 )
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
@@ -53,6 +53,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
     periodic_task_result,
 )
+from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
     ProgressPercent,
@@ -109,14 +110,16 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "redis",
+    "static-webserver",
     "storage",
     "sto-worker",
     "redis",
+    "webserver",
 ]
 
 pytest_simcore_ops_services_selection = [
     "adminer",
-    "minio",
+    "s3-storage",
     "portainer",
 ]
 
@@ -162,7 +165,7 @@ async def minimal_configuration(
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
-    minio_s3_settings_envs: EnvVarsDict,
+    s3_storage_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
     with_product: dict[str, Any],
     osparc_product_name: str,
@@ -256,7 +259,7 @@ async def current_study(
     sleeper_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
@@ -365,7 +368,6 @@ def mock_env(
             "DYNAMIC_SIDECAR_IMAGE": image_name,
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-            "SWARM_STACK_NAME": "pytest-simcore",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
@@ -380,7 +382,7 @@ def mock_env(
             # this address to reach the rabbit service
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
@@ -633,7 +635,7 @@ async def _fetch_data_via_data_manager(
 
 
 async def _start_and_wait_for_dynamic_services_ready(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     product_name: str,
     product_api_base_url: str,
     user_id: UserID,
@@ -681,7 +683,7 @@ async def _start_and_wait_for_dynamic_services_ready(
 
 
 async def _wait_for_dy_services_to_fully_stop(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
 ) -> None:
     # pylint: disable=protected-access
     app: FastAPI = director_v2_client._transport.app  # type: ignore # noqa: SLF001
@@ -731,10 +733,10 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = "TEST: test_nodeports_i
 
 
 async def _assert_push_non_file_outputs(
-    initialized_app: FastAPI, director_v2_client: httpx.AsyncClient, service_uuid: str
+    initialized_app: FastAPI, director_v2_client: httpx2.AsyncClient, service_uuid: str
 ) -> None:
     result = await director_v2_client.post(f"/v2/dynamic_scheduler/services/{service_uuid}/outputs:push")
-    assert result.status_code == httpx.codes.ACCEPTED
+    assert result.status_code == httpx2.codes.ACCEPTED
     task_id: TaskId = result.json()
 
     logger.debug("Going to poll task %s", task_id)
@@ -744,23 +746,40 @@ async def _assert_push_non_file_outputs(
     ) -> None:
         logger.debug("%s: %.2f %s", task_id, percent, message)
 
-    async with periodic_task_result(
-        HttpClient(
-            app=initialized_app,
-            async_client=director_v2_client,
-            base_url=TypeAdapter(AnyHttpUrl).validate_python(f"{director_v2_client.base_url}"),
-        ),
-        task_id,
-        task_timeout=60,
-        status_poll_interval=1,
-        progress_callback=_debug_progress_callback,
-    ) as result:
-        logger.debug("Task %s finished", task_id)
-        return result
+    task_client = HttpClient(
+        app=initialized_app,
+        async_client=director_v2_client,
+        base_url=TypeAdapter(AnyHttpUrl).validate_python(f"{director_v2_client.base_url}"),
+    )
+    try:
+        async with periodic_task_result(
+            task_client,
+            task_id,
+            task_timeout=60,
+            status_poll_interval=1,
+            progress_callback=_debug_progress_callback,
+        ) as result:
+            logger.debug("Task %s finished", task_id)
+            return result
+    except TaskExceptionError:
+        configuration = initialized_app.state.long_running_client_configuration
+        registered_routes = [
+            f"{type(route).__name__}(name={getattr(route, 'name', None)!r}, path={getattr(route, 'path', None)!r})"
+            for route in initialized_app.routes
+        ]
+        logger.exception(
+            "Long-running task status diagnostic: task_id=%s base_url=%s requested_path=/task/{task_id} "
+            "router_prefix=%r registered_routes=%s",
+            task_id,
+            director_v2_client.base_url,
+            configuration.router_prefix,
+            registered_routes,
+        )
+        raise
 
 
 async def _assert_retrieve_completed(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     service_uuid: str,
     dynamic_services_urls: dict[str, str],
 ) -> None:
@@ -814,7 +833,7 @@ async def test_nodeports_integration(
     mock_osparc_variables_api_auth_rpc: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     db_manager: DBManager,
     current_user: dict[str, Any],
     current_study: ProjectAtDB,

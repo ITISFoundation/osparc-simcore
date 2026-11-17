@@ -19,6 +19,12 @@ qx.Class.define("osparc.WindowSizeTracker", {
   extend: qx.core.Object,
   type: "singleton",
 
+  construct: function() {
+    this.base(arguments);
+
+    qx.event.message.Bus.getInstance().subscribe("localeSwitch", this.__refreshRibbon, this);
+  },
+
   properties: {
     windowWidth: {
       check: "Integer",
@@ -57,6 +63,10 @@ qx.Class.define("osparc.WindowSizeTracker", {
   members: {
     __tooSmallDialog: null,
     __lastRibbonMessage: null,
+
+    __refreshRibbon: function() {
+      this.__applyTooSmall(this.getTooSmall());
+    },
 
     startTracker: function() {
       // onload, load, DOMContentLoaded, appear... didn't work

@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements.txt requirements.in
 aiohappyeyeballs==2.7.1
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.5
     # via
     #   -c ../../requirements/constraints.txt
     #   -r requirements.in
@@ -15,7 +15,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-coverage==7.16.0
+coverage==7.17.0
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -23,7 +23,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-idna==3.19
+idna==3.20
     # via yarl
 iniconfig==2.3.0
     # via pytest
@@ -48,7 +48,7 @@ markupsafe==3.0.3
     # via werkzeug
 more-itertools==11.1.0
     # via openapi-core
-multidict==6.7.1
+multidict==6.9.1
     # via
     #   aiohttp
     #   yarl
@@ -68,16 +68,16 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-propcache==0.5.2
+propcache==0.5.4
     # via
     #   aiohttp
     #   yarl
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via pydantic
 pydantic-settings==2.15.0
     # via
@@ -85,14 +85,14 @@ pydantic-settings==2.15.0
     #   openapi-spec-validator
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1.post1
     # via -r requirements.in
 pytest-cov==7.1.0
     # via -r requirements.in
@@ -100,7 +100,7 @@ pytest-instafail==0.5.0
     # via -r requirements.in
 pytest-sugar==1.1.1
     # via -r requirements.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via pydantic-settings
 pyyaml==6.0.3
     # via
@@ -132,7 +132,7 @@ typing-inspection==0.4.4
     # via
     #   pydantic
     #   pydantic-settings
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via openapi-core
-yarl==1.24.5
+yarl==1.25.1
     # via aiohttp

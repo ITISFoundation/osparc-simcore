@@ -73,7 +73,7 @@ def mock_env(
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_PORT": "5432",
             "POSTGRES_USER": "test",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "RABBIT_HOST": "rabbit",
             "RABBIT_PASSWORD": "adminadmin",
             "RABBIT_PORT": "5672",
@@ -277,7 +277,8 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
                     "REDIS_SETTINGS": (
-                        '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}'
+                        '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,'
+                        '"REDIS_PASSWORD":null,"REDIS_DB_OFFSET":0}'
                     ),
                     "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": (
                         '{"R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT":"PT1H","R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_PE'
@@ -288,7 +289,7 @@ def expected_dynamic_sidecar_spec(
                     "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": (
                         '{"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ARGUMENTS":{},"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ARGUMENTS":[]}'
                     ),
-                    "R_CLONE_PROVIDER": "MINIO",
+                    "R_CLONE_PROVIDER": "RUSTFS",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "SSL_CERT_FILE": "",

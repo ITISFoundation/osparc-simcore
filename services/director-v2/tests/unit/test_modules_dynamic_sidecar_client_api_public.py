@@ -10,7 +10,7 @@ import pytest
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import HTTPError, Response
+from httpx2 import HTTPError, Response
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, TypeAdapter
@@ -45,7 +45,7 @@ def mock_env(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Fake
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
 
     monkeypatch.setenv("POSTGRES_HOST", "")
     monkeypatch.setenv("POSTGRES_USER", "")

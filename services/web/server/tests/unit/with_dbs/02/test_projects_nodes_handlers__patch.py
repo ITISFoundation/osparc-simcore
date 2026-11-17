@@ -6,6 +6,7 @@
 # pylint: disable=too-many-statements
 
 
+import asyncio
 import json
 from http import HTTPStatus
 from unittest import mock
@@ -16,6 +17,7 @@ from deepdiff import DeepDiff
 from models_library.projects_nodes import PartialNode
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.postgres_locks import TIMEOUT_S, count_lock_waiters_behind, get_backend_pid, wait_until
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
@@ -27,8 +29,16 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import (
     _projects_nodes_repository as projects_nodes_repository,
 )
+from simcore_service_webserver.projects import _projects_repository as projects_repository
 from simcore_service_webserver.projects import _projects_service as projects_service
 from simcore_service_webserver.projects.models import ProjectDict
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 API_PREFIX = "/" + api_version_prefix
 
@@ -245,6 +255,47 @@ async def test_patch_project_node_ui_remove_marker(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+@pytest.mark.parametrize(
+    "patch_payload,expect_pipeline_sync",
+    [
+        pytest.param({"progress": 42.0}, False, id="progress only"),
+        pytest.param({"progress": 100.0}, False, id="progress finished"),
+        pytest.param({"ui": {"position": {"x": 1, "y": 2}}}, False, id="ui only"),
+        pytest.param({"progress": 12.5, "ui": {"marker": {"color": "#123456"}}}, False, id="progress and ui"),
+        pytest.param({"progress": 42.0, "label": "renamed"}, True, id="progress with label"),
+        pytest.param({"label": "renamed"}, True, id="label only"),
+    ],
+)
+async def test_patch_project_node_syncs_director_v2_only_for_non_ui_keys(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_rpc_check_for_service: None,
+    patch_payload: dict,
+    expect_pipeline_sync: bool,
+):
+    """patches touching only keys director-v2 does not use (see _NODE_UI_KEYS) must not
+    trigger a pipeline sync, since the file-picker progress updates would otherwise
+    fire a full POST /v2/computations on every tick
+    """
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+
+    resp = await client.patch(f"{base_url}", json=patch_payload)
+    await assert_status(resp, expected)
+
+    create_or_update_pipeline = mocked_dynamic_services_interface["director_v2.api.create_or_update_pipeline"]
+    if expect_pipeline_sync:
+        create_or_update_pipeline.assert_called_once()
+    else:
+        create_or_update_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_computational_project_node_notifies_only_updated_node(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -262,6 +313,8 @@ async def test_patch_computational_project_node_notifies_only_updated_node(
 
     await assert_status(resp, expected)
     mocked_notify_project_node_update.assert_awaited_once()
+    # REST-triggered notifications are not strict (only the outbox consumer is)
+    assert not mocked_notify_project_node_update.await_args.kwargs.get("strict", False)
     notified_project = mocked_notify_project_node_update.await_args.args[1]
     assert set(notified_project["workbench"]) == {node_id}
     assert notified_project["workbench"][node_id]["label"] == "updated label"
@@ -299,6 +352,8 @@ async def test_patch_project_node_notifies_outputs_updated_during_pipeline_sync(
 
     await assert_status(resp, expected)
     mocked_notify_project_node_update.assert_awaited_once()
+    # REST-triggered notifications are not strict (only the outbox consumer is)
+    assert not mocked_notify_project_node_update.await_args.kwargs.get("strict", False)
     notified_project = mocked_notify_project_node_update.await_args.args[1]
     assert notified_project["workbench"][node_id]["outputs"] == outputs_updated_during_pipeline_sync
 
@@ -369,6 +424,8 @@ async def test_patch_project_node_inputs_notifies(
     notify_project_nodes_update.assert_awaited_once()
     list_project_groups.assert_awaited_once()
     assert notify_project_nodes_update.await_args is not None
+    # REST-triggered notifications are not strict (only the outbox consumer is)
+    assert not notify_project_nodes_update.await_args.kwargs.get("strict", False)
     assert not DeepDiff(
         [f"{node_id}" for node_id in notify_project_nodes_update.await_args.args[2]],
         list(user_project["workbench"].keys()),
@@ -451,3 +508,63 @@ async def test_patch_project_node_service_key_with_error(
     ):
         resp = await client.patch(f"{url}", json=_patch_version)
         assert resp.status == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+async def test_patch_project_node_does_not_deadlock_with_a_concurrent_parent_row_writer(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_rpc_check_for_service: None,
+    mocked_notify_project_node_update,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    """a real PATCH must queue behind the parent project row instead of deadlocking with it"""
+    project_uuid = user_project["uuid"]
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    url = client.app.router["patch_project_node"].url_for(project_id=project_uuid, node_id=node_id)
+
+    async def _patch_node() -> None:
+        resp = await client.patch(f"{url}", json={"label": "concurrent-rename"})
+        assert resp.status == expected, f"PATCH returned {resp.status}"
+
+    # what a graph mutation does: lock the parent project row first, then write the node rows
+    async with sqlalchemy_async_engine.connect() as conn, conn.begin():
+        await projects_repository._lock_project_graph(conn, project_uuid=project_uuid)  # noqa: SLF001
+        holder = await get_backend_pid(conn)
+
+        # the PATCH starts only while the lock is held: it cannot complete before its first
+        # statement queues on the parent row, so the interleaving below is always exercised
+        patch_task = asyncio.create_task(_patch_node())
+
+        async def _patch_is_done_or_behind_me() -> bool:
+            # done() cannot mean "won the race": the PATCH started only after the lock above was
+            # taken, so finishing now could only come from an unrelated early failure, which the
+            # awaited patch_task below surfaces as the real error
+            if patch_task.done():
+                return True
+            return await count_lock_waiters_behind(sqlalchemy_async_engine, holder) > 0
+
+        await wait_until(_patch_is_done_or_behind_me, "the PATCH neither failed nor queued behind the parent lock")
+
+        # the node row, written through the production repository only after the parent
+        # row was locked first, in the same transaction
+        await projects_nodes_repository.update(
+            client.app,
+            conn,
+            project_id=project_uuid,
+            node_id=node_id,
+            partial_node=PartialNode.model_construct(progress=42.0),
+        )
+
+    # a deadlock surfaces as a failed PATCH (its backend was aborted), not as a stuck test
+    await asyncio.wait_for(patch_task, timeout=TIMEOUT_S)
+
+    final_node = await projects_nodes_repository.get(client.app, project_id=project_uuid, node_id=node_id)
+    # both writers got their write in
+    assert final_node.label == "concurrent-rename"
+    assert final_node.progress == pytest.approx(42.0)

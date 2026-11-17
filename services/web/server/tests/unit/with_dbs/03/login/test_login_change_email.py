@@ -16,6 +16,12 @@ from simcore_service_webserver.login.constants import (
 from simcore_service_webserver.login.settings import LoginOptions
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def new_email(user_email: str) -> str:
@@ -60,7 +66,7 @@ async def test_change_to_existing_email(client: TestClient):
         )
         await assert_status(
             response,
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "This email cannot be used",
         )
 

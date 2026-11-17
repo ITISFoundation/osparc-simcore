@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from helpers.shared_comp_utils import (
@@ -49,7 +49,7 @@ pytest_simcore_core_services_selection = [
     "storage",
     "redis",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["s3-storage", "adminer"]
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def mock_env(
             "SIMCORE_SERVICES_NETWORK_NAME": "test_swarm_network_name",
             "SWARM_STACK_NAME": "test_mocked_stack_name",
             "TRAEFIK_SIMCORE_ZONE": "test_mocked_simcore_zone",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         },
@@ -151,7 +151,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "product_name": "not a product",
                 "product_api_base_url": "http://invalid",
             },
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             {
@@ -160,7 +160,7 @@ COMPUTATION_URL: str = "v2/computations"
                 "product_name": "not a product",
                 "product_api_base_url": "http://invalid",
             },
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             {
@@ -187,7 +187,7 @@ def test_invalid_computation(
 
 
 async def test_start_empty_computation_returns_200(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -395,7 +395,7 @@ class PartialComputationParams:
 )
 async def test_run_partial_computation(
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -550,7 +550,7 @@ async def test_run_partial_computation(
 
 async def test_run_computation(
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -664,7 +664,7 @@ async def test_run_computation(
 
 
 async def test_abort_computation(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -742,7 +742,7 @@ async def test_abort_computation(
 
 
 async def test_update_and_delete_computation(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -843,7 +843,7 @@ async def test_update_and_delete_computation(
     )
 
     # now try to update the pipeline, is expected to be forbidden
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_409_CONFLICT}"):
+    with pytest.raises(httpx2.HTTPStatusError, match=f"{status.HTTP_409_CONFLICT}"):
         await create_pipeline(
             async_client,
             project_uuid=sleepers_project.uuid,
@@ -867,7 +867,7 @@ async def test_update_and_delete_computation(
 
 
 async def test_pipeline_with_no_computational_services_still_create_correct_comp_tasks_in_db(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -1227,7 +1227,7 @@ async def test_pipeline_with_dynamic_cycle_feeding_comp_node_is_allowed(
 
 
 async def test_burst_create_computations(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -1303,7 +1303,7 @@ async def test_burst_create_computations(
         return_exceptions=True,
     )
     created_tasks = [r for r in responses if isinstance(r, ComputationGet)]
-    failed_tasks = [r for r in responses if isinstance(r, httpx.HTTPStatusError)]
+    failed_tasks = [r for r in responses if isinstance(r, httpx2.HTTPStatusError)]
 
     assert len(created_tasks) == 2
     assert len(failed_tasks) == (NUMBER_OF_CALLS - 1)

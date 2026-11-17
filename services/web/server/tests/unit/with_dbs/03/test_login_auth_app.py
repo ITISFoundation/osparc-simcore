@@ -24,8 +24,13 @@ from simcore_service_webserver.application_settings import (
     ApplicationSettings,
     get_application_settings,
 )
-from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.security import security_web
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.fixture
@@ -37,10 +42,8 @@ def service_name() -> str:
 def app_environment_for_wb_authz_service_dict(
     docker_compose_service_environment_dict: EnvVarsDict,
     docker_compose_service_hostname: str,
-    default_app_cfg: AppConfigDict,
+    postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
-    postgres_cfg = default_app_cfg["db"]["postgres"]
-
     # Checks that docker-compose service environment is correct
     assert docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"] == "WEBSERVER_AUTHZ_APP_FACTORY"
     # expected tracing in the docker-environ BUT we will disable it for tests
@@ -54,11 +57,9 @@ def app_environment_for_wb_authz_service_dict(
         # NOTE: TEST-stack uses different env-vars
         # this is temporary here until we get rid of config files
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8129
-        "POSTGRES_DB": postgres_cfg["database"],
-        "POSTGRES_HOST": postgres_cfg["host"],
-        "POSTGRES_PORT": postgres_cfg["port"],
-        "POSTGRES_USER": postgres_cfg["user"],
-        "POSTGRES_PASSWORD": postgres_cfg["password"],
+        # the tests run outside the swarm, so they reach postgres through the ports the
+        # stack publishes instead of through the service names in docker-compose
+        **postgres_env_vars_dict,
         "HOSTNAME": docker_compose_service_hostname,
         "WEBSERVER_CELERY": "null",
         "WEBSERVER_TRACING": "null",  # BUT we will disable it for tests

@@ -391,7 +391,7 @@ printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
-printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
+printf "$$rows" "Storage S3 (RustFS)" "http://$(get_my_ip).nip.io:9090/rustfs/console/" 12345678 12345678;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
 
@@ -616,17 +616,24 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 .PHONY: devenv devenv-all node-env
 
+# Single source of truth for the uv version (see requirements/UV_VERSION for the pinning note).
+# tests/environment-setup/test_used_uv.py verifies all other references stay in sync.
+# exported so docker buildx bake interpolates it into the base image builds
+# (services/docker-compose-build.yml); requirements/UV_VERSION is hashed into
+# BASE_TAG by ci/helpers/compute_base_image_tag.bash
+export UV_VERSION := $(shell cat requirements/UV_VERSION)
+
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				curl -LsSf https://astral.sh/uv/install.sh | sh; \
+				curl -LsSf https://astral.sh/uv/$(UV_VERSION)/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
-		# upgrading uv
+		# upgrading uv (pinned, see note above)
 		@if [ "${CI}" != "true" ]; then \
-			uv self --quiet update; \
+			uv self --quiet update $(UV_VERSION) || true; \
 		else \
 			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
 		fi
@@ -638,8 +645,11 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json .vscode/mcp.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
-	# Installing pre-commit hooks in current .git repo
-	@$</bin/pre-commit install
+	@uv pip --quiet uninstall --python $< pre-commit 2>/dev/null || true
+	# Installing pre-commit hooks. All worktrees share them, so the hook runs a per-user
+	# pre-commit (uv tool) instead of the .venv of the worktree that installed it
+	@uv tool install --quiet --upgrade --force pre-commit
+	@"$$(uv tool dir --bin)/pre-commit" install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
 
 
@@ -934,7 +944,7 @@ clean-venv: devenv ## Purges .venv into original configuration
 	@uv pip list
 
 clean-hooks: ## Uninstalls git pre-commit hooks
-	@-pre-commit uninstall 2> /dev/null || rm .git/hooks/pre-commit
+	@-"$$(uv tool dir --bin)/pre-commit" uninstall 2> /dev/null || rm -f "$$(git rev-parse --git-common-dir)/hooks/pre-commit"
 
 clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned

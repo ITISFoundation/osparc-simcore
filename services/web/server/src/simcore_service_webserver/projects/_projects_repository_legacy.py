@@ -884,19 +884,6 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects.c.uuid == project_uuid)
             )
 
-    async def delete_project(self, user_id: int, project_uuid: str):
-        _logger.info(
-            "Deleting project with %s for user with %s",
-            f"{project_uuid=}",
-            f"{user_id}",
-        )
-
-        async with self.engine.begin() as conn:
-            await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                projects.delete().where(projects.c.uuid == project_uuid)
-            )
-
     #
     # Project NODES
     #

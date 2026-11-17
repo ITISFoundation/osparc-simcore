@@ -291,8 +291,7 @@
                 "type": "number"
               },
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               }
             ],
             "title": "Osparc Credits"
@@ -455,7 +454,6 @@
           },
           "current_cost_per_unit": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Current Cost Per Unit"
           },
           "current_cost_per_unit_id": {

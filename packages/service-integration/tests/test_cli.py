@@ -7,8 +7,8 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-from click.testing import Result
 from service_integration import __version__
+from typer.testing import Result
 
 
 def _format_cli_error(result: Result) -> str:

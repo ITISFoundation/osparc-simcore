@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from unittest import mock
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from models_library.resource_tracker import UnitExtraInfoTier
@@ -234,7 +234,7 @@ async def test_get_default_pricing_plan_for_service(
     mocked_setup_rabbitmq: mock.Mock,
     postgres_db: sa.engine.Engine,
     resource_tracker_pricing_tables_db: None,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     url = URL(f"/v1/services/{_SERVICE_KEY}/{_SERVICE_VERSION}/pricing-plan")
     response = await async_client.get(f"{url.with_query({'product_name': 'osparc'})}")

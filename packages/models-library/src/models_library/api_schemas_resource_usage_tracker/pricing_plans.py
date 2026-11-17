@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import NamedTuple, Self
 
 from pydantic import BaseModel, ConfigDict, PositiveInt, model_validator
+from pydantic.config import JsonDict
 
 from ..resource_tracker import (
     HardwareInfo,
@@ -25,39 +26,43 @@ class RutPricingUnitGet(BaseModel):
     default: bool
     specific_info: HardwareInfo
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "pricing_unit_id": 1,
-                    "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "current_cost_per_unit": 5.7,
-                    "current_cost_per_unit_id": 1,
-                    "default": True,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                },
-                {
-                    "pricing_unit_id": 1,
-                    "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "current_cost_per_unit": 5.7,
-                    "current_cost_per_unit_id": 1,
-                    "default": True,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
-                },
-                {
-                    "pricing_unit_id": 2,
-                    "unit_name": "5 seats",
-                    "unit_extra_info": UnitExtraInfoLicense.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "current_cost_per_unit": 10.5,
-                    "current_cost_per_unit_id": 2,
-                    "default": False,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
-                },
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "pricing_unit_id": 1,
+                        "unit_name": "SMALL",
+                        "unit_extra_info": UnitExtraInfoTier.model_json_schema()["examples"][0],
+                        "current_cost_per_unit": 5.7,
+                        "current_cost_per_unit_id": 1,
+                        "default": True,
+                        "specific_info": HardwareInfo.model_json_schema()["examples"][0],
+                    },
+                    {
+                        "pricing_unit_id": 1,
+                        "unit_name": "SMALL",
+                        "unit_extra_info": UnitExtraInfoTier.model_json_schema()["examples"][0],
+                        "current_cost_per_unit": 5.7,
+                        "current_cost_per_unit_id": 1,
+                        "default": True,
+                        "specific_info": HardwareInfo.model_json_schema()["examples"][1],
+                    },
+                    {
+                        "pricing_unit_id": 2,
+                        "unit_name": "5 seats",
+                        "unit_extra_info": UnitExtraInfoLicense.model_json_schema()["examples"][0],
+                        "current_cost_per_unit": 10.5,
+                        "current_cost_per_unit_id": 2,
+                        "default": False,
+                        "specific_info": HardwareInfo.model_json_schema()["examples"][1],
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class RutPricingPlanGet(BaseModel):
@@ -87,54 +92,46 @@ class RutPricingPlanGet(BaseModel):
                     raise ValueError(error_message)
         return self
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "pricing_plan_id": 1,
-                    "display_name": "Pricing Plan for Sleeper",
-                    "description": "Special Pricing Plan for Sleeper",
-                    "classification": "TIER",
-                    "created_at": "2023-01-11 13:11:47.293595",
-                    "pricing_plan_key": "pricing-plan-sleeper",
-                    "pricing_units": [
-                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][  # type: ignore [index]
-                            0  # type: ignore [index]
-                        ]
-                    ],
-                    "is_active": True,
-                },
-                {
-                    "pricing_plan_id": 1,
-                    "display_name": "Pricing Plan for Sleeper",
-                    "description": "Special Pricing Plan for Sleeper",
-                    "classification": "TIER",
-                    "created_at": "2023-01-11 13:11:47.293595",
-                    "pricing_plan_key": "pricing-plan-sleeper",
-                    "pricing_units": [
-                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][  # type: ignore [index]
-                            1  # type: ignore [index]
-                        ]
-                    ],
-                    "is_active": True,
-                },
-                {
-                    "pricing_plan_id": 2,
-                    "display_name": "VIP model A",
-                    "description": "Special Pricing Plan for VIP",
-                    "classification": "LICENSE",
-                    "created_at": "2023-01-11 13:11:47.293595",
-                    "pricing_plan_key": "vip-model-a",
-                    "pricing_units": [
-                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][  # type: ignore [index]
-                            2  # type: ignore [index]
-                        ]
-                    ],
-                    "is_active": True,
-                },
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "pricing_plan_id": 1,
+                        "display_name": "Pricing Plan for Sleeper",
+                        "description": "Special Pricing Plan for Sleeper",
+                        "classification": "TIER",
+                        "created_at": "2023-01-11 13:11:47.293595",
+                        "pricing_plan_key": "pricing-plan-sleeper",
+                        "pricing_units": [RutPricingUnitGet.model_json_schema()["examples"][0]],
+                        "is_active": True,
+                    },
+                    {
+                        "pricing_plan_id": 1,
+                        "display_name": "Pricing Plan for Sleeper",
+                        "description": "Special Pricing Plan for Sleeper",
+                        "classification": "TIER",
+                        "created_at": "2023-01-11 13:11:47.293595",
+                        "pricing_plan_key": "pricing-plan-sleeper",
+                        "pricing_units": [RutPricingUnitGet.model_json_schema()["examples"][1]],
+                        "is_active": True,
+                    },
+                    {
+                        "pricing_plan_id": 2,
+                        "display_name": "VIP model A",
+                        "description": "Special Pricing Plan for VIP",
+                        "classification": "LICENSE",
+                        "created_at": "2023-01-11 13:11:47.293595",
+                        "pricing_plan_key": "vip-model-a",
+                        "pricing_units": [RutPricingUnitGet.model_json_schema()["examples"][2]],
+                        "is_active": True,
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class RutPricingPlanPage(NamedTuple):
@@ -148,15 +145,19 @@ class PricingPlanToServiceGet(BaseModel):
     service_version: ServiceVersion
     created: datetime
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "pricing_plan_id": 1,
-                    "service_key": "simcore/services/comp/itis/sleeper",
-                    "service_version": "2.0.2",
-                    "created": "2023-01-11 13:11:47.293595",
-                }
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "pricing_plan_id": 1,
+                        "service_key": "simcore/services/comp/itis/sleeper",
+                        "service_version": "2.0.2",
+                        "created": "2023-01-11 13:11:47.293595",
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)

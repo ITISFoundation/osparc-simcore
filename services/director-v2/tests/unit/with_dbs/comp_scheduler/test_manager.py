@@ -337,9 +337,9 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
 
     # now we artificially set the last_schedule time well in the past
     await CompRunsRepository(sqlalchemy_async_engine).update(
-        comp_run.user_id,
-        comp_run.project_uuid,
-        comp_run.iteration,
+        user_id=comp_run.user_id,
+        project_id=comp_run.project_uuid,
+        iteration=comp_run.iteration,
         scheduled=datetime.datetime.now(tz=datetime.UTC) - SCHEDULER_INTERVAL * (_LOST_TASKS_FACTOR + 1),
     )
     with caplog.at_level(logging.ERROR):

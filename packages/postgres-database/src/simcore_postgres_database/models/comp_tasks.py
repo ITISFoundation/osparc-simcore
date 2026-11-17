@@ -1,6 +1,7 @@
 """Computational Tasks Table"""
 
 import enum
+from typing import Final
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -115,9 +116,10 @@ comp_tasks = sa.Table(
 
 register_modified_datetime_auto_update_trigger(comp_tasks)
 
-DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
-DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
-DB_CHANNEL_NAME: str = "comp_tasks_output_events"
+DB_PROCEDURE_NAME: Final[str] = "notify_comp_tasks_changed"
+DB_TRIGGER_NAME: Final[str] = f"{DB_PROCEDURE_NAME}_event"
+DB_CHANNEL_NAME: Final[str] = "outbox_wakeup"
+DB_OUTBOX_KIND_COMP_TASK_SYNC: Final[str] = "comp_task.sync.v1"
 
 # ------------------------ TRIGGERS
 
@@ -125,9 +127,11 @@ task_output_changed_trigger = sa.DDL(
     f"""
 DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
 CREATE TRIGGER {DB_TRIGGER_NAME}
-AFTER UPDATE OF outputs,state ON comp_tasks
+AFTER UPDATE OF outputs,state,run_hash ON comp_tasks
     FOR EACH ROW
-    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state))
+    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb
+        OR OLD.state IS DISTINCT FROM NEW.state
+        OR OLD.run_hash IS DISTINCT FROM NEW.run_hash))
     EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
 """
 )
@@ -137,34 +141,20 @@ AFTER UPDATE OF outputs,state ON comp_tasks
 task_output_changed_procedure = sa.DDL(
     f"""
 CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
-    DECLARE
-        record RECORD;
-        payload JSON;
-        changes JSONB;
-    BEGIN
-        IF (TG_OP = 'DELETE') THEN
-            record = OLD;
-        ELSE
-            record = NEW;
-        END IF;
+DECLARE
+    changed JSONB;
+BEGIN
+    SELECT coalesce(jsonb_agg(pre.key ORDER BY pre.key), '[]'::jsonb) INTO changed
+    FROM jsonb_each(to_jsonb(OLD)) AS pre, jsonb_each(to_jsonb(NEW)) AS post
+    WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
 
-        SELECT jsonb_agg(pre.key ORDER BY pre.key) INTO changes
-        FROM jsonb_each(to_jsonb(OLD)) AS pre, jsonb_each(to_jsonb(NEW)) AS post
-        WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
+    INSERT INTO outbox_events (kind, aggregate_type, aggregate_id, changed_columns)
+    VALUES ('{DB_OUTBOX_KIND_COMP_TASK_SYNC}', 'comp_task', NEW.task_id::text, changed);
 
-        payload = json_build_object(
-            'table', TG_TABLE_NAME,
-            'changes', changes,
-            'action', TG_OP,
-            'task_id', record.task_id,
-            'project_id', record.project_id,
-            'node_id', record.node_id
-        );
+    PERFORM pg_notify('{DB_CHANNEL_NAME}', '');
 
-        PERFORM pg_notify('{DB_CHANNEL_NAME}', payload::text);
-
-        RETURN NULL;
-    END;
+    RETURN NULL;
+END;
 $$ LANGUAGE plpgsql;
 """  # noqa: S608
 )

@@ -50,29 +50,6 @@ async def get_licensed_items(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_available_licensed_items_for_wallet(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    product_name: ProductName,
-    wallet_id: WalletID,
-    user_id: UserID,
-    offset: int = 0,
-    limit: int = 20,
-) -> LicensedItemRpcGetPage:
-    result: LicensedItemRpcGetPage = await rabbitmq_rpc_client.request(
-        DEFAULT_WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_available_licensed_items_for_wallet"),
-        product_name=product_name,
-        user_id=user_id,
-        wallet_id=wallet_id,
-        offset=offset,
-        limit=limit,
-    )
-    assert isinstance(result, LicensedItemRpcGetPage)  # nosec
-    return result
-
-
-@log_decorator(_logger, level=logging.DEBUG)
 async def checkout_licensed_item_for_wallet(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,

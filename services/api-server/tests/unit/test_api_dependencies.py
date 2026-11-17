@@ -44,13 +44,13 @@ def test_get_metadata_filter():
     input_data = ["key1val", "key2:exactval"]
     with pytest.raises(HTTPException) as exc_info:
         get_job_metadata_filter(input_data)
-    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # Test with empty pattern not allowed
     input_data = ["key1:", "key2:exactval"]
     with pytest.raises(HTTPException) as exc_info:
         get_job_metadata_filter(input_data)
-    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_metadata_filter_in_api_route():
@@ -101,7 +101,7 @@ def test_metadata_filter_in_api_route():
 
     # Test with invalid filter (should return 422)
     response = client.get("/test-filter?metadata.any=invalid&metadata.any=key2:exactval")
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # Test with URL-encoded characters
     # Use special characters that need encoding: space, &, =, +, /, ?

@@ -8,78 +8,82 @@ from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from common_library.gettext_support import DEFAULT_LOCALE
+from models_library.notifications import Channel
 from simcore_service_webserver.login._twofa_service import send_sms_code
+from simcore_service_webserver.login.errors import SendingVerificationSmsError
 
-_PHONE_NUMBER = "+41000000000"
+_PHONE_NUMBER = "+14155552671"
 _CODE = "123456"
 _FIRST_NAME = "Jane"
+_USER_NAME = "jane.doe"
+_PRODUCT_NAME = "osparc"
+_HOST = "https://osparc.example.com"
+_TTL = 300
 
 
 @pytest.fixture
-def mock_twilio_client() -> Iterator[MagicMock]:
-    with patch("simcore_service_webserver.login._twofa_service.twilio.rest.Client") as mock_client_cls:
-        mock_client = MagicMock()
-        mock_client_cls.return_value = mock_client
-        yield mock_client
+def mock_send_message_from_template() -> Iterator[AsyncMock]:
+    with patch(
+        "simcore_service_webserver.login._twofa_service.notifications_service.send_message_from_template",
+        new_callable=AsyncMock,
+    ) as mock_send:
+        yield mock_send
 
 
 async def _send_sms_code(
     *,
     locale: str | None,
     user_id: int | None = None,
-    resolved_locale: str = DEFAULT_LOCALE,
-) -> AsyncMock:
-    mock_app = MagicMock()
-    mock_twilio_auth = MagicMock()
-    mock_twilio_auth.is_alphanumeric_supported.return_value = False
-
-    with patch(
-        "simcore_service_webserver.login._twofa_service.resolve_effective_locale",
-        new_callable=AsyncMock,
-        return_value=resolved_locale,
-    ) as mock_resolve:
-        await send_sms_code(
-            mock_app,
-            phone_number=_PHONE_NUMBER,
-            code=_CODE,
-            twilio_auth=mock_twilio_auth,
-            twilio_messaging_sid="sid",
-            twilio_alpha_numeric_sender="sender",
-            first_name=_FIRST_NAME,
-            user_id=user_id,
-            locale=locale,
-        )
-    return mock_resolve
+) -> None:
+    await send_sms_code(
+        MagicMock(),
+        phone_number=_PHONE_NUMBER,
+        code=_CODE,
+        first_name=_FIRST_NAME,
+        user_name=_USER_NAME,
+        product_name=_PRODUCT_NAME,
+        host=_HOST,
+        ttl=_TTL,
+        user_id=user_id,
+        locale=locale,
+    )
 
 
-async def test_send_sms_code_translates_body_using_resolved_locale(mock_twilio_client: MagicMock):
-    """The SMS body is translated via the locale resolved by resolve_effective_locale."""
-    translated_msgid = "Estimado/a {first_name}, su código de verificación es {code}"
+async def test_send_sms_code_forwards_locale_and_user_id_to_notifications(
+    mock_send_message_from_template: AsyncMock,
+):
+    """send_sms_code delegates locale resolution to the notifications service, passing the caller's locale/user_id."""
+    await _send_sms_code(locale=None, user_id=42)
 
-    with patch("simcore_service_webserver.login._twofa_service.get_translator") as mock_get_translator:
-        mock_get_translator.return_value.gettext.return_value = translated_msgid
-        await _send_sms_code(locale="es_ES", resolved_locale="es_ES")
-
-    mock_get_translator.assert_called_once_with("es_ES")
-    body = mock_twilio_client.messages.create.call_args.kwargs["body"]
-    assert body == translated_msgid.format(first_name=_FIRST_NAME, code=_CODE)
-
-
-async def test_send_sms_code_forwards_locale_and_user_id_to_resolver(mock_twilio_client: MagicMock):
-    """send_sms_code delegates locale resolution, passing through the caller's locale/user_id."""
-    mock_resolve = await _send_sms_code(locale=None, user_id=42)
-
-    mock_resolve.assert_awaited_once()
-    _, kwargs = mock_resolve.call_args
+    mock_send_message_from_template.assert_awaited_once()
+    _, kwargs = mock_send_message_from_template.call_args
     assert kwargs["user_id"] == 42
     assert kwargs["locale"] is None
-    mock_twilio_client.messages.create.assert_called_once()
+    assert kwargs["product_name"] == _PRODUCT_NAME
+    assert kwargs["channel"] == Channel.sms
+    assert kwargs["template_name"] == "new_2fa_code"
 
 
-async def test_send_sms_code_falls_back_to_english_by_default(mock_twilio_client: MagicMock):
-    """With no explicit locale and no user_id, the body stays in English (DEFAULT_LOCALE, no catalog)."""
-    await _send_sms_code(locale=None, user_id=None, resolved_locale=DEFAULT_LOCALE)
+async def test_send_sms_code_sends_code_to_phone_contact(
+    mock_send_message_from_template: AsyncMock,
+):
+    await _send_sms_code(locale="es_ES", user_id=None)
 
-    body = mock_twilio_client.messages.create.call_args.kwargs["body"]
-    assert body == f"Dear {_FIRST_NAME}, your verification code is {_CODE}"
+    _, kwargs = mock_send_message_from_template.call_args
+    assert [contact.phone_number for contact in kwargs["external_contacts"]] == [_PHONE_NUMBER]
+    assert kwargs["locale"] == "es_ES"
+    assert kwargs["context"] == {
+        "user": {"first_name": _FIRST_NAME, "user_name": _USER_NAME},
+        "host": _HOST,
+        "code": _CODE,
+        "ttl": _TTL,
+    }
+
+
+async def test_send_sms_code_wraps_delivery_failures(
+    mock_send_message_from_template: AsyncMock,
+):
+    mock_send_message_from_template.side_effect = RuntimeError("notifications unavailable")
+
+    with pytest.raises(SendingVerificationSmsError):
+        await _send_sms_code(locale=None)

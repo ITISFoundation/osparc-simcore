@@ -4,30 +4,23 @@ from pathlib import PurePosixPath
 from typing import Any, Final
 from urllib.parse import urlparse
 
-import httpx
+import httpx2
 from common_library.gettext_support import DEFAULT_LOCALE
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import status
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.notifications import Channel
-from models_library.notifications.rpc import (
-    EmailAddressing,
-    EmailAttachment,
-    EmailContact,
-    TemplateRef,
-)
+from models_library.notifications.rpc import EmailAddressing, EmailAttachment, EmailContact, TemplateRef
+from models_library.products import ProductName
+from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
 from models_library.users import UserID
 from pydantic import EmailStr
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.notifications import (
-    send_message_from_template,
-)
-from tenacity import (
-    retry,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_exponential,
-)
+from servicelib.rabbitmq.rpc_interfaces.notifications import send_message_from_template
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import UserPreferencesRpcApi
+from servicelib.ssl_context import get_shared_ssl_context
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from ..db.payment_users_repo import PaymentsUsersRepo
 from ..models.db import PaymentsTransactionsDB
@@ -40,9 +33,9 @@ _DEFAULT_INVOICE_FILENAME: Final[str] = "invoice.pdf"
 
 
 def _retry_if_invoice_pdf_error(exception: BaseException) -> bool:
-    if isinstance(exception, (httpx.ConnectError, httpx.ReadTimeout)):
+    if isinstance(exception, (httpx2.ConnectError, httpx2.ReadTimeout)):
         return True
-    if isinstance(exception, httpx.HTTPStatusError):
+    if isinstance(exception, httpx2.HTTPStatusError):
         return exception.response.status_code in (
             status.HTTP_429_TOO_MANY_REQUESTS,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -60,7 +53,7 @@ _INVOICE_PDF_RETRY_WAIT_MAX_SECONDS: Final[int] = 10
 
 # Worst case for repeated read timeouts is about 70 seconds total:
 # 5 attempts * 10 seconds timeout + waits of 4 + 4 + 4 + 8 seconds.
-_INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
+_INVOICE_PDF_TIMEOUT: Final = httpx2.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
 
 
 @retry(
@@ -73,8 +66,10 @@ _INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
     stop=stop_after_attempt(_INVOICE_PDF_RETRY_ATTEMPTS),
     reraise=True,
 )
-async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
-    async with httpx.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx2.Response:
+    async with httpx2.AsyncClient(
+        follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT, verify=get_shared_ssl_context()
+    ) as client:
         _response = await client.get(invoice_pdf)
         _response.raise_for_status()
     return _response
@@ -83,7 +78,7 @@ async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
 _INVOICE_FILE_NAME_PATTERN: Final = re.compile(r'filename="(?P<filename>[^"]+)"')
 
 
-def _extract_file_name(response: httpx.Response, url: str) -> str:
+def _extract_file_name(response: httpx2.Response, url: str) -> str:
     content_disposition = response.headers.get("content-disposition", "")
     match = _INVOICE_FILE_NAME_PATTERN.search(content_disposition)
     if match:
@@ -93,6 +88,33 @@ def _extract_file_name(response: httpx.Response, url: str) -> str:
     if url_filename.lower().endswith(".pdf"):
         return url_filename
     return _DEFAULT_INVOICE_FILENAME
+
+
+async def _list_additional_invoice_email_recipients(
+    user_preferences_rpc: UserPreferencesRpcApi,
+    user_id: UserID,
+    product_name: ProductName,
+    payment_id: str,
+) -> list[EmailStr]:
+    try:
+        preference = await user_preferences_rpc.get_frontend_user_preference(
+            user_id=user_id,
+            product_name=product_name,
+            preference_class=InvoiceEmailRecipientsFrontendUserPreference,
+        )
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                "Failed to list additional invoice email recipients",
+                error=exc,
+                error_context={"user_id": user_id, "payment_id": payment_id},
+            )
+        )
+        return []
+
+    if preference is None:
+        return []
+    return preference.value
 
 
 async def _download_invoice_pdf(
@@ -110,7 +132,7 @@ async def _download_invoice_pdf(
     }
     try:
         response = await _get_invoice_pdf(url)
-    except httpx.ReadTimeout as exc:
+    except httpx2.ReadTimeout as exc:
         timeout_info = exc.request.extensions.get("timeout", "unknown")
         _logger.warning(
             **create_troubleshooting_log_kwargs(
@@ -145,6 +167,7 @@ class EmailProvider(NotificationProvider):
         bcc_email: EmailStr | None = None,
     ):
         self._rabbitmq_rpc_client = rabbitmq_rpc_client
+        self._user_preferences_rpc = UserPreferencesRpcApi(rabbitmq_rpc_client, DEFAULT_WEBSERVER_RPC_NAMESPACE)
         self._users_repo = users_repo
         self._bcc_email = bcc_email
 
@@ -183,6 +206,13 @@ class EmailProvider(NotificationProvider):
 
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
 
+        additional_emails = await _list_additional_invoice_email_recipients(
+            self._user_preferences_rpc,
+            user_id,
+            data.product_name,
+            payment.payment_id,
+        )
+
         attachments: list[EmailAttachment] = []
         if payment.invoice_pdf_url:
             downloaded = await _download_invoice_pdf(
@@ -202,7 +232,7 @@ class EmailProvider(NotificationProvider):
 
         full_name = " ".join(part for part in (data.first_name, data.last_name) if part) or (data.user_name or "")
 
-        addressing = EmailAddressing(
+        primary_addressing = EmailAddressing(
             to=[
                 EmailContact(
                     name=full_name,
@@ -211,6 +241,17 @@ class EmailProvider(NotificationProvider):
             ],
             bcc=[EmailContact(name="", email=self._bcc_email)] if self._bcc_email else None,
             attachments=attachments or None,
+        )
+        primary_email = str(data.email).casefold()
+        seen_emails = {primary_email} | ({str(self._bcc_email).casefold()} if self._bcc_email else set())
+        additional_contacts: list[EmailContact] = []
+        for email in additional_emails:
+            normalized_email = str(email).casefold()
+            if normalized_email not in seen_emails:
+                seen_emails.add(normalized_email)
+                additional_contacts.append(EmailContact(name="", email=email))
+        additional_addressing = (
+            EmailAddressing(to=additional_contacts, attachments=attachments or None) if additional_contacts else None
         )
 
         context: dict[str, Any] = {
@@ -228,17 +269,19 @@ class EmailProvider(NotificationProvider):
         }
 
         try:
-            await send_message_from_template(
-                self._rabbitmq_rpc_client,
-                product_name=data.product_name,
-                addressing=addressing,
-                template_ref=TemplateRef(
-                    channel=Channel.email,
-                    template_name=_PAID_TEMPLATE_NAME,
-                ),
-                context=context,
-                locale=data.language or DEFAULT_LOCALE,
-            )
+            for addressing in (primary_addressing, additional_addressing):
+                if addressing is not None:
+                    await send_message_from_template(
+                        self._rabbitmq_rpc_client,
+                        product_name=data.product_name,
+                        addressing=addressing,
+                        template_ref=TemplateRef(
+                            channel=Channel.email,
+                            template_name=_PAID_TEMPLATE_NAME,
+                        ),
+                        context=context,
+                        locale=data.language or DEFAULT_LOCALE,
+                    )
         except Exception as exc:  # pylint: disable=broad-except
             _logger.exception(
                 **create_troubleshooting_log_kwargs(

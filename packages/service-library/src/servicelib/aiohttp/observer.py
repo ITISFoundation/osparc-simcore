@@ -13,7 +13,7 @@ from aiohttp import web
 from ..aiohttp.application_setup import ensure_single_setup
 from ..utils import logged_gather
 
-log = logging.getLogger(__name__)
+_logger: Final = logging.getLogger(__name__)
 
 
 _APP_OBSERVER_EVENTS_REGISTRY_APPKEY: Final = web.AppKey("APP_OBSERVER_EVENTS_REGISTRY", defaultdict)
@@ -22,7 +22,7 @@ _APP_OBSERVER_EVENTS_REGISTRY_APPKEY: Final = web.AppKey("APP_OBSERVER_EVENTS_RE
 class ObserverRegistryNotFoundError(RuntimeError): ...
 
 
-@ensure_single_setup(__name__, logger=log)
+@ensure_single_setup(__name__, logger=_logger)
 def setup_observer_registry(app: web.Application):
     # only once
     app.setdefault(_APP_OBSERVER_EVENTS_REGISTRY_APPKEY, defaultdict(list))
@@ -41,7 +41,7 @@ def register_observer(app: web.Application, func: Callable, event: str):
     _event_registry = _get_registry(app)
 
     if func not in _event_registry[event]:
-        log.debug("registering %s to event %s", func, event)
+        _logger.debug("registering %s to event %s", func, event)
         _event_registry[event].append(func)
 
 

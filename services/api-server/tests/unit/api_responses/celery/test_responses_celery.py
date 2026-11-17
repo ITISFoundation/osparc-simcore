@@ -11,7 +11,7 @@ import respx
 from celery.contrib.testing.worker import TestWorkController  # type: ignore # pylint: disable=no-name-in-module
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.responses import (
     ResponseObject,
@@ -278,7 +278,7 @@ async def test_create_response_with_invalid_json_schema_returns_422(
     )
 
     # ASSERT - validation error is returned and body is json serializable
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     payload = response.json()
     assert "errors" in payload
     assert isinstance(payload["errors"], list)

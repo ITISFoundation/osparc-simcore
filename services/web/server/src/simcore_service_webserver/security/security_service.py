@@ -8,6 +8,7 @@ from ._authz_service import (
     clean_auth_policy_cache,
     encrypt_password,
     get_access_model,
+    password_needs_rehash,
 )
 
 __all__: tuple[str, ...] = (
@@ -15,6 +16,7 @@ __all__: tuple[str, ...] = (
     "clean_auth_policy_cache",
     "encrypt_password",
     "get_access_model",
+    "password_needs_rehash",
 )
 
-# nopycln: file
+# nopycln: file  # noqa: ERA001

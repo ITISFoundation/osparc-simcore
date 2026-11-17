@@ -18,11 +18,10 @@ install() {
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  # tests without DB can be safely run in parallel
   pushd services/director-v2
-  make test-ci-unit pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
-  # these tests cannot be run in parallel
-  make test-ci-unit test-path=with_dbs
+  # NOTE: xdist workers share ONE docker stack (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py);
+  # tests marked `docker_exclusive` run alone (see the pytest_simcore.xdist_docker_daemon plugin)
+  make test-ci-unit pytest-parameters="--numprocesses=auto"
   popd
 }
 

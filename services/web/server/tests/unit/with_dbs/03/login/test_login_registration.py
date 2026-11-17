@@ -39,6 +39,12 @@ from simcore_service_webserver.login.settings import (
     get_plugin_settings,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
@@ -101,7 +107,7 @@ async def test_register_body_validation(client: TestClient, user_password: str, 
         },
     )
 
-    assert response.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     body = await response.json()
     data, error = unwrap_envelope(body)
 

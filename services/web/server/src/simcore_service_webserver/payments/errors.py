@@ -1,5 +1,6 @@
 from models_library.api_schemas_payments.errors import (
     InvalidPaymentMethodError,
+    PaymentAlreadyAckedError,
     PaymentMethodAlreadyAckedError,
     PaymentMethodNotFoundError,
     PaymentMethodUniqueViolationError,
@@ -11,6 +12,7 @@ from ..errors import WebServerBaseError
 
 __all__ = (
     "InvalidPaymentMethodError",
+    "PaymentAlreadyAckedError",
     "PaymentMethodAlreadyAckedError",
     "PaymentMethodNotFoundError",
     "PaymentMethodUniqueViolationError",

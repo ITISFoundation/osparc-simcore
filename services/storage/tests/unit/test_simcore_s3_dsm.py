@@ -8,6 +8,7 @@ import random
 from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from aws_library.s3 import S3KeyNotFoundError, SimcoreS3API
@@ -657,7 +658,7 @@ async def test_list_fmds_filters_by_created_before(
     file_size: ByteSize,
 ):
     """an entry created before the threshold must be included, one created after it must be excluded"""
-    now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+    now = datetime.datetime.now(tz=datetime.UTC)
     threshold = now - datetime.timedelta(days=30)
 
     _, included_file_id = await upload_file(file_size, "old_file.dat")
@@ -819,3 +820,234 @@ async def test_search_files_scoped_by_product(
 
     # Verify product isolation: no file from product 2 should appear in product 1 results
     assert file_ids_product_1.isdisjoint(file_ids_product_2), "Files from different products should not overlap"
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_file_removes_only_the_exact_object(
+    user_id: UserID,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """Deleting a file must not remove stored keys that merely start with its key
+
+    Storage keys are plain strings: ``.../report.txt`` is a prefix of
+    ``.../report.txt.gz``, and a prefix-based delete would destroy both.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+    _, prefixed_file_id = await upload_file(file_size, "report.txt.gz", None)
+    assert str(prefixed_file_id).startswith(f"{file_id}"), "keys must be prefix-related for this test"
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=f"{file_id}")
+
+    # the key that starts with the deleted one must be untouched
+    s3_metadata = await storage_s3_client.get_object_metadata(
+        bucket=storage_s3_bucket, object_key=f"{prefixed_file_id}"
+    )
+    assert s3_metadata.size == file_size
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_file_twice_removes_entries_nested_under_its_id(
+    user_id: UserID,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """Entries nested under a file id are removed once the id is unregistered
+
+    A file holds no children, so registering `file_id/child.txt` under a stored file is
+    not a supported layout. The first delete removes the exact object only and leaves the
+    nested entry behind; the second delete finds no registration, treats the id as a
+    folder path and cascades over the `file_id/` prefix, as deleting an unregistered
+    folder requires.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+    child_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{file_id}/child.txt")
+    await upload_file(file_size, "child.txt", child_file_id)
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=f"{file_id}")
+
+    child_metadata = await storage_s3_client.get_object_metadata(
+        bucket=storage_s3_bucket, object_key=f"{child_file_id}"
+    )
+    assert child_metadata.size == file_size
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=f"{child_file_id}")
+    with pytest.raises(FileMetaDataNotFoundError):
+        await simcore_s3_dsm.get_file(user_id, child_file_id)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_file_twice_keeps_prefix_sharing_sibling(
+    user_id: UserID,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """A repeated delete must not touch a prefix-sharing sibling key
+
+    The second call finds no registration and takes the unregistered cleanup
+    path; that path must stay confined to the exact key and its subfolders.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+    _, prefixed_file_id = await upload_file(file_size, "report.txt.gz", None)
+    assert str(prefixed_file_id).startswith(f"{file_id}"), "keys must be prefix-related for this test"
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    s3_metadata = await storage_s3_client.get_object_metadata(
+        bucket=storage_s3_bucket, object_key=f"{prefixed_file_id}"
+    )
+    assert s3_metadata.size == file_size
+    fmd = await simcore_s3_dsm.get_file(user_id, prefixed_file_id)
+    assert fmd.file_id == prefixed_file_id
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_file_with_unused_connection_commits(
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """The deletion must be committed when the caller passes a fresh connection
+
+    This mirrors how the export cleaner calls it: a connection borrowed from the
+    pool but never used. If any statement runs on that connection before the
+    transaction block, SQLAlchemy autobegins it, `transaction_context` degrades to
+    a savepoint, and closing the connection rolls the deletion back -- the object
+    would be gone from S3 while its registration survives forever.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+
+    # exactly `pass_or_acquire_connection`: connect, hand over, close without commit
+    conn = await sqlalchemy_async_engine.connect()
+    try:
+        await simcore_s3_dsm.delete_file(user_id, file_id, connection=conn)
+    finally:
+        await conn.close()
+
+    with pytest.raises(FileMetaDataNotFoundError):
+        await simcore_s3_dsm.get_file(user_id, file_id)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_file_soft_link_keeps_the_target_object(
+    user_id: UserID,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """Removing a file soft link must leave the target object and registration intact"""
+    _, file_id = await upload_file(file_size, "original.txt", None)
+    link_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{uuid4()}/original.txt")
+
+    link_fmd = await simcore_s3_dsm.create_soft_link(user_id, file_id, link_file_id)
+    assert link_fmd.is_soft_link
+
+    await simcore_s3_dsm.delete_file(user_id, link_file_id)
+
+    # the link registration is gone
+    with pytest.raises(FileMetaDataNotFoundError):
+        await simcore_s3_dsm.get_file(user_id, link_file_id)
+
+    # the target is untouched, both in S3 and in the database
+    s3_metadata = await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=f"{file_id}")
+    assert s3_metadata.size == file_size
+    assert (await simcore_s3_dsm.get_file(user_id, file_id)).file_id == file_id
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_directory_soft_link_keeps_the_target_objects(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    create_directory_with_files: Callable[
+        [str, ByteSize, int, int, ProjectID, NodeID],
+        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    file_size: ByteSize,
+):
+    """Removing a directory soft link must not delete the target's S3 objects"""
+    FILE_COUNT = 5
+    directory_file_id, _ = await create_directory_with_files(
+        "dir-under-soft-link",
+        file_size,
+        1,
+        FILE_COUNT,
+        project_id,
+        node_id,
+    )
+    link_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{uuid4()}/{Path(directory_file_id).name}")
+
+    link_fmd = await simcore_s3_dsm.create_soft_link(user_id, directory_file_id, link_file_id)
+    assert link_fmd.is_soft_link
+    assert link_fmd.is_directory
+    assert link_fmd.object_name
+
+    await simcore_s3_dsm.delete_file(user_id, link_file_id)
+
+    with pytest.raises(FileMetaDataNotFoundError):
+        await simcore_s3_dsm.get_file(user_id, link_file_id)
+
+    target_fmd = await simcore_s3_dsm.get_file(user_id, directory_file_id)
+    assert not target_fmd.is_soft_link
+
+    s3_client = get_s3_client(simcore_s3_dsm.app)
+    counted_objects = 0
+    async for s3_objects in s3_client.list_objects_paginated(
+        bucket=simcore_s3_dsm.simcore_bucket_name, prefix=f"{directory_file_id}"
+    ):
+        counted_objects += len(s3_objects)
+    assert counted_objects == FILE_COUNT

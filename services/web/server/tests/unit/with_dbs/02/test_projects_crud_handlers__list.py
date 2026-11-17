@@ -35,6 +35,12 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_batch_get_computations_latest_states(
@@ -166,7 +172,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
 ):
     await _list_projects(
         client,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
         expected_error_code="greater_than_equal",

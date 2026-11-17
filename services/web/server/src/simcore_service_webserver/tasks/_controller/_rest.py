@@ -20,6 +20,7 @@ from servicelib.long_running_tasks import lrt_api
 
 from ..._meta import API_VTAG
 from ...celery import get_task_manager
+from ...locale import translate_message
 from ...login.decorators import login_required
 from ...long_running_tasks.plugin import webserver_request_context_decorator
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
@@ -110,12 +111,13 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 
     _task_id = f"{task_status.job_id}"
     _progress = task_status.progress
+    _message = translate_message(_progress.message.description, request) if _progress.message else ""
     return create_data_response(
         TaskStatus(
             task_progress=TaskProgress(
                 task_id=_task_id,
                 percent=_progress.percent_value,
-                message=_progress.message.description if _progress.message else "",
+                message=_message,
             ),
             done=task_status.done,
             started=None,

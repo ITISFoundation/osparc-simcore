@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from aiohttp import ClientSession, ClientTimeout, web
@@ -13,7 +13,7 @@ from .application_keys import APP_CLIENT_SESSION_KEY
 
 
 @asynccontextmanager
-async def persistent_client_session(app: web.Application) -> AsyncIterator[None]:
+async def persistent_client_session(app: web.Application) -> AsyncGenerator[None]:
     """Ensures a single client session per application
 
     IMPORTANT: Use this function ONLY in cleanup context , i.e.

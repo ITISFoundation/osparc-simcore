@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import inspect
 import logging
 import socket
 from collections.abc import Callable, Coroutine
@@ -104,7 +105,7 @@ def exclusive(  # noqa: PLR0915
                     await auto_reacquisition_started.wait()
 
                     # then the task that runs the user code
-                    assert asyncio.iscoroutinefunction(coro)  # nosec
+                    assert inspect.iscoroutinefunction(coro)  # nosec
                     work_task = tg.create_task(
                         coro(*args, **kwargs),
                         name=_EXCLUSIVE_TASK_NAME.format(module_name=coro.__module__, func_name=coro.__name__),

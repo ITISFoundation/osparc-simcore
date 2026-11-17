@@ -92,8 +92,8 @@ async def clone_study(
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
     hidden: Annotated[bool, Query()] = False,
-    title: Annotated[ShortTruncatedStr | None, Body(empty=True)] = None,
-    description: Annotated[LongTruncatedStr | None, Body(empty=True)] = None,
+    title: Annotated[ShortTruncatedStr | None, Body()] = None,
+    description: Annotated[LongTruncatedStr | None, Body()] = None,
 ):
     project: ProjectGet = await webserver_api.clone_project(
         project_id=study_id,

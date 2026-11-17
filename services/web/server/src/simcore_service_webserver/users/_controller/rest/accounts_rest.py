@@ -228,6 +228,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
         reviewer_id=req_ctx.user_id,
         bcc_emails=approval_data.bcc_emails,
         invitation_url=f"{approval_data.invitation_url}" if approval_data.invitation_url else None,
+        extra_credits_in_usd=approval_data.extra_credits_in_usd,
         message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
     )
     assert pre_registration_id  # nosec

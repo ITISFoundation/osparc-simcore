@@ -37,7 +37,7 @@ async def get_or_create_on_demand_cluster(
             user_id=user_id,
             wallet_id=wallet_id,
         )
-        _logger.info("received cluster: %s", returned_cluster)
+        _logger.debug("received cluster: %s", returned_cluster)
         if returned_cluster.state is not ClusterState.RUNNING:
             raise ComputationalBackendOnDemandNotReadyError(
                 eta=timedelta_as_minute_second(returned_cluster.eta),

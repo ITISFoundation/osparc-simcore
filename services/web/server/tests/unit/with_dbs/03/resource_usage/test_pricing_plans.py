@@ -24,19 +24,21 @@ from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.resource_usage.settings import get_plugin_settings
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_rut_api_responses(client: TestClient, aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
-    pricing_unit_get = RutPricingUnitGet.model_validate(
-        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][0]
-    )
+    pricing_unit_get = RutPricingUnitGet.model_validate(RutPricingUnitGet.model_json_schema()["examples"][0])
 
-    service_pricing_plan_get = RutPricingPlanGet.model_validate(
-        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0],
-    )
+    service_pricing_plan_get = RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0])
 
     aioresponses_mocker.get(
         re.compile(f"^{settings.api_base_url}/pricing-plans/+.+$"),

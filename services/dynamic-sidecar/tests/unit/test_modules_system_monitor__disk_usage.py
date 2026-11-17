@@ -5,6 +5,7 @@
 from collections.abc import Callable
 from datetime import timedelta
 from pathlib import Path
+from typing import NamedTuple
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -14,11 +15,11 @@ from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
     MountPathCategory,
+    SDiskUsageProtocol,
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
-from psutil._common import sdiskusage
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
@@ -27,6 +28,21 @@ from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     _get_monitored_paths,
     get_usage,
 )
+
+
+class _DiskUsage(NamedTuple):
+    """Stand-in for the value returned by ``psutil.disk_usage``.
+
+    ``psutil`` names that result ``sdiskusage`` but keeps it in a private module it moves between
+    releases (``_common`` in 7.0.0, ``_ntuples`` in 7.2.2), so the mock builds its own value. It
+    keeps psutil's shape - byte counts plus a 0-100 percent - since that is what
+    ``DiskUsage.from_ps_util_disk_usage`` reads through ``SDiskUsageProtocol``.
+    """
+
+    total: ByteSize
+    used: ByteSize
+    free: ByteSize
+    percent: float
 
 
 @pytest.fixture
@@ -63,8 +79,8 @@ def mock_disk_usage(mocker: MockerFixture) -> Callable[[dict[str, ByteSize]], No
     base_module = "simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage"
 
     def _(free: dict[str, ByteSize]) -> None:
-        def _disk_usage(path: str) -> sdiskusage:
-            return sdiskusage(total=0, used=0, free=free[path], percent=0)
+        def _disk_usage(path: str) -> SDiskUsageProtocol:
+            return _DiskUsage(total=ByteSize(0), used=ByteSize(0), free=free[path], percent=0.0)
 
         mocker.patch(f"{base_module}.psutil.disk_usage", side_effect=_disk_usage)
 
@@ -126,7 +142,7 @@ async def test_disk_usage_monitor(
 ) -> None:
     disk_usage_monitor = DiskUsageMonitor(
         app=AsyncMock(),
-        user_id=1,
+        user_id=UserID(1),
         node_id=node_id,
         interval=timedelta(seconds=5),
         monitored_paths=get_monitored_paths(Path("/inputs"), Path("/outputs"), [Path("/workspace")]),
@@ -175,7 +191,7 @@ async def test_disk_usage_monitor_new_frontend_format(
 ) -> None:
     disk_usage_monitor = DiskUsageMonitor(
         app=AsyncMock(),
-        user_id=1,
+        user_id=UserID(1),
         node_id=node_id,
         interval=timedelta(seconds=5),
         monitored_paths=get_monitored_paths(

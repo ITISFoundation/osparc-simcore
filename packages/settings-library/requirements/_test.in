@@ -11,6 +11,7 @@
 
 coverage
 faker
+filelock
 pytest
 pytest-cov
 pytest-instafail
@@ -18,3 +19,4 @@ pytest-mock
 pytest-runner
 pytest-sugar
 python-dotenv
+pyyaml

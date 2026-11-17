@@ -5,7 +5,7 @@ from http import HTTPStatus
 from pprint import pformat
 from typing import Any, TypeVar
 
-import httpx
+import httpx2
 from models_library.generics import Envelope
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
@@ -15,7 +15,7 @@ T = TypeVar("T")
 
 
 def assert_status(
-    response: httpx.Response,
+    response: httpx2.Response,
     expected_status_code: int,
     response_model: type[T] | None,
     *,

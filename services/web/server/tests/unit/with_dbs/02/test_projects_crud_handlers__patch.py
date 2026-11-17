@@ -21,6 +21,12 @@ from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 API_PREFIX = "/" + api_version_prefix
 
 
@@ -219,7 +225,7 @@ async def test_patch_project_with_client_session_header(
         headers={"X-Client-Session-Id": "invalid-uuid-format"},
     )
     # This should fail validation since it's not a proper UUID
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])

@@ -6,9 +6,9 @@ consistent.
 
 ## The one invariant
 
-| Extension | Role | Invoked how | Lives where |
-|---|---|---|---|
-| `*.mk` | **library** | `include`-only, never called directly | `scripts/makefiles/` |
+| Extension  | Role            | Invoked how                               | Lives where                   |
+|------------|-----------------|-------------------------------------------|-------------------------------|
+| `*.mk`     | **library**     | `include`-only, never called directly     | `scripts/makefiles/`          |
 | `Makefile` | **entry point** | `cd <dir> && make <target>` (human or CI) | each project root + repo root |
 
 If you find yourself running `make -f something.mk`, it should have been a
@@ -122,6 +122,22 @@ unused.
 5. Before changing a contract target, grep `ci/github` for its name.
 6. Validate a change is behavior-preserving with a dry-run diff:
    `diff <(git stash -u -- scripts requirements; make -C <dir> -n <target>; git stash pop) ...`
+
+## Help output (`help.mk` / `help.awk`)
+
+`help.mk` renders `make help` from `##` descriptions placed after a target.
+
+- `##@ Section Name` above a group of targets labels it, until the next `##@`
+  in that file. A section name reused across files merges into one section.
+  Targets without a section fall into a leading, unlabeled block.
+- `help.awk` picks an icon by keyword in the section name (e.g. "Docker",
+  "Test", "Lint", "Clean", "Install", "i18n", "Version", "Swarm", "Info"). Never
+  hardcode an emoji in a `##` or `##@` text.
+- A `##` description starts with a capital letter and fits on one line. Use a
+  `##@` section rather than category text such as `## [docker] ...`.
+- A section is optional: use one for two or more related public targets (e.g.
+  `mypy` and `mypy-debug`); leave pattern rules, private helpers, and isolated
+  targets unlabeled. See `python-lint.mk` for an example.
 
 ## Known follow-ups (deferred, need manual review)
 

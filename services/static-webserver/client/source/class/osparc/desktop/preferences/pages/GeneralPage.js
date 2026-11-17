@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     __addLanguageSetting: function() {
       const box = new osparc.widget.SectionBox(this.tr("Language"));
 
-      box.addHelper(this.tr("Translations are AI-generated and may contain errors."));
+      box.addHelper(this.tr("Languages marked (Beta) are previews that may contain inaccuracies."));
 
       const form = new qx.ui.form.Form();
 
@@ -74,9 +74,28 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       });
       languageSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       osparc.utils.LanguageManager.getAvailableLocales().forEach(localeCode => {
+        // qx.ui.form.ListItem is an Atom, not a Composite: it cannot host child
+        // widgets, so the beta marker goes into the label text itself.
+        // Language labels are kept in their original language on purpose, and
+        // "Beta" is a widely understood marker, so neither is translated here.
+        const isBeta = osparc.utils.LanguageManager.isLocaleBeta(localeCode);
         const label = osparc.utils.LanguageManager.getLocaleLabel(localeCode);
-        const lItem = new qx.ui.form.ListItem(label, null, localeCode);
+        const labelWithBeta = isBeta ? `${label} (Beta)` : label;
+        const lItem = new qx.ui.form.ListItem(labelWithBeta, null, localeCode);
+        if (isBeta) {
+          lItem.setToolTipText(this.tr("This translation is a preview and may contain inaccuracies"));
+        }
         languageSB.add(lItem);
+      });
+
+      // qooxdoo gives SelectBox a fixed default width: grow it to fit the
+      // longest option (plus room for the dropdown arrow and field padding)
+      const widestItemWidth = languageSB.getChildren().reduce(
+        (max, item) => Math.max(max, item.getSizeHint().width),
+        0
+      );
+      languageSB.set({
+        minWidth: widestItemWidth + 20
       });
 
       const currentLocale = osparc.utils.LanguageManager.getUserLocale();

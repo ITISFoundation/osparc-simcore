@@ -9,7 +9,7 @@ import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 from servicelib.fastapi import long_running_tasks
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings

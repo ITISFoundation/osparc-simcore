@@ -21,6 +21,12 @@ from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(
     "user_role,expected",

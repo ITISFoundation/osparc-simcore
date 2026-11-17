@@ -88,9 +88,7 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       const nSeats = parseInt(this.getUnitData().getExtraInfo()["num_of_seats"]);
       const nCredits = this.getUnitData().getCost();
       const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
-      let msg = nSeats + " seat" + (nSeats > 1 ? "s " : " ") + this.tr("will be available until ") + osparc.utils.Utils.formatDate(expirationDate);
-      msg += `<br>The rental will cost ${nCredits} credits`;
-      msg += `<br>I hereby accept the Terms and Conditions`;
+      const msg = this.tr("%1 %2 will be available until %3.<br>The rental will cost %4 credits.<br>I hereby accept the Terms and Conditions.", nSeats, nSeats > 1 ? this.tr("seats") : this.tr("seat"), osparc.utils.Utils.formatDate(expirationDate), nCredits);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Rent"),
         confirmText: this.tr("Rent"),

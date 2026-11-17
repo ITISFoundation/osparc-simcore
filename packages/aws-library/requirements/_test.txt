@@ -4,16 +4,16 @@ annotated-doc==0.0.4
     # via
     #   -c requirements/_base.txt
     #   fastapi
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-anyio==4.12.1
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
-    #   httpx
+    #   httpx2
     #   starlette
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
@@ -30,11 +30,13 @@ blinker==1.9.0
     # via flask
 boto3==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
 botocore==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-xray-sdk
     #   boto3
@@ -46,39 +48,35 @@ botocore-stubs==1.42.41
     #   types-aioboto3
     #   types-aiobotocore
     #   types-boto3
-certifi==2026.2.25
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   httpcore
-    #   httpx
     #   requests
 cffi==2.0.0
     # via cryptography
 cfn-lint==1.41.0
     # via moto
-charset-normalizer==3.4.6
+charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.3.1
-    # via
-    #   -c requirements/_base.txt
-    #   flask
-coverage==7.16.0
+click==8.5.0
+    # via flask
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-docker==7.1.0
+docker==7.2.0
     # via moto
 faker==40.38.0
     # via -r requirements/_test.in
-fastapi==0.141.1
+fastapi==0.162.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -87,6 +85,8 @@ fastapi-lifespan-manager==0.1.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+filelock==4.2.7
+    # via -r requirements/_test.in
 flask==3.1.3
     # via
     #   flask-cors
@@ -97,19 +97,18 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-graphql-core==3.2.8
+graphql-core==3.3.1
     # via moto
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
-    #   httpcore
-httpcore==1.0.9
+    #   httpcore2
+httpcore2==2.16.0
     # via
     #   -c requirements/_base.txt
-    #   httpx
-httpx==0.28.1
+    #   httpx2
+httpx2==2.16.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 icdiff==2.0.10
@@ -118,7 +117,7 @@ idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
-    #   httpx
+    #   httpx2
     #   requests
 iniconfig==2.3.0
     # via pytest
@@ -133,7 +132,7 @@ jmespath==1.1.0
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.7.7
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -161,23 +160,27 @@ markupsafe==3.0.3
     #   flask
     #   jinja2
     #   werkzeug
-moto==5.2.2
+moto==5.2.5
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-networkx==3.6.1
+networkx==3.7
     # via cfn-lint
 openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via moto
-packaging==26.0
+opentelemetry-api==1.45.2
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
 pathable==0.4.4
     # via jsonschema-path
-pint==0.25.2
+pint==0.26.2
     # via -r requirements/_test.in
 platformdirs==4.9.4
     # via pint
@@ -193,12 +196,12 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.13.4
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   fastapi
-pydantic-core==2.46.4
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -208,7 +211,7 @@ pygments==2.21.0
     #   pytest
 pyparsing==3.3.2
     # via moto
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -218,9 +221,9 @@ pytest==9.1.1
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
-pytest-benchmark==5.3.0
+pytest-benchmark==5.3.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -228,7 +231,7 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -238,7 +241,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -277,10 +280,9 @@ rpds-py==0.30.0
     #   referencing
 s3transfer==0.14.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   boto3
-setuptools==82.0.1
-    # via moto
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -297,6 +299,11 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
     # via pytest-sugar
+truststore==0.10.5
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore2
+    #   httpx2
 types-aioboto3==15.5.0
     # via -r requirements/_test.in
 types-aiobotocore==3.8.0
@@ -307,30 +314,32 @@ types-awscrt==0.31.3
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-boto3==1.42.70
+types-boto3==1.42.97
     # via -r requirements/_test.in
 types-s3transfer==0.16.0
     # via
     #   types-aioboto3
     #   types-boto3
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   fastapi
     #   flexcache
     #   flexparser
+    #   opentelemetry-api
     #   pint
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/_base.txt
     #   fastapi
     #   pydantic
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -338,7 +347,7 @@ urllib3==2.7.0
     #   docker
     #   requests
     #   responses
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via
     #   flask
     #   flask-cors

@@ -12,7 +12,7 @@ def _parse_metadata_items(raw: list[str]) -> list[MetadataFilterItem]:
     for item in raw:
         if ":" not in item:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Invalid metadata filter format: '{item}'. Expected 'key:pattern'.",
             )
         name, pattern = item.split(":", 1)
@@ -64,6 +64,6 @@ def get_job_metadata_filter(
         )
     except ValidationError as err:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=err.errors(include_context=False),
         ) from err

@@ -149,11 +149,12 @@ def services_endpoint(
                 password = env_vars_for_docker_compose[password_env]
                 endpoint = URL(
                     f"http://{user}:{password}@{get_localhost_ip()}:"
-                    f"{get_service_published_port(full_service_name, target_ports)}"
+                    f"{get_service_published_port(full_service_name, target_ports, stack_name=stack_name)}"
                 )
             else:
                 endpoint = URL(
-                    f"http://{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
+                    f"http://{get_localhost_ip()}:"
+                    f"{get_service_published_port(full_service_name, target_ports, stack_name=stack_name)}"
                 )
             services_endpoint[service] = endpoint
         else:

@@ -82,7 +82,7 @@ def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-a
         "RABBIT_PASSWORD": "test",
         "RABBIT_SECURE": "0",
         "RABBIT_USER": "test",
-        "R_CLONE_PROVIDER": "MINIO",
+        "R_CLONE_PROVIDER": "RUSTFS",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         "DY_SIDECAR_SERVICE_KEY": service_key,
         "DY_SIDECAR_SERVICE_VERSION": service_version,

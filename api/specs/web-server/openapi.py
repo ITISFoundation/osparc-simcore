@@ -100,7 +100,7 @@ def main():
         title=PROJECT_NAME,
         version=API_VERSION,
         description=SUMMARY,
-        license={
+        license_info={
             "name": "MIT",
             "url": "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE",
         },

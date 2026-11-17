@@ -7,7 +7,10 @@
 import json
 from unittest.mock import MagicMock
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI
@@ -20,6 +23,8 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.profiles import Profile
 from simcore_service_api_server.services_http.webserver import AuthSession
 from starlette import status
+
+pytest_simcore_core_services_selection = ["postgres"]
 
 
 @pytest.fixture
@@ -57,8 +62,8 @@ def mocked_webserver_rest_api(app: FastAPI):
 
 
 async def test_get_profile(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
 ):
@@ -82,8 +87,8 @@ async def test_get_profile(
 
 
 async def test_update_profile(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
 ):
