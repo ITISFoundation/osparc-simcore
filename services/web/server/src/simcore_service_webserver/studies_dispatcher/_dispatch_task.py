@@ -50,11 +50,13 @@ _COPY_CLEANUP_TIMEOUT_S: Final[
     Annotated[
         int,
         doc(
-            "time budget of the best-effort deletion of a copy whose clone failed; the copy is "
-            "stamped for the garbage-collector before it and the stamp survives a timeout"
+            "time budget of the best-effort deletion of a copy whose clone failed, awaited by the "
+            "dispatch task the browser polls: keep it well below the garbage-collector sweep "
+            "interval, since exceeding it only means the collector deletes the stamped copy on "
+            "its next pass"
         ),
     ]
-] = 120
+] = 10
 
 
 @lru_cache
