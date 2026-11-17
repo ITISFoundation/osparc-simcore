@@ -220,6 +220,20 @@ what breaks is repository code coupled to the older version, like a test
 importing a private `psutil` type that 7.2 removed. The gate's checks decide
 whether such a pull request merges; the moved pins are commented, not blocked.
 
+Moves in the other direction are not wanted, and a successful resolve does not
+mean one did not happen. uv also reads the lockfile it is about to overwrite as
+a source of version preferences, so an `--upgrade-package dnspython==2.9.2` in a
+directory whose `--constraint` source still pinned 2.9.0 did not fail: it
+dropped the extra that pulls `email-validator` in and backtracked what stood
+above it. In the two lockfiles of #10099 it took `fastapi` from 0.162.0 to
+0.110.3, `starlette` from 1.6.0 to 0.37.2 and `fastapi-pagination` from 0.16.1
+to 0.15.16. The resync now compares every managed lockfile against the
+merge-base with the base branch (`RENOVATE_RESYNC_BASE_REF` names another ref)
+and writes the same report the unresolvable-directory case writes, which puts
+those downgrades under `test_no_lockfile_resync_left_behind` too. Where no
+base ref is reachable it warns instead, since a shallow clone is not evidence
+of a rollback.
+
 A directory that resolves at nothing gets the `MAX_UNBLOCK_ROUNDS` fallback
 instead: uv names the pin in its way, the first round lets that package rise no
 higher than another lockfile here pins it, and the round after frees it. That is
