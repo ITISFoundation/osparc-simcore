@@ -20,7 +20,8 @@ requested on its own:
   TAKEOVER_ASSIGNEES assigned, marked ready and a comment naming the failing checks and
   the commands to take the update over, but only after FAIL_COOLDOWN_HOURS on the last
   commit so that Renovate can push its own fix first;
-- 🙋-needs-takeover removed from a ready pull request whose checks are green again;
+- 🙋-needs-takeover and its assignee removed from a ready pull request whose checks are
+  green again;
 - a draft whose reviewers were already requested, or which has reviews, is left alone;
 - every draft gets the pins its diff moved besides the dependency of its title
   commented, each with what carried the new version, edited in place on later runs.
@@ -200,6 +201,7 @@ class PullRequest:
     title: str = ""
     head_branch: str = ""
     labels: tuple[str, ...] = ()
+    assignees: tuple[str, ...] = ()
     checks: tuple[Check, ...] = ()
 
     def api(self, path: str) -> object:
@@ -215,13 +217,16 @@ class PullRequest:
         return len(requested.get("users", [])) + len(requested.get("teams", [])) + len(reviews) > 0
 
     def read(self) -> None:
-        """Fills in title, head branch, labels and checks. A pull request with no checks
-        reported yet keeps an empty list"""
-        info = gh_json("pr", "view", f"{self.number}", "--repo", self.repo, "--json", "labels,title,headRefName")
+        """Fills in title, head branch, labels, assignees and checks. A pull request with no
+        checks reported yet keeps an empty list"""
+        info = gh_json(
+            "pr", "view", f"{self.number}", "--repo", self.repo, "--json", "labels,assignees,title,headRefName"
+        )
         assert isinstance(info, dict)
         self.title = str(info.get("title", ""))
         self.head_branch = str(info.get("headRefName", ""))
         self.labels = tuple(str(label["name"]) for label in info.get("labels", []))
+        self.assignees = tuple(str(assignee["login"]) for assignee in info.get("assignees", []))
         try:
             reported = gh_json("pr", "checks", f"{self.number}", "--repo", self.repo, "--json", "name,bucket")
         except subprocess.CalledProcessError:
@@ -254,6 +259,17 @@ class PullRequest:
 
     def assign(self, login: str) -> None:
         gh("pr", "edit", f"{self.number}", "--repo", self.repo, "--add-assignee", login)
+
+    def unassign(self, logins: Sequence[str]) -> None:
+        if logins:
+            flags = [flag for login in logins for flag in ("--remove-assignee", login)]
+            gh("pr", "edit", f"{self.number}", "--repo", self.repo, *flags)
+
+
+def rotation_assignees(assignees: Iterable[str], pool: Sequence[str]) -> list[str]:
+    """The assignees the rotation put there. Renovate assigns osparc-shared to every pull
+    request (assignees in .renovaterc.jsonc) and that one stays"""
+    return [login for login in assignees if login in pool]
 
 
 def takeover_assignee(number: int, assignees: Sequence[str]) -> str:
@@ -620,10 +636,10 @@ def open_drafts(repo: str, bot: str) -> list[int]:
     return [number for number, is_draft in open_pull_requests(repo, bot) if is_draft]
 
 
-def clear_taken_over(repo: str, bot: str) -> None:
-    """Takes 🙋-needs-takeover off the ready pull requests whose checks are green again, the
-    usual outcome of a Renovate rebase onto a master that carries the fix. Nothing is added
-    back: 🤖-renovate-fast-lane is a label a person sets"""
+def clear_taken_over(repo: str, bot: str, takeover_assignees: Sequence[str]) -> None:
+    """Takes 🙋-needs-takeover and its assignee off the ready pull requests whose checks are
+    green again, the usual outcome of a Renovate rebase onto a master that carries the fix.
+    Nothing is added back: 🤖-renovate-fast-lane is a label a person sets"""
     for number, is_draft in open_pull_requests(repo, bot, label=TAKEOVER_LABEL):
         if is_draft:
             # a pull request turned back into a draft is decided again by gate_draft
@@ -634,8 +650,11 @@ def clear_taken_over(repo: str, bot: str) -> None:
             continue
         if decide(pr.checks) != "done":
             continue
+        owners = rotation_assignees(pr.assignees, takeover_assignees)
         pr.set_labels(remove=TAKEOVER_LABEL)
-        print(f"PR #{pr.number}: checks green again, {TAKEOVER_LABEL} removed")
+        pr.unassign(owners)
+        left = f", {', '.join(owners)} unassigned" if owners else ""
+        print(f"PR #{pr.number}: checks green again, {TAKEOVER_LABEL} removed{left}")
 
 
 def gate_draft(
@@ -706,7 +725,7 @@ def run(
             print(f"PR #{pr.number}: checks passed, waiting out the release-age cool-down")
             continue
         gate_draft(pr, fail_cooldown_hours, takeover_assignees, drift_list_limit)
-    clear_taken_over(repo, bot)
+    clear_taken_over(repo, bot, takeover_assignees)
 
 
 def main() -> int:

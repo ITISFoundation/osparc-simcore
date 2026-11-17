@@ -176,6 +176,13 @@ def test_the_takeover_owner_walks_the_pool(review_gate):
     assert len({review_gate.takeover_assignee(17, pool) for _ in range(5)}) == 1
 
 
+def test_clearing_leaves_the_assignee_renovate_sets(review_gate):
+    pool = ["sanderegg", "pcrespov", "GitHK", "giancarloromeo"]
+    assert review_gate.rotation_assignees(["osparc-shared", "GitHK"], pool) == ["GitHK"]
+    # osparc-shared is the account Mergify merges the fast lane as
+    assert review_gate.rotation_assignees(["osparc-shared"], pool) == []
+
+
 def test_the_takeover_pool_owns_the_files_renovate_writes(osparc_simcore_root_dir: Path):
     # an assignee who does not own the files cannot clear the code-owner gate
     code_owners = (osparc_simcore_root_dir / ".github/CODEOWNERS").read_text(encoding="utf-8")

@@ -275,14 +275,15 @@ To list them:
 
 The assignee comes from `TAKEOVER_ASSIGNEES` in the `review-gate` job, picked by
 the pull request number, so one pull request keeps its owner and consecutive
-ones walk the list. That person owns it until it merges or closes. A test keeps
-that list equal to the owners of the last
+ones walk the list. That person owns it until the pull request merges, closes,
+or goes green on its own. A test keeps that list equal to the owners of the last
 [CODEOWNERS](../.github/CODEOWNERS) block.
 
-The gate removes the label once the checks of a ready pull request are green
-again, which is what a Renovate rebase onto a `master` carrying the fix
-produces. It adds nothing back: `🤖-renovate-fast-lane` is a label a person puts
-on.
+The gate removes the label and its assignee once the checks of a ready pull
+request are green again, which is what a Renovate rebase onto a `master`
+carrying the fix produces. Only the assignee it added goes: `osparc-shared`,
+which Renovate assigns to every pull request, stays. It adds nothing back:
+`🤖-renovate-fast-lane` is a label a person puts on.
 
 Two states that are *not* a takeover:
 
