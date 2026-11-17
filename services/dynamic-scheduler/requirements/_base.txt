@@ -465,13 +465,13 @@ python-dotenv==1.2.4
     #   nicegui
     #   pydantic-settings
     #   uvicorn
-python-engineio==4.13.5
+python-engineio==4.15.1
     # via python-socketio
 python-multipart==0.0.33
     # via
     #   fastapi
     #   nicegui
-python-socketio==5.16.4
+python-socketio==5.18.1
     # via
     #   -r requirements/_base.in
     #   nicegui
@@ -551,7 +551,7 @@ toolz==1.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.67.3
+tqdm==4.70.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -607,7 +607,7 @@ urllib3==2.8.0
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
     #   sentry-sdk
-uvicorn==0.53.0
+uvicorn==0.54.0
     # via
     #   fastapi
     #   fastapi-cli

@@ -300,7 +300,7 @@ tenacity==9.1.4
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==1.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.67.3
+tqdm==4.70.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 truststore==0.10.5
     # via

@@ -26,7 +26,7 @@ from ..products import products_web
 from ..resource_manager.resource_manager_service import PROJECT_ID_KEY, managed_resource
 from ..signals import SIGNAL_USER_CONNECTED, SIGNAL_USER_DISCONNECTED
 from ._messages import send_message_to_user
-from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
+from ._utils import EnvironDict, SocketID, SocketioAuthData, get_socket_server, register_socketio_handler
 from .constants import SOCKET_IO_HEARTBEAT_EVENT
 
 _logger = logging.getLogger(__name__)
@@ -110,11 +110,18 @@ async def _set_user_in_project_rooms(
 
 
 @register_socketio_handler
-async def connect(socket_id: SocketID, environ: EnvironDict, app: web.Application) -> bool:
+async def connect(
+    socket_id: SocketID,
+    environ: EnvironDict,
+    auth: SocketioAuthData,  # noqa: ARG001  # pylint: disable=unused-argument
+    app: web.Application,
+) -> bool:
     """socketio reserved handler for when the frontend connects through socket.io
 
     Arguments:
         environ -- the WSGI environ, among other contains the original request
+        auth -- the client's CONNECT payload, None when the client sends none. Not used yet:
+                the user is identified through the request's session, SEE auth_user_factory
 
     Raises:
         SIoConnectionRefusedError: HTTPUnauthorized
