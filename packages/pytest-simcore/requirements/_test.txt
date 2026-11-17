@@ -47,8 +47,10 @@ coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-dnspython==2.9.0
-    # via email-validator
+dnspython==2.9.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   email-validator
 docker==7.2.0
     # via -r requirements/_test.in
 email-validator==2.3.0
