@@ -82,7 +82,6 @@ async def delete_project_as_admin(
     *,
     project_uuid: ProjectID,
     product_name: ProductName,
-    expected_creation_date: datetime.datetime | None = None,
 ) -> None:
     """Deletes a project and all its data, including the pipeline and dynamic services.
         This call is idempotent and may be called multiple times without raising an error
@@ -91,11 +90,8 @@ async def delete_project_as_admin(
         if a computational pipeline is running, it will be stopped first and waited for it to stop
         before deleting the project.
 
-        Runs while holding the project's delete lock, shared with the studies dispatcher.
-        expected_creation_date is the `creation_date` of the row selected for deletion: it is
-        re-checked under the lock and the deletion is skipped if the uuid now holds a
-        different project — a periodic selection goes stale once its copy is deleted and
-        recreated under the same deterministic uuid.
+        Runs while holding the project's delete lock, shared with the studies dispatcher,
+        so that deletion and cloning of the same uuid never overlap.
 
     Raises:
         ProjectDeleteError: if the project could not be deleted, or another deletion or
@@ -109,19 +105,6 @@ async def delete_project_as_admin(
     )
     async def _delete_under_project_lock() -> None:
         try:
-            if expected_creation_date is not None:
-                # the uuid may hold a recreated project since the row was selected
-                selected = await _projects_repository.get_project(app, project_uuid=project_uuid)
-                if selected.creation_date != expected_creation_date:
-                    _logger.info(
-                        "Project %s was recreated since it was selected for deletion"
-                        " (found created %s, expected %s). Not deleting it",
-                        project_uuid,
-                        selected.creation_date,
-                        expected_creation_date,
-                    )
-                    return
-
             with log_context(_logger, logging.INFO, "hide project"):
                 # NOTE: We do not need to use PROJECT_DB_UPDATE_REDIS_LOCK_KEY lock, as hidden field is not passed to frontend
                 project = await _projects_repository.patch_project(
