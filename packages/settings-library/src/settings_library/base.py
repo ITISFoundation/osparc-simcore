@@ -44,8 +44,9 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
                 msg = _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(field_name=field_name, err=err)
                 _logger.warning(msg)
                 return None
-            _logger.warning("Validation errors=%s", err.errors())
-            raise DefaultFromEnvFactoryError(errors=err.errors()) from err
+            # include_input=False: rejected values can be secrets (e.g. session secret key)
+            _logger.warning("Validation errors=%s", err.errors(include_input=False))
+            raise DefaultFromEnvFactoryError(errors=err.errors(include_input=False)) from err
 
     return _default_factory
 

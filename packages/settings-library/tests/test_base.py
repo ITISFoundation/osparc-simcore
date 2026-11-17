@@ -193,12 +193,12 @@ def test_create_settings_class_without_environ_fails(
         M2_outside_context.create_from_envs()
 
     assert err_info.value.errors[0] == {
-        "input": {},
         "loc": ("S_VALUE",),
         "msg": "Field required",
         "type": "missing",
         "url": f"https://errors.pydantic.dev/{pydantic_version}/v/missing",
     }
+    assert "input" not in err_info.value.errors[0]
 
 
 def test_create_settings_class_with_environ_passes(
