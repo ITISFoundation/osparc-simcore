@@ -11,6 +11,7 @@ import ipaddress
 import logging
 import math
 from collections.abc import AsyncIterator
+from typing import Final
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -23,10 +24,10 @@ from .settings import LoginThrottleSettings
 
 _logger = logging.getLogger(__name__)
 
-_MAX_BACKOFF_EXPONENT = 32
-_REDIS_TIMEOUT_SEC = 5
-_LOGIN_ATTEMPT_LOCK_TTL_SEC = 30
-_LOGIN_ATTEMPT_LOCK_WAIT_SEC = 3  # below _REDIS_TIMEOUT_SEC
+_MAX_BACKOFF_EXPONENT: Final[int] = 32
+_REDIS_TIMEOUT_SEC: Final[int] = 5
+_LOGIN_ATTEMPT_LOCK_TTL_SEC: Final[int] = 30
+_LOGIN_ATTEMPT_LOCK_WAIT_SEC: Final[int] = 3  # below _REDIS_TIMEOUT_SEC
 
 type ClientIP = ipaddress.IPv4Address | ipaddress.IPv6Address
 

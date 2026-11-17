@@ -19,7 +19,9 @@ _logger = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
-LOGIN_THROTTLE_SETTINGS_APPKEY: Final = web.AppKey("LOGIN_THROTTLE_SETTINGS", LoginThrottleSettings)
+LOGIN_THROTTLE_SETTINGS_APPKEY: Final[web.AppKey[LoginThrottleSettings]] = web.AppKey(
+    "LOGIN_THROTTLE_SETTINGS", LoginThrottleSettings
+)
 
 
 @routes.get(f"/{API_VTAG}/auth:check", name="check_auth")
