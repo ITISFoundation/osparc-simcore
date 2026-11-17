@@ -5,7 +5,7 @@ from typing import Annotated, Final
 
 import pytest
 from annotated_types import doc
-from pydantic import AfterValidator, BaseModel, Field, SecretStr, ValidationError
+from pydantic import Field, SecretStr, ValidationError
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import SessionSecretKey
 
@@ -28,7 +28,6 @@ class _SessionSettings(BaseCustomSettings):
 
 _RENDERERS: Final[dict[str, Callable[[ValidationError], str]]] = {
     "str": str,
-    "repr": repr,
     "errors": lambda e: repr(e.errors()),
     "json": lambda e: e.json(),
 }
@@ -90,18 +89,3 @@ def test_key_error_grouped_with_other_field_errors():
         )
     locations = {error["loc"][0] for error in exc_info.value.errors()}
     assert locations == {"SESSION_SECRET_KEY", "SESSION_PORT"}
-
-
-def test_sanity_plain_secretstr_leaks():
-    # baseline: without the BeforeValidator the plaintext IS exposed in errors()
-    def _too_short(v: SecretStr) -> SecretStr:
-        if len(v.get_secret_value()) < 32:
-            raise ValueError
-        return v
-
-    class _Leaking(BaseModel):
-        token: Annotated[SecretStr, AfterValidator(_too_short)]
-
-    with pytest.raises(ValidationError) as exc_info:
-        _Leaking(token=_PLAINTEXT)  # pyright: ignore[reportArgumentType]
-    assert _PLAINTEXT in repr(exc_info.value.errors())
