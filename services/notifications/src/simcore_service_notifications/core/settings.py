@@ -53,12 +53,7 @@ class SMTPSettings(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _password_never_in_error_input(cls, data: Any) -> Any:
-        # pydantic reports the failed input verbatim in str(error), errors() and
-        # json(), including for the model-level validators below. Replacing the raw
-        # password with SecretStr at validation entry keeps the plaintext out of them.
-        # NOTE: the replacement is in-place on purpose: pydantic reports the original
-        # input object, so a modified copy would still leak
+    def _keep_password_out_of_validation_errors(cls, data: Any) -> Any:
         if isinstance(data, dict) and isinstance(data.get("password"), str):
             data["password"] = SecretStr(data["password"])
         return data

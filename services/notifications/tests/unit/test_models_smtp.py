@@ -153,8 +153,9 @@ _RENDERERS: Final[dict[str, Callable[[ValidationError], str]]] = {
 def test_invalid_smtp_configuration_does_not_expose_password(
     cfg: dict[str, Any], render: Callable[[ValidationError], str]
 ):
-    # the credential pairing check is a model-level validator: pydantic records the
-    # raw input dict as the error input, so it must be masked at validation entry
+    """The credential pairing check is a model-level validator and pydantic reports its
+    input verbatim, so the raw password must be masked at validation entry
+    """
     with pytest.raises(ValidationError) as err_info:
         SMTPSettings.model_validate(cfg)
 
