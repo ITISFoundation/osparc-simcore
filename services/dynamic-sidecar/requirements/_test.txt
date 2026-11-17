@@ -52,7 +52,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.0
+coverage==7.17.1
     # via pytest-cov
 docker==7.2.0
     # via -r requirements/_test.in
@@ -121,7 +121,7 @@ pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -180,7 +180,7 @@ types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-psutil==7.2.2.20260906
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

@@ -49,7 +49,7 @@ charset-normalizer==3.5.2
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   requests
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -173,7 +173,7 @@ pygments==2.21.0
     #   pytest
 pyleak==0.2.0
     # via -r requirements/_test.in
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -240,7 +240,7 @@ requests==2.34.2
     #   -c requirements/_fastapi.txt
     #   docker
     #   jsonschema-path
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
@@ -274,7 +274,7 @@ types-psutil==7.2.2.20260906
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
-types-tqdm==4.70.0.20260906
+types-tqdm==4.70.0.20261102
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

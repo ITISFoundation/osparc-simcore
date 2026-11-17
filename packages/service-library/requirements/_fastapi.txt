@@ -36,8 +36,9 @@ click==8.5.0
     # via
     #   rich-toolkit
     #   uvicorn
-dnspython==2.9.0
+dnspython==2.9.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   email-validator
 email-validator==2.3.0

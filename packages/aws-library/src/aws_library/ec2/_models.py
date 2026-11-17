@@ -4,7 +4,7 @@ import tempfile
 from dataclasses import dataclass
 from typing import Annotated, Final
 
-import sh  # type: ignore[import-untyped]
+import sh
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import (
@@ -42,10 +42,10 @@ class Resources(BaseModel, frozen=True):
     ] = DEFAULT_FACTORY
 
     @classmethod
-    def create_as_empty(cls) -> "Resources":
+    def create_as_empty(cls) -> Resources:
         return cls(cpus=0, ram=ByteSize(0))
 
-    def __ge__(self, other: "Resources") -> bool:
+    def __ge__(self, other: Resources) -> bool:
         """operator for >= comparison
         if self has greater or equal resources than other, returns True
         This will return True only if all of the resources in self are greater or equal to other
@@ -58,7 +58,7 @@ class Resources(BaseModel, frozen=True):
             return True
         return self > other
 
-    def __gt__(self, other: "Resources") -> bool:
+    def __gt__(self, other: Resources) -> bool:
         """operator for > comparison
         if self has resources greater than other, returns True
         VERY IMPORTANT: This will return True only if all of the resources in self are greater than other
@@ -102,7 +102,7 @@ class Resources(BaseModel, frozen=True):
 
         return self != other
 
-    def __add__(self, other: "Resources") -> "Resources":
+    def __add__(self, other: Resources) -> Resources:
         """operator for adding two Resources
         Note that only numeric generic resources are added
         Non-numeric generic resources are ignored
@@ -126,7 +126,7 @@ class Resources(BaseModel, frozen=True):
             generic_resources=merged,
         )
 
-    def __sub__(self, other: "Resources") -> "Resources":
+    def __sub__(self, other: Resources) -> Resources:
         """operator for subtracting two Resources
         Note that only numeric generic resources are subtracted
         Non-numeric generic resources are ignored
@@ -168,7 +168,7 @@ class Resources(BaseModel, frozen=True):
         data: dict[str, int | float | str],
         *,
         mapping: dict[str, str] | None = None,
-    ) -> "Resources":
+    ) -> Resources:
         """Inverse of as_flat_dict with optional key mapping"""
         mapped_data = data
         if mapping:
@@ -324,12 +324,9 @@ class EC2InstanceBootSpecific(BaseModel):
                 temp_file.writelines(v)
                 temp_file.flush()
                 # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
-                sh.bash(
-                    "-n",
-                    temp_file.name,  # pyright: ignore[reportCallIssue] - sh is untyped but safe for bash syntax checking
-                )
+                sh.bash("-n", temp_file.name)
         except sh.ErrorReturnCode as exc:
-            msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
+            msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr.decode()}"
             raise ValueError(msg) from exc
 
         return v
