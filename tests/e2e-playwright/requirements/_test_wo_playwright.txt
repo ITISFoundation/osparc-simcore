@@ -78,7 +78,7 @@ pydantic-settings==2.16.1
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   pytest-html
     #   pytest-instafail
