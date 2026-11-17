@@ -78,7 +78,6 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_constants import FRONTEND_SERVICE_KEY_PREFIX
-from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from models_library.services_resources import (
     ServiceResourcesDict,
     set_reservation_same_as_limit,
@@ -170,7 +169,7 @@ from ._access_rights_service import (
     has_user_project_access_rights,
 )
 from ._default_tags_service import apply_user_default_tags
-from ._nodes_utils import validate_new_service_resources
+from ._nodes_utils import is_node_computational, validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
@@ -754,7 +753,7 @@ async def patch_project_for_user(
     )
 
 
-_TTL_CACHE_PRICING_LOOKUPS_S: Final[int] = 5
+_TTL_CACHE_PRICING_LOOKUPS: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 
 
 def _pricing_lookup_cache_key(function: Any, *_args: Any, **kwargs: Any) -> str:
@@ -763,9 +762,10 @@ def _pricing_lookup_cache_key(function: Any, *_args: Any, **kwargs: Any) -> str:
 
 
 @run_sequentially_in_context(target_args=["product_name", "service_key", "service_version"])
-@cached(ttl=_TTL_CACHE_PRICING_LOOKUPS_S, key_builder=_pricing_lookup_cache_key)
-async def _default_pricing_and_hardware_info(
+@cached(ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(), key_builder=_pricing_lookup_cache_key)
+async def _get_default_pricing_and_hardware_info(
     app: web.Application,
+    # keyword-only: both decorators build their key out of the arguments' names
     *,
     product_name: str,
     service_key: ServiceKey,
@@ -774,8 +774,10 @@ async def _default_pricing_and_hardware_info(
     """The service's DEFAULT pricing unit in this product, None when it has none.
 
     A project's nodes typically share a service and an operation handles them concurrently, so a
-    lookup is cached for `_TTL_CACHE_PRICING_LOOKUPS_S` seconds and concurrent lookups of one key
-    run one at a time. Neither a None answer nor a failure is reused.
+    lookup is cached for `_TTL_CACHE_PRICING_LOOKUPS` and concurrent lookups of one key run one at
+    a time: the cache only holds an answer once its lookup returned, so without that serialization
+    every node of a service would ask before the first answer lands. Neither a None answer nor a
+    failure is reused.
     """
     service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
         app,
@@ -863,9 +865,8 @@ async def update_project_node_resources_from_hardware_info(
     required_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
         new_node_resources, mode="json"
     )
-    if _same_required_resources(
-        (await db.get_project_node(project_id, node_id)).required_resources, required_resources
-    ):
+    persisted_resources = (await db.get_project_node(project_id, node_id)).required_resources
+    if not _db_needs_update(persisted_resources, required_resources):
         # the node is already sized for this machine, no need to write it again
         return
 
@@ -879,28 +880,18 @@ async def update_project_node_resources_from_hardware_info(
     )
 
 
-def _same_required_resources(persisted: Any, sized: dict[str, Any]) -> bool:
-    """True when the persisted resources already are the sizing result
+def _db_needs_update(persisted: Any, sized: dict[str, Any]) -> bool:
+    """True when the node's persisted resources are not yet the sizing result
 
-    A node that was never sized (empty resources) is never the same, so that it still gets
-    written.
+    A node that was never sized (empty resources) always needs the write.
     """
     if not persisted:
-        return False
+        return True
     adapter = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict)
     try:
-        return bool(adapter.dump_python(adapter.validate_python(persisted), mode="json") == sized)
+        return bool(adapter.dump_python(adapter.validate_python(persisted), mode="json") != sized)
     except ValidationError:
-        return False
-
-
-def _is_node_computational(service_key: ServiceKey) -> bool:
-    """True for a node that runs on a machine the product pays for at creation time.
-
-    A dynamic service is excluded: it is sized when it starts, in
-    ``_start_dynamic_service``. The frontend is excluded because it runs on no machine.
-    """
-    return bool(COMPUTATIONAL_SERVICE_KEY_RE.fullmatch(f"{service_key}"))
+        return True
 
 
 def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
@@ -917,7 +908,7 @@ def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
 
 
 @run_sequentially_in_context(target_args=["product_name", "pricing_plan_id", "pricing_unit_id"])
-@cached(ttl=_TTL_CACHE_PRICING_LOOKUPS_S, key_builder=_pricing_lookup_cache_key)
+@cached(ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(), key_builder=_pricing_lookup_cache_key)
 async def _aws_ec2_instances_of_pricing_link(
     app: web.Application,
     *,
@@ -928,7 +919,7 @@ async def _aws_ec2_instances_of_pricing_link(
     """The machine types of a pricing link, or None when the resource-usage-tracker does not
     know that plan/unit in this product.
 
-    Cached like `_default_pricing_and_hardware_info`, whose docstring says why.
+    Cached like `_get_default_pricing_and_hardware_info`, whose docstring says why.
     """
     try:
         pricing_unit_get = await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
@@ -956,7 +947,7 @@ async def _link_default_pricing_unit(
     overwritten, and its machine types are the ones returned.
     """
     # NOTE: `cached` erases the return type of the lookups, hence the annotations at the call sites
-    default_info: PricingAndHardwareInfoTuple | None = await _default_pricing_and_hardware_info(
+    default_info: PricingAndHardwareInfoTuple | None = await _get_default_pricing_and_hardware_info(
         app, product_name=product_name, service_key=service_key, service_version=service_version
     )
     if default_info is None:
@@ -1106,7 +1097,7 @@ async def link_default_pricing_units_and_size_computational_nodes(
 
     to_link: list[NodeID] = []
     for node_id, node in nodes.items():
-        if not _is_node_computational(node.key):
+        if not is_node_computational(node.key):
             continue
         if await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id):
             continue
@@ -1435,7 +1426,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
             if output:
                 pricing_plan_id, pricing_unit_id = output
             else:
-                default_info: PricingAndHardwareInfoTuple | None = await _default_pricing_and_hardware_info(
+                default_info: PricingAndHardwareInfoTuple | None = await _get_default_pricing_and_hardware_info(
                     request.app,
                     product_name=product_name,
                     service_key=service_key,
@@ -1564,7 +1555,7 @@ async def add_project_node(
         required_resources=jsonable_encoder(default_resources),
     )
 
-    if _is_node_computational(service_key) and _is_product_billed(request.app, product_name):
+    if is_node_computational(service_key) and _is_product_billed(request.app, product_name):
         await _best_effort_link_pricing_unit_and_size_node(
             request.app,
             user_id=user_id,
