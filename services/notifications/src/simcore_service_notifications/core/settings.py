@@ -18,6 +18,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    ValidationError,
+    ValidationInfo,
     field_validator,
     model_validator,
 )
@@ -35,6 +37,7 @@ from settings_library.tracing import TracingSettings
 from settings_library.twilio import TwilioSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+from ..exceptions.errors import InvalidNotificationsChannelSettingsError
 from ..models.smtp import ALLOWED_HEADERS, EmailProtocol
 
 _CHANNEL_REQUIRED_SETTINGS: Final[
@@ -231,6 +234,12 @@ class NotificationsTwilioSettings(BaseModel):
         return self.accounts[product.account]
 
 
+_CHANNEL_SETTINGS_MODELS: Final[dict[str, type[BaseModel]]] = {
+    "NOTIFICATIONS_TWILIO_SETTINGS": NotificationsTwilioSettings,
+    "NOTIFICATIONS_SMTP_SETTINGS": NotificationsSMTPSettings,
+}
+
+
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
@@ -399,6 +408,26 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ],
         ),
     ] = None
+
+    @field_validator("NOTIFICATIONS_TWILIO_SETTINGS", "NOTIFICATIONS_SMTP_SETTINGS", mode="before")
+    @classmethod
+    def _parse_channel_settings(cls, value, info: ValidationInfo) -> BaseModel | None:
+        # a blank env var (e.g. an unset passthrough `${SMTP_SETTINGS}`) means unset; a
+        # malformed value is reported by field name and reason only: pydantic echoes the
+        # offending input in ValidationError, which here contains credentials
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return None
+        assert info.field_name is not None  # nosec
+        model = _CHANNEL_SETTINGS_MODELS[info.field_name]
+        try:
+            if isinstance(value, str):
+                return model.model_validate_json(value)
+            return model.model_validate(value)
+        except ValidationError as exc:
+            reasons = "; ".join(f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in exc.errors())
+            # non-ValueError on purpose: pydantic wraps ValueError/AssertionError
+            # and echoes the offending input, which here holds credentials
+            raise InvalidNotificationsChannelSettingsError(env_name=info.field_name, errors=reasons) from None
 
     @field_validator("LOG_LEVEL")
     @classmethod

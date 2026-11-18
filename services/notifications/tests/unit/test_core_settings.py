@@ -3,6 +3,8 @@
 # pylint: disable=redefined-outer-name
 
 
+import json
+
 import pytest
 from celery_library.basic_types import BootServerMode
 from models_library.notifications.errors import (
@@ -17,6 +19,9 @@ from simcore_service_notifications.core.settings import (
     NotificationsSMTPSettings,
     ProductSMTPSettings,
     SMTPSettings,
+)
+from simcore_service_notifications.exceptions.errors import (
+    InvalidNotificationsChannelSettingsError,
 )
 
 
@@ -199,3 +204,65 @@ def test_non_worker_mode_allows_missing_smtp_settings(mock_environment: EnvVarsD
 
     assert settings.NOTIFICATIONS_BOOT_SERVER_MODE is BootServerMode.AS_REST_API_SERVER
     assert settings.NOTIFICATIONS_SMTP_SETTINGS is None
+
+
+_TWILIO_SETTINGS = {
+    "accounts": {
+        "local": {
+            "TWILIO_ACCOUNT_SID": "ACdummy",
+            "TWILIO_AUTH_TOKEN": "aDummyAuthToken",
+            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": ["41"],
+        }
+    },
+    "products": {
+        "osparc": {
+            "account": "local",
+            "messaging_service_sid": "MGdummy",
+            "alphanumeric_sender_id": "osparc",
+        }
+    },
+}
+
+
+def test_twilio_settings_valid(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("NOTIFICATIONS_TWILIO_SETTINGS", json.dumps(_TWILIO_SETTINGS))
+
+    settings = ApplicationSettings.create_from_envs()
+
+    assert settings.NOTIFICATIONS_TWILIO_SETTINGS is not None
+    assert settings.NOTIFICATIONS_TWILIO_SETTINGS.get_twilio_account_settings("osparc").TWILIO_ACCOUNT_SID == "ACdummy"
+
+
+def test_twilio_settings_empty_string_is_unset(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    # e.g. `NOTIFICATIONS_TWILIO_SETTINGS: ${TWILIO_SETTINGS}` with TWILIO_SETTINGS unset
+    monkeypatch.setenv("NOTIFICATIONS_TWILIO_SETTINGS", "")
+
+    settings = ApplicationSettings.create_from_envs()
+
+    assert settings.NOTIFICATIONS_TWILIO_SETTINGS is None
+
+
+def test_twilio_settings_malformed_json_fails_without_echoing_secret(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    probe_value = "dummyAuthTokenA"
+    monkeypatch.setenv("NOTIFICATIONS_TWILIO_SETTINGS", '{"accounts": {"TWILIO_AUTH_TOKEN": "' + probe_value + '"')
+
+    with pytest.raises(InvalidNotificationsChannelSettingsError) as exc_info:
+        ApplicationSettings.create_from_envs()
+
+    assert "NOTIFICATIONS_TWILIO_SETTINGS" in str(exc_info.value)
+    assert probe_value not in str(exc_info.value)
+
+
+def test_smtp_settings_malformed_json_fails_without_echoing_password(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    probe_value = "dummySmtpPasswordB"
+    monkeypatch.setenv("NOTIFICATIONS_SMTP_SETTINGS", '{"mail_servers": {"password": "' + probe_value + '"')
+
+    with pytest.raises(InvalidNotificationsChannelSettingsError) as exc_info:
+        ApplicationSettings.create_from_envs()
+
+    assert "NOTIFICATIONS_SMTP_SETTINGS" in str(exc_info.value)
+    assert probe_value not in str(exc_info.value)

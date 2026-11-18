@@ -6,6 +6,7 @@ from celery_library.types import register_celery_types
 from servicelib.logging_utils import log_context
 
 from ...core.settings import ApplicationSettings
+from ...exceptions.errors import NotificationsSmsDeliveryPermanentError
 from ._email import send_email_message_task
 from ._sms import send_sms_message_task
 
@@ -17,4 +18,9 @@ def register_worker_tasks(settings: ApplicationSettings, app: Celery) -> None:
 
     with log_context(_logger, logging.INFO, msg="worker tasks registration"):
         register_task(app, send_email_message_task, rate_limit=settings.NOTIFICATIONS_EMAIL_RATE_LIMIT)
-        register_task(app, send_sms_message_task, rate_limit=settings.NOTIFICATIONS_SMS_RATE_LIMIT)
+        register_task(
+            app,
+            send_sms_message_task,
+            rate_limit=settings.NOTIFICATIONS_SMS_RATE_LIMIT,
+            dont_autoretry_for=(NotificationsSmsDeliveryPermanentError,),
+        )

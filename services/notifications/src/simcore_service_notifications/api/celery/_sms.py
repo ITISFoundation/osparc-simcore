@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 import logging
+from typing import Final
 
 from celery import (  # type: ignore[import-untyped]
     Task,
@@ -9,16 +10,36 @@ from models_library.celery import TaskKey
 from models_library.notifications.celery import SmsMessage
 from models_library.products import ProductName
 from servicelib.logging_utils import log_context
-from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
+from twilio.base.exceptions import (  # type: ignore[import-untyped]
+    TwilioException,
+    TwilioRestException,
+)
 
 from ...clients.twilio import send_sms
 from ...core.settings import ApplicationSettings, NotificationsTwilioSettings
-from ...exceptions.errors import NotificationsSmsDeliveryError
+from ...exceptions.errors import (
+    NotificationsSmsDeliveryError,
+    NotificationsSmsDeliveryPermanentError,
+)
 
 _logger = logging.getLogger(__name__)
 
 _FROM, _TO = 3, -1
 _MIN_NUM_DIGITS = 5
+
+# 4xx the provider may recover from, so they stay retryable
+_TRANSIENT_4XX: Final = frozenset({408, 429})
+_HTTP_CLIENT_ERROR_MIN: Final = 400
+_HTTP_SERVER_ERROR_MIN: Final = 500
+
+
+def _is_permanent_rejection(exc: TwilioRestException) -> bool:
+    status = exc.status
+    return (
+        isinstance(status, int)
+        and _HTTP_CLIENT_ERROR_MIN <= status < _HTTP_SERVER_ERROR_MIN
+        and status not in _TRANSIENT_4XX
+    )
 
 
 def _mask_phone_number(phone: str) -> str:
@@ -61,6 +82,10 @@ async def send_sms_message_task(
                 body=message.body,
                 sender=sender,
             )
-        except TwilioException as exc:
+        except TwilioRestException as exc:
             # NOTE: never surface the raw provider error, phone number or body in the exception message
+            if _is_permanent_rejection(exc):
+                raise NotificationsSmsDeliveryPermanentError(masked_phone_number=masked_phone_number) from exc
+            raise NotificationsSmsDeliveryError(masked_phone_number=masked_phone_number) from exc
+        except TwilioException as exc:
             raise NotificationsSmsDeliveryError(masked_phone_number=masked_phone_number) from exc
