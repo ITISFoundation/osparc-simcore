@@ -113,7 +113,6 @@ async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> N
 
 
 async def _volume_mountpoint_is_held_by_running_container(docker: Docker, mountpoint: Path) -> bool:
-    """True when a running container binds the mountpoint, so the mount is live not stale"""
     mountpoint_path = Path(mountpoint)
     containers = await docker.containers.list(all=False)
     for container in containers:
@@ -207,13 +206,14 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
                 await volume.delete(force=True)
             except DockerError as retry_err:
                 if lazy_unmount_attempted and _is_stale_mountpoint_error(retry_err):
-                    _logger.warning(
+                    _logger.exception(
                         **create_troubleshooting_log_kwargs(
                             f"Volume '{volume_name}' is still busy after lazy unmount",
                             error=retry_err,
                             error_context={"mountpoint": f"{mountpoint}"},
                             tip=f"run 'umount -l {mountpoint}' on the host",
-                        )
+                        ),
+                        exc_info=False,
                     )
                     return
                 raise

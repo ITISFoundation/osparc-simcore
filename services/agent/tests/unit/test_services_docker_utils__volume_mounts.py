@@ -20,17 +20,14 @@ _MOUNTPOINT_ROOT = "/var/lib/docker/volumes"
 type RunRemoveVolume = Callable[[list[Exception | None]], Awaitable[AsyncMock]]
 
 
-class _FakeContainer:
-    def __init__(self, mounts: list[dict], *, running: bool = False) -> None:
-        self._mounts = mounts
-        self._running = running
-
-    async def show(self) -> dict:
-        return {"Mounts": self._mounts, "State": {"Running": self._running}}
-
-
 _RUNNING = {"Running": True}
 _EXITED = {"Running": False}
+
+
+def _fake_container(mounts: list[dict], state: dict) -> AsyncMock:
+    container = AsyncMock()
+    container.show.return_value = {"Mounts": mounts, "State": state}
+    return container
 
 
 def _fake_docker(
@@ -41,9 +38,7 @@ def _fake_docker(
     docker = Mock()
     docker.volumes.list = AsyncMock(return_value={"Volumes": volumes})
     states = states or [_RUNNING] * len(container_mounts)
-    containers = [
-        _FakeContainer(mounts, running=state["Running"]) for mounts, state in zip(container_mounts, states, strict=True)
-    ]
+    containers = [_fake_container(mounts, state) for mounts, state in zip(container_mounts, states, strict=True)]
     docker.containers.list = AsyncMock(return_value=containers)
     return docker
 

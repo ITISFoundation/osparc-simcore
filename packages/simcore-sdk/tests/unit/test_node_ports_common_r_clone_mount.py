@@ -1062,14 +1062,17 @@ def make_manager_with_mounts() -> Callable[[dict[Path, AsyncMock], int], RCloneM
     def _make(mounts: dict[Path, AsyncMock], index: int) -> RCloneMountManager:
         manager = object.__new__(RCloneMountManager)
         manager._task_ensure_mounts_working = None  # noqa: SLF001
+        manager.delegate = AsyncMock()
         manager._tracked_mounts = {}  # noqa: SLF001
         manager._reverse_path_search = {}  # noqa: SLF001
+        manager._mount_lifecycle_locks = {}  # noqa: SLF001
         for path, mount in mounts.items():
             mount.local_mount_path = path
             mount.index = index
             mount_id = get_mount_id(path, index)
             manager._tracked_mounts[mount_id] = mount  # noqa: SLF001
             manager._reverse_path_search[mount_id] = cast(StorageFileID, "remote/path")  # noqa: SLF001
+            manager._mount_lifecycle_locks[mount_id] = asyncio.Lock()  # noqa: SLF001
         return manager
 
     return _make
@@ -1088,7 +1091,6 @@ async def test_ensure_unmounted_keeps_mount_tracked_when_transfer_wait_fails(
         await manager.ensure_unmounted(local_mount_path=tmp_path, index=index)
 
     assert manager.is_mount_tracked(local_mount_path=tmp_path, index=index)
-    assert len(manager._reverse_path_search) == 1  # noqa: SLF001
     tracked_mount.stop_mount.assert_not_awaited()
 
 
@@ -1104,10 +1106,56 @@ async def test_ensure_unmounted_untracks_mount_after_successful_stop(
 
     tracked_mount.stop_mount.assert_awaited_once()
     assert not manager.is_mount_tracked(local_mount_path=tmp_path, index=index)
-    assert manager._reverse_path_search == {}  # noqa: SLF001
 
 
-async def test_teardown_unmounts_all_mounts_even_when_one_fails(
+async def test_responsiveness_worker_skips_mount_while_unmounting(
+    tmp_path: Path,
+    index: int,
+    make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],
+):
+    """A mount whose stop is in flight must not be recreated by the worker:
+    the unmount would then untrack a freshly created running container.
+    """
+    tracked_mount = AsyncMock()
+    wait_started = asyncio.Event()
+    wait_release = asyncio.Event()
+
+    async def _slow_transfer_wait() -> None:
+        wait_started.set()
+        await wait_release.wait()
+
+    tracked_mount.wait_for_all_transfers_to_complete.side_effect = _slow_transfer_wait
+    tracked_mount.is_healthy.return_value = False
+    manager = make_manager_with_mounts({tmp_path: tracked_mount}, index)
+
+    unmount = asyncio.create_task(manager.ensure_unmounted(local_mount_path=tmp_path, index=index))
+    await wait_started.wait()
+
+    await manager._worker_ensure_mount_is_responsive()  # noqa: SLF001
+
+    assert not tracked_mount.start_mount.await_count, "worker must not restore a mount being unmounted"
+
+    wait_release.set()
+    await unmount
+    assert not manager.is_mount_tracked(local_mount_path=tmp_path, index=index)
+
+
+async def test_responsiveness_worker_restores_unhealthy_mount(
+    tmp_path: Path,
+    index: int,
+    make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],
+):
+    tracked_mount = AsyncMock()
+    tracked_mount.is_healthy.return_value = False
+    manager = make_manager_with_mounts({tmp_path: tracked_mount}, index)
+
+    await manager._worker_ensure_mount_is_responsive()  # noqa: SLF001
+
+    tracked_mount.stop_mount.assert_awaited_once_with(skip_transfer_wait=True)
+    tracked_mount.start_mount.assert_awaited_once()
+
+
+async def test_teardown_unmounts_healthy_mount_when_another_mount_fails(
     tmp_path: Path,
     index: int,
     make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],

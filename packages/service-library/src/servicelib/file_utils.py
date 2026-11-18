@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import shutil
 from collections.abc import AsyncIterator, Iterator
@@ -15,13 +14,21 @@ from aiofiles.os import remove
 from aiofiles.os import wrap as sync_to_async
 from pydantic import ByteSize, TypeAdapter
 
+from .utils import limited_gather
+
 CHUNK_4KB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("4kb")  # 4K blocks
 CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8MiB")  # 8mIB blocks
 
 
-class AsyncStream(Protocol):
+class _AsyncStream(Protocol):
     # aiofiles declares read position-only; keyword-allowing here rejects its handles
     async def read(self, size: int = -1, /) -> bytes: ...
+
+
+class _Hasher(Protocol):
+    def update(self, data: bytes, /) -> None: ...
+
+    def hexdigest(self) -> str: ...
 
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
@@ -40,12 +47,12 @@ async def _rm(path: Path, *, ignore_errors: bool):
 async def remove_directory(path: Path, *, only_children: bool = False, ignore_errors: bool = False) -> None:
     """Optional parameter allows to remove all children and keep directory"""
     if only_children:
-        await asyncio.gather(*[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")])  # noqa: ASYNC240
+        await limited_gather(*[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")], limit=2)  # noqa: ASYNC240
     else:
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
-async def create_sha256_checksum(async_stream: AsyncStream, *, chunk_size: ByteSize = CHUNK_8MB) -> str:
+async def create_sha256_checksum(async_stream: _AsyncStream, *, chunk_size: ByteSize = CHUNK_8MB) -> str:
     """
     Usage:
     import aiofiles
@@ -61,8 +68,8 @@ async def create_sha256_checksum(async_stream: AsyncStream, *, chunk_size: ByteS
 
 
 async def _eval_hash_async(
-    async_stream: AsyncStream,
-    hasher: hashlib._Hash,
+    async_stream: _AsyncStream,
+    hasher: _Hasher,
     chunk_size: ByteSize,
 ) -> str:
     while chunk := await async_stream.read(chunk_size):
