@@ -1,7 +1,7 @@
 services:
   postgres:
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 volumes:
   postgres_data:
     name: ${POSTGRES_DATA_VOLUME}

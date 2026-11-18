@@ -52,14 +52,14 @@ Make sure you first install all the [requirements](#requirements) mentioned in t
   git clone https://github.com/ITISFoundation/osparc-simcore.git
   cd osparc-simcore
 
-  # show setup info and build core services
-  make info build
+  # build core services
+  make build
 
   # starts swarm and deploys services
   make up-prod
 
-  # display swarm configuration
-  make info-swarm
+  # display endpoints for osparc and monitoring tools
+  make show-endpoints
 
   # open front-end in the browser
   #  127.0.0.1.nip.io:9081 - simcore front-end site
@@ -67,7 +67,7 @@ Make sure you first install all the [requirements](#requirements) mentioned in t
   xdg-open http://127.0.0.1.nip.io:9081/
 
   # to stop the swarm
-  make down
+  make down leave
 ```
 
 Some routes can only be reached via DNS such as `UUID.services.DNS`. Since `UUID.services.127.0.0.1` is **not a valid DNS**, the solution is to use [nip.io](https://nip.io/). A service that maps ``<anything>[.-]<IP Address>.nip.io`` in "dot", "dash" or "hexadecimal" notation to the corresponding ``<IP Address>``.
@@ -85,7 +85,7 @@ To build and run:
 
 To develop, in addition:
 
-- *python 3.10*: we recommend using [UV](https://docs.astral.sh/uv/)
+- *python 3.14*: we recommend using [UV](https://docs.astral.sh/uv/)
 - *nodejs* for client part: we recommend using the node manager [nvm](https://github.com/nvm-sh/nvm#install--update-script)
 - [vscode] (highly recommended)
 
@@ -158,8 +158,8 @@ To enable this, the following commands should be used to build, instead of the o
   make devenv
   source .venv/bin/activate
 
-  # show setup info and build core services
-  make info build build-devel
+  # build core services
+  make build build-devel
 
   # starts swarm and deploys services
   make up-devel
@@ -167,8 +167,8 @@ To enable this, the following commands should be used to build, instead of the o
   # The above command will keep in running with "[RUN] Running command..."
   # Open another terminal session, to continue
 
-  # display swarm configuration
-  make info-swarm
+  # display endpoints for osparc and monitoring tools
+  make show-endpoints
 
   # open front-end in the browser
   #  127.0.0.1.nip.io:9081 - simcore front-end site
@@ -176,7 +176,7 @@ To enable this, the following commands should be used to build, instead of the o
   xdg-open http://127.0.0.1.nip.io:9081/
 
   # to stop the swarm
-  make down
+  make down leave
 ```
 
 ## Contributing

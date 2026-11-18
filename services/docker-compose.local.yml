@@ -233,6 +233,8 @@ services:
       [
         "postgres",
         "-c",
+        "ssl=off",
+        "-c",
         "tcp_keepalives_idle=600",
         "-c",
         "tcp_keepalives_interval=600",

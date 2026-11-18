@@ -12,6 +12,7 @@ exclude_path = [
 
 # Sites that block or rate-limit HEAD/bot requests but are known-good.
 exclude = [
+  '^https://app\.codspeed\.io/ITISFoundation/osparc-simcore\?utm_source=badge$',
   "^https://fonts.gstatic.com",
   "^https://img.shields.io",
   "^https://badge.fury.io",
