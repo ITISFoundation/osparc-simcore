@@ -81,7 +81,7 @@ click==8.5.0
     # via
     #   -r requirements/_test.in
     #   flask
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -234,7 +234,7 @@ pygments==2.21.0
     #   pytest
 pyparsing==3.3.2
     # via moto
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -329,7 +329,7 @@ types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-awscrt==0.31.3
     # via botocore-stubs
-types-tqdm==4.70.0.20260906
+types-tqdm==4.70.0.20261102
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

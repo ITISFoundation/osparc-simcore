@@ -40,8 +40,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/benchmarks/requirements/ci.txt"
@@ -50,7 +52,7 @@ jobs:
       - name: install
         run: ./ci/github/benchmarks/codspeed.bash install
       - name: benchmark
-        uses: CodSpeedHQ/action@61efe07e57e55bedeab750c434504de272a56e8c # v5.6.1
+        uses: CodSpeedHQ/action@af75f77f17a054769abefaa42fe8dc2975469b5f # v5.6.3
         with:
           mode: simulation
           run: ./ci/github/benchmarks/codspeed.bash benchmark

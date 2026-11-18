@@ -91,15 +91,15 @@ pydantic-settings==2.14.2
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via locust
 python-dotenv==1.2.4
     # via pydantic-settings
-python-engineio==4.13.5
+python-engineio==4.15.1
     # via
     #   locust
     #   python-socketio
-python-socketio==5.16.4
+python-socketio==5.18.1
     # via locust
 pyzmq==27.1.0
     # via locust

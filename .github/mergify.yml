@@ -12,9 +12,23 @@ shared:
 merge_queue:
   max_parallel_checks: 1
 
+# The default queue checks in place (max_parallel_checks: 1, batch_size: 1,
+# merge_conditions equal to queue_conditions), so Mergify first merges master into
+# the pull request branch. When that merge carries a file under .github/workflows/,
+# GitHub refuses an app-authored commit unless the app holds `workflows`. Mergify
+# holds it on this repository; in a fork its only write path is "allow edits by
+# maintainers", which carries contents, so GitHub answers "refusing to allow a
+# GitHub App to create or update workflow" and the pull request dequeues as
+# BRANCH_UPDATE_FAILED. A user commit carries no such restriction, hence
+# osparc-shared -- the account the fast lane merges as, logged in at the Mergify
+# dashboard and write through dev-team.
+#
+# update_method stays unset (`merge`): GitHub refuses the OAuth rebase of a
+# contributor's fork branch, which would refuse it at queue entry instead.
 queue_rules:
   - name: default
     batch_size: 1
+    update_bot_account: osparc-shared
 
     queue_conditions:
       - label!=🤖-do-not-merge
@@ -46,6 +60,10 @@ queue_rules:
     # GitHub still enforces those required checks when Mergify merges.
     branch_protection_injection_mode: none
     merge_bot_account: osparc-shared
+    # No update_bot_account: renovate_only admits only the Renovate and Mergify
+    # noreply addresses as commit authors, so an osparc-shared update commit would
+    # move the pull request to the default queue and its reviews. Renovate branches
+    # are in this repository, where the app's `workflows` permission covers updates.
 
     # No check of another app than Mergify is pending or failed. Mergify lists each
     # check under its name and as @<app>/<name>; matching the qualified form leaves

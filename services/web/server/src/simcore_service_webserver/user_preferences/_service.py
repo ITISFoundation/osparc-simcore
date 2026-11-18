@@ -8,6 +8,9 @@ from models_library.api_schemas_webserver.users_preferences import (
     Preference,
 )
 from models_library.products import ProductName
+from models_library.shared_user_preferences import (
+    TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
+)
 from models_library.user_preferences import (
     AnyUserPreference,
     FrontendUserPreference,
@@ -28,7 +31,6 @@ from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from ..db.plugin import get_asyncpg_engine
 from ._models import (
     ALL_FRONTEND_PREFERENCES,
-    TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
     get_preference_identifier,
     get_preference_name,
 )

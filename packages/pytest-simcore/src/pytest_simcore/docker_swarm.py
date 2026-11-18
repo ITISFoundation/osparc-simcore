@@ -135,7 +135,10 @@ def assert_service_is_running(service) -> None:
     _logger.info("%s is up and running!!", service_name)
 
 
-def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_title: str) -> None:
+def _fetch_and_print_services(
+    docker_client: docker.client.DockerClient,
+    extra_title: str,
+) -> None:
     _logger.info(HEADER_STR.format(f"docker services running {extra_title}"))
 
     for service_obj in docker_client.services.list():

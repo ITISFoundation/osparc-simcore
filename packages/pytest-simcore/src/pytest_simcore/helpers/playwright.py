@@ -578,6 +578,14 @@ class RobustWebSocket:
         self._pending_event_waiters.add(waiter)
         return waiter
 
+    def expect_project_closed(self, project_uuid: str, *, timeout: timedelta) -> _ReconnectableEventWaiter:
+        """Register a listener that waits until `project_uuid` is closed (and unlocked)"""
+        return self.expect_event(
+            "framereceived",
+            SocketIOProjectClosedWaiter(project_uuid=project_uuid),
+            timeout=timeout.total_seconds() * SECOND,
+        )
+
     def wait_until_connected(self, *, timeout: float) -> None:
         """
         Block until the current websocket is connected, i.e. it received its first frame
@@ -873,7 +881,7 @@ def _check_service_endpoint(
         except PlaywrightTimeoutError, TimeoutError:
             logger.exception(
                 "❌ Timed-out requesting service endpoint after %ds ❌",
-                _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
+                _SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds(),
             )
         except PlaywrightError:
             logger.exception("Failed to request service endpoint")

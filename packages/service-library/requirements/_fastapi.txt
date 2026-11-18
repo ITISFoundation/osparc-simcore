@@ -36,8 +36,9 @@ click==8.5.0
     # via
     #   rich-toolkit
     #   uvicorn
-dnspython==2.9.0
+dnspython==2.9.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   email-validator
 email-validator==2.3.0
@@ -278,7 +279,7 @@ urllib3==2.8.0
     #   -c requirements/_base.txt
     #   requests
     #   sentry-sdk
-uvicorn==0.53.0
+uvicorn==0.54.0
     # via
     #   fastapi
     #   fastapi-cli
@@ -287,7 +288,7 @@ uvloop==0.23.0
     # via uvicorn
 watchfiles==1.1.1
     # via uvicorn
-websockets==17.1
+websockets==17.4
     # via uvicorn
 wrapt==1.17.3
     # via
