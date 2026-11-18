@@ -32,8 +32,13 @@ head, never the base.
 
 The remotes are normally `origin` for the fork and `upstream` for
 `ITISFoundation/osparc-simcore`, with `upstream` configured so pushes to it
-fail. Check with `git remote -v`. To recover the state of an existing pull
-request, `gh pr view --json baseRefName,headRefName,isDraft,files`.
+fail. Check with `git remote -v`. To pick up an existing pull request again,
+read its base, head, draft state and file list from the pull request page or
+from its API object.
+
+Everything below needs `git` and a GitHub token for the fork. Where a command
+uses the `gh` CLI, the plain steps and the API call are given as well: `gh` is
+not installed or configured everywhere an agent runs.
 
 ## Description rules
 
@@ -58,8 +63,22 @@ request, `gh pr view --json baseRefName,headRefName,isDraft,files`.
 
 Draft unless told otherwise. If intent is unclear, ask.
 
+Push the branch to the fork, then open a draft pull request from
+`<fork-owner>:<branch>` to `master` of `ITISFoundation/osparc-simcore`. Write the
+description to a file rather than passing it through the shell:
+
 ```bash
 git push -u origin <branch>
+```
+
+Submit from
+`https://github.com/ITISFoundation/osparc-simcore/compare/master...<fork-owner>:<branch>?expand=1`,
+with the title, the description from that file, and the draft box checked.
+
+With `gh` configured for the account that owns the fork, the same step is one
+command:
+
+```bash
 gh pr create --draft --repo ITISFoundation/osparc-simcore --base master \
   --head <fork-owner>:<branch> --title "<gitmoji> <summary>" \
   --body-file <file>
@@ -67,7 +86,12 @@ gh pr create --draft --repo ITISFoundation/osparc-simcore --base master \
 
 ## Updating
 
-To change title or body, `gh pr edit` aborts with a GraphQL scope error when the
+Title and body are two fields of the pull request. Send
+`PATCH /repos/ITISFoundation/osparc-simcore/pulls/<number>` with a JSON object
+holding `title` and `body`, using any client that has a token for the fork; only
+include the field you are changing.
+
+With `gh`, note that `gh pr edit` aborts with a GraphQL scope error when the
 token lacks `read:org` because its read query asks for organization-backed
 fields. The REST endpoint accepts the same patch with a `repo`-only token:
 
