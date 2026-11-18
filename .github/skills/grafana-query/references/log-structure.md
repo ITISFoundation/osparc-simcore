@@ -12,25 +12,29 @@ filters on them directly and needs no parsing pipe. Each entry has two layers:
    `log_timestamp`, `log_source`, `log_msg`, `log_uid`, `log_oec`,
    `log_trace_id`, `log_span_id`, `log_trace_sampled`, `log_service`
 
+`<stack>` below is the deployment's Swarm stack name (`SWARM_STACK_NAME`), for
+example `master-simcore_master` or `staging-simcore_staging`.
+
 ## Field Layout
 
-The log tools report the stream labels and the fields constant across a stream once
-per stream, and the per-line fields with each line. Values below are placeholders.
+The log tools report the stream labels and the fields constant across a stream
+once per stream, and the per-line fields with each line. Values below are
+placeholders.
 
 ```json
 {
   "labels": {
     "container_id": "<container-id>",
-    "service_name": "master-simcore_master_webserver",
+    "service_name": "<stack>_webserver",
     "source_type": "docker_swarm_logs"
   },
   "parsed": {
-    "container_name": "master-simcore_master_webserver.<replica>.<task-id>",
+    "container_name": "<stack>_webserver.<replica>.<task-id>",
     "host": "<swarm-node-hostname>",
     "level": "3",
     "log_level": "INFO",
     "log_oec": "None",
-    "log_service": "master-simcore_master_webserver",
+    "log_service": "<stack>_webserver",
     "log_trace_sampled": "True",
     "log_uid": "None"
   },
@@ -72,8 +76,8 @@ per stream, and the per-line fields with each line. Values below are placeholder
 | `level` | label | numeric syslog priority, does not mirror `log_level` |
 | `message` | string | full log line as pipe-separated key=value pairs |
 
-Kubernetes workloads (the monitoring and logging stacks) carry `kubernetes.*` labels
-instead: `kubernetes.container_name`, `kubernetes.pod_name`,
+Kubernetes workloads (the monitoring and logging stacks) carry `kubernetes.*`
+labels instead: `kubernetes.container_name`, `kubernetes.pod_name`,
 `kubernetes.pod_namespace`, `kubernetes.pod_node_name`.
 
 ## Non-simcore Services
@@ -83,10 +87,10 @@ container labels plus one raw message:
 
 ```json
 {
-  "container_name": "master-simcore_master_traefik.<replica>.<task-id>",
+  "container_name": "<stack>_traefik.<replica>.<task-id>",
   "host": "<swarm-node-hostname>",
   "level": "6",
-  "log_service": "master-simcore_master_traefik",
+  "log_service": "<stack>_traefik",
   "message": "2026-01-01T00:00:00Z WRN Health check failed. ... serviceName=<swarm-service>@swarm"
 }
 ```
@@ -97,27 +101,27 @@ the severity from the text. Traefik writes `WRN`, `ERR` and `INF`.
 ## Container Name Format
 
 ```text
-<stack>_<prefix>_<service>.<replica>.<task-id>
+<stack>_<service>.<replica>.<task-id>
 ```
 
-The `<stack>` and `<prefix>` vary by deployment; on master they are
-`master-simcore_master`. Discover the pattern by listing `service_name` label
-values with a `matcher`.
+`<stack>` is the deployment's Swarm stack name, `<service>` the compose service
+name. Discover `<stack>` by listing `service_name` label values with a `matcher`
+and reading the prefix shared by `*_webserver`.
 
-For `master-simcore_master_webserver.<replica>.<task-id>`, the service is
-`webserver`, the replica is a Swarm replica number, and the last segment is the
-Swarm task ID. A service deployed without a mode count shows the Swarm service ID
-in the middle segment instead of a replica number.
+For `<stack>_webserver.<replica>.<task-id>`, the replica is a Swarm replica
+number and the last segment is the Swarm task ID. A service deployed without a
+mode count shows the Swarm service ID in the middle segment instead of a replica
+number.
 
 ## Notes on Log Level Filtering
 
 - For simcore Python services, filter the indexed field: `AND log_level:"ERROR"`
-- For non-Python services (Traefik, Redis) match the text instead, since they have
-  no `log_level`: `AND _msg:~"(?i)error|ERR"`
+- For non-Python services (Traefik, Redis) match the text instead, since they
+  have no `log_level`: `AND _msg:~"(?i)error|ERR"`
 - `level` is a numeric syslog priority and does not mirror `log_level`. Prefer
   `log_level`.
 - If filtering by `log_level` returns nothing where errors are expected, widen to
   `AND _msg:~"(?i)error|exception|traceback|critical"`, which catches structured
   and unstructured indicators alike
 
-Last updated: 2026-11-18, values verified against master.
+Last updated: 2026-11-18.
