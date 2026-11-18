@@ -11,8 +11,9 @@ Target the Python version in `.python-version`.
 - Use `uv pip install`, `uv run --with <pkg> <tool>`, and `make reqs`.
   Never use bare `pip` or `pip-compile`. See
   [Python Dependencies](../../requirements/python-dependencies.md).
-- Run Ruff, Pylint, and mypy through repository commands or pre-commit. Global
-  tool configuration may differ from CI.
+- Run Ruff (a linter), Pylint, and mypy (a static type checker) through
+  repository commands or pre-commit. Global tool configuration may differ from
+  CI.
 - Pylint is not a pre-commit hook; CI runs it via `make pylint`. After editing
   Python files, run `pylint --rcfile=.pylintrc <changed files>` before
   finishing: a line-level `# noqa` satisfies ruff only, and pylint needs a
