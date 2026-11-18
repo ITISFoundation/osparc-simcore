@@ -1,0 +1,56 @@
+suite: extra objects
+templates:
+  - templates/extra-objects.yaml
+values:
+  - values/base.yaml
+release:
+  name: my-svc
+tests:
+  - it: renders nothing without extra objects
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders templates and adds the chart labels
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: "{{ .Release.Name }}-config"
+          data:
+            key: value
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: my-svc-config
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: my-svc
+            app.kubernetes.io/instance: my-svc
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: keeps labels set on the object over the chart labels
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: config
+            labels:
+              app.kubernetes.io/name: custom
+              team: ops
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: custom
+      - equal:
+          path: metadata.labels.team
+          value: ops
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: my-svc

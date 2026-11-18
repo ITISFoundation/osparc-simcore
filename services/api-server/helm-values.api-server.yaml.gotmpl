@@ -1,0 +1,62 @@
+env:
+  API_SERVER_BOOT_SERVER_MODE: "AS_REST_API_SERVER"
+
+ingresses:
+  - annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: simcoreapi
+      traefik.ingress.kubernetes.io/router.priority: "3"
+      traefik.ingress.kubernetes.io/router.middlewares: >-
+        {{ .Release.Namespace }}-gzip@kubernetescrd,
+        {{ .Release.Namespace }}-api-server-ratelimit@kubernetescrd,
+        {{ .Release.Namespace }}-api-server-inflightreq@kubernetescrd
+    paths:
+      - path: /
+        pathType: Exact
+      - path: /v0
+        pathType: Exact
+      - path: /v0/
+        pathType: Prefix
+      - path: /api/v0/openapi.json
+        pathType: Exact
+
+extraObjects:
+  # requests = average / period, the burst is computed over 1 second
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: api-server-ratelimit
+    spec:
+      rateLimit:
+        average: 1
+        period: 1m
+        burst: 10
+        sourceCriterion:
+          ipStrategy:
+            # second IP from the right of X-Forwarded-For
+            depth: 2
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: api-server-ensure-group-header
+    spec:
+      headers:
+        customRequestHeaders:
+          X-Inflight-Limit-Group: all
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: api-server-limit-reqs
+    spec:
+      inFlightReq:
+        amount: {{ requiredEnv "TRAEFIK_API_SERVER_INFLIGHTREQ_AMOUNT" }}
+        sourceCriterion:
+          requestHeaderName: X-Inflight-Limit-Group
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: api-server-inflightreq
+    spec:
+      chain:
+        middlewares:
+          - name: api-server-ensure-group-header
+          - name: api-server-limit-reqs

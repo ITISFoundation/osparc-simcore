@@ -1,0 +1,4 @@
+apiVersion: v2
+name: rabbit
+description: Simple chart for running RabbitMQ locally; not for production use.
+version: 0.1.0

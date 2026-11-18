@@ -1,0 +1,39 @@
+image:
+  repository: local/clusters-keeper
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  nodePort: 30010
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32015
+
+env:
+  CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT: 3000
+  CLUSTERS_KEEPER_LOGLEVEL: DEBUG
+
+extraVolumes:
+  - name: clusters-keeper-src
+    hostPath:
+      path: /osparc-simcore/services/clusters-keeper
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: clusters-keeper-src
+    mountPath: /devel/services/clusters-keeper
+  - name: packages-src
+    mountPath: /devel/packages
