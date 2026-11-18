@@ -15,6 +15,7 @@ globs. Read the one that matches what you are editing:
 - [Makefile authoring conventions](.github/instructions/makefiles.instructions.md)
 - [GitHub workflow instructions](.github/instructions/github-workflows.instructions.md)
 - [Helmfile Go templates](.github/instructions/helmfile-go-templates.instructions.md)
+- [Simcore service chart](.github/instructions/simcore-service-chart.instructions.md)
 - [Kubernetes (helmfile, values, kind)](.github/instructions/kubernetes.instructions.md)
 - [JavaScript](.github/instructions/node.instructions.md)
 
