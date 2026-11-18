@@ -82,7 +82,7 @@ that file type or service over a general rule.
 - Never push to `renovate/*` branches. Fix a failing Renovate pull request as
   described in
   [docs/renovate.md](../../docs/renovate.md#fixing-a-failing-renovate-pull-request).
-- Authoring a pull request, its title or its description: use the
+- Creating or updating a pull request, its title or its description: use the
   [`write-pull-request`](../skills/write-pull-request/SKILL.md) skill.
 
 ## Ordering

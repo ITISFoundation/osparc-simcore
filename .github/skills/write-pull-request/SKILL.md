@@ -1,101 +1,92 @@
 ---
 name: write-pull-request
 description: >-
-  Write and create a pull request for this repository: gitmoji title, the
-  PULL_REQUEST_TEMPLATE.md sections, the compactness rules, and the gh
-  commands. Use when: create a PR, open a pull request, draft a PR, write or
-  update the PR description, description of these changes, ready to merge,
-  hand over a Renovate pull request.
+  Create or update a pull request in this repository. Use when: create a PR,
+  open a pull request, draft a PR, update a pull request, edit or rewrite the
+  PR description, change the PR title, pick pull-request work up on another
+  machine, continue an existing pull request, hand over a Renovate pull
+  request, or any request to prepare a pull request.
 ---
 
 # Write Pull Request
 
 ## When to Use
 
-- A branch is finished and needs a pull request
-- An existing description needs rewriting
-- A Renovate pull request is taken over
+Any time the user asks, whatever the state of the branch:
 
-## Before writing
+- Creating a pull request
+- Updating an existing one: description, title, or pushing new commits to it
+- Picking pull-request work up again, for example after switching computers
+- Taking over a Renovate pull request
 
-- Read [PULL_REQUEST_TEMPLATE.md](../../PULL_REQUEST_TEMPLATE.md). Its section
-  names are fixed, and the comment at the top lists the accepted gitmoji.
-- Collect the facts from the branch: `git --no-pager log master..HEAD`, the
-  diff, and any measurement a bullet will quote. Verify a number before writing
-  it, or write `not measured yet`.
+## Topology
 
-## Title
+A pull request goes from a branch in your fork to the `master` branch of the
+upstream repository, `ITISFoundation/osparc-simcore`. The fork branch is always
+the head and never the base.
 
-One gitmoji from the template legend followed by what changed, for example
-`📝 docs: align grafana-query skill with the Victoria monitoring stack`.
+This repository's remotes are usually `origin` for the fork and `upstream` for
+`ITISFoundation/osparc-simcore`, with `upstream` configured so pushes to it
+fail. Check with `git remote -v` before pushing. After a machine switch,
+`gh pr view --json baseRefName,headRefName,isDraft,files` reports what the pull
+request currently is.
 
-## Description
+## Where each rule lives
 
-- Follow the template structure. Fill every section. Where one does not apply,
-  write `n/a`.
-- Open with `## Goal`: one sentence on why the pull request exists.
-- State the final solution, the facts and the measurements. No trial or process
-  narrative, no step-by-step history of how the branch evolved.
-- `## What do these changes do?`: the change in behavior, not the diff. Name a
-  file only when that file is itself the subject (a generated spec, a lockfile,
-  a config a reviewer must open); name a workflow by its display name, never its
-  file name. Say nothing about code the pull request does not touch.
-- At most two sentences per bullet. State each fact once: a mechanism explained
-  in one bullet must not come back in the next.
-- Work outside the `## Goal` sentence goes under a `### Bonus` sub-title, not
-  mixed into the main bullets. Better still, put it in its own pull request.
-- Background a reviewer needs but did not ask for goes under a `### Context`
-  sub-title: two sentences, facts or measurements only.
-- `## How to test`: commands and snippets a reviewer runs, or `n/a`. What you
-  ran while developing does not belong here, and nowhere else either.
-- Work to do after merge goes under a `### Follow-up` sub-title, not in
-  `## How to test`.
-- `## Dev-ops`: the work that still has to be done at deploy time, or `n/a`.
-  Steps already carried out belong nowhere in the description. See
-  [docs/devops-checklist.md](../../../docs/devops-checklist.md).
+[PULL_REQUEST_TEMPLATE.md](../../PULL_REQUEST_TEMPLATE.md) is the authority on
+the section list, the gitmoji legend for the title, and the `Assisted-by:`
+format. [unslop](../unslop/SKILL.md) is the authority on prose quality and what
+to cut. Neither is restated here. The template is also the file a reviewer
+opens first, so read it before writing rather than working from memory.
+
+## Facts before prose
+
+Take the content from the branch, not from the conversation: the commit list
+from `git --no-pager log master..HEAD`, the diff, and every measurement a bullet
+quotes. Verify a number before writing it, or write `not measured yet`.
+
+## Rules the template does not carry
+
+- Fill every section. Where one does not apply, write `n/a`.
+- State each fact once. A mechanism explained in one bullet must not come back
+  in the next.
+- No process narrative. State the final solution, the facts, the measurements.
 - Do not report tooling that runs by default. Pre-commit, linting and the test
   suite passing is expected. Report only what a reviewer cannot infer:
   measurements, and what was deliberately left untested.
 - Use the platform's own words: checks pass or fail, reviewers are requested. No
-  `green` or `red`, no `paging the owners`, no metaphors such as `once CI has
-  spoken`. Literal wording only.
-- Keep the caveats. Do not dress a known limitation in optimistic prose, and do
-  not claim more than the measurements support.
-- Performance pull requests: before and after measurements (CI step durations,
-  baseline mean against new value). If a measurement is not available yet, leave
-  an explicit placeholder and fill it in once the checks complete.
+  `green` or `red`, no metaphors such as `once CI has spoken`.
+- Keep the caveats. Do not claim more than the measurements support. A
+  performance pull request gives before and after numbers.
+
+## Line width
+
+Do not wrap a pull request body. GitHub renders the markdown and wraps it for
+the reader, so one bullet stays on one line however long it runs. The 80-column
+limit this repository's markdown linter enforces applies to tracked files, not
+to a pull request.
 
 ## Unslop before posting
 
 Run the draft through [unslop](../unslop/SKILL.md), whoever wrote it, so the
-description carries only what changed and why. That skill lists what counts as
-slop and what to cut.
+description carries only what changed and why.
 
-## AI assistance
+## Creating and updating
 
-Tick `🤖 This PR was AI generated` when it was, then name each contributing tool
-on its own line, as the template describes:
-
-```text
-Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
-```
-
-## Creating the pull request
-
-Push only to create the pull request. Otherwise the general conventions say
-commit locally and stop. Draft unless told otherwise; if intent is unclear, ask.
+Draft unless told otherwise; if intent is unclear, ask. The flags below encode
+the topology above.
 
 ```bash
 git push -u origin <branch>
-gh pr create --draft \
-  --repo ITISFoundation/osparc-simcore --base master \
-  --head <fork-owner>:<branch> \
-  --title "<gitmoji> <summary>" --body-file <file>
+gh pr create --draft --repo ITISFoundation/osparc-simcore --base master \
+  --head <fork-owner>:<branch> --title "<gitmoji> <summary>" \
+  --body-file <file>
 ```
 
-The base branch is `master`. To change the title or body afterwards, `gh pr
-edit` fails with a GraphQL scope error when the token lacks `read:org`. Patch
-through the REST endpoint instead:
+To change title or body afterwards, `gh pr edit` aborts with a GraphQL scope
+error when the token lacks `read:org`: its read query asks for
+organization-backed fields the edit itself does not need. The REST endpoint
+accepts the same patch with a `repo`-only token:
 
 ```bash
 gh api -X PATCH "repos/ITISFoundation/osparc-simcore/pulls/<number>" \
@@ -108,5 +99,5 @@ A pull request taking over a Renovate one fills the same template. Renovate's
 release notes stay in its pull request, linked from `## Related issue/s` as
 `replaces #<number> (Renovate's release notes are there)`, and the title keeps
 Renovate's with `(taken over from #<number>)` appended. Never push to
-`renovate/*` branches. The handover steps are in
+`renovate/*` branches. The steps are in
 [docs/renovate.md](../../../docs/renovate.md#fixing-a-failing-renovate-pull-request).
