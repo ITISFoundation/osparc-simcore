@@ -75,6 +75,7 @@ kubeconform: ## Validates Kubernetes manifests with kubeconform
 		-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
 		-kubernetes-version $(KUBERNETES_VERSION) \
 		-strict \
+		-verbose \
 		$(TEMPLATES_DIR)
 
 ##@ Lint
