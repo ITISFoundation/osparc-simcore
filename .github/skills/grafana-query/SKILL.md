@@ -27,15 +27,17 @@ skill states the common shape and marks what to discover per deployment.
 
 ## Access
 
-Read access uses a service account token, passed to the Grafana MCP server as
-`GRAFANA_URL` and `GRAFANA_SERVICE_ACCOUNT_TOKEN` (see
-`.vscode/mcp.template.json`). Point the server at another deployment's URL and
-token to query that deployment.
+Queries reach Grafana through a Grafana MCP server (`mcp-grafana`), which needs
+two values in its environment: `GRAFANA_URL`, the deployment's Grafana base URL,
+and `GRAFANA_SERVICE_ACCOUNT_TOKEN`, a read-only service account token created in
+that deployment's Grafana. Registering the server is a one-time setup in the
+client you run the agent in, so it lives outside this repository. Point it at
+another deployment's URL and token to query that deployment.
 
-The Grafana base URL is not stored in this repository. Any MCP tool response that
-returns a link (`exploreUrl` or `url` field) contains it. Only `<base>/api/health`
-answers without a token; it reports the Grafana version, which is not pinned
-across deployments. Every other endpoint returns 401.
+Neither value is stored here. Any MCP tool response that returns a link
+(`exploreUrl` or `url` field) carries the base URL in use. Only
+`<base>/api/health` answers without a token; it reports the Grafana version,
+which is not pinned across deployments. Every other endpoint returns 401.
 
 ## Naming placeholder
 
