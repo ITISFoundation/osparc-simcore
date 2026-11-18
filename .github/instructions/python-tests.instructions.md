@@ -92,9 +92,10 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 ## Running tests
 
-- Follow the [`run-python-tests`](../skills/run-python-tests/SKILL.md) procedure
-  and start with the narrowest relevant target. Broaden validation when the
-  change crosses package, service, database, serialization, or API boundaries.
+- Follow the [`run-python-tests`](../skills/run-python-tests/SKILL.md)
+  procedure: run the project's suite, then narrow to the failing file or test.
+  Validate beyond the project you changed when the change crosses package,
+  service, database, serialization, or API boundaries.
 - Run a whole suite in parallel with `--numprocesses=auto` where the project
   declares `pytest-xdist`.
 - The service Makefiles pass `--keep-docker-up` in every mode, so runs do not

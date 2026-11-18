@@ -13,16 +13,11 @@ Target the Python version in `.python-version`.
 - Check a change with `pre-commit run --files <changed files>`, then
   `make mypy` and `make pylint` in the project directory. pre-commit covers
   ruff, pyright and file hygiene, not mypy or pylint.
-- Ad-hoc pylint needs the root config:
-  `pylint --rcfile=<repo-root>/.pylintrc <changed files>`. A relative
-  `--rcfile` does not resolve from a project directory.
 - Fix lint findings rather than suppressing them. Add `# noqa` or
-  `# pylint: disable=` only where a fix is not possible; `# noqa` covers ruff
-  only, so pylint needs its own directive.
+  `# pylint: disable=` only where a fix is not possible.
 
 ## Typing
 
-- Use `X | None`, not `Optional[X]`.
 - Use PEP 695 syntax for new type aliases and generics:
   `type SortField = Literal["name", "email"]`, `class EnvelopeE[ErrorT](BaseModel)`.
   Keep assignment-based aliases when the alias must be callable at runtime
