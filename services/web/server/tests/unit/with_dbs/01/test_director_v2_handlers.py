@@ -38,10 +38,12 @@ from models_library.api_schemas_webserver.computations import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.wallets import WalletID, WalletInfo, WalletStatus
+from models_library.wallets import WalletID, WalletInfo
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from pytest_simcore.helpers.project_nodes_pricing import get_node_pricing_state
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -53,11 +55,8 @@ from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
-from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
-from simcore_postgres_database.models.wallets import wallets as wallets_table
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
@@ -317,57 +316,54 @@ async def foreign_workspace_project(
 ) -> AsyncIterator[ProjectDict]:
     """project inside a shared workspace owned by another user, invisible to the logged user"""
     assert client.app
-    async with NewUser(None, client.app) as other_user:
-        async with sqlalchemy_async_engine.begin() as conn:
-            workspace_id = (
-                await conn.execute(
-                    sa.insert(workspaces)
-                    .values(
-                        name="foreign-workspace",
-                        owner_primary_gid=int(other_user["primary_gid"]),
-                        product_name=osparc_product_name,
-                    )
-                    .returning(workspaces.c.workspace_id)
-                )
-            ).scalar_one()
-        try:
-            async with NewProject(
-                {},
-                client.app,
-                user_id=other_user["id"],
-                product_name=osparc_product_name,
-                tests_data_dir=tests_data_dir,
-            ) as project:
-                async with sqlalchemy_async_engine.begin() as conn:
-                    await conn.execute(
-                        sa.update(projects).where(projects.c.uuid == project["uuid"]).values(workspace_id=workspace_id)
-                    )
-                yield project
-        finally:
-            async with sqlalchemy_async_engine.begin() as conn:
-                await conn.execute(sa.delete(workspaces).where(workspaces.c.workspace_id == workspace_id))
+    # pylint: disable=contextmanager-generator-missing-cleanup
+    async with (
+        NewUser(None, client.app) as other_user,
+        insert_and_get_row_lifespan(
+            sqlalchemy_async_engine,
+            table=workspaces,
+            values={
+                "name": "foreign-workspace",
+                "owner_primary_gid": int(other_user["primary_gid"]),
+                "product_name": osparc_product_name,
+            },
+            pk_col=workspaces.c.workspace_id,
+        ) as workspace,
+        NewProject(
+            {"workspace_id": workspace["workspace_id"]},
+            client.app,
+            user_id=other_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as project,
+    ):
+        yield project
 
 
-async def _share_project_with_logged_user(
-    sqlalchemy_async_engine: AsyncEngine,
-    project: ProjectDict,
+@pytest.fixture
+async def read_only_shared_project(
+    client: TestClient,
     logged_user: UserInfoDict,
-    *,
-    read: bool,
-    write: bool,
-) -> None:
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            sa.insert(project_to_groups).values(
-                project_uuid=project["uuid"],
-                gid=int(logged_user["primary_gid"]),
-                read=read,
-                write=write,
-                delete=False,
-                created=sa.func.now(),
-                modified=sa.func.now(),
-            )
-        )
+    tests_data_dir: Path,
+    osparc_product_name: ProductName,
+) -> AsyncIterator[ProjectDict]:
+    """project owned by another USER, shared read-only with the logged user's personal group"""
+    assert client.app
+    async with (
+        NewUser(None, client.app) as other_user,
+        NewProject(
+            {
+                "access_rights": {
+                    f"{logged_user['primary_gid']}": {"read": True, "write": False, "delete": False},
+                },
+            },
+            client.app,
+            user_id=other_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as project,
+    ):
+        yield project
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -419,31 +415,20 @@ async def logged_user_default_wallet(
 ) -> AsyncIterator[WalletID]:
     """wallet owned by the logged user, set as their default preference"""
     assert client.app
-    async with sqlalchemy_async_engine.begin() as conn:
-        wallet_id = (
-            await conn.execute(
-                sa.insert(wallets_table)
-                .values(
-                    name="logged-user-default-wallet",
-                    owner=int(logged_user["primary_gid"]),
-                    status=WalletStatus.ACTIVE,
-                    product_name=osparc_product_name,
-                )
-                .returning(wallets_table.c.wallet_id)
-            )
-        ).scalar_one()
-    try:
+    async with insert_and_get_wallet_lifespan(
+        sqlalchemy_async_engine,
+        product_name=osparc_product_name,
+        user_group_id=int(logged_user["primary_gid"]),
+        name="logged-user-default-wallet",
+    ) as wallet:
         await user_preferences_service.set_frontend_user_preference(
             client.app,
             user_id=UserID(logged_user["id"]),
             product_name=osparc_product_name,
             frontend_preference_identifier=PreferredWalletIdFrontendUserPreference().preference_identifier,
-            value=wallet_id,
+            value=wallet["wallet_id"],
         )
-        yield WalletID(wallet_id)
-    finally:
-        async with sqlalchemy_async_engine.begin() as conn:
-            await conn.execute(sa.delete(wallets_table).where(wallets_table.c.wallet_id == wallet_id))
+        yield WalletID(wallet["wallet_id"])
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -479,12 +464,10 @@ async def test_read_only_collaborator_can_get_but_not_run_computation(
     director_v2_service_mock: AioResponsesMock,
     client: TestClient,
     logged_user: UserInfoDict,
-    foreign_project: ProjectDict,
-    sqlalchemy_async_engine: AsyncEngine,
+    read_only_shared_project: ProjectDict,
 ):
     assert client.app
-    await _share_project_with_logged_user(sqlalchemy_async_engine, foreign_project, logged_user, read=True, write=False)
-    project_id = foreign_project["uuid"]
+    project_id = read_only_shared_project["uuid"]
 
     url = client.app.router["get_computation"].url_for(project_id=project_id)
     rsp = await client.get(f"{url}")
