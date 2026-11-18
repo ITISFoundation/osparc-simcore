@@ -1,11 +1,8 @@
 # Common Query Patterns
 
-Replace `<stack>` with the deployment's Swarm stack name (`SWARM_STACK_NAME`),
-for example `master-simcore_master`, `staging-simcore_staging` or
-`production-simcore_production`. In logs, `service_name` is `<stack>_<service>`;
-in metrics it is the bare `<service>`. Resolve the stack name and the datasource
-UIDs first: list the datasources, then list log label values with a `matcher` and
-read the prefix shared by `*_webserver`.
+`<stack>` is the deployment's Swarm stack name (`SWARM_STACK_NAME`), for example
+`master-simcore_master`. In logs, `service_name` is `<stack>_<service>`; in
+metrics it is the bare `<service>`.
 
 ## Logs (LogsQL)
 
@@ -125,42 +122,20 @@ sum by (container_label_com_docker_swarm_service_name) (
 
 ## Workflow to investigate an error
 
-1. Check for errors in the simcore services:
-
-   ```logsql
-   {service_name=~"<stack>_.*"} AND log_level:"ERROR"
-   ```
-
-   If this returns nothing, widen the search to all services:
-
-   ```logsql
-   {source_type="docker_swarm_logs"} AND _msg:~"(?i)error|ERR"
-   ```
-
-2. Narrow down. Log lines written while a request is handled carry a
-   `log_trace_id`. Trace all services on that request:
-
-   ```logsql
-   {service_name=~"<stack>_.*"} AND log_trace_id:"<trace-id>"
-   ```
-
-   When `log_trace_id` is missing, no request handler wrote the line. Filter to
-   the one service instead:
-
-   ```logsql
-   {service_name="<stack>_<service>"} AND log_level:"ERROR"
-   ```
-
+1. Look for errors in the simcore services with the all-services log-level
+   query. If it returns nothing, widen to the message match for any service.
+2. Narrow down. Lines written while a request is handled carry a
+   `log_trace_id`; trace all services on that request with it. When it is
+   missing, no request handler wrote the line, so filter to the one service.
 3. Read the surrounding logs with `direction: "forward"` and a narrow window
    around the error timestamp.
-
-4. Fetch the trace by ID when `log_trace_id` is not `"0"`. Its services are named
-   `simcore-service-<name>`, so a filter on the log `service_name` will not match.
-
+4. Fetch the trace by ID when `log_trace_id` is not `"0"`. Its services are
+   named `simcore-service-<name>`, so a filter on the log `service_name` will
+   not match.
 5. Check the impact: request rate and error rate of that service over the same
    window. Metric `service_name` values are bare (`webserver`).
 
-## Tips
+## Tool options
 
 - The default lookback is one hour. Pass `startRfc3339` and `endRfc3339`
   (`now-6h`, `now`) for anything wider.
