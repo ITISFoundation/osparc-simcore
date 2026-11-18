@@ -9,6 +9,8 @@ from ...core.settings import ApplicationSettings, ProductSMTPSettings
 from ...models.product import Product
 from ._base import ChannelHandler
 
+_SMTP_NOT_CONFIGURED_ERROR = "NOTIFICATIONS_SMTP_SETTINGS must be configured to send email notifications"
+
 
 def _interleave_recipients_by_domain(
     recipients: list[EmailContact],
@@ -22,7 +24,7 @@ def get_email(identity: SenderIdentity, product_smtp_settings: ProductSMTPSettin
     return f"{local_part}@{product_smtp_settings.domain}"
 
 
-class EmailChannelHandler(ChannelHandler):
+class EmailChannelHandler(ChannelHandler[EmailMessage]):
     """Handles email channel: validates and fans out into per-recipient payloads."""
 
     @staticmethod
@@ -34,7 +36,7 @@ class EmailChannelHandler(ChannelHandler):
         """Resolve a from_identity into a concrete EmailContact using product data."""
         smtp_config = settings.NOTIFICATIONS_SMTP_SETTINGS
         if smtp_config is None:
-            raise RuntimeError("NOTIFICATIONS_SMTP_SETTINGS must be configured to send email notifications")
+            raise RuntimeError(_SMTP_NOT_CONFIGURED_ERROR)
         smtp_settings = smtp_config.get_product_smtp_settings(product.name)
         match from_identity:
             case SenderIdentity.SUPPORT:

@@ -8,7 +8,7 @@ from ...models.product import Product
 from ._base import ChannelHandler
 
 
-class SmsChannelHandler(ChannelHandler):
+class SmsChannelHandler(ChannelHandler[SmsMessage]):
     """Handles sms channel: fans out into per-recipient payloads.
 
     NOTE: messaging_service_sid/sender are product-settings-driven and are resolved

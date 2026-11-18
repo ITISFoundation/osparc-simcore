@@ -7,13 +7,18 @@ from ...core.settings import ApplicationSettings
 from ...models.product import Product
 
 
-class ChannelHandler(ABC):
-    """Base class for all channel-specific message handlers."""
+class ChannelHandler[MessageT: Message](ABC):
+    """Base class for all channel-specific message handlers.
+
+    Parameterized by the message model the channel consumes: the dispatcher
+    selects the handler from message.channel, so the per-channel narrowing
+    is decided at dispatch, not inside a handler.
+    """
 
     @staticmethod
     @abstractmethod
     def prepare_messages(
-        message: Message,
+        message: MessageT,
         *,
         product: Product,
         settings: ApplicationSettings,

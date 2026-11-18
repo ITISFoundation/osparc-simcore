@@ -255,6 +255,7 @@ async def send_message_from_template(
         locale=locale,
     )
 
+    addressing: EmailAddressing | SmsAddressing
     match channel:
         case Channel.email:
             addressing = await _create_email_addressing(
