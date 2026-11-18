@@ -4,7 +4,7 @@ attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   referencing
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -95,5 +95,5 @@ typing-extensions==4.16.0
     #   flexcache
     #   flexparser
     #   pint
-yarl==1.24.5
+yarl==1.25.1
     # via -r requirements/_test.in

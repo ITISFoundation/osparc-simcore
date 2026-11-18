@@ -40,7 +40,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -144,11 +144,11 @@ python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-python-engineio==4.13.5
+python-engineio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   python-socketio
-python-socketio==5.16.4
+python-socketio==5.18.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

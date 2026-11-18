@@ -114,7 +114,7 @@ click-repl==0.4.1
     # via
     #   -c requirements/_base.txt
     #   celery
-coverage==7.17.0
+coverage==7.17.1
     # via pytest-cov
 cryptography==50.0.2
     # via

@@ -516,7 +516,7 @@ toolz==1.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.67.3
+tqdm==4.70.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -568,7 +568,7 @@ urllib3==2.8.0
     #   botocore
     #   requests
     #   sentry-sdk
-uvicorn==0.53.0
+uvicorn==0.54.0
     # via
     #   fastapi
     #   fastapi-cli
@@ -577,7 +577,7 @@ uvloop==0.23.0
     # via uvicorn
 watchfiles==1.1.1
     # via uvicorn
-websockets==17.1
+websockets==17.4
     # via uvicorn
 wrapt==1.17.3
     # via
