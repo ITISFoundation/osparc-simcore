@@ -5,7 +5,10 @@
 
 .DEFAULT_GOAL := help
 
-include $(CURDIR)/../scripts/makefiles/common.mk
+REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
+include $(REPO_BASE_DIR)/scripts/makefiles/globals.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/k8s.mk
 
 # VARIABLES ----------------------------------------------
@@ -61,15 +64,13 @@ helmfile-simcore-diff: .helmfile-simcore-diff ## Shows changes in simcore servic
 
 ##@ Tests
 
-kubeconform: KUBERNETES_VERSION ?= 1.36.1
-kubeconform: guard-TEMPLATES_DIR _require-valid-kubeconform
+kubeconform: guard-TEMPLATES_DIR guard-KUBERNETES_VERSION _require-valid-kubeconform
 kubeconform: ## Validates Kubernetes manifests with kubeconform
 	@kubeconform \
 		-schema-location default \
 		-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
 		-kubernetes-version $(KUBERNETES_VERSION) \
 		-strict \
-		-verbose \
 		$(TEMPLATES_DIR)
 
 ##@ Lint
