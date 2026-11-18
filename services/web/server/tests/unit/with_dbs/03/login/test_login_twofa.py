@@ -588,8 +588,10 @@ async def test_2fa_sms_failure_during_login(
     assert client.app
 
     mocker.patch(
-        # MD: Emulates error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
-        "simcore_service_webserver.login._twofa_service.twilio.rest.Client",
+        # sms delivery fails when the code is submitted for sending; emulates the
+        # Twilio 'From' error in https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
+        # (2FA sms now goes through the notifications RPC, not the twilio client)
+        f"{notifications_service.__name__}.send_message_from_template",
         autospec=True,
         side_effect=TwilioRestException(
             status=400,
