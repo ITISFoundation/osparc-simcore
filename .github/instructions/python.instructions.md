@@ -15,9 +15,10 @@ Target the Python version in `.python-version`.
   repository commands or pre-commit. Global tool configuration may differ from
   CI.
 - Pylint is not a pre-commit hook; CI runs it via `make pylint`. After editing
-  Python files, run `pylint --rcfile=.pylintrc <changed files>` before
-  finishing: a line-level `# noqa` satisfies ruff only, and pylint needs a
-  matching `# pylint: disable=` directive.
+  Python files, run
+  `pylint --rcfile="$(git rev-parse --show-toplevel)/.pylintrc" <changed files>`
+  before finishing: a line-level `# noqa` satisfies ruff only, and pylint needs
+  a matching `# pylint: disable=` directive.
 
 ## Typing
 

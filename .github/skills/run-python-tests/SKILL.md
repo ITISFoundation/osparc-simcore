@@ -69,9 +69,10 @@ make test-ci-integration
 pytest tests/unit/test_foo.py::test_name -v
 ```
 
-A service's targets default to `tests/unit`, a package's to all of `tests`;
-only `packages/simcore-sdk` splits a package into `tests/unit` and
-`tests/integration`.
+A service's targets default to `tests/unit`, a package's to all of `tests`.
+`packages/simcore-sdk` is the exception: its `test-ci-unit` targets
+`tests/unit`, and its integration suite runs only through
+`make test-ci-integration`.
 
 Run the whole suite in parallel where the project declares `pytest-xdist`:
 
@@ -102,8 +103,10 @@ make pylint    # no pre-commit hook: CI runs it, so run it by hand
 ```
 
 Run the ones that cover the change. For a few edited files,
-`pylint --rcfile=.pylintrc <files>` is enough. A line-level `# noqa` satisfies
-ruff only; pylint needs a matching `# pylint: disable=` directive.
+`pylint --rcfile="$(git rev-parse --show-toplevel)/.pylintrc" <files>` is
+enough; `.pylintrc` exists only at the repository root, and pylint resolves a
+relative `--rcfile` against the current directory. A line-level `# noqa`
+satisfies ruff only; pylint needs a matching `# pylint: disable=` directive.
 
 ## Docker-backed tests
 
