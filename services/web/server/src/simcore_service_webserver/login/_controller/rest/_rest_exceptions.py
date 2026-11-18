@@ -139,7 +139,7 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
     )
 
 
-async def _handle_login_throttled(request: web.Request, exception: Exception):
+async def _handle_login_throttled(request: web.Request, exception: Exception):  # NOSONAR
     assert isinstance(  # nosec
         exception, LoginThrottledError
     ), f"Expected LoginThrottledError, got {type(exception)}"
