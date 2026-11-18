@@ -104,24 +104,18 @@ the severity from the text. Traefik writes `WRN`, `ERR` and `INF`.
 <stack>_<service>.<replica>.<task-id>
 ```
 
-`<stack>` is the deployment's Swarm stack name, `<service>` the compose service
-name. Discover `<stack>` by listing `service_name` label values with a `matcher`
-and reading the prefix shared by `*_webserver`.
+`<service>` is the compose service name.
 
 For `<stack>_webserver.<replica>.<task-id>`, the replica is a Swarm replica
 number and the last segment is the Swarm task ID. A service deployed without a
 mode count shows the Swarm service ID in the middle segment instead of a replica
 number.
 
-## Notes on Log Level Filtering
+## Log level filtering
 
-- For simcore Python services, filter the indexed field: `AND log_level:"ERROR"`
-- For non-Python services (Traefik, Redis) match the text instead, since they
-  have no `log_level`: `AND _msg:~"(?i)error|ERR"`
-- `level` is a numeric syslog priority and does not mirror `log_level`. Prefer
-  `log_level`.
-- If filtering by `log_level` returns nothing where errors are expected, widen to
-  `AND _msg:~"(?i)error|exception|traceback|critical"`, which catches structured
-  and unstructured indicators alike
+- Simcore Python services: filter the indexed field, `AND log_level:"ERROR"`
+- When `log_level` returns nothing where errors are expected, widen to
+  `AND _msg:~"(?i)error|exception|traceback|critical"`. Non-simcore services
+  have no `log_level` at all.
 
 Last updated: 2026-11-18.

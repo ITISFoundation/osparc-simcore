@@ -8,22 +8,8 @@ argument-hint: "Describe what you want to investigate (e.g., 'errors in webserve
 
 Every osparc deployment exposes monitoring the same way: a Grafana instance in
 front of the Victoria stack (VictoriaLogs, VictoriaMetrics, VictoriaTraces). Only
-the datasource UIDs, the service name prefix and the dashboard set vary, so this
-skill states the common shape and marks what to discover per deployment.
-
-## When to Use
-
-- Investigating errors or warnings in simcore services
-- Checking service logs for specific events or patterns
-- Querying metrics (request rates, latencies, resource usage)
-- Viewing distributed traces
-- Checking alert rule state
-- Analyzing service performance or resource consumption
-
-> **IMPORTANT**: If you discover that the actual Grafana data (datasource types,
-> label names, log field structures, dashboard names, service naming patterns) is
-> inconsistent with what this skill documents, **update the skill files** to
-> reflect the correct state. This keeps the skill accurate for later use.
+the datasource UIDs, the service name prefix and the dashboard set vary. If the
+live data disagrees with anything here, update these files.
 
 ## Access
 
@@ -50,9 +36,9 @@ lists the known values. Discover the one in front of you by listing log
 
 ## Datasources
 
-Datasource UIDs differ per deployment. **Always discover them dynamically** at the
-start of a query session by listing datasources, filtering by type if needed.
-Their names are the same across deployments:
+Datasource UIDs differ per deployment: discover them at the start of a query
+session by listing datasources, filtering by type if needed. The same five are
+present everywhere:
 
 | UID | Type | Purpose |
 | --- | --- | --- |
@@ -74,8 +60,8 @@ fails with `unexpected pipe name "json"`. Use field filters instead, see
 
 ## Dashboards
 
-Dashboard UIDs differ per deployment. **Always discover them dynamically**:
-searching without a query lists all of them. The folder layout is shared.
+Dashboard UIDs differ per deployment: search without a query to list them all.
+The folder layout is shared.
 
 Simcore folder:
 
@@ -177,6 +163,4 @@ the traced function. Fetch a trace by ID instead of searching for it: the
 See [Query Patterns](./references/query-patterns.md) for LogsQL and PromQL
 queries.
 
-Last updated: 2026-11-18. Verified on a master deployment; the datasource UIDs,
-label names and metric families are the shared monitoring setup, and the service
-name prefix is what changes per deployment.
+Last updated: 2026-11-18, verified on a master deployment.
