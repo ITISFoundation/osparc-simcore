@@ -80,7 +80,8 @@ def webserver_environ(request, docker_stack: dict, simcore_docker_compose: dict)
         "director",
         "docker-api-proxy",
         "dynamic-schdlr",
-        "notifications-worker",
+        "notifications-email-worker",
+        "notifications-sms-worker",
         "sto-worker",
         "sto-worker-cpu-bound",
     ]
