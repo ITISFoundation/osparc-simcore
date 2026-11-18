@@ -10,6 +10,7 @@ KUBECONFORM_VERSION := 0.8.0
 KIND_VERSION := 0.32.0
 HELMFILE_VERSION := 1.1.6
 HELM_VERSION := 3.22.1
+HELM_UNITTEST_VERSION := 1.2.1
 
 #
 # Helmfile configuration
@@ -22,30 +23,6 @@ HELMFILE_COMMAND_FLAGS ?=
 #
 # utils
 #
-
-# run_helmfile <helmfile_file> <command>
-# Example: $(call run_helmfile,services/helmfile.yaml.gotmpl,lint)
-define run_helmfile
-    cd $(REPO_BASE_DIR) || exit 1; \
-    set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
-    $(HELMFILE_ENV) helmfile $(HELMFILE_GLOBAL_FLAGS) -f $(1) $(2) $(HELMFILE_COMMAND_FLAGS)
-endef
-
-.PHONY: _require-valid-helm
-_require-valid-helm:
-	$(call verify_tool_installation,helm,$(HELM_VERSION),helm version --short)
-
-.PHONY: _require-valid-helmfile
-_require-valid-helmfile:
-	$(call verify_tool_installation,helmfile,$(HELMFILE_VERSION),helmfile --version)
-
-.PHONY: _require-valid-kind
-_require-valid-kind:
-	$(call verify_tool_installation,kind,$(KIND_VERSION),kind --version)
-
-.PHONY: _require-valid-kubeconform
-_require-valid-kubeconform:
-	$(call verify_tool_installation,kubeconform,$(KUBECONFORM_VERSION),kubeconform -v)
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -61,17 +38,54 @@ guard-%:
 
 # $(1) command, $(2) expected version, $(3) version command
 define verify_tool_installation
-	@if ! command -v $(1) >/dev/null 2>&1; then \
+	if ! command -v $(1) >/dev/null 2>&1; then \
 		echo "'$(1)' is not installed. Install version $(2) to continue."; \
 		exit 1; \
 	fi
-	@installed_version=$$($(3)); \
-	if ! echo "$$installed_version" | grep "$(2)"; then \
+	installed_version=$$($(3)); \
+	if ! echo "$$installed_version" | grep --silent "$(2)"; then \
 		echo "WARNING: installed $(1) version does not match" >&2; \
 		echo "Expected:'$(2)'. Installed: '$$installed_version'. Please, update!"  >&2; \
 		sleep 3s; \
 	fi
 endef
+
+# run_helmfile <helmfile_file> <command>
+# Example: $(call run_helmfile,services/helmfile.yaml.gotmpl,lint)
+define run_helmfile
+    cd $(REPO_BASE_DIR) || exit 1; \
+    set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
+    $(HELMFILE_ENV) helmfile $(HELMFILE_GLOBAL_FLAGS) -f $(1) $(2) $(HELMFILE_COMMAND_FLAGS)
+endef
+
+.PHONY: _require-valid-helm
+_require-valid-helm:
+	@$(call verify_tool_installation,helm,$(HELM_VERSION),helm version --short)
+
+.PHONY: _require-valid-helmfile
+_require-valid-helmfile:
+	@$(call verify_tool_installation,helmfile,$(HELMFILE_VERSION),helmfile --version)
+
+.PHONY: _require-valid-helm-unittest
+_require-valid-helm-unittest: _require-valid-helm
+	@if ! helm plugin list | grep -q '^unittest'; then \
+		echo "helm plugin 'unittest' is not installed."; \
+		exit 1; \
+	fi
+	@installed_version=$$(helm plugin list | awk '$$1 == "unittest" {print $$2}'); \
+	if [ "$$installed_version" != "$(HELM_UNITTEST_VERSION)" ]; then \
+		echo "WARNING: installed helm unittest plugin version does not match" >&2; \
+		echo "Expected:'$(HELM_UNITTEST_VERSION)'. Installed: '$$installed_version'. Please, update!" >&2; \
+		sleep 3s; \
+	fi
+
+.PHONY: _require-valid-kind
+_require-valid-kind:
+	@$(call verify_tool_installation,kind,$(KIND_VERSION),kind --version)
+
+.PHONY: _require-valid-kubeconform
+_require-valid-kubeconform:
+	@$(call verify_tool_installation,kubeconform,$(KUBECONFORM_VERSION),kubeconform -v)
 
 #
 # helmfile internal

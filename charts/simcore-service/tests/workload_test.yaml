@@ -1,0 +1,60 @@
+suite: workload kind
+templates:
+  - templates/deployment.yaml
+  - templates/daemonset.yaml
+  - templates/secret.yaml
+values:
+  - values/base.yaml
+release:
+  name: my-svc
+tests:
+  - it: renders only a Deployment by default
+    asserts:
+      - template: templates/deployment.yaml
+        isKind:
+          of: Deployment
+      - template: templates/deployment.yaml
+        equal:
+          path: spec.replicas
+          value: 1
+      - template: templates/daemonset.yaml
+        hasDocuments:
+          count: 0
+
+  - it: renders only a DaemonSet without replicas
+    set:
+      kind: DaemonSet
+      replicaCount: 3
+    asserts:
+      - template: templates/daemonset.yaml
+        isKind:
+          of: DaemonSet
+      - template: templates/daemonset.yaml
+        notExists:
+          path: spec.replicas
+      - template: templates/deployment.yaml
+        hasDocuments:
+          count: 0
+
+  - it: uses the release selector labels in selector and pod template
+    asserts:
+      - template: templates/deployment.yaml
+        equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: my-svc
+            app.kubernetes.io/instance: my-svc
+      - template: templates/deployment.yaml
+        isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: my-svc
+            app.kubernetes.io/instance: my-svc
+
+  - it: rejects an unknown kind
+    set:
+      kind: StatefulSet
+    asserts:
+      - template: templates/deployment.yaml
+        failedTemplate:
+          errorPattern: "kind"

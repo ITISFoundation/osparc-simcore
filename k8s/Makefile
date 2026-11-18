@@ -64,6 +64,10 @@ helmfile-simcore-diff: .helmfile-simcore-diff ## Shows changes in simcore servic
 
 ##@ Tests
 
+.PHONY: helm-unittest
+helm-unittest: _require-valid-helm-unittest  ## Runs helm-unittest tests of the simcore-service chart
+	@helm unittest --color --strict $(REPO_BASE_DIR)/charts/simcore-service
+
 kubeconform: guard-TEMPLATES_DIR guard-KUBERNETES_VERSION _require-valid-kubeconform
 kubeconform: ## Validates Kubernetes manifests with kubeconform
 	@kubeconform \
