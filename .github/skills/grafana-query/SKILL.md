@@ -1,6 +1,6 @@
 ---
 name: grafana-query
-description: "Query Grafana for logs, metrics, traces, and alerts from an osparc-simcore deployment. Use when: debugging service errors, checking logs in Loki, querying Prometheus metrics, investigating incidents, finding error patterns, viewing dashboards, checking alert rules, or analyzing service performance."
+description: "Query Grafana for logs, metrics, traces, and alerts from an osparc-simcore deployment. Use when: debugging service errors, querying service logs, querying Prometheus metrics, investigating incidents, finding error patterns, viewing dashboards, checking alert rules, or analyzing service performance."
 argument-hint: "Describe what you want to investigate (e.g., 'errors in webserver last hour', 'memory usage of director-v2')"
 ---
 
@@ -11,63 +11,67 @@ argument-hint: "Describe what you want to investigate (e.g., 'errors in webserve
 - Investigating errors or warnings in simcore services
 - Checking service logs for specific events or patterns
 - Querying Prometheus metrics (request rates, latencies, resource usage)
-- Viewing distributed traces via Tempo
+- Viewing distributed traces
 - Checking alert rule state
 - Analyzing service performance or resource consumption
 
-> **IMPORTANT**: If you discover that the actual Grafana data (datasource types, label names, log field structures, dashboard names, service naming patterns) is inconsistent with what this skill documents, **update the skill files** to reflect the correct state. This ensures the skill stays accurate for future invocations.
+> **IMPORTANT**: If you discover that the actual Grafana data (datasource types,
+> label names, log field structures, dashboard names, service naming patterns) is
+> inconsistent with what this skill documents, **update the skill files** to
+> reflect the correct state. This keeps the skill accurate for later use.
+
+## Access
+
+Read access uses a service account token. The Grafana base URL is not stored in
+this repository: any MCP tool response that returns a link (`exploreUrl` or `url`
+field) contains it. Only `<base>/api/health` answers without a token, and it
+reports the Grafana version; every other endpoint returns 401.
 
 ## Datasources
 
-Datasource UIDs differ per deployment. **Always discover them dynamically** at the start of a query session:
+Datasource UIDs differ per deployment. **Always discover them dynamically** at the
+start of a query session by listing datasources. Master runs Grafana 12.3.2 on the
+Victoria stack:
 
-1. List all datasources and their UIDs
-2. Filter by type when needed: `type: "loki"`, `type: "prometheus"`, `type: "tempo"`
+- `victoria-logs` (victoriametrics-logs-datasource): all service logs
+- `victoria-metrics` (prometheus): default datasource, Swarm and Kubernetes
+- `victoria-metrics-swarm` (prometheus): Docker Swarm targets only
+- `victoria-metrics-kubernetes` (prometheus): Kubernetes targets only
+- `victoria-traces` (tempo): distributed tracing
 
-Expected datasource types in a typical deployment:
+The log tools take LogsQL on a VictoriaLogs datasource, not LogQL. LogsQL has no
+`| json` pipe, so a LogQL query such as
 
-| Name pattern | Type | Purpose |
-|--------------|------|---------|
-| loki | Loki | Log aggregation (all service logs) |
-| prometheus-federation | Prometheus | Federated metrics (usually the default datasource) |
-| prometheus-catchall | Prometheus | Catchall Prometheus metrics |
-| tempo | Tempo | Distributed tracing |
-| cloudwatch | CloudWatch | AWS infrastructure metrics (RDS, etc.) |
+```logql
+{service_name=~"master-simcore_master_.*"} | json | log_level = `ERROR`
+```
+
+fails with `unexpected pipe name "json"`. Use field filters instead, see
+[Query Patterns](./references/query-patterns.md).
 
 ## Dashboards
 
 Dashboard UIDs differ per deployment. **Always discover them dynamically**:
+searching without a query lists all of them. Master has 19 dashboards in four
+folders.
 
-Typical dashboard folders and their contents:
+Simcore folder:
 
-### simcore folder
 | Title | Purpose |
-|-------|---------|
-| Metrics | Core simcore service metrics |
-| Services | Service-level overview |
-| Requests load overview | HTTP request load |
-| autoscaling overview | Autoscaling status |
-| API server log streaming queues | API server queues |
-| s4l-lite admin overview | Sim4Life Lite admin |
+| --- | --- |
+| Services | resources, HTTP and RPC handling per service |
+| Requests load overview | HTTP request load across services |
 
-The Metrics dashboard contains panels for core simcore services. It contains metrics related to resources usage (e.g. RAM and CPU), HTTP request handling statistics and RPC request handling statistics. This is a very useful dashboard to investigate once it has been determined that an error happened within a specific simcore service.
+Open `Services` once an error is traced to one simcore service.
 
-### ops folder
-| Title | Purpose |
-|-------|---------|
-| Traefik2 | Reverse proxy metrics |
-| RabbitMQ Overview | Message broker |
-| Redis Overview | Cache/queue |
-| Postgres Overview | Database metrics |
-| Docker Registries | Registry health |
-| AWS RDS Metrics | RDS database |
+OPS Apps folder: RabbitMQ Overview, Redis Overview, Postgres Overview, Docker
+Registries, Traefik Internal State, OpenTelemetry Collector, Grafana Internal
+Metrics, plus the self-monitoring dashboards for VictoriaMetrics (federated,
+vmalert, cluster), VictoriaLogs and VictoriaTraces.
 
-### system folder
-| Title | Purpose |
-|-------|---------|
-| Docker Swarm Overview | Cluster overview |
-| Nodes - Overview | Host nodes |
-| Nodes - Detailed Insights | Per-node deep dive |
+System folder: Swarm Nodes (node-exporter), Kubernetes Nodes, GPU Nodes (DCGM).
+
+Vendor folder: S4l-chatbox-dashboard.
 
 ## Procedure
 
@@ -77,42 +81,76 @@ Before any query, resolve the datasource UIDs for this deployment.
 
 ### 1. Identify the Target
 
-Determine which service(s) to investigate. The simcore platform services use the naming pattern `<stack>_<prefix>_<service>` (e.g., `simcore_staging_webserver`). The exact stack/prefix varies by deployment.
-**Discover the naming pattern** by listing Loki label values.
+Determine which service or services to investigate. Naming differs between logs
+and metrics:
 
-Common service name patterns:
-- **Core services**: `<stack>_<prefix>_<service>` (e.g., `*_webserver`, `*_api-server`, `*_director-v2`)
-- **Dynamic proxies**: `dy-proxy_<node-uuid>`
-- **Dynamic sidecars**: `dy-sidecar_<node-uuid>`
-- **Dask**: `dask_stack_<component>`
+- logs: `service_name` holds the full Swarm name,
+  `master-simcore_master_<service>`
+- metrics: `service_name` holds the bare name, `webserver`
+- container metrics: the full name is in
+  `container_label_com_docker_swarm_service_name`
 
-Core simcore services:
-`webserver`, `api-server`, `director`, `director-v2`, `catalog`, `dynamic-schdlr`, `agent`, `autoscaling`, `clusters-keeper`, `resource-usage-tracker`, `wb-api-server`, `wb-auth`, `wb-db-event-listener`, `wb-garbage-collector`, `payments`, `invitations`, `datcore-adapter`, `traefik`
+The `<stack>_<prefix>` part varies per deployment. Discover it by listing log label
+values with a `matcher`, see the warning in step 2.
 
-### 2. Query Logs (Loki)
+Dynamic services have their own streams: `dy-proxy_<node-uuid>`,
+`dy-sidecar_<node-uuid>`, and one container per user service (`<service>_<uuid>`,
+`jsonifier_<uuid>`, `sleeper_<uuid>`). On a busy deployment these dominate the
+`service_name` values.
 
-Use the Loki datasource UID discovered in step 0. Available Loki labels:
-- `service_name` — service identifier (see naming patterns above)
-- `container_name` — Docker container name with replica info
-- `host` — host node name
-- `source` — log pipeline source (typically `vector`)
+Core simcore services on master: `webserver`, `static-webserver`, `api-server`,
+`api-worker`, `catalog`, `director`, `director-v2`, `dynamic-schdlr`, `agent`,
+`dask-scheduler`, `dask-sidecar`, `storage`, `resource-usage-tracker`,
+`wb-api-server`, `wb-auth`, `wb-db-event-listener`, `wb-garbage-collector`,
+`sto-worker`, `sto-worker-cpu-bound`, `notifications`, `notifications-worker`,
+`payments`, `invitations`, `datcore-adapter`, `migration`, `traefik`, `postgres`,
+`redis`. Other deployments also run `autoscaling` and `clusters-keeper`.
 
-See [Log Structure Reference](./references/log-structure.md) for JSON field details.
+### 2. Query Logs
 
-### 3. Query Metrics (Prometheus)
+Use the logs datasource UID from step 0. Labels on master:
 
-Use the `prometheus-federation` datasource UID discovered in step 0. Common metric patterns:
-- HTTP request metrics from gunicorn/aiohttp
-- Service-specific business metrics
-- Docker/container resource metrics
+- `service_name`: service identifier, see the naming patterns above
+- `container_name`: container name with replica and task ID
+- `host`: Swarm node hostname
+- `source_type`: log pipeline source, `docker_swarm_logs` for Swarm workloads
+- `log_level`, `log_source`, `log_uid`, `log_oec`, `log_trace_id`, `log_span_id`:
+  structured fields of the simcore Python logger
+- `kubernetes.*`: Kubernetes stacks (monitoring, logging)
 
-### 4. Query Traces (Tempo)
+`list_loki_label_values` has no `limit` argument. Called without a `matcher` it
+returned 57303 `service_name` values, 2.2 MB, because of the dynamic-service
+streams. Pass `matcher`, for example `{source_type="docker_swarm_logs"}`.
 
-Use the Tempo datasource UID discovered in step 0. Traces are correlated with logs via `log_trace_id` and `log_span_id` fields in log entries.
+See [Log Structure](./references/log-structure.md) for the field details.
+
+### 3. Query Metrics
+
+Use the `victoria-metrics` datasource UID, the default one. Metric families on
+master:
+
+- `http_requests_total`: labels `service_name`, `http_status`, `method`,
+  `simcore_user_agent`
+- `http_request_latency_seconds_with_labels_bucket`, `_sum`, `_count`: request
+  latency histogram
+- `http_in_flight_requests`, `asyncio_event_loop_*`, `process_*`, `python_gc_*`
+- `container_memory_working_set_bytes`, `container_cpu_usage_seconds_total`:
+  container metrics, selected by
+  `container_label_com_docker_swarm_service_name`
+- business metrics per service, for example
+  `simcore_simcore_service_webserver_services_started_total`
+
+### 4. Query Traces
+
+Use the `victoria-traces` datasource UID. Traces carry the OpenTelemetry service
+names (`simcore-service-catalog`, `simcore-service-director`,
+`simcore-service-dynamic-scheduler`), not the log `service_name`. A span name is
+the traced function. Fetch a trace by ID instead of searching for it: the
+`log_trace_id` field of a simcore log line holds that ID.
 
 ## Common Query Patterns
 
-See [Query Patterns Reference](./references/query-patterns.md) for ready-to-use LogQL and PromQL queries.
+See [Query Patterns](./references/query-patterns.md) for LogsQL and PromQL
+queries.
 
----
-*Last updated: 2026-05-04*
+Last updated: 2026-11-18, values verified against master.
