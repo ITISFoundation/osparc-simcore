@@ -1528,14 +1528,38 @@ services:
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
-      NOTIFICATIONS_TWILIO_SETTINGS: ${TWILIO_SETTINGS}
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       HEALTHCHECK_MODE: heartbeat
       # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
       NOTIFICATIONS_EMAIL_RATE_LIMIT: ${NOTIFICATIONS_EMAIL_RATE_LIMIT}
       CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
       CELERY_POOL: prefork
-      CELERY_QUEUES: notifications
+      NOTIFICATIONS_CELERY_QUEUES: notifications-email
+    networks: *notifications_networks
+
+  notifications-sms-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "notifications-sms-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<:
+        - *common_logging_environments
+        - *postgres_settings
+        - *rabbit_settings
+        - *redis_settings
+        - *tracing_open_telemetry_environments
+
+      NOTIFICATIONS_BOOT_SERVER_MODE: AS_CELERY_WORKER
+      NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
+      NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
+      NOTIFICATIONS_TWILIO_SETTINGS: ${TWILIO_SETTINGS}
+      NOTIFICATIONS_WORKER_NAME: "notifications-sms-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      HEALTHCHECK_MODE: heartbeat
+      # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
+      NOTIFICATIONS_SMS_RATE_LIMIT: ${NOTIFICATIONS_SMS_RATE_LIMIT}
+      CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
+      CELERY_POOL: prefork
+      NOTIFICATIONS_CELERY_QUEUES: notifications-sms
     networks: *notifications_networks
 
   payments:

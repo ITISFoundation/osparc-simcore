@@ -63,7 +63,7 @@ if [ "${NOTIFICATIONS_BOOT_SERVER_MODE:-}" = "AS_CELERY_WORKER" ]; then
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${NOTIFICATIONS_WORKER_NAME}" \
-      --queues="${CELERY_QUEUES}"
+      --queues="${NOTIFICATIONS_CELERY_QUEUES:-notifications-email}"
   else
     exec celery \
       --app=simcore_service_notifications.modules.celery.worker_main:app \
@@ -71,7 +71,7 @@ if [ "${NOTIFICATIONS_BOOT_SERVER_MODE:-}" = "AS_CELERY_WORKER" ]; then
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${NOTIFICATIONS_WORKER_NAME}" \
-      --queues="${CELERY_QUEUES}"
+      --queues="${NOTIFICATIONS_CELERY_QUEUES:-notifications-email}"
   fi
 else
   if [ "${SC_BOOT_MODE}" = "debug" ]; then

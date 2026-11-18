@@ -1,11 +1,13 @@
 import re
-from typing import Annotated, Self
+from typing import Annotated, Final, Self
 
+from annotated_types import doc
 from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_regex import TWILIO_ALPHANUMERIC_SENDER_ID_RE
 from models_library.basic_types import LogLevel
+from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsProductSMTPSettingsNotFoundError,
     NotificationsProductTwilioSettingsNotFoundError,
@@ -20,6 +22,10 @@ from pydantic import (
     model_validator,
 )
 from pydantic.types import SecretStr
+from servicelib.celery.async_jobs.notifications import (
+    channel_from_notifications_queue_name,
+    notifications_queue_name,
+)
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import PortInt
 from settings_library.celery import CelerySettings
@@ -30,6 +36,19 @@ from settings_library.twilio import TwilioSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from ..models.smtp import ALLOWED_HEADERS, EmailProtocol
+
+_CHANNEL_REQUIRED_SETTINGS: Final[
+    Annotated[
+        dict[Channel, str],
+        doc(
+            "settings field each consumed channel requires: without it a worker boots "
+            "and only fails once a task of that channel runs"
+        ),
+    ]
+] = {
+    Channel.email: "NOTIFICATIONS_SMTP_SETTINGS",
+    Channel.sms: "NOTIFICATIONS_TWILIO_SETTINGS",
+}
 
 
 class SMTPSettings(BaseModel):
@@ -286,6 +305,18 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(description="Boot mode: REST API server or Celery worker"),
     ] = BootServerMode.AS_REST_API_SERVER
 
+    NOTIFICATIONS_CELERY_QUEUES: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Comma-separated queues consumed when booting as Celery worker, e.g. "
+                "'notifications-email'. Passed to the Celery CLI by docker/boot.sh and "
+                "checked against the per-channel settings at boot. When unset, the "
+                "worker is assumed to consume the email channel."
+            ),
+        ),
+    ] = None
+
     NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
         int,
         Field(description="Maximum number of recipients per email message"),
@@ -375,15 +406,29 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return LogLevel(cls.validate_log_level(value))
 
     @model_validator(mode="after")
-    def _worker_requires_smtp_settings(self) -> "ApplicationSettings":
-        if (
-            self.NOTIFICATIONS_BOOT_SERVER_MODE is BootServerMode.AS_CELERY_WORKER
-            and self.NOTIFICATIONS_SMTP_SETTINGS is None
-        ):
-            msg = (
-                "NOTIFICATIONS_SMTP_SETTINGS must be configured when "
-                "NOTIFICATIONS_BOOT_SERVER_MODE is AS_CELERY_WORKER "
-                "(per-product SMTP settings are required by the worker)."
-            )
-            raise ValueError(msg)
+    def _worker_requires_channel_settings(self) -> Self:
+        if self.NOTIFICATIONS_BOOT_SERVER_MODE is not BootServerMode.AS_CELERY_WORKER:
+            return self
+
+        if self.NOTIFICATIONS_CELERY_QUEUES:
+            queue_names = [name.strip() for name in self.NOTIFICATIONS_CELERY_QUEUES.split(",") if name.strip()]
+        else:
+            queue_names = [notifications_queue_name(Channel.email)]
+
+        for channel in sorted({channel_from_notifications_queue_name(name) for name in queue_names}):
+            required_field = _CHANNEL_REQUIRED_SETTINGS.get(channel)
+            if required_field is None:
+                msg = (
+                    f"NOTIFICATIONS_CELERY_QUEUES consumes the '{channel}' channel "
+                    f"({notifications_queue_name(channel)}) but this service version "
+                    f"does not support delivering it."
+                )
+                raise ValueError(msg)
+            if getattr(self, required_field) is None:
+                msg = (
+                    f"{required_field} must be configured when "
+                    f"NOTIFICATIONS_BOOT_SERVER_MODE is AS_CELERY_WORKER and the worker "
+                    f"consumes the '{channel}' channel (see NOTIFICATIONS_CELERY_QUEUES)."
+                )
+                raise ValueError(msg)
         return self
