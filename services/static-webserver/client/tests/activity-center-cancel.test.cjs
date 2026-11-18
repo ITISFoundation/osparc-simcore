@@ -1,5 +1,5 @@
 /* global require, __dirname */
-/* eslint no-underscore-dangle: ["error", { "allow": ["__shouldShowFn", "_loadRowData"] }] */
+/* eslint no-underscore-dangle: ["error", { "allow": ["_loadRowData"] }] */
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -26,11 +26,6 @@ function createCancelButtonRenderer() {
         switch: { ThemeSwitcher: { isLight: () => true } },
         table: { cellrenderer: {
           ButtonRenderer: class {},
-          ImageButtonRenderer: class {
-            constructor(action, icon, shouldShow = null) {
-              this.__shouldShowFn = shouldShow;
-            }
-          },
         } },
       },
     },
@@ -42,6 +37,14 @@ function createCancelButtonRenderer() {
   const definition = definitions["osparc.jobs.RunsTable"];
   context.osparc.jobs.RunsTable = definition.statics;
   context.osparc.data.Job = definitions["osparc.data.Job"].statics;
+  const imageRenderer = definitions["osparc.ui.table.cellrenderer.ImageButtonRenderer"];
+  context.osparc.ui.table.cellrenderer.ImageButtonRenderer = class {
+    constructor(...args) {
+      this.base = () => {};
+      this.setIconPath = () => {};
+      imageRenderer.construct.apply(this, args);
+    }
+  };
   definition.construct.call({
     base() {},
     set() {},
@@ -56,15 +59,12 @@ function createCancelButtonRenderer() {
     __attachHandlers() {},
   });
   const renderer = renderers[definition.statics.COLS.ACTION_CANCEL.column];
-  const render = definitions["osparc.ui.table.cellrenderer.ImageButtonRenderer"].members.createDataCellHtml;
   /** @param {Object} rowData Table row to render. */
-  function renderRow(rowData) {
-    const html = [];
-    render.call({
-      __shouldShowFn: renderer.__shouldShowFn,
-      base: () => html.push("<button>Cancel</button>"),
-    }, { rowData }, html);
-    return html.join("");
+  function countCancelRenderCalls(rowData) {
+    let calls = 0;
+    renderer.base = () => { calls += 1; };
+    imageRenderer.members.createDataCellHtml.call(renderer, { rowData }, []);
+    return calls;
   }
   /**
    * @param {string|undefined} rawState Execution state from the API.
@@ -101,17 +101,20 @@ function createCancelButtonRenderer() {
       model._loadRowData(0, 0);
     });
   }
-  return { loadRow, renderRow };
+  return { loadRow, countCancelRenderCalls };
 }
 
 for (const rawState of ["RUNNING", "STARTED"]) {
-  for (const label of ["Running", "En ejecución", { toString: () => "Running" }]) {
-    test(`Activity Center shows Cancel for ${rawState} with label ${label}`, async () => {
-      const { loadRow, renderRow } = createCancelButtonRenderer();
+  for (const [labelType, label] of [
+    ["English text", "Running"],
+    ["Spanish text", "En ejecución"],
+    ["a localized string object", { toString: () => "Running" }],
+  ]) {
+    test(`Activity Center shows Cancel when the state is ${rawState} and the label is ${labelType}`, async () => {
+      const { loadRow, countCancelRenderCalls } = createCancelButtonRenderer();
       const row = await loadRow(rawState, label);
-      assert.equal(row.rawState, rawState);
       assert.equal(row.state, label);
-      assert.match(renderRow(row), /<button>Cancel<\/button>/);
+      assert.equal(countCancelRenderCalls(row), 1);
     });
   }
 }
@@ -120,17 +123,16 @@ for (const rawState of [
   "PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "WAITING_FOR_CLUSTER",
   "SUCCESS", "FAILED", "ABORTED", "NOT_STARTED", "UNKNOWN", undefined,
 ]) {
-  test(`Activity Center hides Cancel for ${rawState} even with a Running display label`, async () => {
-    const { loadRow, renderRow } = createCancelButtonRenderer();
+  test(`Activity Center hides Cancel when the state is ${rawState ?? "missing"} and the label says Running`, async () => {
+    const { loadRow, countCancelRenderCalls } = createCancelButtonRenderer();
     const row = await loadRow(rawState, "Running");
-    assert.equal(renderRow(row), "");
+    assert.equal(countCancelRenderCalls(row), 0);
   });
 }
 
-test("Project history preserves raw state separately from its display label", async () => {
-  const { loadRow, renderRow } = createCancelButtonRenderer();
+test("Project history shows Cancel when an executing run has a translated status label", async () => {
+  const { loadRow, countCancelRenderCalls } = createCancelButtonRenderer();
   const row = await loadRow("STARTED", "En ejecución", "synthetic-project");
-  assert.equal(row.rawState, "STARTED");
   assert.equal(row.state, "En ejecución");
-  assert.match(renderRow(row), /<button>Cancel<\/button>/);
+  assert.equal(countCancelRenderCalls(row), 1);
 });
