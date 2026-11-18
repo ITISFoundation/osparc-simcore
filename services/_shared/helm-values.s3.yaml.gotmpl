@@ -1,0 +1,8 @@
+env:
+  S3_ACCESS_KEY: {{ requiredEnv "S3_ACCESS_KEY" | quote }}
+  S3_BUCKET_NAME: {{ requiredEnv "S3_BUCKET_NAME" | quote }}
+  S3_ENDPOINT: {{ requiredEnv "S3_ENDPOINT" | quote }}
+  S3_REGION: {{ requiredEnv "S3_REGION" | quote }}
+
+secretEnv:
+  S3_SECRET_KEY: {{ requiredEnv "S3_SECRET_KEY" | quote }}
