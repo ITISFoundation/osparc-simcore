@@ -161,7 +161,7 @@ def git_repo_behind_on_virtualenv(tmp_path: Path) -> Path:
 
 def _fake_make_env(tmp_path: Path, script: str) -> dict[str, str]:
     bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
+    bin_dir.mkdir(parents=True, exist_ok=True)
     fake_make = bin_dir / "make"
     fake_make.write_text(script)
     fake_make.chmod(0o755)
@@ -396,3 +396,85 @@ def test_the_post_upgrade_task_runs_the_script_bare_and_is_allowed(
     assert patterns is not None, "no allowedCommands array in the admin configuration"
     allowed = json.loads(f"[{patterns.group(1)}]")
     assert any(re.search(pattern, command) for pattern in allowed)
+
+
+# Answers like uv for a resolve that takes the requested pin and pays for it by moving
+# click down: exactly what a single `upgrade-package` request does to a lockfile whose
+# --constraint source still pins the version being replaced.
+_FAKE_MAKE_ROLLS_A_PIN_BACK: Final[str] = """#!/bin/bash
+dir="$2"
+upgrade="${4#upgrade=}"
+echo "$upgrade" >>"$FAKE_MAKE_CALLS"
+printf 'click==8.0.0\\npackaging==26.0\\nvirtualenv==21.14.10\\n' >"$dir/_base.txt"
+printf 'click==8.0.0\\npackaging==26.0\\nvirtualenv==21.14.10\\n' >"$dir/_tools.txt"
+"""
+
+
+def test_a_resolve_that_moves_a_pin_down_fails_the_resync(
+    tmp_path: Path,
+    resync_lockfiles_script: Path,
+    git_repo_behind_on_virtualenv: Path,
+):
+    repo = git_repo_behind_on_virtualenv
+    pins_file = repo / "pins.txt"
+    pins_file.write_text("virtualenv==21.14.10\n")
+    env = _fake_make_env(tmp_path / "fake-make", _FAKE_MAKE_ROLLS_A_PIN_BACK)
+
+    result = _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env, check=False)
+
+    assert result.returncode == 1
+    report = repo / "renovate-resync-report.md"
+    assert "went **down**" in report.read_text()
+    assert "`requirements/_base.txt`: click 8.1.0 -> 8.0.0" in report.read_text()
+    assert "click 8.1.0 -> 8.0.0" in result.stderr
+
+
+def test_a_pin_rollback_is_not_reported_without_a_reachable_base(
+    tmp_path: Path,
+    resync_module,
+    resync_lockfiles_script: Path,
+    git_repo_behind_on_virtualenv: Path,
+):
+    repo = git_repo_behind_on_virtualenv
+    # no master/main branch and no origin: nothing to compare the lockfiles against
+    _run(
+        "git",
+        "-c",
+        "user.name=test",
+        "-c",
+        "user.email=test@example.com",
+        "branch",
+        "-m",
+        "master",
+        "detached",
+        cwd=repo,
+    )
+    pins_file = repo / "pins.txt"
+    pins_file.write_text("virtualenv==21.14.10\n")
+    env = {
+        **_fake_make_env(tmp_path / "fake-make", _FAKE_MAKE_ROLLS_A_PIN_BACK),
+        resync_module.BASE_REF_ENV: "refs/heads/no-such-base",
+    }
+
+    result = _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env, check=False)
+
+    assert result.returncode == 0
+    assert f"{resync_module.BASE_REF_ENV} not checked" in result.stderr
+    assert not (repo / "renovate-resync-report.md").exists()
+
+
+@pytest.mark.parametrize(
+    "after,expected",
+    [
+        pytest.param("click==8.0.0\n", ["- `requirements/_base.txt`: click 8.1.0 -> 8.0.0"], id="moved down"),
+        pytest.param("click==8.2.0\n", [], id="moved up"),
+        pytest.param("packaging==26.0\n", [], id="dropped from the lockfile"),
+        pytest.param("click==8.1.0\n", [], id="untouched"),
+        pytest.param("click==8.1\n", [], id="same version written shorter"),
+    ],
+)
+def test_pin_rollbacks(resync_module, monkeypatch, tmp_path: Path, after: str, expected: list[str]):
+    repo = _make_git_repo(tmp_path / "repo", {"_base.txt": "click==8.1.0\npackaging==26.0\n"})
+    (repo / "requirements" / "_base.txt").write_text(after)
+    monkeypatch.chdir(repo)
+    assert resync_module.pin_rollbacks(resync_module.base_commit()) == expected

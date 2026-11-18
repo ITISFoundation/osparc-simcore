@@ -65,12 +65,13 @@ click==8.5.0
     #   -r requirements/_test.in
     #   rich-toolkit
     #   uvicorn
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-dnspython==2.9.0
+dnspython==2.9.2
     # via
+    #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   email-validator
 docker==7.2.0
@@ -309,7 +310,7 @@ pygments==2.21.0
     #   -c requirements/_base.txt
     #   pytest
     #   rich
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -440,7 +441,7 @@ types-openpyxl==3.1.5.20261017
     # via -r requirements/_test.in
 types-passlib==1.7.7.20260211
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
@@ -474,7 +475,7 @@ urllib3==2.8.0
     #   docker
     #   requests
     #   sentry-sdk
-uvicorn==0.53.0
+uvicorn==0.54.0
     # via
     #   fastapi
     #   fastapi-cli
@@ -485,7 +486,7 @@ uvloop==0.23.0
     #   uvicorn
 watchfiles==1.1.1
     # via uvicorn
-websockets==17.1
+websockets==17.4
     # via
     #   -r requirements/_test.in
     #   uvicorn

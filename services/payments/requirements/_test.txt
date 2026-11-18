@@ -40,7 +40,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -120,7 +120,7 @@ pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -144,11 +144,11 @@ python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-python-engineio==4.13.5
+python-engineio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   python-socketio
-python-socketio==5.16.4
+python-socketio==5.18.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -179,7 +179,7 @@ types-pyasn1==0.6.0.20250914
     # via types-python-jose
 types-python-jose==3.5.0.20260408
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

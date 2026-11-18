@@ -4,7 +4,7 @@ attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   referencing
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -44,7 +44,7 @@ psutil==7.2.2
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -87,7 +87,7 @@ termcolor==3.3.0
     # via pytest-sugar
 types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
@@ -95,5 +95,5 @@ typing-extensions==4.16.0
     #   flexcache
     #   flexparser
     #   pint
-yarl==1.24.5
+yarl==1.25.1
     # via -r requirements/_test.in

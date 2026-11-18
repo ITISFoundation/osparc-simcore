@@ -14,7 +14,6 @@ from pydantic import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
-    SecretStr,
     field_validator,
 )
 from settings_library.base import BaseCustomSettings
@@ -29,14 +28,14 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_session import (
     DEFAULT_SESSION_COOKIE_NAME,
-    MixinSessionSettings,
+    SessionSecretKey,
 )
 from settings_library.webserver import WebServerSettings as WebServerBaseSettings
 
 
-class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
+class WebServerSettings(WebServerBaseSettings):
     WEBSERVER_SESSION_SECRET_KEY: Annotated[
-        SecretStr,
+        SessionSecretKey,
         Field(
             description="Secret key to encrypt cookies. "
             'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
@@ -53,11 +52,6 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
             "IMPORTANT: this is typically `wb-api-server` service variant of the `webserver` image"
         ),
     ]
-
-    @field_validator("WEBSERVER_SESSION_SECRET_KEY")
-    @classmethod
-    def _check_valid_fernet_key(cls, v):
-        return cls.do_check_valid_fernet_key(v)
 
 
 class ChatbotSettings(BaseCustomSettings):

@@ -27,8 +27,10 @@ click==8.5.0
     #   cookiecutter
 cookiecutter==2.7.1
     # via -r requirements/_base.in
-dnspython==2.9.0
-    # via email-validator
+dnspython==2.9.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   email-validator
 docker==7.2.0
     # via -r requirements/_base.in
 email-validator==2.3.0
@@ -92,7 +94,7 @@ pygments==2.21.0
     # via
     #   pytest
     #   rich
-pytest==9.1.1
+pytest==9.2.0
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
@@ -146,5 +148,5 @@ urllib3==2.8.0
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
-yarl==1.24.5
+yarl==1.25.1
     # via -r requirements/_base.in

@@ -155,3 +155,42 @@ def test_the_hold_comment_carries_the_take_over_commands(review_gate):
     assert "gh pr" not in body
     # closing is what hands the update over, so the fix has to travel with it
     assert "does not propose again a version whose pull request was closed" in body
+
+
+def test_the_hold_comment_marks_the_pull_request_as_owned(review_gate):
+    body = review_gate.hold_comment("ITISFoundation/osparc-simcore", "renovate/redis", 4, ["CI Build Test"], "pcrespov")
+    assert body.startswith("> [!WARNING]")
+    assert review_gate.TAKEOVER_LABEL in body
+    assert "pcrespov is assigned to it" in body
+    # named, not mentioned: the assignment notified them already
+    assert "@pcrespov" not in body
+    assert "- CI Build Test" in body
+    # the commands are in the comment, not only behind the docs link
+    assert "git push -u origin FETCH_HEAD:chore/<name>" in body
+
+
+def test_the_takeover_owner_walks_the_pool(review_gate):
+    pool = ["pcrespov", "sanderegg", "GitHK", "giancarloromeo"]
+    assert [review_gate.takeover_assignee(number, pool) for number in range(4)] == pool
+    # the number picks the owner, so a poll does not reassign a pull request it held before
+    assert len({review_gate.takeover_assignee(17, pool) for _ in range(5)}) == 1
+
+
+def test_clearing_leaves_the_assignee_renovate_sets(review_gate):
+    pool = ["sanderegg", "pcrespov", "GitHK", "giancarloromeo"]
+    assert review_gate.rotation_assignees(["osparc-shared", "GitHK"], pool) == ["GitHK"]
+    # osparc-shared is the account Mergify merges the fast lane as
+    assert review_gate.rotation_assignees(["osparc-shared"], pool) == []
+
+
+def test_the_takeover_pool_owns_the_files_renovate_writes(osparc_simcore_root_dir: Path):
+    # an assignee who does not own the files cannot clear the code-owner gate
+    code_owners = (osparc_simcore_root_dir / ".github/CODEOWNERS").read_text(encoding="utf-8")
+    owners = next(
+        tuple(entry.lstrip("@") for entry in line.split()[1:])
+        for line in code_owners.splitlines()
+        if line.startswith("**/requirements/**")
+    )
+    workflow = (osparc_simcore_root_dir / ".github/workflows/chore-renovate.yml").read_text(encoding="utf-8")
+    line = next(line for line in workflow.splitlines() if "TAKEOVER_ASSIGNEES:" in line)
+    assert tuple(line.partition("TAKEOVER_ASSIGNEES:")[2].strip().split(",")) == owners

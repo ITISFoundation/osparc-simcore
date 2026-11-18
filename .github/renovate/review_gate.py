@@ -16,9 +16,12 @@ requested on its own:
   Mergify queue merges on the checks alone;
 - checks all passed without that label: marked ready, so the code-owner review is what
   the pull request waits for;
-- checks failed: the fast-lane label removed, marked ready and a comment naming the
-  failing checks and the commands to take the update over, but only after
-  FAIL_COOLDOWN_HOURS on the last commit so that Renovate can push its own fix first;
+- checks failed: 🤖-renovate-fast-lane removed and 🙋-needs-takeover added, one owner of
+  TAKEOVER_ASSIGNEES assigned, marked ready and a comment naming the failing checks and
+  the commands to take the update over, but only after FAIL_COOLDOWN_HOURS on the last
+  commit so that Renovate can push its own fix first;
+- 🙋-needs-takeover and its assignee removed from a ready pull request whose checks are
+  green again;
 - a draft whose reviewers were already requested, or which has reviews, is left alone;
 - every draft gets the pins its diff moved besides the dependency of its title
   commented, each with what carried the new version, edited in place on later runs.
@@ -30,8 +33,10 @@ Renovate reports itself does not decide that a pull request needs a human either
 cool-down, which keeps a green draft a draft but must not hide checks that already fail.
 moved_pins parses the `# via` blocks of pip-compile.
 
-Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS, plus GH_TOKEN of the Renovate App
-(a GitHub App cannot mark a pull request opened by another App ready, so a
+Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS, TAKEOVER_ASSIGNEES (the owners a
+held pull request is assigned to, one of them per pull request number; a test keeps the
+list equal to the CODEOWNERS of the files Renovate writes), plus GH_TOKEN of the Renovate
+App (a GitHub App cannot mark a pull request opened by another App ready, so a
 github-actions token fails on that call). DRIFT_LIST_LIMIT, 40 by default, caps the
 packages the comment lists.
 """
@@ -44,7 +49,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from itertools import count
@@ -70,6 +75,17 @@ DRIFT_MARKER: Final[
 FAST_LANE_LABEL: Final[
     Annotated[str, doc("Label of the pull requests the renovate-fast Mergify queue merges without reviews")]
 ] = "🤖-renovate-fast-lane"
+
+TAKEOVER_LABEL: Final[
+    Annotated[
+        str,
+        doc(
+            "Label of the pull requests whose checks kept failing and that wait for a person, so the"
+            " state can be listed. No Mergify condition reads it: 🤖-do-not-merge stays the label that"
+            " holds a merge back"
+        ),
+    ]
+] = "🙋-needs-takeover"
 
 ARTIFACT_CHECK: Final[
     Annotated[
@@ -185,6 +201,7 @@ class PullRequest:
     title: str = ""
     head_branch: str = ""
     labels: tuple[str, ...] = ()
+    assignees: tuple[str, ...] = ()
     checks: tuple[Check, ...] = ()
 
     def api(self, path: str) -> object:
@@ -200,13 +217,16 @@ class PullRequest:
         return len(requested.get("users", [])) + len(requested.get("teams", [])) + len(reviews) > 0
 
     def read(self) -> None:
-        """Fills in title, head branch, labels and checks. A pull request with no checks
-        reported yet keeps an empty list"""
-        info = gh_json("pr", "view", f"{self.number}", "--repo", self.repo, "--json", "labels,title,headRefName")
+        """Fills in title, head branch, labels, assignees and checks. A pull request with no
+        checks reported yet keeps an empty list"""
+        info = gh_json(
+            "pr", "view", f"{self.number}", "--repo", self.repo, "--json", "labels,assignees,title,headRefName"
+        )
         assert isinstance(info, dict)
         self.title = str(info.get("title", ""))
         self.head_branch = str(info.get("headRefName", ""))
         self.labels = tuple(str(label["name"]) for label in info.get("labels", []))
+        self.assignees = tuple(str(assignee["login"]) for assignee in info.get("assignees", []))
         try:
             reported = gh_json("pr", "checks", f"{self.number}", "--repo", self.repo, "--json", "name,bucket")
         except subprocess.CalledProcessError:
@@ -236,6 +256,26 @@ class PullRequest:
         if remove:
             args += ["--remove-label", remove]
         gh(*args)
+
+    def assign(self, login: str) -> None:
+        gh("pr", "edit", f"{self.number}", "--repo", self.repo, "--add-assignee", login)
+
+    def unassign(self, logins: Sequence[str]) -> None:
+        if logins:
+            flags = [flag for login in logins for flag in ("--remove-assignee", login)]
+            gh("pr", "edit", f"{self.number}", "--repo", self.repo, *flags)
+
+
+def rotation_assignees(assignees: Iterable[str], pool: Sequence[str]) -> list[str]:
+    """The assignees the rotation put there. Renovate assigns osparc-shared to every pull
+    request (assignees in .renovaterc.jsonc) and that one stays"""
+    return [login for login in assignees if login in pool]
+
+
+def takeover_assignee(number: int, assignees: Sequence[str]) -> str:
+    """The owner a held pull request gets. The number picks it, so one pull request keeps
+    its owner across polls and consecutive ones walk the list"""
+    return assignees[number % len(assignees)]
 
 
 def _normalized(name: str) -> str:
@@ -530,29 +570,45 @@ def take_over_recipe(repo: str, branch: str) -> str:
     )
 
 
-def hold_for_review(pr: PullRequest, age_hours: int, failing: list[str]) -> None:
-    """Takes a pull request that kept failing past the cool-down out of the fast lane and
-    marks it ready, so it waits for reviews; 🤖-do-not-merge stays a lever only a person sets"""
+def hold_comment(repo: str, branch: str, age_hours: int, failing: list[str], assignee: str) -> str:
+    """What a held pull request reports: the checks that failed, who is assigned, and what
+    to do. The owner is named without an `@` because the assignment notified them"""
     failed = "\n".join(f"- {name}" for name in failing)
-    pr.set_labels(remove=FAST_LANE_LABEL if FAST_LANE_LABEL in pr.labels else "")
-    pr.mark_ready()
-    pr.comment(
+    return (
         "> [!WARNING]\n"
         f"> The checks have been failing for {age_hours} h on the last commit and Renovate did not fix them."
-        " This pull request lost its fast lane and goes through reviews now."
-        f"\n\nFailing checks:\n\n{failed}\n\n"
-        f"{take_over_recipe(pr.repo, pr.head_branch)}\n\n"
-        f"Other options: https://github.com/{pr.repo}/blob/master/{_FIXING_DOCS}. Add {FAST_LANE_LABEL} back"
-        " once the checks pass to take the pull request through the fast lane."
+        f" This pull request lost its fast lane, carries {TAKEOVER_LABEL}, and goes through reviews now."
+        f" {assignee} is assigned to it.\n\n"
+        f"Failing checks:\n\n{failed}\n\n"
+        f"{take_over_recipe(repo, branch)}\n\n"
+        "Take it over when the fix is only correct together with the new version. Otherwise fix the"
+        " cause on `master`, tick the rebase/retry box for a flaky job, or close this pull request to"
+        f" decline the version. Other options: https://github.com/{repo}/blob/master/{_FIXING_DOCS}."
+        f" The gate takes {TAKEOVER_LABEL} off once the checks are green again; add"
+        f" {FAST_LANE_LABEL} back to take the pull request through the fast lane."
     )
 
 
-def open_drafts(repo: str, bot: str) -> list[int]:
-    """Open draft pull requests of the bot. --author filters server-side; GitHub search
-    resolves the bot name to both the "<name>[bot]" and the "app/<name>" form the gh CLI
-    reports in .author.login. --limit: the default 30 results would drop drafts once the
-    repository has more open pull requests than that"""
-    pulls = gh_json(
+def hold_for_review(pr: PullRequest, age_hours: int, failing: list[str], assignees: Sequence[str]) -> None:
+    """Holds a pull request that kept failing past the cool-down: out of the fast lane, one
+    owner named, ready so it waits for reviews; 🤖-do-not-merge stays a lever only a person
+    sets"""
+    assignee = takeover_assignee(pr.number, assignees)
+    pr.set_labels(
+        add=TAKEOVER_LABEL if TAKEOVER_LABEL not in pr.labels else "",
+        remove=FAST_LANE_LABEL if FAST_LANE_LABEL in pr.labels else "",
+    )
+    pr.assign(assignee)
+    pr.mark_ready()
+    pr.comment(hold_comment(pr.repo, pr.head_branch, age_hours, failing, assignee))
+
+
+def open_pull_requests(repo: str, bot: str, *, label: str = "") -> list[tuple[int, bool]]:
+    """Open pull requests of the bot as (number, isDraft). --author filters server-side;
+    GitHub search resolves the bot name to both the "<name>[bot]" and the "app/<name>" form
+    the gh CLI reports in .author.login. --limit: the default 30 results would drop pull
+    requests once the repository has more open pull requests than that"""
+    args = [
         "pr",
         "list",
         "--repo",
@@ -567,12 +623,46 @@ def open_drafts(repo: str, bot: str) -> list[int]:
         bot,
         "--json",
         "number,isDraft",
-    )
+    ]
+    if label:
+        args += ["--label", label]
+    pulls = gh_json(*args)
     assert isinstance(pulls, list)
-    return [int(pull["number"]) for pull in pulls if pull["isDraft"]]
+    return [(int(pull["number"]), bool(pull["isDraft"])) for pull in pulls]
 
 
-def gate_draft(pr: PullRequest, fail_cooldown_hours: int, drift_list_limit: int) -> None:
+def open_drafts(repo: str, bot: str) -> list[int]:
+    """The drafts of the bot, which are the pull requests the gate still decides on"""
+    return [number for number, is_draft in open_pull_requests(repo, bot) if is_draft]
+
+
+def clear_taken_over(repo: str, bot: str, takeover_assignees: Sequence[str]) -> None:
+    """Takes 🙋-needs-takeover and its assignee off the ready pull requests whose checks are
+    green again, the usual outcome of a Renovate rebase onto a master that carries the fix.
+    Nothing is added back: 🤖-renovate-fast-lane is a label a person sets"""
+    for number, is_draft in open_pull_requests(repo, bot, label=TAKEOVER_LABEL):
+        if is_draft:
+            # a pull request turned back into a draft is decided again by gate_draft
+            continue
+        pr = PullRequest(number=number, repo=repo)
+        pr.read()
+        if TAKEOVER_LABEL not in pr.labels:
+            continue
+        if decide(pr.checks) != "done":
+            continue
+        owners = rotation_assignees(pr.assignees, takeover_assignees)
+        pr.set_labels(remove=TAKEOVER_LABEL)
+        pr.unassign(owners)
+        left = f", {', '.join(owners)} unassigned" if owners else ""
+        print(f"PR #{pr.number}: checks green again, {TAKEOVER_LABEL} removed{left}")
+
+
+def gate_draft(
+    pr: PullRequest,
+    fail_cooldown_hours: int,
+    takeover_assignees: Sequence[str],
+    drift_list_limit: int,
+) -> None:
     """What the poll does with one draft pull request whose checks are all done"""
     if failing := [check.name for check in external_checks(pr.checks) if check.bucket == "fail"]:
         # Renovate pushes fixes itself; request a review only once it stops trying
@@ -580,7 +670,7 @@ def gate_draft(pr: PullRequest, fail_cooldown_hours: int, drift_list_limit: int)
         if age_hours < fail_cooldown_hours:
             print(f"PR #{pr.number}: failing for {age_hours}h, waiting for Renovate to fix it")
             return
-        hold_for_review(pr, age_hours, failing)
+        hold_for_review(pr, age_hours, failing, takeover_assignees)
         print(f"PR #{pr.number}: failing past the cool-down, held and marked ready")
     else:
         pr.mark_ready()
@@ -607,8 +697,14 @@ def moved_pins_from(pr: PullRequest) -> list[str]:
     return moved_pins(diff, headline_version(pr.title))
 
 
-def run(repo: str, bot: str, fail_cooldown_hours: int, drift_list_limit: int) -> None:
-    """One pass of the poll over the bot's draft pull requests"""
+def run(
+    repo: str,
+    bot: str,
+    fail_cooldown_hours: int,
+    takeover_assignees: Sequence[str],
+    drift_list_limit: int,
+) -> None:
+    """One pass over the bot's drafts, then over the labeled pull requests that are green"""
     drafts = open_drafts(repo, bot)
     if not drafts:
         print(f"no draft {bot} pull requests open")
@@ -628,11 +724,12 @@ def run(repo: str, bot: str, fail_cooldown_hours: int, drift_list_limit: int) ->
         if verdict == "cooling-down":
             print(f"PR #{pr.number}: checks passed, waiting out the release-age cool-down")
             continue
-        gate_draft(pr, fail_cooldown_hours, drift_list_limit)
+        gate_draft(pr, fail_cooldown_hours, takeover_assignees, drift_list_limit)
+    clear_taken_over(repo, bot, takeover_assignees)
 
 
 def main() -> int:
-    required = ("REPO", "BOT", "FAIL_COOLDOWN_HOURS")
+    required = ("REPO", "BOT", "FAIL_COOLDOWN_HOURS", "TAKEOVER_ASSIGNEES")
     if missing := [name for name in required if not os.environ.get(name)]:
         print(f"error: missing environment: {' '.join(missing)}", file=sys.stderr)
         return 2
@@ -640,6 +737,7 @@ def main() -> int:
         repo=os.environ["REPO"],
         bot=os.environ["BOT"],
         fail_cooldown_hours=int(os.environ["FAIL_COOLDOWN_HOURS"]),
+        takeover_assignees=os.environ["TAKEOVER_ASSIGNEES"].split(","),
         drift_list_limit=int(os.environ.get("DRIFT_LIST_LIMIT", "40")),
     )
     return 0

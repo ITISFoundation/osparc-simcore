@@ -80,7 +80,7 @@ click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -247,7 +247,7 @@ pygments==2.21.0
     #   pytest
 pyparsing==3.3.2
     # via moto
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -333,7 +333,7 @@ truststore==0.10.5
     #   -c requirements/_base.txt
     #   httpcore2
     #   httpx2
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
