@@ -20,6 +20,8 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+ast-serialize==0.13.1
+    # via mypy
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
 bokeh==3.9.0
@@ -74,10 +76,6 @@ fsspec==2026.9.0
     # via
     #   -c requirements/_base.txt
     #   dask
-greenlet==3.2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -109,7 +107,7 @@ jinja2==3.1.6
     #   bokeh
     #   dask
     #   distributed
-librt==0.8.1
+librt==0.16.0
     # via mypy
 locket==1.0.0
     # via
@@ -137,7 +135,7 @@ multidict==6.9.1
     #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   yarl
-mypy==1.19.1
+mypy==2.4.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -181,6 +179,10 @@ psutil==7.2.2
     # via
     #   -c requirements/_base.txt
     #   distributed
+psycopg==3.3.9
+    # via sqlalchemy
+psycopg-binary==3.3.9
+    # via psycopg
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
@@ -233,7 +235,7 @@ sortedcontainers==2.4.0
     #   -c requirements/_base.txt
     #   distributed
     #   fakeredis
-sqlalchemy==2.0.51
+sqlalchemy==2.1.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -254,9 +256,9 @@ tornado==6.6.1
     #   -c requirements/_base.txt
     #   bokeh
     #   distributed
+types-greenlet==3.5.0.20260518
+    # via sqlalchemy
 types-networkx==3.6.1.20261031
-    # via -r requirements/_test.in
-types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in

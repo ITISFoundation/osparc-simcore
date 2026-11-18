@@ -18,6 +18,8 @@ from pytest_simcore.helpers.postgres_tools import (
     reset_database_from_template,
     wait_engine_ready,
 )
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
+from sqlalchemy.exc import ProgrammingError
 
 postgres_config = {
     "user": "test",
@@ -46,11 +48,17 @@ def postgres_container() -> Iterator[PostgresTestConfig]:
         bindings = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"]
         port = str(bindings[0]["HostPort"])
 
-        dsn = f"postgresql+psycopg2://{postgres_config['user']}:{postgres_config['password']}@{postgres_config['host']}:{port}/{postgres_config['database']}"
+        dsn = f"{POSTGRES_SYNC_DSN_SCHEME}://{postgres_config['user']}:{postgres_config['password']}@{postgres_config['host']}:{port}/{postgres_config['database']}"
         engine = sa.create_engine(dsn)
         wait_engine_ready(engine, timeout=60)
         engine.dispose()
-        yield {**postgres_config, "port": port}
+        yield PostgresTestConfig(
+            user=postgres_config["user"],
+            password=postgres_config["password"],
+            database=postgres_config["database"],
+            host=postgres_config["host"],
+            port=port,
+        )
     finally:
         container.remove(force=True)
         client.close()
@@ -59,7 +67,7 @@ def postgres_container() -> Iterator[PostgresTestConfig]:
 def _engine_to(config: PostgresTestConfig, database: str) -> sa.engine.Engine:
     dsn = str(
         PostgresDsn.build(
-            scheme="postgresql+psycopg2",
+            scheme=POSTGRES_SYNC_DSN_SCHEME,
             username=config["user"],
             password=config["password"],
             host=config["host"],
@@ -72,15 +80,27 @@ def _engine_to(config: PostgresTestConfig, database: str) -> sa.engine.Engine:
 
 def _count_rows(engine: sa.engine.Engine, table: sa.Table) -> int:
     with engine.connect() as conn:
-        return int(conn.execute(sa.select(sa.func.count()).select_from(table)).scalar())
+        return int(conn.execute(sa.select(sa.func.count()).select_from(table)).scalar_one())
 
 
-def test_is_database_missing_error_only_matches_postgres_undefined_database():
-    class _DatabaseMissingError:
-        pgcode = "3D000"
+class _Psycopg3MissingDatabaseError(Exception):
+    sqlstate = "3D000"
 
-    missing = sa.exc.ProgrammingError("statement", {}, _DatabaseMissingError())
-    other = sa.exc.ProgrammingError("statement", {}, RuntimeError("other error"))
+
+class _Psycopg2MissingDatabaseError(Exception):
+    pgcode = "3D000"
+
+
+@pytest.mark.parametrize(
+    "missing_database_error",
+    [_Psycopg3MissingDatabaseError, _Psycopg2MissingDatabaseError],
+    ids=["psycopg3", "psycopg2"],
+)
+def test_is_database_missing_error_only_matches_postgres_undefined_database(
+    missing_database_error: type[Exception],
+):
+    missing = ProgrammingError("statement", {}, missing_database_error())
+    other = ProgrammingError("statement", {}, RuntimeError("other error"))
 
     assert _is_database_missing_error(missing)
     assert not _is_database_missing_error(other)

@@ -30,7 +30,7 @@ pytest-cov
 pytest-mock
 pytest-runner
 respx
-sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
+sqlalchemy[mypy,postgresql_psycopgbinary] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types-aiofiles
 types-boto3
 types-jsonschema

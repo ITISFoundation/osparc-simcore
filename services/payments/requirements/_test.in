@@ -27,7 +27,7 @@ pytest-sugar
 python-dotenv
 python-socketio[asyncio_client]
 respx
-sqlalchemy[mypy]
+sqlalchemy[mypy,postgresql_psycopgbinary]
 types-aiofiles
 types-PyYAML
 types-python-jose
