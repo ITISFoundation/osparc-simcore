@@ -98,15 +98,13 @@ a warning.
 
 ```bash
 make ruff      # linter, also a pre-commit hook
-make mypy      # static type checker
-make pylint    # no pre-commit hook: CI runs it, so run it by hand
+make mypy      # static type checker, no pre-commit hook
+make pylint    # no pre-commit hook
 ```
 
-Run the ones that cover the change. For a few edited files,
-`pylint --rcfile="$(git rev-parse --show-toplevel)/.pylintrc" <files>` is
-enough; `.pylintrc` exists only at the repository root, and pylint resolves a
-relative `--rcfile` against the current directory. A line-level `# noqa`
-satisfies ruff only; pylint needs a matching `# pylint: disable=` directive.
+Run the ones that cover the change. `pre-commit run --files <files>` runs ruff
+and pyright only, so it does not replace the last two. For ad-hoc pylint on a
+few files, see [python.instructions.md](../../instructions/python.instructions.md).
 
 ## Docker-backed tests
 
