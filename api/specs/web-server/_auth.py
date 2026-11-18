@@ -4,8 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, Any
-
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
@@ -13,7 +11,6 @@ from models_library.api_schemas_webserver.auth import (
 )
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError, Log
-from pydantic import BaseModel, Field
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login._controller.rest.auth_schemas import (
     LoginBody,
@@ -230,22 +227,6 @@ async def complete_reset_password(code: str, _body: ResetPasswordConfirmation): 
 )
 async def change_email(_body: ChangeEmailBody):
     """logged in user changes email"""
-
-
-class PasswordCheckSchema(BaseModel):
-    strength: Annotated[
-        float,
-        Field(
-            ge=0.0,
-            le=1.0,
-            description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
-        ),
-    ]
-    rating: Annotated[
-        str | None,
-        Field(description="Human readable rating from infinitely weak to very strong"),
-    ] = None
-    improvements: Any | None = None
 
 
 @router.post(

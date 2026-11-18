@@ -143,6 +143,7 @@ async def _handle_login_throttled(request: web.Request, exception: Exception):
     assert isinstance(  # nosec
         exception, LoginThrottledError
     ), f"Expected LoginThrottledError, got {type(exception)}"
+    assert "retry_after_sec" in exception.error_context()  # nosec
 
     response = create_error_response(
         ErrorGet.model_construct(
