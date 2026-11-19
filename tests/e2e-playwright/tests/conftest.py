@@ -16,16 +16,18 @@ import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import arrow
 import pytest
+from annotated_types import doc
 from faker import Faker
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api._generated import Playwright
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, TypeAdapter, ValidationError
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -36,6 +38,7 @@ from pytest_simcore.helpers.playwright import (
     RunningState,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
+    classify_backend_stall,
     decode_socketio_42_message,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
@@ -178,6 +181,19 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 # Dictionary to store start times of tests
 _test_start_times: dict[str, datetime.datetime] = {}
 
+# NOTE: pytest stashes share per-test state between hooks and fixtures: fixture teardowns
+# run after the call-phase makereport, so they can see the failure the hook recorded
+_CALL_FAILURE_STASH_KEY: Final[
+    Annotated[pytest.StashKey[pytest.ExceptionInfo], doc("the test's call-phase failure, if any")]
+] = pytest.StashKey()
+
+_BACKEND_COMPUTATIONS_STASH_KEY: Final[
+    Annotated[
+        pytest.StashKey[dict[str, dict[str, Any]]],
+        doc("backend view of every started computation, captured on failure before they were stopped"),
+    ]
+] = pytest.StashKey()
+
 
 def pytest_runtest_setup(item):
     """
@@ -204,13 +220,44 @@ def _construct_graylog_url(
     return f"{monitoring_url}/graylog/search?{query}"
 
 
+def _capture_backend_computation(
+    api_request_context: APIRequestContext, product_url: AnyUrl, pipeline_id: str
+) -> dict[str, Any]:
+    """What the backend reports about a computation, best-effort: failing to read it must
+    not mask the test's own error."""
+    try:
+        response = api_request_context.get(f"{product_url}v0/computations/{pipeline_id}")
+        if not response.ok:
+            msg = f"HTTP {response.status}: {response.text()[:200]}"
+            raise RuntimeError(msg)  # noqa: TRY301
+        computation = ComputationGet.model_validate(response.json()["data"])
+    except (RuntimeError, ValidationError, KeyError, PlaywrightError) as err:
+        return {"error": repr(err)[:500]}
+
+    node_statuses = {
+        f"{node_id}": node_state.current_status
+        for node_id, node_state in computation.pipeline_details.node_states.items()
+    }
+    return {
+        "state": computation.state.value,
+        "result": computation.result,
+        "node_statuses": {node_id: status.value for node_id, status in node_statuses.items()},
+        "stall_hints": classify_backend_stall(computation.state, node_statuses),
+    }
+
+
+@pytest.hookimpl(wrapper=True)
 def pytest_runtest_makereport(item: pytest.Item, call):
     """
     Hook to add extra information when a test fails.
     """
+    report = yield
 
     # Check if the test failed
     if call.when == "call" and call.excinfo is not None:
+        # NOTE: fixture teardowns run after this hook, so stashing the failure lets them
+        # capture backend state while the test error is still the one being reported
+        item.stash[_CALL_FAILURE_STASH_KEY] = call.excinfo
         test_name = item.name
         test_location = item.location
         product_url = item.config.getoption("--product-url", default=None)
@@ -236,6 +283,8 @@ def pytest_runtest_makereport(item: pytest.Item, call):
             f"ℹ️ Diagnostics report for {test_name} ---",  # noqa: RUF001
         ) as ctx:
             ctx.logger.warning("\n%s", json.dumps(diagnostics, indent=2))
+
+    return report
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -830,6 +879,7 @@ def create_project_from_service_dashboard(
 
 @pytest.fixture
 def start_and_stop_pipeline(
+    request: pytest.FixtureRequest,
     product_url: AnyUrl,
     page: Page,
     log_in_and_out: RobustWebSocket,
@@ -884,6 +934,14 @@ def start_and_stop_pipeline(
             return decode_socketio_42_message(event.value)
 
     yield _do
+
+    # NOTE: after a failed test, record what the backend says about each computation before
+    # stopping it; pytest_runtest_makereport consumed the stashed failure at the call phase
+    if request.node.stash.get(_CALL_FAILURE_STASH_KEY, None) is not None:
+        request.node.stash[_BACKEND_COMPUTATIONS_STASH_KEY] = {
+            pipeline_id: _capture_backend_computation(api_request_context, product_url, pipeline_id)
+            for pipeline_id in started_pipeline_ids
+        }
 
     # ensure all the pipelines are stopped properly
     for pipeline_id in started_pipeline_ids:

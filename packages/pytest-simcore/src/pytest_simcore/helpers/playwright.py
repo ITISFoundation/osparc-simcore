@@ -1084,6 +1084,13 @@ _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
     RunningState.ABORTED,
 )
 
+_PIPELINE_SCHEDULING_STALL_STATES: Final[
+    Annotated[
+        tuple[RunningState, ...],
+        doc("the backend has accepted the computation but no task has reached the scheduler yet"),
+    ]
+] = (RunningState.PUBLISHED, RunningState.PENDING)
+
 _PIPELINE_SCHEDULING_STALL_HINT: Final[
     Annotated[
         str,
@@ -1097,12 +1104,39 @@ _PIPELINE_SCHEDULING_STALL_HINT: Final[
     "(DaskClientAcquisisitonError) and that the dask-scheduler service has running replicas"
 )
 
+_CLUSTER_WAIT_STATES: Final[
+    Annotated[
+        tuple[RunningState, ...],
+        doc("director-v2 asked for a cluster or resources and nothing came back"),
+    ]
+] = (RunningState.WAITING_FOR_CLUSTER, RunningState.WAITING_FOR_RESOURCES)
+
 
 def _pipeline_stall_raised_message(state: RunningState, expected_states: tuple[RunningState, ...]) -> str:
     message = f"pipeline failed or timed out with {state}. Expected one of {expected_states=}"
-    if state in (RunningState.PUBLISHED, RunningState.PENDING):
+    if state in _PIPELINE_SCHEDULING_STALL_STATES:
         message = f"{message}. {_PIPELINE_SCHEDULING_STALL_HINT}"
     return message
+
+
+def classify_backend_stall(
+    state: RunningState,
+    node_statuses: dict[str, RunningState],
+) -> list[str]:
+    """Hints about why a computation is stuck, derived from what the backend itself reports.
+    `node_statuses` maps each node id to its state on the backend.
+    """
+    hints: list[str] = []
+    if state in _PIPELINE_SCHEDULING_STALL_STATES and all(
+        status == RunningState.NOT_STARTED for status in node_statuses.values()
+    ):
+        hints.append(_PIPELINE_SCHEDULING_STALL_HINT)
+    elif state in _CLUSTER_WAIT_STATES:
+        hints.append("HINT: the computation is waiting on a cluster: check the autoscaling and dask-scheduler services")
+    if state == RunningState.FAILED:
+        failed_nodes = sorted(node_id for node_id, status in node_statuses.items() if status == RunningState.FAILED)
+        hints.append(f"HINT: these nodes failed on the backend: {failed_nodes}, fetch their logs from director-v2")
+    return hints
 
 
 def wait_for_pipeline_state(
