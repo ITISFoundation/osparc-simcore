@@ -259,11 +259,15 @@ async def test_function_workflow(  # noqa: PLR0915
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST])
+@pytest.mark.parametrize(
+    "expected_read_functions,expected_write_functions",
+    [(True, True)],
+)
 async def test_register_function_denied_for_guest_having_functions_api_access_rights(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_function: dict[str, Any],
-    add_user_function_api_access_rights: None,
+    logged_user_function_api_access_rights: dict[str, Any],
 ):
     assert logged_user["role"] == UserRole.GUEST
 
