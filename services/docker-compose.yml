@@ -1502,6 +1502,9 @@ services:
         - *tracing_open_telemetry_environments
       NOTIFICATIONS_BOOT_SERVER_MODE: AS_REST_API_SERVER
       NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
+      # sms messages are rejected at publish time if the product's Twilio settings
+      # cannot be resolved here, i.e. before the task reaches the sms worker
+      NOTIFICATIONS_TWILIO_SETTINGS: ${TWILIO_SETTINGS}
       NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
