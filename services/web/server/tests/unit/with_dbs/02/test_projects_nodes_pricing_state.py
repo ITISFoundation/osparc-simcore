@@ -575,6 +575,7 @@ async def test_repair_fails_the_start_when_the_product_has_no_default_pricing_un
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     osparc_product_name: ProductName,
+    clear_pricing_lookup_caches: None,
     sqlalchemy_async_engine: AsyncEngine,
     aioresponses_mocker: AioResponsesMock,
     mocked_director_v2_node_sizing: mock.AsyncMock,
