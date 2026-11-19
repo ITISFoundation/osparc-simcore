@@ -14,3 +14,4 @@ applyTo: "services/static-webserver/client/tests/**/*.test.cjs"
 - Use a browser test for real DOM or user interaction assertions.
 - Cover both shown and hidden states when testing visibility.
 - Verify regression tests fail without the fix.
+- Every test must fail if the implementation returns a wrong value.
