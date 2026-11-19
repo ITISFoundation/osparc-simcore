@@ -50,7 +50,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     GenericDockerError,
 )
-from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -723,8 +722,9 @@ async def test_regression_update_service_update_out_of_sequence(
 ):
     # NOTE: checks that the docker engine replies with
     # `rpc error: code = Unknown desc = update out of sequence`
-    # the error is captured and raised as `docker_api._RetryError`
-    with pytest.raises(TryAgain):
+    # concurrent updates retry on it, and once the retry budget is exhausted
+    # the underlying DockerError surfaces as `GenericDockerError`
+    with pytest.raises(GenericDockerError) as exc_info:
         # starting concurrent updates will trigger the error
         await asyncio.gather(
             *[
@@ -736,6 +736,7 @@ async def test_regression_update_service_update_out_of_sequence(
                 for _ in range(10)
             ]
         )
+    assert "out of sequence" in exc_info.value.original_exception.message
 
 
 @pytest.fixture

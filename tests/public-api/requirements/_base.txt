@@ -71,7 +71,7 @@ shellingham==1.5.4
     # via typer
 six==1.17.0
     # via python-dateutil
-tenacity==9.1.4
+tenacity==9.2.1
     # via osparc
 tqdm==4.70.1
     # via osparc
