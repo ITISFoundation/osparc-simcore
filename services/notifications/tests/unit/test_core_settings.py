@@ -234,6 +234,29 @@ def test_twilio_settings_valid(mock_environment: EnvVarsDict, monkeypatch: pytes
     assert settings.NOTIFICATIONS_TWILIO_SETTINGS.get_twilio_account_settings("osparc").TWILIO_ACCOUNT_SID == "ACdummy"
 
 
+@pytest.mark.parametrize(
+    "account_overrides,expected_base_url",
+    [
+        pytest.param({}, None, id="unset"),
+        pytest.param({"TWILIO_BASE_URL": "http://buggregator:8000"}, "http://buggregator:8000", id="provider emulator"),
+    ],
+)
+def test_twilio_settings_base_url(
+    mock_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    account_overrides: dict[str, Any],
+    expected_base_url: str | None,
+):
+    accounts = {"local": {**_TWILIO_SETTINGS["accounts"]["local"], **account_overrides}}
+    monkeypatch.setenv("NOTIFICATIONS_TWILIO_SETTINGS", json.dumps({**_TWILIO_SETTINGS, "accounts": accounts}))
+
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.NOTIFICATIONS_TWILIO_SETTINGS is not None
+
+    base_url = settings.NOTIFICATIONS_TWILIO_SETTINGS.get_twilio_account_settings("osparc").TWILIO_BASE_URL
+    assert (None if base_url is None else str(base_url).rstrip("/")) == expected_base_url
+
+
 def test_twilio_settings_empty_string_is_unset(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     # e.g. `NOTIFICATIONS_TWILIO_SETTINGS: ${TWILIO_SETTINGS}` with TWILIO_SETTINGS unset
     monkeypatch.setenv("NOTIFICATIONS_TWILIO_SETTINGS", "")

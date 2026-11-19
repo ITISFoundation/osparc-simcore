@@ -15,12 +15,19 @@ async def send_sms(
 ) -> None:
     """Sends an sms via Twilio.
 
+    TWILIO_BASE_URL replaces https://api.twilio.com as the root the message is posted to,
+    which lets a local provider emulator stand in for the real service.
+
     NOTE: the Twilio SDK is synchronous, so the call is run in a thread executor.
     """
     client = twilio.rest.Client(
         account_settings.TWILIO_ACCOUNT_SID,
         account_settings.TWILIO_AUTH_TOKEN.get_secret_value(),
     )
+    base_url = account_settings.TWILIO_BASE_URL
+    if base_url is not None:
+        # the SDK builds every Messages API url from this domain root when the request runs
+        client.api.base_url = str(base_url)
 
     create_kwargs: dict[str, Any] = {
         "messaging_service_sid": messaging_service_sid,

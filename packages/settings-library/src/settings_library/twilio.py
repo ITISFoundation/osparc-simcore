@@ -7,7 +7,7 @@ For twilio SMS services:
 
 from typing import Annotated
 
-from pydantic import BeforeValidator, Field, SecretStr, StringConstraints, TypeAdapter
+from pydantic import AnyHttpUrl, BeforeValidator, Field, SecretStr, StringConstraints, TypeAdapter
 
 from .base import BaseCustomSettings
 
@@ -41,6 +41,19 @@ class TwilioSettings(BaseCustomSettings):
             "41",
         ],
     )
+
+    TWILIO_BASE_URL: Annotated[
+        AnyHttpUrl | None,
+        Field(
+            description=(
+                "Root url of the Twilio Messages API. When set, requests go there "
+                "instead of https://api.twilio.com, e.g. to a local provider "
+                "emulator. Account credentials are sent to it as basic auth, so it "
+                "must be a trusted endpoint."
+            ),
+            examples=["http://buggregator:8000"],
+        ),
+    ] = None
 
     def is_alphanumeric_supported(self, phone_number: str) -> bool:
         # Some countries do not support alphanumeric serder ID
