@@ -9,6 +9,7 @@ globs. Read the one that matches what you are editing:
 - [Python instructions](.github/instructions/python.instructions.md)
 - [Python test instructions](.github/instructions/python-tests.instructions.md)
 - [aiohttp instructions](.github/instructions/aiohttp.instructions.md)
+- [Frontend Node tests](.github/instructions/frontend-tests.instructions.md)
 - [Web-server instructions](.github/instructions/services-webserver.instructions.md)
 - [Web-server OpenAPI spec stubs](.github/instructions/web-server-openapi.instructions.md)
 - [Requirements file conventions](.github/instructions/requirements.instructions.md)
