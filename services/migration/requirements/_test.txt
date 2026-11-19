@@ -17,7 +17,7 @@ coverage==7.17.1
     # via pytest-cov
 docker==7.2.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 idna==3.19
     # via requests
