@@ -4,6 +4,7 @@
 
 
 import json
+from typing import Any, Final
 
 import pytest
 from celery_library.basic_types import BootServerMode
@@ -206,7 +207,7 @@ def test_non_worker_mode_allows_missing_smtp_settings(mock_environment: EnvVarsD
     assert settings.NOTIFICATIONS_SMTP_SETTINGS is None
 
 
-_TWILIO_SETTINGS = {
+_TWILIO_SETTINGS: Final[dict[str, Any]] = {
     "accounts": {
         "local": {
             "TWILIO_ACCOUNT_SID": "ACdummy",

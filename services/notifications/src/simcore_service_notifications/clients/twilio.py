@@ -34,4 +34,4 @@ async def send_sms(
         # SEE https://www.twilio.com/docs/sms/quickstart/python
         client.messages.create(**create_kwargs)
 
-    await asyncio.get_event_loop().run_in_executor(None, _create_message)
+    await asyncio.get_running_loop().run_in_executor(None, _create_message)

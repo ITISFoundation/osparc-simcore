@@ -5,8 +5,9 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Iterator
+from typing import Final
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from common_library.gettext_support import SupportedLocale
@@ -17,14 +18,14 @@ from models_library.users import UserID
 from simcore_service_webserver.login._twofa_service import send_sms_code
 from simcore_service_webserver.login.errors import SendingVerificationSmsError
 
-_PHONE_NUMBER = "+14155552671"
-_CODE = "123456"
-_FIRST_NAME = "Jane"
-_USER_NAME = "jane.doe"
-_PRODUCT_NAME = "osparc"
-_HOST = "https://osparc.example.com"
-_TTL = 300
-_TASK_UUID = uuid4()
+_PHONE_NUMBER: Final[str] = "+14155552671"
+_CODE: Final[str] = "123456"
+_FIRST_NAME: Final[str] = "Jane"
+_USER_NAME: Final[str] = "jane.doe"
+_PRODUCT_NAME: Final[str] = "osparc"
+_HOST: Final[str] = "https://osparc.example.com"
+_TTL: Final[int] = 300
+_TASK_UUID: Final[UUID] = uuid4()
 
 
 def _task_status(state: TaskState) -> TaskStatus:

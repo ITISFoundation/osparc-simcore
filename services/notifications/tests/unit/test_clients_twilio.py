@@ -1,12 +1,13 @@
 # pylint: disable=redefined-outer-name
 
+from typing import Final
 from unittest.mock import MagicMock, patch
 
 from pydantic import SecretStr
 from settings_library.twilio import TwilioSettings
 from simcore_service_notifications.clients.twilio import send_sms
 
-_ACCOUNT_SETTINGS = TwilioSettings(
+_ACCOUNT_SETTINGS: Final[TwilioSettings] = TwilioSettings(
     TWILIO_ACCOUNT_SID="ACdummy",
     TWILIO_AUTH_TOKEN=SecretStr("plainDummyToken"),  # synthetic test fixture credential
     TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT=["41"],

@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import json
-from typing import Any
+from typing import Any, Final
 from unittest.mock import create_autospec
 
 import pytest
@@ -16,7 +16,7 @@ from simcore_service_notifications.exceptions.errors import (
 )
 from twilio.base.exceptions import TwilioRestException  # type: ignore[import-untyped]
 
-_TWILIO_SETTINGS = {
+_TWILIO_SETTINGS: Final[dict[str, Any]] = {
     "accounts": {
         "local": {
             "TWILIO_ACCOUNT_SID": "ACdummy",
