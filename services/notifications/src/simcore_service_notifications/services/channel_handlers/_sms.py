@@ -20,8 +20,10 @@ class SmsChannelHandler(ChannelHandler[SmsMessage]):
     def prepare_messages(
         message: SmsMessage,
         *,
-        product: Product,  # noqa: ARG004
-        settings: ApplicationSettings,  # noqa: ARG004
+        # both kept for the handler interface; the sms payload needs neither
+        # (product settings are resolved by the celery task, see NOTE above)
+        product: Product,  # noqa: ARG004  # pylint: disable=unused-argument
+        settings: ApplicationSettings,  # noqa: ARG004  # pylint: disable=unused-argument
     ) -> list[dict[str, Any]]:
         return [
             CelerySmsMessage.model_validate(
