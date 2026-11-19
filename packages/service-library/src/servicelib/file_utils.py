@@ -21,7 +21,6 @@ CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8MiB")  # 8m
 
 
 class _AsyncStream(Protocol):
-    # aiofiles declares read position-only; keyword-allowing here rejects its handles
     async def read(self, size: int = -1, /) -> bytes: ...
 
 
