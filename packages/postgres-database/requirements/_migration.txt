@@ -33,7 +33,7 @@ psycopg-binary==3.3.9
     # via psycopg
 requests==2.34.2
     # via docker
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

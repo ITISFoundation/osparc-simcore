@@ -551,7 +551,7 @@ six==1.17.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   python-dateutil
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in

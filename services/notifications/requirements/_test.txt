@@ -152,7 +152,7 @@ sniffio==1.3.1
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via fakeredis
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

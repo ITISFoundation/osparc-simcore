@@ -215,7 +215,7 @@ simple-websocket==1.1.0
     # via python-engineio
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
