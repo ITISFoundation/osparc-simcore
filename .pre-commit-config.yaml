@@ -20,6 +20,7 @@ repos:
         args: ["--maxkb=1024"]
       - id: check-merge-conflict
       - id: check-yaml
+        exclude: '^charts/.*/templates/'
       - id: check-json
       - id: check-toml
       - id: detect-private-key
@@ -47,11 +48,24 @@ repos:
         entry: scripts/precommit/pytest-testit.bash
   - repo: local
     hooks:
+      - id: python-test-conventions
+        name: python test conventions
+        language: script
+        types: [file, python]
+        files: (^|/)(tests?/|test_|conftest)
+        entry: scripts/precommit/python_test_conventions.py
+  - repo: local
+    hooks:
       - id: validate-docker-compose
         name: validate-docker-compose
         language: script
         types: [file]
         entry: scripts/precommit/validate-docker-compose.bash
+      - id: check-helmfile-go-templates
+        name: check-helmfile-go-templates
+        language: script
+        entry: scripts/precommit/check-helmfile-go-templates.bash
+        files: \.(yaml|yml)\.gotmpl$
   - repo: https://github.com/crate-ci/typos
     rev: v1.50.0
     hooks:
@@ -69,6 +83,7 @@ repos:
       - id: yamllint
         name: yaml-linter
         args: ["--config-file", ".yamllint.yaml"]
+        exclude: '^charts/.*/templates/' # helm chart templates are not really YAML files
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
     hooks:

@@ -120,7 +120,7 @@ def mocked_function(request) -> dict[str, Any]:
     ],
     indirect=["add_user_function_api_access_rights"],
 )
-async def test_function_workflow(
+async def test_function_workflow(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
@@ -256,6 +256,28 @@ async def test_function_workflow(
     url = client.app.router["get_function"].url_for(function_id=f"{returned_function_uid}")
     response = await client.get(url)
     data, error = await assert_status(response, expected_get2)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST])
+@pytest.mark.parametrize(
+    "expected_read_functions,expected_write_functions",
+    [(True, True)],
+)
+async def test_register_function_denied_for_guest_having_functions_api_access_rights(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_function: dict[str, Any],
+    logged_user_function_api_access_rights: dict[str, Any],
+):
+    assert logged_user["role"] == UserRole.GUEST
+
+    url = client.app.router["register_function"].url_for()
+    response = await client.post(url, json=mocked_function)
+    _, error = await assert_status(response, status.HTTP_403_FORBIDDEN)
+
+    assert error is not None
+    # the role model must be what denies the request
+    assert "function.create" in error["message"]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

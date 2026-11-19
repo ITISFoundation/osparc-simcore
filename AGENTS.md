@@ -9,11 +9,15 @@ globs. Read the one that matches what you are editing:
 - [Python instructions](.github/instructions/python.instructions.md)
 - [Python test instructions](.github/instructions/python-tests.instructions.md)
 - [aiohttp instructions](.github/instructions/aiohttp.instructions.md)
+- [Frontend Node tests](.github/instructions/frontend-tests.instructions.md)
 - [Web-server instructions](.github/instructions/services-webserver.instructions.md)
 - [Web-server OpenAPI spec stubs](.github/instructions/web-server-openapi.instructions.md)
 - [Requirements file conventions](.github/instructions/requirements.instructions.md)
 - [Makefile authoring conventions](.github/instructions/makefiles.instructions.md)
 - [GitHub workflow instructions](.github/instructions/github-workflows.instructions.md)
+- [Helmfile Go templates](.github/instructions/helmfile-go-templates.instructions.md)
+- [Simcore service chart](.github/instructions/simcore-service-chart.instructions.md)
+- [Kubernetes (helmfile, values, kind)](.github/instructions/kubernetes.instructions.md)
 - [JavaScript](.github/instructions/node.instructions.md)
 
 ## graphify

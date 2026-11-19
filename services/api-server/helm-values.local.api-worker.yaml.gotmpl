@@ -1,0 +1,45 @@
+image:
+  repository: local/api-server
+  tag: development
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+resources:
+  limits:
+    memory: 2Gi
+
+# healthcheck disabled in dev mode
+probes:
+  startup: null
+  readiness: null
+  liveness: null
+
+# only for the debug NodePort; the celery worker itself serves no API
+service:
+  enabled: true
+  type: NodePort
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32025
+
+env:
+  API_SERVER_REMOTE_DEBUG_PORT: 3000
+  API_SERVER_LOGLEVEL: DEBUG
+
+extraVolumes:
+  - name: api-server-src
+    hostPath:
+      path: /osparc-simcore/services/api-server
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: api-server-src
+    mountPath: /devel/services/api-server
+  - name: packages-src
+    mountPath: /devel/packages

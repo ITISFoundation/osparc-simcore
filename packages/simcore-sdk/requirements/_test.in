@@ -30,7 +30,7 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 requests
-sqlalchemy[mypy]
+sqlalchemy[mypy,postgresql_psycopgbinary]
 types-aiobotocore[s3]
 types-aiofiles
 types-tqdm

@@ -15,7 +15,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-coverage==7.17.0
+coverage==7.17.2
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -85,7 +85,7 @@ pydantic-settings==2.16.2
     #   openapi-spec-validator
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements.in
     #   pytest-asyncio

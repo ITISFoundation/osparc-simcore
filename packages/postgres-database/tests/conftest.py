@@ -20,8 +20,10 @@ from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
 )
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.utils import as_async_dsn
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -61,7 +63,8 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
 
     user = quote_plus(environ["POSTGRES_USER"])
     password = quote_plus(environ["POSTGRES_PASSWORD"])
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+    dsn = "{scheme}://{user}:{password}@{host}:{port}/{database}".format(
+        scheme=POSTGRES_SYNC_DSN_SCHEME,
         user=user,
         password=password,
         host=docker_ip,
@@ -88,7 +91,7 @@ def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
 @pytest.fixture
 def _make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
     # NOTE: users is responsible of `await engine.dispose()`
-    dsn = postgres_service.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+    dsn = as_async_dsn(postgres_service)
     minsize = 2
     maxsize = 50
 

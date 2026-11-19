@@ -36,6 +36,8 @@ annotated-types==0.8.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
+ast-serialize==0.13.1
+    # via mypy
 attrs==26.1.0
     # via
     #   -c requirements/_base.txt
@@ -81,7 +83,7 @@ click==8.5.0
     # via
     #   -r requirements/_test.in
     #   flask
-coverage==7.17.0
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -98,7 +100,7 @@ execnet==2.1.2
     # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -115,10 +117,6 @@ frozenlist==1.8.0
     #   aiosignal
 graphql-core==3.3.1
     # via moto
-greenlet==3.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 icdiff==2.0.10
     # via pytest-icdiff
 idna==3.19
@@ -162,7 +160,7 @@ jsonschema-specifications==2025.9.1
     #   openapi-schema-validator
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-librt==0.8.1
+librt==0.16.0
     # via mypy
 mako==1.4.3
     # via
@@ -186,7 +184,7 @@ multidict==6.9.1
     #   aiobotocore
     #   aiohttp
     #   yarl
-mypy==1.19.1
+mypy==2.4.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -216,6 +214,10 @@ propcache==0.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+psycopg==3.3.9
+    # via sqlalchemy
+psycopg-binary==3.3.9
+    # via psycopg
 py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
@@ -234,7 +236,7 @@ pygments==2.21.0
     #   pytest
 pyparsing==3.3.2
     # via moto
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -311,7 +313,7 @@ six==1.17.0
     #   -c requirements/_base.txt
     #   python-dateutil
     #   rfc3339-validator
-sqlalchemy==2.0.51
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -329,7 +331,9 @@ types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-awscrt==0.31.3
     # via botocore-stubs
-types-tqdm==4.70.0.20260906
+types-greenlet==3.5.0.20260518
+    # via sqlalchemy
+types-tqdm==4.70.0.20261102
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

@@ -1,0 +1,37 @@
+image:
+  repository: local/agent
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+env:
+  AGENT_LOGLEVEL: DEBUG
+
+# re-declares the base docker-socket volume: Helm replaces lists
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: agent-src
+    hostPath:
+      path: /osparc-simcore/services/agent
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+  - name: agent-src
+    mountPath: /devel/services/agent
+  - name: packages-src
+    mountPath: /devel/packages

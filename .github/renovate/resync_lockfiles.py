@@ -116,6 +116,21 @@ REPORT_FILE: Final[
     ]
 ] = Path("renovate-resync-report.md")
 
+BASE_REF_ENV: Final[
+    Annotated[str, doc("Names the commit to compare the lockfiles against, overriding BASE_REF_CANDIDATES")]
+] = "RENOVATE_RESYNC_BASE_REF"
+
+BASE_REF_CANDIDATES: Final[
+    Annotated[
+        tuple[str, ...],
+        doc(
+            "Refs tried to find the commit the branch started from. The post-upgrade task runs inside Renovate's"
+            " clone, which has the base branch, so a rollback committed by the pip-compile manager itself is"
+            " visible here even though it is already part of HEAD"
+        ),
+    ]
+] = ("origin/master", "master")
+
 
 def normalized(name: str) -> str:
     """PEP 503-normalized name, without extras (`uvicorn[standard]` -> `uvicorn`)"""
@@ -376,25 +391,97 @@ def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot, ceilings:
     return False, ""
 
 
-def report(pins: str, unblocked: list[str], failed: list[str]) -> int:
-    """Writes/removes the PR-visible report file and prints the same summary"""
-    if failed:
-        directories = "\n".join(f"- `{directory}`" for directory in failed)
-        REPORT_FILE.write_text(
-            "# Renovate lockfile resync: FAILED\n"
-            "\n"
-            "The post-upgrade resync (`.github/renovate/resync_lockfiles.py`)"
-            " could not\nregenerate these lockfile directories for the pins"
-            f" `{pins}`:\n\n{directories}\n\n"
-            "They are committed as the pip-compile manager produced them, so they"
-            " may\nstill pin older, possibly vulnerable, versions of the updated"
-            " packages.\nFix them before merging, e.g. by freeing the blocking"
-            " pins and running\n"
-            '`make -C <directory> reqs upgrade="<package>==<version> ..."`,'
-            " or by running\nthe resync script in a scratch `git worktree` and"
-            " cherry-picking the result.\nThe uv resolution error of each"
-            " directory is in the Renovate run log.\n"
+def _pins_by_name(text: str) -> dict[str, Version]:
+    """The version each (normalized) package is pinned to in one lockfile text"""
+    pins: dict[str, Version] = {}
+    for line in text.splitlines():
+        if (match := PIN_AT_LINE_START.match(line)) is not None and (
+            version := _version_of(match.group(2))
+        ) is not None:
+            pins[normalized(match.group(1))] = version
+    return pins
+
+
+def _show_at(revision: str, path: Path) -> str:
+    """The file at `revision`, or an empty string when it did not exist there"""
+    try:
+        return git("show", f"{revision}:{path}")
+    except subprocess.CalledProcessError:
+        return ""
+
+
+def base_commit() -> str:
+    """The commit this branch started from, or an empty string when no base is reachable"""
+    for candidate in (os.environ.get(BASE_REF_ENV, ""), *BASE_REF_CANDIDATES):
+        if not candidate:
+            continue
+        try:
+            return git("merge-base", "HEAD", candidate).strip()
+        except subprocess.CalledProcessError:
+            continue
+    return ""
+
+
+def pin_rollbacks(base: str) -> list[str]:
+    """Lockfile lines pinning a package lower than the base commit did.
+
+    A resolve asked for one package can answer by dropping a whole extra and taking an
+    ancient version of everything above it: requesting dnspython 2.9.2 while the lockfile
+    consumed through `--constraint` still pinned 2.9.0 moved fastapi from 0.162.0 down to
+    0.110.3 and starlette from 1.6.0 down to 0.37.2. That resolve is green and leaves no
+    report behind, so nothing else in the pipeline would see the rollback.
+    """
+    if not base:
+        print(f"warning: no base branch reachable, {BASE_REF_ENV} not checked", file=sys.stderr)
+        return []
+
+    rollbacks: list[str] = []
+    for path_str in git("ls-files").splitlines():
+        if not MANAGED.match(path_str) or not Path(path_str).is_file():
+            continue
+        before = _pins_by_name(_show_at(base, Path(path_str)))
+        after = _pins_by_name(Path(path_str).read_text())
+        rollbacks.extend(
+            f"- `{path_str}`: {name} {previous} -> {version}"
+            for name, version in sorted(after.items())
+            if (previous := before.get(name)) is not None and version < previous
         )
+    return rollbacks
+
+
+def report(pins: str, unblocked: list[str], failed: list[str], rollbacks: list[str]) -> int:
+    """Writes/removes the PR-visible report file and prints the same summary"""
+    if failed or rollbacks:
+        sections = ["# Renovate lockfile resync: FAILED\n"]
+        if failed:
+            directories = "\n".join(f"- `{directory}`" for directory in failed)
+            sections += [
+                (
+                    "The post-upgrade resync (`.github/renovate/resync_lockfiles.py`)"
+                    " could not\nregenerate these lockfile directories for the pins"
+                    f" `{pins}`:\n\n{directories}\n\n"
+                    "They are committed as the pip-compile manager produced them, so they"
+                    " may\nstill pin older, possibly vulnerable, versions of the updated"
+                    " packages.\nFix them before merging, e.g. by freeing the blocking"
+                    " pins and running\n"
+                    '`make -C <directory> reqs upgrade="<package>==<version> ..."`,'
+                    " or by running\nthe resync script in a scratch `git worktree` and"
+                    " cherry-picking the result.\nThe uv resolution error of each"
+                    " directory is in the Renovate run log.\n"
+                )
+            ]
+        if rollbacks:
+            entries = "\n".join(rollbacks)
+            sections += [
+                (
+                    "These lockfile pins went **down** compared to the base branch, so a"
+                    " resolve moved\npackages nobody asked it to move. Regenerate the"
+                    " affected directories in\nconstraint order, deepest `--constraint`"
+                    " source first: a lockfile re-resolved\nwhile the file it consumes still"
+                    f" pins the old version discards the dependant\nchain instead of failing.\n\n{entries}\n"
+                )
+            ]
+        REPORT_FILE.write_text("\n".join(sections))
     elif REPORT_FILE.is_file():
         # a clean resync supersedes a report left over from an earlier branch
         REPORT_FILE.unlink()
@@ -405,8 +492,12 @@ def report(pins: str, unblocked: list[str], failed: list[str]) -> int:
             f"error: could not regenerate the lockfiles in: {' '.join(failed)} (left as Renovate produced them)",
             file=sys.stderr,
         )
-        return 1
-    return 0
+    if rollbacks:
+        print(
+            "error: lockfile pins went down compared to the base branch:\n" + "\n".join(rollbacks),
+            file=sys.stderr,
+        )
+    return 1 if failed or rollbacks else 0
 
 
 def main() -> int:
@@ -437,11 +528,12 @@ def main() -> int:
         return 0
     print(f"Propagating pins: {' '.join(pins)}")
 
+    upgrade = " ".join(pins)
+
     directories = directories_to_resync(pins)
     if not directories:
-        REPORT_FILE.unlink(missing_ok=True)
         print("No lockfile needs regenerating")
-        return 0
+        return report(upgrade, [], [], pin_rollbacks(base_commit()))
     print("Regenerating lockfiles in:")
     for directory in directories:
         print(f"  - {directory}")
@@ -450,7 +542,6 @@ def main() -> int:
     try:
         snapshot = DirectorySnapshot(backup_dir)
 
-        upgrade = " ".join(pins)
         ceilings = highest_pinned()
         unblocked: list[str] = []
         failed: list[str] = []
@@ -465,7 +556,7 @@ def main() -> int:
                 snapshot.restore(directory)
                 failed.append(directory)
 
-        return report(upgrade, unblocked, failed)
+        return report(upgrade, unblocked, failed, pin_rollbacks(base_commit()))
     finally:
         shutil.rmtree(backup_dir, ignore_errors=True)
 

@@ -1,0 +1,14 @@
+{{- if eq (include "simcore-service.kind" .) "DaemonSet" }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "simcore-service.name" . }}
+  labels:
+    {{- include "simcore-service.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "simcore-service.selectorLabels" . | nindent 6 }}
+  template:
+    {{- include "simcore-service.podTemplate" . | nindent 4 }}
+{{- end }}
