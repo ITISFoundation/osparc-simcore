@@ -442,8 +442,6 @@ psutil==7.2.2
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
-psycopg2-binary==2.9.11
-    # via sqlalchemy
 pycountry==23.12.11
     # via -r requirements/_base.in
 pycparser==2.21
@@ -553,7 +551,7 @@ six==1.17.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   python-dateutil
-sqlalchemy==2.0.51
+sqlalchemy==2.1.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in

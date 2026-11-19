@@ -16,7 +16,7 @@ dependencies = [
   "python-dotenv",
   "typer",
   "rich",
-  "sqlalchemy[asyncio]",
+  "sqlalchemy[postgresql_asyncpg]",
   "ansible>=10.7.0",
   "lz4",
   "orjson>=3.11.7",

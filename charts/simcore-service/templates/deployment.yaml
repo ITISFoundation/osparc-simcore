@@ -1,0 +1,15 @@
+{{- if eq (include "simcore-service.kind" .) "Deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "simcore-service.name" . }}
+  labels:
+    {{- include "simcore-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "simcore-service.selectorLabels" . | nindent 6 }}
+  template:
+    {{- include "simcore-service.podTemplate" . | nindent 4 }}
+{{- end }}

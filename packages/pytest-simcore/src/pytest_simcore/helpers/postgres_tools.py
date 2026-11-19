@@ -9,6 +9,7 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 import tenacity
 from pydantic import PostgresDsn
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from tenacity import RetryCallState, retry_if_exception
@@ -22,6 +23,7 @@ _logger = logging.getLogger(__name__)
 _RETRY_WAIT: Final[wait_fixed] = wait_fixed(0.1)
 _RETRY_TIMEOUT: Final[float] = 5  # seconds
 _CONNECT_READY_TIMEOUT: Final[float] = 5  # seconds
+_UNDEFINED_DATABASE_SQLSTATE: Final[str] = "3D000"
 
 
 def wait_engine_ready(engine: sa.engine.Engine, *, timeout: float) -> None:
@@ -53,7 +55,7 @@ class PgTemplateState(TypedDict):
 
 def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
     url = PostgresDsn.build(
-        scheme="postgresql+psycopg2",
+        scheme=POSTGRES_SYNC_DSN_SCHEME,
         username=postgres_config["user"],
         password=postgres_config["password"],
         host=postgres_config["host"],
@@ -82,7 +84,12 @@ def _is_retryable_error(error: BaseException) -> bool:
 
 
 def _is_database_missing_error(error: BaseException) -> bool:
-    return isinstance(error, sa_exc.ProgrammingError) and getattr(error.orig, "pgcode", None) == "3D000"
+    if not isinstance(error, sa_exc.ProgrammingError):
+        return False
+    # psycopg 3 renamed pgcode to sqlstate
+    orig = error.orig
+    code = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
+    return code == _UNDEFINED_DATABASE_SQLSTATE
 
 
 def _log_statement_retry(retry_state: RetryCallState, statement: str) -> None:
@@ -346,7 +353,8 @@ def migrated_pg_tables_context(
 
     user = quote_plus(postgres_config["user"])
     password = quote_plus(postgres_config["password"])
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+    dsn = "{scheme}://{user}:{password}@{host}:{port}/{database}".format(
+        scheme=POSTGRES_SYNC_DSN_SCHEME,
         user=user,
         password=password,
         host=postgres_config["host"],
@@ -415,6 +423,7 @@ async def _async_insert_and_get_row(
             raise ValueError(msg)
         returning_cols = pk_cols
     else:
+        assert pk_col is not None
         returning_cols = [pk_col]
 
     result = await conn.execute(table.insert().values(**values).returning(*returning_cols))
@@ -467,6 +476,7 @@ def _sync_insert_and_get_row(
             raise ValueError(msg)
         returning_cols = pk_cols
     else:
+        assert pk_col is not None
         returning_cols = [pk_col]
 
     result = conn.execute(table.insert().values(**values).returning(*returning_cols))

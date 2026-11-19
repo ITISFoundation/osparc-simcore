@@ -6,6 +6,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Engine
 from yarl import URL
 
+from .constants import POSTGRES_ASYNC_DSN_SCHEME, POSTGRES_SYNC_DSN_SCHEME
 from .models.base import metadata
 
 
@@ -19,10 +20,10 @@ def build_url(
     **_kwargs,
 ) -> URL:
     """
-    Safe build pg url as 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
+    Safe build pg url as 'postgresql+psycopg://{user}:{password}@{host}:{port}/{database}'
     """
     return URL.build(
-        scheme="postgresql+psycopg2",
+        scheme=POSTGRES_SYNC_DSN_SCHEME,
         user=user,
         password=password,
         host=host,
@@ -30,6 +31,12 @@ def build_url(
         path=f"/{database}",
     )
     # _kwargs allows expand on larger dicts without raising exceptions
+
+
+def as_async_dsn(url: str | URL | sa.engine.URL) -> str:
+    """Returns `url` with POSTGRES_ASYNC_DSN_SCHEME instead of the sync driver's, password included"""
+    parsed_url = url if isinstance(url, sa.engine.URL) else sa.engine.make_url(str(url))
+    return parsed_url.set(drivername=POSTGRES_ASYNC_DSN_SCHEME).render_as_string(hide_password=False)
 
 
 def create_tables(dsn: URL):

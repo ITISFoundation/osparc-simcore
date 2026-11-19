@@ -1,0 +1,42 @@
+image:
+  repository: local/payments
+  tag: development
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  nodePort: 30011
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32018
+
+env:
+  PAYMENTS_REMOTE_DEBUGGING_PORT: 3000
+  PAYMENTS_LOGLEVEL: DEBUG
+
+extraVolumes:
+  - name: payments-src
+    hostPath:
+      path: /osparc-simcore/services/payments
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: payments-src
+    mountPath: /devel/services/payments
+  - name: packages-src
+    mountPath: /devel/packages

@@ -30,7 +30,7 @@ python-dotenv
 python-socketio
 pyyaml
 respx
-sqlalchemy[mypy,postgresql_psycopg2binary]
+sqlalchemy[mypy,postgresql_psycopgbinary]
 tenacity
 types-aiofiles
 uvicorn

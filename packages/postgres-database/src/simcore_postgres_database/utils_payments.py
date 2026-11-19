@@ -15,7 +15,8 @@ _logger = logging.getLogger(__name__)
 
 
 type PaymentID = str
-PaymentTransactionRow: TypeAlias = Row  # used in isinstance(...) checks; keep as a runtime class alias (do not convert to a PEP 695 `type ... = ...` alias)  # noqa: UP040
+# runtime alias: used in isinstance() checks, so not a PEP 695 `type ... = ...` alias
+PaymentTransactionRow: TypeAlias = Row  # noqa: UP040
 
 
 UNSET: Final[str] = "__UNSET__"
@@ -149,7 +150,7 @@ async def get_user_payments_transactions(
     )  # newest first
 
     if offset is not None:
-        # psycopg2.errors.InvalidRowCountInResultOffsetClause: OFFSET must not be negative
+        # InvalidRowCountInResultOffsetClause: OFFSET must not be negative
         stmt = stmt.offset(offset)
 
     if limit is not None:

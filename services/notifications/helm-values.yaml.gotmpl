@@ -1,0 +1,21 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/notifications
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  CELERY_EPHEMERAL_RESULT_EXPIRES: {{ requiredEnv "NOTIFICATIONS_CELERY_EPHEMERAL_RESULT_EXPIRES" | quote }}
+  NOTIFICATIONS_BOOT_SERVER_MODE: {{ env "NOTIFICATIONS_BOOT_SERVER_MODE" | default "AS_REST_API_SERVER" | quote }}
+  NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: {{ requiredEnv "NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE" | quote }}
+  NOTIFICATIONS_LOGLEVEL: {{ requiredEnv "NOTIFICATIONS_LOGLEVEL" | quote }}
+  NOTIFICATIONS_TRACING: {{ requiredEnv "NOTIFICATIONS_TRACING" | quote }}
+
+secretEnv:
+  NOTIFICATIONS_SMTP_SETTINGS: {{ requiredEnv "SMTP_SETTINGS" | quote }}
