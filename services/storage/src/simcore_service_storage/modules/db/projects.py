@@ -63,15 +63,15 @@ class ProjectRepository(BaseRepository):
                 mapping[ProjectID(f"{row.uuid}")] = {f"{row.uuid}": row.name}
 
             # Get node labels from projects_nodes
-            async for row in await conn.stream(
+            async for node_row in await conn.stream(
                 sa.select(
                     projects_nodes.c.project_uuid,
                     projects_nodes.c.node_id,
                     projects_nodes.c.label,
                 ).where(projects_nodes.c.project_uuid.in_(f"{pid}" for pid in project_uuids))
             ):
-                project_id = ProjectID(f"{row.project_uuid}")
+                project_id = ProjectID(f"{node_row.project_uuid}")
                 if project_id in mapping:
-                    mapping[project_id][f"{row.node_id}"] = row.label
+                    mapping[project_id][f"{node_row.node_id}"] = node_row.label
 
         return mapping

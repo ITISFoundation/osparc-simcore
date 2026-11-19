@@ -1,0 +1,440 @@
+environments:
+  default: {}
+  local:
+    values:
+      - helmfile-environments.local.yaml
+---
+{{- $namespace := "simcore" -}}
+
+helmDefaults:
+  # wait for release to finish before continuing
+  # needed if one relies on the other
+  wait: true
+  waitForJobs: true # extend for jobs that belong to releases
+  timeout: 600
+
+  # helm diff: avoid errors on 1st installation
+  disableValidation: true
+
+repositories:
+  - name: traefik
+    url: https://helm.traefik.io/traefik
+
+# values are listed per release, not in the template: helmfile appends release
+# values after template values, and the service's own file must come last to win
+templates:
+  simcore-service:
+    namespace: {{ $namespace }}
+    createNamespace: true
+    chart: ../charts/simcore-service
+
+releases:
+  - name: agent
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - agent/helm-values.yaml.gotmpl
+      {{- range (.Values | get "agent.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: api-server
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/traefik
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - api-server/helm-values.yaml.gotmpl
+      - api-server/helm-values.api-server.yaml.gotmpl
+      {{- range (.Values | get "api_server.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: api-worker
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - api-server/helm-values.yaml.gotmpl
+      - api-server/helm-values.api-worker.yaml.gotmpl
+      {{- range (.Values | get "api_worker.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: autoscaling
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.registry.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - autoscaling/helm-values.yaml.gotmpl
+      {{- range (.Values | get "autoscaling.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: catalog
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - catalog/helm-values.yaml.gotmpl
+      {{- range (.Values | get "catalog.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: clusters-keeper
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - clusters-keeper/helm-values.yaml.gotmpl
+      {{- range (.Values | get "clusters_keeper.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: dask-scheduler
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - dask-sidecar/helm-values.yaml.gotmpl
+      - dask-sidecar/helm-values.dask-scheduler.yaml.gotmpl
+      {{- range (.Values | get "dask_scheduler.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: dask-sidecar
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - dask-sidecar/helm-values.yaml.gotmpl
+      - dask-sidecar/helm-values.dask-sidecar.yaml.gotmpl
+      {{- range (.Values | get "dask_sidecar.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: datcore-adapter
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - datcore-adapter/helm-values.yaml.gotmpl
+      {{- range (.Values | get "datcore_adapter.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: director
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.registry.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - director/helm-values.yaml.gotmpl
+      {{- range (.Values | get "director.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: director-v2
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.registry.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - director-v2/helm-values.yaml.gotmpl
+      {{- range (.Values | get "director_v2.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: docker-api-proxy
+    inherit:
+      - template: simcore-service
+    values:
+      - docker-api-proxy/helm-values.yaml.gotmpl
+      {{- range (.Values | get "docker_api_proxy.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: dynamic-scheduler
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - dynamic-scheduler/helm-values.yaml.gotmpl
+      {{- range (.Values | get "dynamic_scheduler.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: invitations
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - invitations/helm-values.yaml.gotmpl
+      {{- range (.Values | get "invitations.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: migration
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - migration/helm-values.yaml.gotmpl
+
+  - name: notifications
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - notifications/helm-values.yaml.gotmpl
+      {{- range (.Values | get "notifications.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: notifications-worker
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - notifications/helm-values.yaml.gotmpl
+      - notifications/helm-values.notifications-worker.yaml.gotmpl
+      {{- range (.Values | get "notifications_worker.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: payments
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - payments/helm-values.yaml.gotmpl
+      {{- range (.Values | get "payments.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: resource-usage-tracker
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - resource-usage-tracker/helm-values.yaml.gotmpl
+      {{- range (.Values | get "resource_usage_tracker.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: static-webserver
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/traefik
+    values:
+      - static-webserver/helm-values.yaml.gotmpl
+      {{- range (.Values | get "static_webserver.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: storage
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - storage/helm-values.yaml.gotmpl
+      {{- range (.Values | get "storage.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: sto-worker
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - storage/helm-values.yaml.gotmpl
+      - storage/helm-values.sto-worker.yaml.gotmpl
+      {{- range (.Values | get "sto_worker.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: sto-worker-cpu-bound
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - storage/helm-values.yaml.gotmpl
+      - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
+      {{- range (.Values | get "sto_worker_cpu_bound.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  # edge proxy: the compose routes are swarm labels; the routed services carry
+  # their Ingresses and Middlewares, shared ones live in traefik/helm-values.yaml.gotmpl
+  - name: traefik
+    namespace: {{ $namespace }}
+    createNamespace: true
+    chart: traefik/traefik
+    version: 39.0.0 # traefik v3.6.7, same as services/docker-compose.yml
+    values:
+      - traefik/helm-values.yaml.gotmpl
+      {{- range (.Values | get "traefik.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  # compose: <<: *webserver_environment, so the webserver values plus overrides
+  - name: wb-api-server
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.invitations.yaml.gotmpl
+      - _shared/helm-values.payments.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - _shared/helm-values.webserver-diagnostics.yaml.gotmpl
+      - web/helm-values.webserver.yaml.gotmpl
+      - web/helm-values.wb-api-server.yaml.gotmpl
+      {{- range (.Values | get "wb_api_server.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  # compose gives wb-auth its own env (not *webserver_environment): auth app factory,
+  # most webserver modules off
+  - name: wb-auth
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - _shared/helm-values.webserver-diagnostics.yaml.gotmpl
+      - web/helm-values.wb-auth.yaml.gotmpl
+      {{- range (.Values | get "wb_auth.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: wb-db-event-listener
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - web/helm-values.wb-db-event-listener.yaml.gotmpl
+      {{- range (.Values | get "wb_db_event_listener.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: wb-garbage-collector
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - web/helm-values.wb-garbage-collector.yaml.gotmpl
+      {{- range (.Values | get "wb_garbage_collector.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: webserver
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/traefik
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.invitations.yaml.gotmpl
+      - _shared/helm-values.payments.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - _shared/helm-values.webserver-diagnostics.yaml.gotmpl
+      - web/helm-values.webserver.yaml.gotmpl
+      {{- range (.Values | get "webserver.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}

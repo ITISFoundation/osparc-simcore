@@ -98,7 +98,9 @@ def socketio_server_events(
     room_name: SocketIORoomStr,
 ) -> dict[str, AsyncMock]:
     # handlers
-    async def connect(sid: str, environ):
+    # python-socketio >= 5.17 retries a connect handler that rejects the `auth`
+    # argument, which doubles the spy's call_count
+    async def connect(sid: str, environ, auth=None):
         print("connecting", sid)
         await socketio_server.enter_room(sid, room_name)
 

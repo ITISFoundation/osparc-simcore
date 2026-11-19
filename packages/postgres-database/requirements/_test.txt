@@ -2,6 +2,8 @@
 #    uv pip compile --output-file=requirements/_test.txt requirements/_test.in
 arrow==1.4.0
     # via -r requirements/_test.in
+ast-serialize==0.13.1
+    # via mypy
 attrs==26.1.0
     # via pytest-docker
 certifi==2026.10.19
@@ -13,7 +15,7 @@ charset-normalizer==3.5.1
     # via
     #   -c requirements/_migration.txt
     #   requests
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -21,11 +23,6 @@ faker==40.38.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in
-greenlet==3.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_migration.txt
-    #   sqlalchemy
 idna==3.19
     # via
     #   -c requirements/_base.txt
@@ -33,9 +30,9 @@ idna==3.19
     #   requests
 iniconfig==2.3.0
     # via pytest
-librt==0.8.1
+librt==0.16.0
     # via mypy
-mypy==1.19.1
+mypy==2.4.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -47,9 +44,17 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
+psycopg==3.3.9
+    # via
+    #   -c requirements/_migration.txt
+    #   sqlalchemy
+psycopg-binary==3.3.9
+    # via
+    #   -c requirements/_migration.txt
+    #   psycopg
 pygments==2.21.0
     # via pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -81,7 +86,7 @@ requests==2.34.2
     #   types-docker
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.0.51
+sqlalchemy==2.1.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -89,8 +94,8 @@ sqlalchemy==2.0.51
     #   -r requirements/_test.in
 types-docker==7.2.0.20261102
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20261030
-    # via -r requirements/_test.in
+types-greenlet==3.5.0.20260518
+    # via sqlalchemy
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt

@@ -74,7 +74,7 @@ services:
 
   mailpit:
     # Fake SMTP server with web UI — https://mailpit.axllent.org
-    image: axllent/mailpit:v1.33.1
+    image: axllent/mailpit:v1.34.0
     init: true
     command:
       - --smtp-auth-accept-any
@@ -109,6 +109,8 @@ services:
       RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?access_key_required}
       RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?secret_key_required}
       RUSTFS_CONSOLE_ENABLE: "true"
+      # presigned links are fetched cross-origin by the browser, RustFS sends no CORS headers without this
+      RUSTFS_CORS_ALLOWED_ORIGINS: "*"
     ports:
       - "9001:9000" # S3 API (host port kept from the previous minio service)
       - "9090:9001" # web console

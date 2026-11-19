@@ -24,8 +24,6 @@ orjson==3.13.0
     #   -r requirements/../../../packages/common-library/requirements/_base.in
 propcache==0.4.1
     # via yarl
-psycopg2-binary==2.9.11
-    # via sqlalchemy
 pydantic==2.14.3
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
@@ -35,7 +33,7 @@ pydantic-core==2.50.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/../../../packages/common-library/requirements/_base.in
-sqlalchemy==2.0.51
+sqlalchemy==2.1.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -50,5 +48,5 @@ typing-extensions==4.16.0
     #   typing-inspection
 typing-inspection==0.4.5
     # via pydantic
-yarl==1.24.5
+yarl==1.25.1
     # via -r requirements/_base.in

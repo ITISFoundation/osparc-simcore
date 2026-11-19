@@ -1,0 +1,55 @@
+suite: service
+templates:
+  - templates/service.yaml
+values:
+  - values/base.yaml
+release:
+  name: my-svc
+tests:
+  - it: renders nothing when the service is disabled
+    set:
+      service.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: ignores nodePort for a ClusterIP service
+    set:
+      service.nodePort: 30080
+    asserts:
+      - notExists:
+          path: spec.ports[0].nodePort
+
+  - it: sets nodePort for a NodePort service
+    set:
+      service.type: NodePort
+      service.nodePort: 30080
+    asserts:
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30080
+
+  - it: defaults targetPort and protocol of extra service ports
+    set:
+      service.extraServicePorts:
+        - name: metrics
+          port: 9090
+        - name: dns
+          port: 53
+          targetPort: 5353
+          protocol: UDP
+    asserts:
+      - equal:
+          path: spec.ports[1]
+          value:
+            name: metrics
+            port: 9090
+            targetPort: 9090
+            protocol: TCP
+      - equal:
+          path: spec.ports[2]
+          value:
+            name: dns
+            port: 53
+            targetPort: 5353
+            protocol: UDP

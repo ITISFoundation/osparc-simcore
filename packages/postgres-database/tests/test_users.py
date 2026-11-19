@@ -246,7 +246,7 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         # Ensure the users_secrets table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.select(sa.func.count()).select_from(sa.table("users_secrets"))).scalar()
-        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        assert "psycopg.errors.UndefinedTable" in f"{exc_info.value}"
         conn.rollback()
 
         # INSERT users with password hashes (emulates data in-place before migration)
@@ -314,7 +314,7 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         # Verify password_hash column is removed from users table
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT password_hash FROM users"))
-        assert "psycopg2.errors.UndefinedColumn" in f"{exc_info.value}"
+        assert "psycopg.errors.UndefinedColumn" in f"{exc_info.value}"
         conn.rollback()
 
     # MIGRATE DOWNGRADE: this should move password hashes back to users
@@ -324,7 +324,7 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         # Verify users_secrets table no longer exists
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT COUNT(*) FROM users_secrets")).scalar()
-        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        assert "psycopg.errors.UndefinedTable" in f"{exc_info.value}"
         conn.rollback()
 
         # Verify password hashes are back in users table

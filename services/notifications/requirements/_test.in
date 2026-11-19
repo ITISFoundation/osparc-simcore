@@ -24,4 +24,4 @@ pytest-cov
 pytest-mock
 pytest-runner
 python-dotenv
-sqlalchemy[mypy]
+sqlalchemy[mypy,postgresql_psycopgbinary]

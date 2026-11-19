@@ -13,7 +13,7 @@ charset-normalizer==3.4.6
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -42,7 +42,7 @@ pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -75,7 +75,7 @@ types-docker==7.2.0.20261102
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20261030
+types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
 urllib3==2.8.0
     # via

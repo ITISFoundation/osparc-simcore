@@ -1,0 +1,55 @@
+suite: network policy
+templates:
+  - templates/networkpolicy.yaml
+values:
+  - values/base.yaml
+release:
+  name: my-svc
+tests:
+  - it: renders nothing when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: selects the release pods and denies all traffic without rules
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: my-svc
+            app.kubernetes.io/instance: my-svc
+      - equal:
+          path: spec.policyTypes
+          value:
+            - Ingress
+            - Egress
+      - lengthEqual:
+          path: spec.ingress
+          count: 0
+      - lengthEqual:
+          path: spec.egress
+          count: 0
+
+  - it: renders templates in ingress and egress rules
+    set:
+      networkPolicy:
+        enabled: true
+        ingress:
+          - from:
+              - podSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: "{{ .Release.Name }}-client"
+        egress:
+          - to:
+              - podSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: "{{ .Release.Name }}-db"
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchLabels["app.kubernetes.io/instance"]
+          value: my-svc-client
+      - equal:
+          path: spec.egress[0].to[0].podSelector.matchLabels["app.kubernetes.io/instance"]
+          value: my-svc-db

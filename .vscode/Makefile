@@ -2,7 +2,7 @@
 
 include ../scripts/makefiles/templates.mk
 
-VSCODE_CONFIGS := settings.json launch.json mcp.json
+VSCODE_CONFIGS := settings.json launch.json
 
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
