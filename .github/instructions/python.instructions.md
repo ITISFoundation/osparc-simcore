@@ -27,6 +27,9 @@ Target the Python version in `.python-version`.
 - Do not rewrite existing code solely to modernize syntax.
 - Fully annotate parameters and return types of all functions and methods,
   including private helpers. Annotate class attributes and non-obvious values.
+- Return a `NamedTuple` rather than a raw `tuple` when a function returns more
+  than one value: the field names say which element is which at the call site,
+  and the declaration is one class.
 - Declare module-level constants as `NAME: Final[T] = value` with an explicit
   type, including private ones and constants in test modules. Document
   non-obvious constant rationale with `Final[Annotated[T, doc(...)]]` instead
