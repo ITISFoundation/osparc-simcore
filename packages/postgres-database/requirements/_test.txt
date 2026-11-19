@@ -86,7 +86,7 @@ requests==2.34.2
     #   types-docker
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

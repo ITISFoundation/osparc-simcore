@@ -391,7 +391,7 @@ six==1.17.0
     #   simcore-service-storage-sdk
 sortedcontainers==2.4.0
     # via fakeredis
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
