@@ -61,7 +61,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 fastapi==0.162.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 frozenlist==1.8.0
     # via
