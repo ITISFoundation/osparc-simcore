@@ -12,6 +12,8 @@ from ._email import (
     SenderIdentity,
 )
 from ._message import (
+    GetMessageStatusRequest,
+    GetMessageStatusResponse,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
@@ -40,6 +42,8 @@ __all__: tuple[str, ...] = (
     "EmailContact",
     "EmailContent",
     "EmailMessage",
+    "GetMessageStatusRequest",
+    "GetMessageStatusResponse",
     "Message",
     "PhoneNumberStr",
     "PreviewTemplateRequest",

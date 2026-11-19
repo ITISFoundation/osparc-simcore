@@ -42,3 +42,7 @@ class NotificationsTooManyRecipientsError(BaseNotificationsError):
 
 class NotificationsRecipientChannelMismatchError(BaseNotificationsError):
     msg_template = "Contact type '{contact_type}' does not match notification channel '{channel}'."
+
+
+class NotificationsTaskNotFoundError(BaseNotificationsError):
+    msg_template = "Task or group '{task_or_group_uuid}' not found."
