@@ -11,5 +11,6 @@
 alembic
 click
 docker # aiohttp==3.7.3 conflicting with requests==2.25.1 -> docker
+sqlalchemy[postgresql_psycopgbinary] # sync driver for alembic upgrades run by the sc-pg CLI
 tenacity
 urllib3

@@ -192,7 +192,7 @@ _project_tags_subquery = (
 ).subquery("project_tags_subquery")
 
 
-async def list_service_runs_by_product_and_user_and_wallet(
+async def list_service_runs_by_product_and_user_and_wallet(  # noqa: PLR0913, C901
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
@@ -470,7 +470,7 @@ async def sum_project_wallet_total_credits(
         return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
 
-async def export_service_runs_table_to_s3(
+async def export_service_runs_table_to_s3(  # noqa: PLR0913
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
@@ -587,7 +587,7 @@ async def total_service_runs_by_product_and_user_and_wallet(
 
         result = await conn.execute(query)
     row = result.first()
-    return cast(PositiveInt, row[0]) if row else 0
+    return row[0] if row else 0
 
 
 ### For Background check purpose:
@@ -629,7 +629,7 @@ async def total_service_runs_with_running_status_across_all_products(
         )
         result = await conn.execute(query)
     row = result.first()
-    return cast(PositiveInt, row[0]) if row else 0
+    return row[0] if row else 0
 
 
 async def update_service_missed_heartbeat_counter(

@@ -430,8 +430,6 @@ psutil==7.2.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-psycopg2-binary==2.9.11
-    # via sqlalchemy
 pycryptodome==3.23.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
@@ -551,7 +549,7 @@ six==1.17.0
     #   python-dateutil
 sniffio==1.3.1
     # via asgi-lifespan
-sqlalchemy==2.0.51
+sqlalchemy==2.1.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in

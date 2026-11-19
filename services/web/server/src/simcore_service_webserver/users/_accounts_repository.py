@@ -272,7 +272,7 @@ async def review_user_pre_registration(
 
     async with transaction_context(engine, connection) as conn:
         # Base update values
-        update_values = {
+        update_values: dict[str, Any] = {
             "account_request_status": new_status,
             "account_request_reviewed_by": reviewed_by,
             "account_request_reviewed_at": sa.func.now(),

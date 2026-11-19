@@ -72,6 +72,11 @@ def _prepare_data(
     return prepared_params
 
 
+def _bindparams(data: dict[str, Any]) -> list[sa.BindParameter]:
+    # a String-typed parameter is sent as "$1::VARCHAR", which enum/jsonb/uuid columns reject
+    return [sa.bindparam(name, value=value, type_=sa.types.NULLTYPE) for name, value in data.items()]
+
+
 def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engine.Engine, faker: Faker):
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback
@@ -83,7 +88,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
         # Ensure the projects_to_jobs table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.select(sa.func.count()).select_from(projects_to_jobs)).scalar()
-        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        assert "psycopg.errors.UndefinedTable" in f"{exc_info.value}"
         conn.rollback()
 
         # INSERT data (emulates data in-place)
@@ -103,7 +108,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
             VALUES ({values_clause})
             RETURNING id
             """  # noqa: S608
-        ).bindparams(**user_data)
+        ).bindparams(*_bindparams(user_data))
         result = conn.execute(stmt)
         user_id = result.scalar()
 
@@ -129,7 +134,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
             VALUES ({values_clause})
             RETURNING name
             """  # noqa: S608
-        ).bindparams(**product_data)
+        ).bindparams(*_bindparams(product_data))
         result = conn.execute(stmt)
         product_name = result.scalar()
 
@@ -192,7 +197,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
                 INSERT INTO projects ({columns_clause})
                 VALUES ({values_clause})
                 """  # noqa: S608
-            ).bindparams(**prj_prepared)
+            ).bindparams(*_bindparams(prj_prepared))
             conn.execute(stmt)
 
             # projects_to_products
@@ -201,7 +206,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
             INSERT INTO projects_to_products (project_uuid, product_name)
             VALUES (:project_uuid, :product_name)
                 """
-            ).bindparams(project_uuid=prj_prepared["uuid"], product_name=product_name)
+            ).bindparams(*_bindparams({"project_uuid": prj_prepared["uuid"], "product_name": product_name}))
             conn.execute(stmt)
 
         conn.commit()
