@@ -256,7 +256,7 @@ def _capture_backend_computation(
             msg = f"HTTP {response.status}: {response.text()[:200]}"
             raise RuntimeError(msg)  # noqa: TRY301
         return backend_computation_snapshot(response.json())
-    except Exception as err:
+    except Exception as err:  # pylint: disable=broad-exception-caught
         return {"error": repr(err)[:500]}
 
 
@@ -272,7 +272,7 @@ def _emit_backend_diagnostics(item: pytest.Item, report: pytest.TestReport) -> N
             f"Backend diagnostics for {item.name} (captured before the computations were stopped) ---",
         ) as ctx:
             ctx.logger.warning("\n%s", payload)
-    except Exception as err:
+    except Exception as err:  # pylint: disable=broad-exception-caught
         # NOTE: an exception escaping this hook aborts the session and truncates the junit report,
         # which is worse than losing the diagnostics
         logging.warning("could not report the backend snapshot for %s: %r", item.name, err)
