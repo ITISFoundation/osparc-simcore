@@ -12,12 +12,13 @@ from unittest import mock
 
 import pytest
 from annotated_types import doc
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
 from playwright.sync_api import ElementHandle, Frame, Locator, Page, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, TypeAdapter, ValidationError
 from pytest_simcore.helpers import playwright as playwright_helpers
 from pytest_simcore.helpers.playwright import (
     REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE,
@@ -28,6 +29,7 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectStateUpdatedWaiter,
     _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
+    backend_computation_snapshot,
     classify_backend_stall,
     start_websocket_tracking,
     wait_for_nodes_outputs_updated,
@@ -35,6 +37,13 @@ from pytest_simcore.helpers.playwright import (
 )
 
 _NODE_ID: Final[str] = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
+_OTHER_NODE_ID: Final[str] = "2fb4808a-e403-4a46-b52c-892560d27862"
+
+# NOTE: each stall diagnosis is recognised here by a fragment of its own text, so a test case can
+# say which diagnosis it expects without repeating the hint sentences
+_SCHEDULING_STALL_MARKER: Final[str] = "never scheduled"
+_CLUSTER_WAIT_MARKER: Final[str] = "waiting on a cluster"
+_STALL_HINT_MARKERS: Final[tuple[str, ...]] = (_SCHEDULING_STALL_MARKER, _CLUSTER_WAIT_MARKER)
 
 
 def _socketio_message(name: str, obj: dict[str, Any]) -> str:
@@ -575,20 +584,38 @@ def _satisfied_websocket() -> RobustWebSocket:
 
 
 @pytest.mark.parametrize(
-    "state,expects_scheduling_hint",
+    "state,expected_fragments",
     [
-        pytest.param(RunningState.PUBLISHED, True, id="published-blames-backend-scheduling"),
-        pytest.param(RunningState.PENDING, True, id="pending-blames-backend-scheduling"),
-        pytest.param(RunningState.WAITING_FOR_CLUSTER, False, id="waiting-for-cluster-keeps-plain-message"),
+        pytest.param(
+            RunningState.PUBLISHED,
+            (_SCHEDULING_STALL_MARKER, "director-v2"),
+            id="published-blames-backend-scheduling",
+        ),
+        pytest.param(
+            RunningState.PENDING,
+            (_SCHEDULING_STALL_MARKER, "dask-scheduler"),
+            id="pending-blames-backend-scheduling",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_CLUSTER,
+            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            id="cluster-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_RESOURCES,
+            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            id="resource-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(RunningState.STARTED, (), id="a-stuck-running-pipeline-names-no-layer"),
     ],
 )
-def test_pipeline_state_timeout_message_matches_the_scheduling_stage(
+def test_pipeline_state_timeout_message_names_the_stalled_layer(
     state: RunningState,
-    expects_scheduling_hint: Annotated[bool, doc("PUBLISHED/PENDING stalls must carry the scheduling HINT")],
+    expected_fragments: Annotated[tuple[str, ...], doc("fragments the failure message must carry for this state")],
     caplog: pytest.LogCaptureFixture,
 ):
-    # NOTE: a timeout while still PUBLISHED/PENDING means the backend accepted the pipeline but
-    # never handed work to the scheduler, and the failure message must carry that HINT
+    # NOTE: PUBLISHED/PENDING means the backend accepted the pipeline but never handed a task to
+    # the scheduler, WAITING_FOR_* means it asked for a cluster that never arrived
     with pytest.raises(PlaywrightTimeoutError), caplog.at_level(logging.INFO):
         wait_for_pipeline_state(
             state,
@@ -600,8 +627,10 @@ def test_pipeline_state_timeout_message_matches_the_scheduling_stage(
         )
 
     assert state.value in caplog.text
-    for fragment in ("never scheduled", "dask-scheduler", "director-v2"):
-        assert (fragment in caplog.text) is expects_scheduling_hint
+    for fragment in expected_fragments:
+        assert fragment in caplog.text
+    for marker in _STALL_HINT_MARKERS:
+        assert (marker in caplog.text) is (marker in expected_fragments)
 
 
 def test_outputs_wait_with_failed_body_does_not_blame_the_db_listener(
@@ -1177,9 +1206,22 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
             id="published-with-a-running-task-is-not-a-scheduling-stall",
         ),
         pytest.param(
+            # NOTE: one task reaching the scheduler is enough to rule out a scheduling stall
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.NOT_STARTED, _OTHER_NODE_ID: RunningState.STARTED},
+            (),
+            id="published-with-one-of-two-tasks-scheduled-is-not-a-scheduling-stall",
+        ),
+        pytest.param(
+            RunningState.PUBLISHED,
+            {},
+            (),
+            id="published-without-nodes-is-not-blamed-on-scheduling",
+        ),
+        pytest.param(
             RunningState.WAITING_FOR_CLUSTER,
             {_NODE_ID: RunningState.NOT_STARTED},
-            ("waiting on a cluster", "autoscaling"),
+            (_CLUSTER_WAIT_MARKER, "autoscaling"),
             id="cluster-wait-blames-the-cluster-layer",
         ),
         pytest.param(
@@ -1187,6 +1229,12 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
             {_NODE_ID: RunningState.FAILED},
             (_NODE_ID,),
             id="failed-names-the-failed-node",
+        ),
+        pytest.param(
+            RunningState.FAILED,
+            {_NODE_ID: RunningState.ABORTED},
+            (),
+            id="failed-without-failed-nodes-names-no-node",
         ),
         pytest.param(
             RunningState.SUCCESS,
@@ -1205,11 +1253,40 @@ def test_classify_backend_stall_hints_match_what_the_backend_reports(
     for fragment in expected_fragments:
         assert fragment in text
 
-    # NOTE: the scheduling hint must appear exactly when the backend holds a computation
-    # whose nodes have all not started
-    stall_expected = state in (RunningState.PUBLISHED, RunningState.PENDING) and all(
-        status == RunningState.NOT_STARTED for status in node_statuses.values()
-    )
-    assert ("never scheduled" in text) is stall_expected
+    for marker in _STALL_HINT_MARKERS:
+        assert (marker in text) is (marker in expected_fragments)
     if not expected_fragments:
         assert text == ""
+
+
+_COMPUTATION_EXAMPLE: Final[dict[str, Any]] = ComputationGet.model_json_schema()["examples"][0]
+
+
+def test_backend_computation_snapshot_reads_the_list_the_web_server_returns():
+    # NOTE: GET /v0/computations/{project_id} answers with one ComputationGet per runnable
+    # variant of the project, not with a single object
+    computation = ComputationGet.model_validate(_COMPUTATION_EXAMPLE)
+    body = {"data": [computation.model_dump(mode="json")], "error": None}
+
+    snapshot = backend_computation_snapshot(body)
+
+    assert snapshot["state"] == computation.state.value
+    assert snapshot["node_statuses"] == {
+        f"{node_id}": node_state.current_status.value
+        for node_id, node_state in computation.pipeline_details.node_states.items()
+    }
+    # NOTE: the model's example is PUBLISHED with every node NOT_STARTED, i.e. a scheduling stall
+    reported = [marker for hint in snapshot["stall_hints"] for marker in _STALL_HINT_MARKERS if marker in hint]
+    assert reported == [_SCHEDULING_STALL_MARKER]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param({"data": {}}, id="single-object-body"),
+        pytest.param({"data": []}, id="empty-list-body"),
+    ],
+)
+def test_backend_computation_snapshot_rejects_a_body_without_a_computation(body: dict[str, Any]):
+    with pytest.raises((ValidationError, LookupError)):
+        backend_computation_snapshot(body)
