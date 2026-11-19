@@ -303,7 +303,7 @@ class ProjectNodesRepo:
             raise ProjectNodesNodeNotFoundError(node_id=node_uuid, project_uuid=self.project_uuid)
 
         insert_stmt = pg_insert(projects_node_to_pricing_unit).values(
-            project_node_id=int(project_node_id),
+            project_node_id=project_node_id,
             pricing_plan_id=pricing_plan_id,
             pricing_unit_id=pricing_unit_id,
             created=sqlalchemy.func.now(),
