@@ -221,7 +221,7 @@ async def get_wallet_info(
     product_name: ProductName,
     check_user_wallet_permission: bool = True,
 ) -> WalletInfo | None:
-    if not products_service.is_credit_computation_enabled(app, product=product):
+    if not products_service.is_product_credit_consumption_enabled(app, product=product):
         return None
     project_wallet = await projects_wallets_service.get_project_wallet(app, project_id=project_id)
     if project_wallet is None:

@@ -912,7 +912,7 @@ def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
     ``PUT .../nodes/{node_id}/resources`` is refused on a node that has a pricing link.
     """
     product = products_service.get_product(app, product_name=product_name)
-    return products_service.is_credit_computation_enabled(app, product=product)
+    return products_service.is_product_credit_consumption_enabled(app, product=product)
 
 
 @_cache_pricing_lookup("product_name", "pricing_plan_id", "pricing_unit_id")
@@ -1361,7 +1361,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
         product = products_web.get_current_product(request)
-        if products_service.is_credit_computation_enabled(request.app, product=product):
+        if products_service.is_product_credit_consumption_enabled(request.app, product=product):
             # Deal with Wallet
             project_wallet = await _wallets_service.get_project_wallet(request.app, project_id=project_uuid)
             if project_wallet is None:
