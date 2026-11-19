@@ -10,6 +10,8 @@ from typing import Any, Final, cast
 import pytest
 import sqlalchemy as sa
 from pydantic import PostgresDsn
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
+from simcore_postgres_database.utils import as_async_dsn
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from .helpers.docker import get_service_published_port
@@ -76,7 +78,7 @@ _MINUTE: Final[int] = 60
 def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
     dsn = str(
         PostgresDsn.build(
-            scheme="postgresql+psycopg2",
+            scheme=POSTGRES_SYNC_DSN_SCHEME,
             username=postgres_dsn["user"],
             password=postgres_dsn["password"],
             host=postgres_dsn["host"],
@@ -192,8 +194,7 @@ async def sqlalchemy_async_engine(
 ) -> AsyncIterator[AsyncEngine]:
     # NOTE: prevent having to import this if latest sqlalchemy not installed
 
-    sync_dsn = postgres_db.url.render_as_string(hide_password=False)
-    engine = create_async_engine(sync_dsn.replace("postgresql+psycopg2://", "postgresql+asyncpg://"))
+    engine = create_async_engine(as_async_dsn(postgres_db.url))
     assert engine
     yield engine
 

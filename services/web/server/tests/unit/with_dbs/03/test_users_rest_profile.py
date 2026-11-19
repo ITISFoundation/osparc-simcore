@@ -21,6 +21,7 @@ from models_library.api_schemas_webserver.users import (
     MyProfileRestGet,
 )
 from models_library.groups import AccessRightsDict
+from models_library.users import UserID
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -165,7 +166,7 @@ async def test_get_profile_user_not_in_support_group(
 
     # preferences
     assert profile.preferences == await get_frontend_user_preferences_aggregation(
-        client.app, user_id=logged_user["id"], product_name="osparc"
+        client.app, user_id=UserID(logged_user["id"]), product_name="osparc"
     )
 
 
@@ -188,7 +189,7 @@ async def test_get_profile_user_in_support_group(
     await _groups_repository.add_new_user_in_group(
         client.app,
         group_id=support_group_before_app_starts["gid"],
-        new_user_id=logged_user["id"],
+        new_user_id=UserID(logged_user["id"]),
         access_rights=AccessRightsDict(read=True, write=False, delete=False),
     )
 
@@ -556,13 +557,13 @@ async def test_get_profile_with_failing_db_connection(
 
     A logged user fails to get profile because though authentication because
 
-    i.e. conn.execute(query) will raise psycopg2.OperationalError: server closed the connection unexpectedly
+    i.e. conn.execute(query) will raise psycopg.OperationalError: server closed the connection unexpectedly
 
     SEE:
     - https://github.com/ITISFoundation/osparc-simcore/issues/880
     - https://github.com/ITISFoundation/osparc-simcore/pull/1160
     """
-    from psycopg2 import OperationalError  # noqa: PLC0415
+    from psycopg.errors import OperationalError  # noqa: PLC0415
 
     assert client.app
 
@@ -604,7 +605,7 @@ async def user_pre_registration(
     sqlalchemy_async_engine = get_asyncpg_engine(client.app)
 
     # Create pre-registration data for the logged user
-    pre_registration_details = {
+    pre_registration_details: dict[str, Any] = {
         "pre_first_name": "Pre-Registered",
         "pre_last_name": "User",
         "institution": "Test University",
@@ -682,7 +683,7 @@ async def test_get_profile_user_with_pre_registration(
 
     # Verify preferences are still working
     assert profile.preferences == await get_frontend_user_preferences_aggregation(
-        client.app, user_id=logged_user["id"], product_name="osparc"
+        client.app, user_id=UserID(logged_user["id"]), product_name="osparc"
     )
 
 
@@ -754,5 +755,5 @@ async def test_get_profile_user_without_pre_registration(
 
     # Verify preferences are working
     assert profile.preferences == await get_frontend_user_preferences_aggregation(
-        client.app, user_id=logged_user["id"], product_name="osparc"
+        client.app, user_id=UserID(logged_user["id"]), product_name="osparc"
     )

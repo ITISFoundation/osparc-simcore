@@ -47,7 +47,6 @@ github-workflow-job: ## Runs a github workflow job using act locally, run using 
 	# running job "${job}"
 	$(SCRIPTS_DIR)/act.bash ../.. ${job}
 
-
 .PHONY: info
 inf%: ## Displays basic info
 	# system

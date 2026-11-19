@@ -1,0 +1,202 @@
+suite: pod template
+templates:
+  - templates/deployment.yaml
+  - templates/secret.yaml
+values:
+  - values/base.yaml
+release:
+  name: my-svc
+tests:
+  - it: renders valueFrom env entries before plain values and drops nulls
+    template: templates/deployment.yaml
+    set:
+      env:
+        A_PLAIN: x
+        B_REF:
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        C_NUMBER: 8080
+        D_NULL: null
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: B_REF
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: A_PLAIN
+              value: x
+            - name: C_NUMBER
+              value: "8080"
+
+  - it: merges env across values layers, later layers override and null removes
+    template: templates/deployment.yaml
+    values:
+      - values/base.yaml
+      - values/env-base.yaml
+      - values/env-override.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: A_KEPT
+              value: base
+            - name: B_OVERRIDDEN
+              value: override
+            - name: D_ADDED
+              value: override
+
+  - it: lets --set override env from values files
+    template: templates/deployment.yaml
+    values:
+      - values/base.yaml
+      - values/env-base.yaml
+    set:
+      env.A_KEPT: null
+      env.B_OVERRIDDEN: set
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: B_OVERRIDDEN
+              value: set
+            - name: C_REMOVED
+              value: base
+
+  - it: moves an env entry overridden with valueFrom before the plain values
+    template: templates/deployment.yaml
+    values:
+      - values/base.yaml
+      - values/env-base.yaml
+    set:
+      env.C_REMOVED:
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: C_REMOVED
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: A_KEPT
+              value: base
+            - name: B_OVERRIDDEN
+              value: base
+
+  - it: omits env when no values are set
+    template: templates/deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env
+
+  - it: omits envFrom when secretEnv is empty
+    template: templates/deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+
+  - it: references the env secret and sets a checksum when secretEnv is set
+    template: templates/deployment.yaml
+    set:
+      secretEnv:
+        TOKEN: abc
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: my-svc-env
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[a-f0-9]{64}$
+
+  - it: exposes the http container port when the service is enabled
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+
+  - it: omits container ports when the service is disabled
+    template: templates/deployment.yaml
+    set:
+      service.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+
+  - it: omits probes set to null
+    template: templates/deployment.yaml
+    set:
+      probes.startup: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: defaults the topology spread labelSelector to the release selector labels
+    template: templates/deployment.yaml
+    set:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].labelSelector
+          value:
+            matchLabels:
+              app.kubernetes.io/name: my-svc
+              app.kubernetes.io/instance: my-svc
+
+  - it: merges the release selector labels into an explicit topology spread labelSelector
+    template: templates/deployment.yaml
+    set:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: other
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].labelSelector.matchLabels
+          value:
+            app: other
+            app.kubernetes.io/name: my-svc
+            app.kubernetes.io/instance: my-svc
+
+  - it: appends extra volumes and mounts after /tmp
+    template: templates/deployment.yaml
+    set:
+      extraVolumes:
+        - name: data
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: data
+          mountPath: /data
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes
+          value:
+            - name: tmp
+              emptyDir: {}
+            - name: data
+              emptyDir: {}
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data

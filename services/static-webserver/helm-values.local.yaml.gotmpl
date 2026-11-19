@@ -1,0 +1,16 @@
+image:
+  repository: local/static-webserver
+  tag: development
+
+env:
+  SERVER_LOGLEVEL: info
+
+extraVolumes:
+  - name: static-content-src
+    hostPath:
+      path: /osparc-simcore/services/static-webserver/client/source-output
+      type: Directory
+
+extraVolumeMounts:
+  - name: static-content-src
+    mountPath: /static-content

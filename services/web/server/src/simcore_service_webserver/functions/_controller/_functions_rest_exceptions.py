@@ -1,6 +1,8 @@
 import inspect
 import sys
 
+from models_library.functions_errors import FunctionBaseError
+
 from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
@@ -9,10 +11,12 @@ from ...exception_handling import (
 )
 
 # Get all classes defined in functions_errors
-function_error_classes = [
+function_error_classes: list[type[FunctionBaseError]] = [
     obj
     for name, obj in inspect.getmembers(sys.modules["models_library.functions_errors"])
-    if inspect.isclass(obj) and obj.__module__.startswith("models_library.functions_errors")
+    if inspect.isclass(obj)
+    and issubclass(obj, FunctionBaseError)
+    and obj.__module__.startswith("models_library.functions_errors")
 ]
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {

@@ -7,5 +7,5 @@
 
 alembic
 pydantic
-sqlalchemy[postgresql_psycopg2binary,postgresql_asyncpg] # SEE extras in https://github.com/sqlalchemy/sqlalchemy/blob/main/setup.cfg#L43
+sqlalchemy[postgresql_asyncpg] # the asyncpg driver, which also brings the asyncio extra (greenlet). No sync driver here: only the sc-pg CLI (see _migration.in) and the test envs open sync connections
 yarl

@@ -5,104 +5,122 @@ description: 'Run Python tests for any service or package in this monorepo. Use 
 
 # Run Python Tests
 
-## When to Use
-
-- Running tests for any Python project under `services/` or `packages/`
-- Setting up a project for the first time before running tests
-- Debugging test failures related to missing modules or dependencies
-
-## Procedure
-
-Follow these steps **in order**. Do not skip the install step unless you have already installed dependencies for this project in the current python virtual environment.
-
-### Step 1: Activate the workspace virtual environment
+## Step 1: Activate the workspace virtual environment
 
 ```bash
 source .venv/bin/activate
 ```
 
-All projects in this monorepo share a single workspace-level `.venv`, created once via `make devenv` at the repository root. It must be active before any install or test command.
+All projects share the single `.venv` at the repository root, created by
+`make devenv`.
 
-### Step 2: Change to the project directory
-
-Navigate to the root of the specific service or package you want to test:
+## Step 2: Change to the project directory
 
 ```bash
-# For a service:
-cd services/<service-name>
-# e.g. cd services/payments, cd services/web/server
-
-# For a package:
-cd packages/<package-name>
-# e.g. cd packages/models-library, cd packages/pytest-simcore
+cd services/web/server        # a service
+cd packages/models-library    # a package
 ```
 
-### Step 3: Install in development mode
+## Step 3: Install in development mode
 
 ```bash
 make install-dev
 ```
 
-This installs the package in editable mode along with all test dependencies into the shared `.venv`. This step is **required** before running tests — without it, imports will fail with `ModuleNotFoundError`.
+Installs the project in editable mode, so edits under `src/` take effect without
+reinstalling. `install-ci` is what CI runs and installs non-editably; use it only
+to reproduce a CI environment.
 
-> **Note**: You only need to re-run `make install-dev` when switching to a different project or after dependency changes. If you already installed for this project in the current session, you can skip this step.
+The install is exact and the `.venv` is shared, so installing project B removes
+the dependencies that only project A lists. Install the project under test last,
+and expect to reinstall when alternating between projects.
 
-> **Note**: In the service-library, it is `make install-dev[all]` to include all dependencies required for testing.
-
-### Step 4: Run tests
-
-```bash
-# Run all tests under the project's tests folder:
-pytest tests/ -v
-
-# Run a single test file under tests/:
-pytest tests/unit/test_<name>.py -v
-
-# Run a single test function under tests/:
-pytest tests/unit/test_<name>.py::test_function_name -v
-```
-
-> **Warning**: Do **NOT** use `make test*` — these targets normally include `--pdb`, which drops into an interactive debugger on failure and will block execution.
-
-Use `--keep-docker-up` flag when running unit and integration tests to keep docker containers up between sessions and improve performance.
-
-### Step 4b: Quick static analysis
-For any code changes, run the following quick checks and fix any issues before running the full test suite. These checks are much faster than the full test run and can catch common issues early.:
+In `packages/service-library`, extras are opt-in, so quote the target:
 
 ```bash
-# Type checking with ruff:
-make ruff
+make "install-dev[all]"   # also [aiohttp] and [fastapi]
 ```
 
-### Step 4c: Long static analysis (required before committing changes)
+## Step 4: Run the tests
 
-Verify the project passes static analysis from the project directory:
+Run the project's suite in parallel:
 
 ```bash
-# Type checking with mypy:
-make mypy
-
-# Linting with pylint:
-make pylint
+make test-ci-unit pytest-parameters=--numprocesses=auto
+pytest tests -n auto
 ```
 
-These are slow checks that can catch issues without running the full test suite. Run them after making code changes to confirm correctness.
+Parallel runs need the project to declare `pytest-xdist`: `service-library`,
+`simcore-sdk`, `web/server`, `director-v2`, `catalog`, `autoscaling`,
+`datcore-adapter`, `dynamic-sidecar` and `storage`. Elsewhere pytest rejects
+`--numprocesses` as an unrecognized argument. The fixtures in `pytest_simcore`
+are xdist-aware: the first worker sets shared resources up, the controller
+removes them at session end, and each worker gets its own database clone and S3
+bucket, so parallel runs do not race.
 
-### Step 5: Troubleshooting
+A service's targets default to `tests/unit`, a package's to all of `tests`.
+`packages/simcore-sdk` is the exception: its `test-ci-unit` targets
+`tests/unit`, and its integration suite runs only through
+`make test-ci-integration`.
 
-1. If tests fail with `ModuleNotFoundError` → re-run `make install-dev` in the project directory (Step 3).
-2. If tests fail with port conflicts or connection errors (stale docker state) → run `make down leave` from the repository root, then retry from Step 2.
-3. If `command not found` or wrong Python version → ensure the venv is active: `source .venv/bin/activate`.
+Narrow down to the failing file, folder or test:
 
-## Common Mistakes
+```bash
+# services take target= and test-path=
+make test-ci-unit target=tests/unit/test_foo.py
+make test-ci-unit test-path=tests/unit/isolated
 
-| Mistake | Symptom | Fix |
-|---------|---------|-----|
-| Skipping `make install-dev` | `ModuleNotFoundError` | Run `make install-dev` in the project directory |
-| Running pytest from workspace root | Wrong test discovery or missing conftest | `cd` to the specific project first |
-| Using `make test-unit` / `make test-integration` | Execution blocks on first test failure (`--pdb`) | Use `pytest tests/ -v` directly |
-| Venv not activated | `command not found` or wrong Python | `source .venv/bin/activate` (create it first with `make devenv` at repo root if missing) |
-| Stale docker containers | Port conflicts, connection errors | `make down leave` from workspace root |
+# packages take the pytest target, or extra parameters
+make test-ci-unit TEST_TARGET=tests/test_foo.py
+make test-ci-unit pytest-parameters="-k foo"
 
----
-*Last updated: 2026-03-24*
+# packages/service-library keeps its extras in separate targets
+make "test-ci[all]"
+
+# services and packages/simcore-sdk also have test-ci-integration
+make test-ci-integration
+
+# one test, without make
+pytest tests/unit/test_foo.py::test_name -v
+```
+
+`test-ci-*` is CI's pytest argument set, which also deselects `heavy_load`
+markers; a bare `pytest tests/` runs those tests too. `test-dev-*` adds
+`--exitfirst`, `-vv` and `--pdb`, so an unattended run stops at the first failure
+and waits on a debugger. Requesting workers in dev mode drops `--pdb` and prints
+a warning.
+
+## Step 5: Static checks
+
+```bash
+make ruff      # linter, also a pre-commit hook
+make mypy      # static type checker, no pre-commit hook
+make pylint    # no pre-commit hook
+```
+
+Run the ones that cover the change. `pre-commit run --files <files>` runs ruff
+and pyright only, so it does not replace the last two.
+
+## Docker-backed tests
+
+Services pass `--keep-docker-up` in `PYTEST_BASE_ARGS`, so it is set in dev and
+CI mode alike. `packages/service-library`, `packages/simcore-sdk` and
+`packages/celery-library` do the same. The flag skips teardown of the Swarm
+stack, its network and the docker registry fixture. Workers never remove them;
+the xdist controller does at session end. To start from no stack, run `make
+down` and then `make leave` from the repository root.
+
+## Troubleshooting
+
+- `ModuleNotFoundError`: a later `make install-dev` in another project reset the
+  shared `.venv` to that project's dependencies. Re-run `make install-dev` here.
+- `unrecognized arguments: --numprocesses`: the project does not declare
+  `pytest-xdist`. Run without workers.
+- `command not found`, or the wrong Python: the venv is not active, so
+  `source .venv/bin/activate`.
+- Port conflicts or connection errors: containers left by an earlier run.
+  `make down` and then `make leave` from the repository root.
+- A run that stops at the first failure and waits: `test-dev-*` passes `--pdb`.
+  Use `test-ci-*`.
+- Tests discovered from the wrong rootdir, or `conftest.py` not found: pytest ran
+  from the repository root. `cd` to the project first.
