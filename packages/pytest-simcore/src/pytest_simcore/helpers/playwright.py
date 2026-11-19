@@ -24,6 +24,7 @@ from typing import Annotated, Any, Final
 import arrow
 import pytest
 from annotated_types import doc
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
 from playwright._impl._sync_base import EventContextManager, EventInfo
@@ -1111,11 +1112,20 @@ _CLUSTER_WAIT_STATES: Final[
     ]
 ] = (RunningState.WAITING_FOR_CLUSTER, RunningState.WAITING_FOR_RESOURCES)
 
+_CLUSTER_WAIT_HINT: Final[
+    Annotated[
+        str,
+        doc("appended when the pipeline waits on a cluster that never arrives"),
+    ]
+] = "HINT: the computation is waiting on a cluster: check the autoscaling and dask-scheduler services"
+
 
 def _pipeline_stall_raised_message(state: RunningState, expected_states: tuple[RunningState, ...]) -> str:
     message = f"pipeline failed or timed out with {state}. Expected one of {expected_states=}"
     if state in _PIPELINE_SCHEDULING_STALL_STATES:
         message = f"{message}. {_PIPELINE_SCHEDULING_STALL_HINT}"
+    elif state in _CLUSTER_WAIT_STATES:
+        message = f"{message}. {_CLUSTER_WAIT_HINT}"
     return message
 
 
@@ -1127,16 +1137,46 @@ def classify_backend_stall(
     `node_statuses` maps each node id to its state on the backend.
     """
     hints: list[str] = []
-    if state in _PIPELINE_SCHEDULING_STALL_STATES and all(
-        status == RunningState.NOT_STARTED for status in node_statuses.values()
+    # NOTE: an empty node_statuses has nothing to schedule, so it must not be reported as a
+    # pipeline the backend failed to schedule
+    if (
+        state in _PIPELINE_SCHEDULING_STALL_STATES
+        and node_statuses
+        and all(status == RunningState.NOT_STARTED for status in node_statuses.values())
     ):
         hints.append(_PIPELINE_SCHEDULING_STALL_HINT)
     elif state in _CLUSTER_WAIT_STATES:
-        hints.append("HINT: the computation is waiting on a cluster: check the autoscaling and dask-scheduler services")
+        hints.append(_CLUSTER_WAIT_HINT)
     if state == RunningState.FAILED:
         failed_nodes = sorted(node_id for node_id, status in node_statuses.items() if status == RunningState.FAILED)
-        hints.append(f"HINT: these nodes failed on the backend: {failed_nodes}, fetch their logs from director-v2")
+        if failed_nodes:
+            hints.append(f"HINT: these nodes failed on the backend: {failed_nodes}, fetch their logs from director-v2")
     return hints
+
+
+def backend_computation_snapshot(response_body: Any) -> dict[str, Any]:
+    """What the backend reports about a computation, from the body of a
+    `GET /v0/computations/{project_id}` request.
+
+    The web-server answers with a list, one entry per runnable variant of the project, so the
+    snapshot describes the first of them.
+    """
+    computations = [ComputationGet.model_validate(entry) for entry in response_body["data"]]
+    if not computations:
+        msg = "the backend reported no computation for this project"
+        raise LookupError(msg)
+
+    computation = computations[0]
+    node_states = computation.pipeline_details.node_states
+    node_statuses: dict[str, RunningState] = {
+        f"{node_id}": node_state.current_status for node_id, node_state in node_states.items()
+    }
+    return {
+        "state": computation.state.value,
+        "result": computation.result,
+        "node_statuses": {node_id: status.value for node_id, status in node_statuses.items()},
+        "stall_hints": classify_backend_stall(computation.state, node_statuses),
+    }
 
 
 def wait_for_pipeline_state(

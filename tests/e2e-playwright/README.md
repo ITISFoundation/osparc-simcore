@@ -103,7 +103,8 @@ Studies protected by HTTP basic auth can be reached with
 When a test fails, `tests/conftest.py` logs a JSON diagnostics report with
 the test location, the deployment, the duration, the time window of the run
 and a LogsQL query over the services involved in pipeline stalls
-(`api-server`, `autoscaling`, `dask-scheduler`, `director-v2`, `webserver`).
+(`api-server`, `autoscaling`, `dask-sidecar`, `dask-scheduler`, `director-v2`,
+`webserver`).
 
 Pass `--grafana-url` (or set `GRAFANA_URL`) to add a Grafana explore
 deep-link over that window. Without it the report still carries the query
@@ -116,8 +117,9 @@ only then stops them. That snapshot is logged at the teardown phase and
 attached to the junit report as the `backend_computations` property, so
 `--junitxml` carries it too.
 
-The pipeline waits name the failing layer: a timeout while the computation
-is still `PUBLISHED`/`PENDING` says the backend never scheduled it, and the
+The pipeline waits name the failing layer: a timeout with the computation
+still `PUBLISHED`/`PENDING` says the backend never scheduled it, one with
+`WAITING_FOR_CLUSTER`/`WAITING_FOR_RESOURCES` points at the cluster, and the
 `wb-db-event-listener` hint only appears when the block it wraps completed.
 
 ## e2e CI

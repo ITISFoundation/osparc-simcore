@@ -22,12 +22,11 @@ import arrow
 import pytest
 from annotated_types import doc
 from faker import Faker
-from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api._generated import Playwright
-from pydantic import AnyUrl, TypeAdapter, ValidationError
+from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -38,7 +37,7 @@ from pytest_simcore.helpers.playwright import (
     RunningState,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
-    classify_backend_stall,
+    backend_computation_snapshot,
     decode_socketio_42_message,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
@@ -221,13 +220,17 @@ _FAILURE_DIAGNOSIS_LOGS_QUERY: Final[
             "at test time, hence the leading .*"
         ),
     ]
-] = r'{service_name=~".*_(api-server|autoscaling|dask-scheduler|director-v2|webserver)"}'
+] = r'{service_name=~".*_(api-server|autoscaling|dask-sidecar|dask-scheduler|director-v2|webserver)"}'
 
 
 def _resolve_grafana_base_url(item: pytest.Item) -> str | None:
-    if base := item.config.getoption("--grafana-url", default=None) or os.environ.get("GRAFANA_URL"):
-        return str(base).rstrip("/")
-    return None
+    base = item.config.getoption("--grafana-url", default=None) or os.environ.get("GRAFANA_URL")
+    if not base:
+        return None
+    # NOTE: a URL copied from an address bar often carries ?orgId=..., which would end up in the
+    # middle of the explore link; only the origin and any path prefix are needed here
+    parsed = urllib.parse.urlsplit(str(base))
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", ""))
 
 
 def _construct_grafana_explore_url(
@@ -245,40 +248,34 @@ def _construct_grafana_explore_url(
 def _capture_backend_computation(
     api_request_context: APIRequestContext, product_url: AnyUrl, pipeline_id: str
 ) -> dict[str, Any]:
-    """What the backend reports about a computation, best-effort: failing to read it must
-    not mask the test's own error."""
+    """What the backend reports about a computation. Any failure becomes an error entry, because it
+    must neither mask the test's own error nor skip stopping the computation."""
     try:
         response = api_request_context.get(f"{product_url}v0/computations/{pipeline_id}")
         if not response.ok:
             msg = f"HTTP {response.status}: {response.text()[:200]}"
             raise RuntimeError(msg)  # noqa: TRY301
-        computation = ComputationGet.model_validate(response.json()["data"])
-    except (RuntimeError, ValidationError, KeyError, PlaywrightError) as err:
+        return backend_computation_snapshot(response.json())
+    except Exception as err:
         return {"error": repr(err)[:500]}
-
-    node_statuses = {
-        f"{node_id}": node_state.current_status
-        for node_id, node_state in computation.pipeline_details.node_states.items()
-    }
-    return {
-        "state": computation.state.value,
-        "result": computation.result,
-        "node_statuses": {node_id: status.value for node_id, status in node_statuses.items()},
-        "stall_hints": classify_backend_stall(computation.state, node_statuses),
-    }
 
 
 def _emit_backend_diagnostics(item: pytest.Item, report: pytest.TestReport) -> None:
     snapshot = item.stash.get(_BACKEND_COMPUTATIONS_STASH_KEY, None)
     if not snapshot:
         return
-    payload = json.dumps({"backend_computations": snapshot}, indent=2)
-    report.user_properties.append(("backend_computations", payload))
-    with log_context(
-        logging.WARNING,
-        f"Backend diagnostics for {item.name} (captured before the computations were stopped) ---",
-    ) as ctx:
-        ctx.logger.warning("\n%s", payload)
+    try:
+        payload = json.dumps({"backend_computations": snapshot}, indent=2)
+        report.user_properties.append(("backend_computations", payload))
+        with log_context(
+            logging.WARNING,
+            f"Backend diagnostics for {item.name} (captured before the computations were stopped) ---",
+        ) as ctx:
+            ctx.logger.warning("\n%s", payload)
+    except Exception as err:
+        # NOTE: an exception escaping this hook aborts the session and truncates the junit report,
+        # which is worse than losing the diagnostics
+        logging.warning("could not report the backend snapshot for %s: %r", item.name, err)
 
 
 @pytest.hookimpl(wrapper=True)
@@ -288,11 +285,20 @@ def pytest_runtest_makereport(item: pytest.Item, call):
     """
     report = yield
 
-    # Check if the test failed
-    if call.when == "call" and call.excinfo is not None:
-        # NOTE: fixture teardowns run after this hook, so stashing the failure lets them
-        # capture backend state while the test error is still the one being reported
-        item.stash[_CALL_FAILURE_STASH_KEY] = call.excinfo
+    failed_in_call = call.when == "call" and report.failed and call.excinfo is not None
+    if call.when == "call":
+        # NOTE: fixture teardowns run after this hook, so stashing the failure lets them capture
+        # backend state while the test error is still the one being reported. A passing attempt
+        # clears the entry: rerun plugins reuse the same item, and a stale failure would attach
+        # the previous attempt's snapshot to a passing test
+        excinfo = call.excinfo
+        if report.failed and excinfo is not None:
+            item.stash[_CALL_FAILURE_STASH_KEY] = excinfo
+        elif _CALL_FAILURE_STASH_KEY in item.stash:
+            del item.stash[_CALL_FAILURE_STASH_KEY]
+
+    if failed_in_call:
+        # Check if the test failed
         test_name = item.name
         test_location = item.location
         product_url = item.config.getoption("--product-url", default=None)
@@ -320,11 +326,6 @@ def pytest_runtest_makereport(item: pytest.Item, call):
                 diagnostics["grafana_explore_url"] = _construct_grafana_explore_url(
                     grafana_base_url, _FAILURE_DIAGNOSIS_LOGS_QUERY, start_time, end_time
                 )
-
-        diagnostics["backend_snapshot"] = (
-            "what the backend reported about the started computations, logged at the teardown "
-            "phase and attached to the junit report, only when a computation was started"
-        )
 
         with log_context(
             logging.WARNING,
