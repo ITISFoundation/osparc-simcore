@@ -10,6 +10,7 @@ from models_library.notifications import (
 )
 from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
+    NotificationsRecipientChannelMismatchError,
     NotificationsUnsupportedChannelError,
 )
 from models_library.notifications.rpc import Addressing as RpcAddressing
@@ -80,6 +81,28 @@ async def _collect_active_recipients(app: web.Application, group_ids: list[Group
     return list(recipients_dict.values())
 
 
+def _as_email_contacts(items: list[Contact] | None) -> list[EmailContact]:
+    contacts: list[EmailContact] = []
+    for item in items or []:
+        if not isinstance(item, EmailContact):
+            raise NotificationsRecipientChannelMismatchError(
+                contact_type=type(item).__name__, channel=Channel.email.value
+            )
+        contacts.append(item)
+    return contacts
+
+
+def _as_sms_contacts(items: list[Contact] | None) -> list[SmsContact]:
+    contacts: list[SmsContact] = []
+    for item in items or []:
+        if not isinstance(item, SmsContact):
+            raise NotificationsRecipientChannelMismatchError(
+                contact_type=type(item).__name__, channel=Channel.sms.value
+            )
+        contacts.append(item)
+    return contacts
+
+
 async def _create_email_addressing(
     app: web.Application,
     *,
@@ -92,22 +115,22 @@ async def _create_email_addressing(
 
     Raises:
         NotificationsNoActiveRecipientsError: If no active recipients found.
+        NotificationsRecipientChannelMismatchError: If a contact is not an email contact.
     """
     to_contacts: list[EmailContact] = []
 
     if group_ids:
         to_contacts = await _collect_active_recipients(app, group_ids=group_ids)
 
-    if external_contacts:
-        to_contacts.extend(c for c in external_contacts if isinstance(c, EmailContact))
+    to_contacts.extend(_as_email_contacts(external_contacts))
 
     if not to_contacts:
         raise NotificationsNoActiveRecipientsError
 
     return EmailAddressing(
         to=to_contacts,
-        reply_to=reply_to if isinstance(reply_to, EmailContact) else None,
-        bcc=[c for c in bcc if isinstance(c, EmailContact)] if bcc else None,
+        reply_to=_as_email_contacts([reply_to])[0] if reply_to is not None else None,
+        bcc=_as_email_contacts(bcc) or None,
     )
 
 
@@ -118,8 +141,9 @@ def _create_sms_addressing(
 
     Raises:
         NotificationsNoActiveRecipientsError: If no active recipients found.
+        NotificationsRecipientChannelMismatchError: If a contact is not an sms contact.
     """
-    to_contacts = [c for c in (external_contacts or []) if isinstance(c, SmsContact)]
+    to_contacts = _as_sms_contacts(external_contacts)
 
     if not to_contacts:
         raise NotificationsNoActiveRecipientsError
