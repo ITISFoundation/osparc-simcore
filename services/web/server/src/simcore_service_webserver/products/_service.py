@@ -109,11 +109,7 @@ async def is_product_billable(app: web.Application, *, product_name: ProductName
 
 
 def is_credit_computation_enabled(app: web.Application, *, product: Product) -> bool:
-    """True when credits must be computed and consumed for this product's tasks.
-
-    The product opts in through ``is_payment_enabled``, and the web-server-wide switch
-    lets a deployment turn computation off without touching the products table.
-    """
+    """True when credits must be computed and consumed for this product's tasks."""
     credit_computation_enabled = app[APP_SETTINGS_APPKEY].WEBSERVER_CREDIT_COMPUTATION_ENABLED
     return bool(product.is_payment_enabled and credit_computation_enabled)
 
