@@ -1,14 +1,8 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field
 
-from .. import Channel
-
-type PhoneNumberStr = Annotated[
-    str,
-    # SEE https://en.wikipedia.org/wiki/E.164
-    StringConstraints(pattern=r"^\+[1-9]\d{6,14}$"),
-]
+from .._notifications import Channel, PhoneNumberStr
 
 
 class SmsContact(BaseModel):

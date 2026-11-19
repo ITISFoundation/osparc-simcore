@@ -38,3 +38,7 @@ class NotificationsTooManyRecipientsError(BaseNotificationsError):
         "The number of recipients ({num_recipients}) exceeds the allowed maximum of {max_recipients}. "
         "Please reduce the number of recipients and try again."
     )
+
+
+class NotificationsRecipientChannelMismatchError(BaseNotificationsError):
+    msg_template = "Contact type '{contact_type}' does not match notification channel '{channel}'."
