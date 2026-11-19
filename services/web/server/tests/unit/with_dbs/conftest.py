@@ -602,10 +602,14 @@ DEFAULT_PRICING_PLAN_ID: Final[int] = 1
 DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the unit's machine is t3.medium")]] = 1
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def clear_pricing_lookup_caches() -> None:
     """The pricing lookups in `_projects_service` are cached per process for
-    `_TTL_CACHE_PRICING_LOOKUPS`. Empty them so one test's answers cannot serve another's."""
+    `_TTL_CACHE_PRICING_LOOKUPS`. Empty them so one test's answers cannot serve another's.
+
+    Request it in any test that answers the tracker with its own `aioresponses_mocker`
+    registrations; `mock_rut_default_pricing_unit` requests it already.
+    """
     for lookup in (
         _projects_service._get_default_pricing_and_hardware_info,  # noqa: SLF001
         _projects_service._aws_ec2_instances_of_pricing_link,  # noqa: SLF001
@@ -628,7 +632,7 @@ def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
 
 
 @pytest.fixture
-def mark_product_billed(client: TestClient, osparc_product_name: ProductName) -> Callable[[], None]:
+def create_billed_product(client: TestClient, osparc_product_name: ProductName) -> Callable[[], None]:
     """Marks the test's product as one that pays for the resources its nodes use, be they
     computational or dynamic.
 
@@ -646,13 +650,17 @@ def mark_product_billed(client: TestClient, osparc_product_name: ProductName) ->
 
 
 @pytest.fixture
-def with_billed_product(mark_product_billed: Callable[[], None]) -> None:
+def with_billed_product(create_billed_product: Callable[[], None]) -> None:
     """Marks the test's product as one that pays for the resources its nodes use"""
-    mark_product_billed()
+    create_billed_product()
 
 
 @pytest.fixture
-def mock_rut_default_pricing_unit(client: TestClient, aioresponses_mocker: AioResponsesMock) -> RutPricingUnitGet:
+def mock_rut_default_pricing_unit(
+    client: TestClient,
+    aioresponses_mocker: AioResponsesMock,
+    clear_pricing_lookup_caches: None,
+) -> RutPricingUnitGet:
     """The resource-usage-tracker's default plan/unit for the service is unit 1
     (t3.medium, non-zero cost)."""
     assert client.app

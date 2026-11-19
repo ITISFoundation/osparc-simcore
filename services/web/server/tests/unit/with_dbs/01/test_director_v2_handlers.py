@@ -935,7 +935,7 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
     wallet_info_expected: WalletInfo | None,
     mock_rut_default_pricing_unit: None,
     mocked_director_v2_node_sizing: mock.AsyncMock,
-    mark_product_billed: Callable[[], None],
+    create_billed_product: Callable[[], None],
 ):
     """A run fetches the requester's wallet when it has billable services, and repairs
     the nodes' pricing state only when the product pays for them.
@@ -960,7 +960,7 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
 
     if wallet_info_expected is not None:
         # a product takes ownership of its nodes' pricing state only when it says so
-        mark_product_billed()
+        create_billed_product()
 
     state_before = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     assert state_before, "the test project must have nodes"
@@ -1047,6 +1047,7 @@ async def test_start_computation_is_not_forwarded_when_a_node_cannot_be_priced(
     user_project: ProjectDict,
     mocker: MockerFixture,
     aioresponses_mocker: AioResponsesMock,
+    clear_pricing_lookup_caches: None,
     mocked_director_v2_node_sizing: mock.AsyncMock,
     with_billed_product: None,
     pricing_failure: str,
