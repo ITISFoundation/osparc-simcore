@@ -23,7 +23,12 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.funcapi_api_access_rights_table import (
+    funcapi_api_access_rights_table,
+)
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.statics._constants import FRONTEND_APP_DEFAULT
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -120,7 +125,7 @@ def mocked_function(request) -> dict[str, Any]:
     ],
     indirect=["add_user_function_api_access_rights"],
 )
-async def test_function_workflow(
+async def test_function_workflow(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
@@ -256,6 +261,44 @@ async def test_function_workflow(
     url = client.app.router["get_function"].url_for(function_id=f"{returned_function_uid}")
     response = await client.get(url)
     data, error = await assert_status(response, expected_get2)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST])
+async def test_register_function_denied_for_guest_having_functions_api_access_rights(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    sqlalchemy_async_engine: AsyncEngine,
+    mocked_function: dict[str, Any],
+) -> None:
+    """A GUEST session must be denied function registration by the role model
+    (`function.create` is not granted to GUEST), independently of any other
+    functions access layer.
+
+    Regression guard for the `register_function` route's RBAC check.
+    """
+    assert logged_user["role"] == UserRole.GUEST
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            funcapi_api_access_rights_table.insert().values(
+                group_id=logged_user["primary_gid"],
+                product_name=FRONTEND_APP_DEFAULT,
+                read_functions=True,
+                write_functions=True,
+                execute_functions=True,
+                read_function_jobs=True,
+                write_function_jobs=True,
+                execute_function_jobs=True,
+            )
+        )
+
+    url = client.app.router["register_function"].url_for()
+    response = await client.post(url, json=mocked_function)
+    _, error = await assert_status(response, status.HTTP_403_FORBIDDEN)
+
+    assert error is not None
+    # the role model must be what denies the request
+    assert "function.create" in error["message"]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
