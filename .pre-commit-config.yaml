@@ -48,6 +48,14 @@ repos:
         entry: scripts/precommit/pytest-testit.bash
   - repo: local
     hooks:
+      - id: python-test-conventions
+        name: python test conventions
+        language: script
+        types: [file, python]
+        files: (^|/)(tests?/|test_|conftest)
+        entry: scripts/precommit/python_test_conventions.py
+  - repo: local
+    hooks:
       - id: validate-docker-compose
         name: validate-docker-compose
         language: script
