@@ -2,7 +2,7 @@ import asyncio
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
@@ -46,6 +46,30 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+class RunnableProjects(NamedTuple):
+    """The project variants one start request turns into runs."""
+
+    project_ids: list[ProjectID]
+    project_vc_commits: list[CommitID]
+
+
+async def _get_or_create_runnable_projects(request: web.Request, project_id: ProjectID) -> RunnableProjects:
+    """The project variants to start, created on demand for a revisioned project."""
+    run_policy = get_project_run_policy(request.app)
+    assert run_policy  # nosec
+
+    project_ids, project_vc_commits = await run_policy.get_or_create_runnable_projects(request, project_id)
+    _logger.debug(
+        "Project %s will start %d variants: %s",
+        f"{project_id=}",
+        len(project_ids),
+        f"{project_ids=}",
+    )
+    assert project_ids  # nosec
+    assert len(project_ids) == len(project_vc_commits) if project_vc_commits else True  # nosec
+    return RunnableProjects(project_ids=project_ids, project_vc_commits=project_vc_commits)
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start", name="start_computation")
@@ -147,27 +171,8 @@ async def start_computation(request: web.Request) -> web.Response:  # pylint: di
         **({"encryption": encryption} if encryption is not None else {}),
     }
 
-    run_policy = get_project_run_policy(request.app)
-    assert run_policy  # nosec
-
-    running_project_ids: list[ProjectID]
-    project_vc_commits: list[CommitID]
-
-    (
-        running_project_ids,
-        project_vc_commits,
-    ) = await run_policy.get_or_create_runnable_projects(request, path_params.project_id)
-    _logger.debug(
-        "Project %s will start %d variants: %s",
-        f"{path_params.project_id=}",
-        len(running_project_ids),
-        f"{running_project_ids=}",
-    )
-
-    assert running_project_ids  # nosec
-    assert (  # nosec
-        len(running_project_ids) == len(project_vc_commits) if project_vc_commits else True
-    )
+    runnable = await _get_or_create_runnable_projects(request, path_params.project_id)
+    running_project_ids, project_vc_commits = runnable.project_ids, runnable.project_vc_commits
 
     # a node that cannot be priced fails the start rather than running unbilled
     await repair_projects_nodes_pricing_and_resources(
