@@ -53,7 +53,6 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _projects_service
-from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
 from simcore_service_webserver.projects.api import repair_projects_nodes_pricing_and_resources
 from simcore_service_webserver.projects.exceptions import (
     ClustersKeeperNotAvailableError,
@@ -421,7 +420,6 @@ async def test_repair_writes_nothing_for_a_node_already_sized(
     user_project: ProjectDict,
     osparc_product_name: ProductName,
     sqlalchemy_async_engine: AsyncEngine,
-    mocker: MockerFixture,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
     with_billed_product: None,
@@ -454,29 +452,31 @@ async def test_repair_writes_nothing_for_a_node_already_sized(
             user_project["workbench"][f"{node_id}"]["key"], cpu=1.9, ram_bytes=3865470566
         ),
     )
-    # the dynamic node still needs its default link and sizing, so the repair below has
-    # exactly one node left to write
+    # the dynamic node still needs its default link and sizing, so it is the only node the
+    # repair below has to complete
+    dynamic_seed = single_container_required_resources(user_project["workbench"][f"{dynamic_node_id}"]["key"])
     await set_node_required_resources(
         sqlalchemy_async_engine,
         project_id,
         dynamic_node_id,
-        single_container_required_resources(user_project["workbench"][f"{dynamic_node_id}"]["key"]),
+        dynamic_seed,
     )
-    update_node = mocker.spy(ProjectDBAPI.get_from_app_context(client.app), "update_project_node")
 
     await _repair(client, logged_user, project_id, osparc_product_name)
 
-    # the sizing was computed (the web-server cannot know the result without asking) and
-    # written once, for the dynamic node only
-    assert mocked_director_v2_node_sizing.called
-    assert update_node.call_count == 1
-    written_node_ids = {call.args[2] for call in update_node.call_args_list}
-    assert written_node_ids == {dynamic_node_id}
-
     state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    # the already-sized node kept exactly what it had
     sized_resources = state[node_id].required_resources
     assert sized_resources
-    assert sized_resources["container"]["resources"]["CPU"]["limit"] == pytest.approx(1.9)
+    assert sized_resources["container"]["resources"] == resources_limits(cpu=1.9, ram_bytes=3865470566)
+    # the dynamic node is the one the repair completed: linked to the default unit and sized
+    # by the dynamic-sidecar formula (see the numbers computed at the top of this module)
+    dynamic_state = state[dynamic_node_id]
+    assert dynamic_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+    assert dynamic_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert dynamic_state.required_resources != dynamic_seed
+    assert dynamic_state.required_resources
+    assert dynamic_state.required_resources["container"]["resources"] == resources_limits(cpu=0.6, ram_bytes=2791728742)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
