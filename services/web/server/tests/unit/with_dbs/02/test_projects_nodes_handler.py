@@ -382,6 +382,14 @@ async def test_create_node(
     postgres_db: sa.engine.Engine,
     sqlalchemy_async_engine: AsyncEngine,
 ):
+    """Creates a node of each class as every role.
+
+    CHARACTERIZATION of the pricing/resources state at node creation: no node gets a pricing
+    link here, because this test's product does not pay for computational resources. Every node
+    keeps the catalog's default resources, which `PUT .../nodes/{node_id}/resources` can still
+    rewrite. Linking and sizing a computational node is characterized in
+    `test_projects_nodes_pricing_state.py::test_node_creation_links_default_unit_and_sizes_it`.
+    """
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
 
@@ -411,12 +419,6 @@ async def test_create_node(
             )
         assert result.scalar() is not None
 
-        # CHARACTERIZATION of the pricing/resources state at node creation: no node gets a
-        # pricing link here, because this test's product does not pay for computational
-        # resources. Every node keeps the catalog's default resources, which `PUT
-        # .../nodes/{node_id}/resources` can still rewrite. Linking and sizing a
-        # computational node is characterized in
-        # `test_projects_nodes_pricing_state.py::test_node_creation_links_default_unit_and_sizes_it`.
         state = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
         new_node_state = state[NodeID(node_id)]
         mocked_director_v2_node_sizing.assert_not_called()

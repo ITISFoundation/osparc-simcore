@@ -31,6 +31,7 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.resource_tracker import HardwareInfo
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -549,10 +550,23 @@ async def test_repair_fails_the_start_after_writing_the_nodes_it_could(
     )
     await set_node_required_resources(sqlalchemy_async_engine, project_id, comp_node_id, seed)
 
-    async def _sizing_or_timeout(*args, **kwargs):
-        if "/comp/" in kwargs["service_key"]:
+    async def _sizing_or_timeout(
+        rabbitmq_rpc_client: Any,
+        *,
+        service_key: str,
+        service_version: str,
+        resources: ServiceResourcesDict,
+        hardware_info: HardwareInfo,
+    ) -> ServiceResourcesDict:
+        if "/comp/" in service_key:
             raise TimeoutError
-        return await fake_compute_node_resources_for_hardware(*args, **kwargs)
+        return await fake_compute_node_resources_for_hardware(
+            rabbitmq_rpc_client,
+            service_key=service_key,
+            service_version=service_version,
+            resources=resources,
+            hardware_info=hardware_info,
+        )
 
     mocked_director_v2_node_sizing.side_effect = _sizing_or_timeout
     with pytest.raises(ClustersKeeperNotAvailableError):
