@@ -22,7 +22,7 @@ from typing import Annotated, Final
 from aiohttp import web
 from annotated_types import doc
 from common_library.gettext_support import SupportedLocale
-from models_library.celery import GroupStatus, GroupUUID, TaskState, TaskUUID
+from models_library.celery import GroupStatus, GroupUUID, TaskState, TaskStatus, TaskUUID
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -277,8 +277,15 @@ class SMSError(RuntimeError):
 
 
 _SMS_DELIVERY_FAILED_MSG: Final = "SMS code delivery failed"
-_SMS_DELIVERY_POLL_INTERVAL_S: Final = 1.0
+_SMS_DELIVERY_POLL_INTERVAL_S: Final = 2.0
 _SMS_DELIVERY_MAX_WAIT_S: Final = 10.0
+
+
+def _is_delivered(status: TaskStatus | GroupStatus) -> bool | None:
+    """Delivery verdict of a published message: True delivered, False failed, None still running"""
+    if isinstance(status, GroupStatus):
+        return status.is_successful if status.is_done else None
+    return status.task_state == TaskState.SUCCESS if status.is_done else None
 
 
 async def _await_sms_delivery(
@@ -293,28 +300,28 @@ async def _await_sms_delivery(
     Publishing only acknowledges enqueueing, so a worker-side rejection (e.g. a
     Twilio 4xx) would otherwise go unnoticed and login would report a code that
     never arrives. Raises SMSError on delivery failure so the caller can give
-    the resend cooldown back. A delivery still in flight at the deadline
-    returns without raising: the task may still deliver, and freeing the
-    cooldown early would only invite duplicate codes.
+    the resend cooldown back. A delivery still in flight at the deadline,
+    or whose status cannot be looked up, returns without raising: the task
+    may still deliver, and freeing the cooldown early would only invite
+    duplicate codes.
     """
     deadline = time.monotonic() + _SMS_DELIVERY_MAX_WAIT_S
     while True:
-        status = await notifications_service.get_message_status(
-            app,
-            user_id=user_id,
-            product_name=product_name,
-            task_or_group_uuid=task_or_group_uuid,
-        )
-        delivered: bool | None = None
-        if isinstance(status, GroupStatus):
-            if status.is_done:
-                delivered = status.is_successful
-        elif status.is_done:
-            delivered = status.task_state == TaskState.SUCCESS
-        if delivered is not None:
-            if not delivered:
-                raise SMSError(_SMS_DELIVERY_FAILED_MSG)
+        try:
+            status = await notifications_service.get_message_status(
+                app,
+                user_id=user_id,
+                product_name=product_name,
+                task_or_group_uuid=task_or_group_uuid,
+            )
+        except Exception:  # pylint: disable=broad-except
+            _logger.warning("SMS delivery status of %s could not be looked up, reporting success", task_or_group_uuid)
             return
+        delivered = _is_delivered(status)
+        if delivered is True:
+            return
+        if delivered is False:
+            raise SMSError(_SMS_DELIVERY_FAILED_MSG)
         if time.monotonic() >= deadline:
             _logger.warning(
                 "SMS delivery task %s still running after %.0f s, reporting success",

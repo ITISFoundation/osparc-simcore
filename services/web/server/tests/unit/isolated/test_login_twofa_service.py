@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import pytest
 from common_library.gettext_support import SupportedLocale
-from models_library.celery import TaskState, TaskStatus
+from models_library.celery import GroupStatus, TaskState, TaskStatus
 from models_library.notifications import Channel
 from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
@@ -31,6 +31,18 @@ def _task_status(state: TaskState) -> TaskStatus:
     return TaskStatus(
         task_uuid=_TASK_UUID,
         task_state=state,
+        progress_report=ProgressReport(actual_value=1),
+    )
+
+
+def _group_status(*, is_successful: bool) -> GroupStatus:
+    return GroupStatus(
+        group_uuid=uuid4(),
+        task_uuids=[_TASK_UUID],
+        completed_count=1,
+        total_count=1,
+        is_done=True,
+        is_successful=is_successful,
         progress_report=ProgressReport(actual_value=1),
     )
 
@@ -138,6 +150,26 @@ async def test_send_sms_code_raises_when_delivery_fails(
         await _send_sms_code(locale=None)
 
 
+async def test_send_sms_code_raises_when_group_delivery_fails(
+    mock_send_message_from_template: AsyncMock,
+    mock_get_message_status: AsyncMock,
+):
+    mock_get_message_status.return_value = _group_status(is_successful=False)
+
+    with pytest.raises(SendingVerificationSmsError):
+        await _send_sms_code(locale=None)
+
+
+async def test_send_sms_code_succeeds_when_group_delivery_succeeds(
+    mock_send_message_from_template: AsyncMock,
+    mock_get_message_status: AsyncMock,
+):
+    mock_get_message_status.return_value = _group_status(is_successful=True)
+
+    await _send_sms_code(locale=None)
+    assert mock_get_message_status.await_count >= 1
+
+
 async def test_send_sms_code_reports_success_when_delivery_still_running(
     mock_send_message_from_template: AsyncMock,
     mock_get_message_status: AsyncMock,
@@ -150,3 +182,14 @@ async def test_send_sms_code_reports_success_when_delivery_still_running(
 
     await _send_sms_code(locale=None)
     assert mock_get_message_status.await_count >= 1
+
+
+async def test_send_sms_code_reports_success_when_status_lookup_fails(
+    mock_send_message_from_template: AsyncMock,
+    mock_get_message_status: AsyncMock,
+):
+    # a failed status lookup is not evidence of a failed delivery: raising
+    # would free the resend cooldown and invite duplicate codes
+    mock_get_message_status.side_effect = RuntimeError("rabbitmq unavailable")
+
+    await _send_sms_code(locale=None)
