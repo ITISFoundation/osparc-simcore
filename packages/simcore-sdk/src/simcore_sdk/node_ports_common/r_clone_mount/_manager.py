@@ -322,7 +322,7 @@ class RCloneMountManager:
     async def _worker_ensure_mount_is_responsive(self) -> None:
         mount_restored = False
         with log_context(_logger, logging.DEBUG, "ensuring rclone mount is responsive"):
-            for mount_id, mount in list(self._tracked_mounts.items()):
+            for mount_id, mount in self._tracked_mounts.items():
                 lock = await self._try_lock_mount_lifecycle(mount_id)
                 if lock is None:
                     continue
