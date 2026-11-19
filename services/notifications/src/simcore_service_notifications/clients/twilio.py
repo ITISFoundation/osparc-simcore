@@ -17,7 +17,10 @@ async def send_sms(
 
     NOTE: the Twilio SDK is synchronous, so the call is run in a thread executor.
     """
-    client = twilio.rest.Client(account_settings.TWILIO_ACCOUNT_SID, account_settings.TWILIO_AUTH_TOKEN)
+    client = twilio.rest.Client(
+        account_settings.TWILIO_ACCOUNT_SID,
+        account_settings.TWILIO_AUTH_TOKEN.get_secret_value(),
+    )
 
     create_kwargs: dict[str, Any] = {
         "messaging_service_sid": messaging_service_sid,

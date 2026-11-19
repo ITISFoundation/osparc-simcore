@@ -61,10 +61,10 @@ def _prepare_celery_messages(
 
 
 def _get_task_description(message: Message) -> str | None:
+    # only the email subject: the sms body can carry single-use secrets
+    # (e.g. 2FA codes) that must not be persisted in the task store
     if isinstance(message, EmailMessage):
         return message.content.subject
-    if isinstance(message, SmsMessage):
-        return message.content.body
     return None
 
 

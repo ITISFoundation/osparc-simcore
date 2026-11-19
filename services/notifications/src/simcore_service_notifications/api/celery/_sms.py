@@ -24,13 +24,14 @@ from ...exceptions.errors import (
 
 _logger = logging.getLogger(__name__)
 
-_FROM, _TO = 3, -1
-_MIN_NUM_DIGITS = 5
+_FROM: Final[int] = 3
+_TO: Final[int] = -1
+_MIN_NUM_DIGITS: Final[int] = 5
 
 # 4xx the provider may recover from, so they stay retryable
-_TRANSIENT_4XX: Final = frozenset({408, 429})
-_HTTP_CLIENT_ERROR_MIN: Final = 400
-_HTTP_SERVER_ERROR_MIN: Final = 500
+_TRANSIENT_4XX: Final[frozenset[int]] = frozenset({408, 429})
+_HTTP_CLIENT_ERROR_MIN: Final[int] = 400
+_HTTP_SERVER_ERROR_MIN: Final[int] = 500
 
 
 def _is_permanent_rejection(exc: TwilioRestException) -> bool:
