@@ -1,47 +1,46 @@
-{{- $healthcheck := dict "path" "/" "port" "web" -}}
+{{- $healthcheck := dict "path" "/api/version" "port" "http" -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: mailpit
+  name: buggregator
 spec:
   type: NodePort
   ports:
     - name: smtp
       port: 1025
-      targetPort: 1025
+      targetPort: smtp
       nodePort: 31025
-    - name: web
-      port: 8025
-      targetPort: 8025
+    - name: http
+      port: 8000
+      targetPort: http
       nodePort: 31825
   selector:
-    app: mailpit
+    app: buggregator
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mailpit
+  name: buggregator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mailpit
+      app: buggregator
   template:
     metadata:
       labels:
-        app: mailpit
+        app: buggregator
     spec:
+      automountServiceAccountToken: false
       containers:
-        - name: mailpit
-          image: axllent/mailpit:v1.29.3
-          args:
-            - --smtp-auth-accept-any
-            - --smtp-auth-allow-insecure
+        - name: buggregator
+          # Fake SMTP server plus error/dump collector with web UI — https://buggregator.dev
+          image: ghcr.io/buggregator/server:2.11.2
           ports:
             - name: smtp
               containerPort: 1025
-            - name: web
-              containerPort: 8025
+            - name: http
+              containerPort: 8000
           readinessProbe:
             httpGet: {{ $healthcheck | toJson }}
           livenessProbe:
