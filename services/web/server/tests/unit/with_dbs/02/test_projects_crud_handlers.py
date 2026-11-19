@@ -9,6 +9,7 @@ import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
 from math import ceil
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
@@ -778,11 +779,8 @@ async def test_get_project_inactivity_of_foreign_project_is_forbidden(
     logged_user: UserInfoDict,
     client: TestClient,
     osparc_product_name: ProductName,
-    tests_data_dir,
+    tests_data_dir: Path,
 ):
-    """A user without any access right to a project must not be able to query its
-    inactivity (the lookup reaches dynamic-scheduler, which performs no ownership check)
-    """
     assert client.app
 
     async with (
@@ -798,7 +796,7 @@ async def test_get_project_inactivity_of_foreign_project_is_forbidden(
         url = client.app.router["get_project_inactivity"].url_for(project_id=other_project["uuid"])
         response = await client.get(f"{url}")
 
-        _, _ = await assert_status(response, status.HTTP_403_FORBIDDEN)
+        await assert_status(response, status.HTTP_403_FORBIDDEN)
         mock_dynamic_scheduler_inactivity.assert_not_called()
 
 
@@ -813,5 +811,5 @@ async def test_get_project_inactivity_of_nonexistent_project_is_not_found(
     url = client.app.router["get_project_inactivity"].url_for(project_id=faker.uuid4())
     response = await client.get(f"{url}")
 
-    _, _ = await assert_status(response, status.HTTP_404_NOT_FOUND)
+    await assert_status(response, status.HTTP_404_NOT_FOUND)
     mock_dynamic_scheduler_inactivity.assert_not_called()
