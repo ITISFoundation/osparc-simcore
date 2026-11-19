@@ -4,7 +4,7 @@
 Rules from .github/instructions/python-tests.instructions.md:
   - a test module is split before it grows past 1000 lines,
   - a conftest.py defines no autouse fixture,
-  - a fixture handing a callback back is named create_*.
+  - a fixture returning a callback back is named create_*.
 
 Only what this commit introduces is reported. pre-commit stashes unstaged edits, so the file
 on disk is the staged content, and HEAD is the baseline: files already over the limit, and
