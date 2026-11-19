@@ -1,6 +1,6 @@
 import hashlib
 import shutil
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 from logging import Logger
 from pathlib import Path
@@ -23,12 +23,6 @@ CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8MiB")  # 8m
 class _AsyncStream(Protocol):
     # aiofiles declares read position-only; keyword-allowing here rejects its handles
     async def read(self, size: int = -1, /) -> bytes: ...
-
-
-class _Hasher(Protocol):
-    def update(self, data: bytes, /) -> None: ...
-
-    def hexdigest(self) -> str: ...
 
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
@@ -63,15 +57,14 @@ async def create_sha256_checksum(async_stream: _AsyncStream, *, chunk_size: Byte
     SEE https://ant.apache.org/manual/Tasks/checksum.html
     WARNING: bandit reports the use of insecure MD2, MD4, MD5, or SHA1 hash function.
     """
-    sha256_hash = hashlib.sha256()  # nosec
-    return await _eval_hash_async(async_stream, sha256_hash, chunk_size)
+    return await _eval_hash_async(async_stream, chunk_size)
 
 
 async def _eval_hash_async(
     async_stream: _AsyncStream,
-    hasher: _Hasher,
     chunk_size: ByteSize,
 ) -> str:
+    hasher = hashlib.sha256()  # nosec
     while chunk := await async_stream.read(chunk_size):
         hasher.update(chunk)
     digest = hasher.hexdigest()
@@ -88,7 +81,7 @@ def _get_directory_snapshot(path: Path) -> dict[str, tuple[float, int]]:
 
 
 @contextmanager
-def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterator[None]:
+def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Generator[None]:
     before: dict[str, tuple[float, int]] = _get_directory_snapshot(path)
     yield
     after: dict[str, tuple[float, int]] = _get_directory_snapshot(path)
@@ -124,7 +117,7 @@ def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterato
 
 
 @asynccontextmanager
-async def temporary_text_file(content: str) -> AsyncIterator[str]:
+async def temporary_text_file(content: str) -> AsyncGenerator[str]:
     async with tempfile.NamedTemporaryFile("w") as f:
         await f.write(content)
         await f.flush()
