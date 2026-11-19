@@ -21,7 +21,7 @@ from collections.abc import (
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any, Final
+from typing import Any, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -31,7 +31,6 @@ import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
-from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
 )
@@ -54,6 +53,8 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.project_nodes_pricing import (
+    DEFAULT_PRICING_PLAN_ID,
+    DEFAULT_PRICING_UNIT_ID,
     T3_MEDIUM_NAME,
     fake_compute_node_resources_for_hardware,
     make_pricing_unit,
@@ -597,9 +598,6 @@ def mocked_conditionally_unsubscribe_project_logs(
 #
 # pricing/resources characterization helpers (shared by with_dbs/01 and 02)
 #
-
-DEFAULT_PRICING_PLAN_ID: Final[int] = 1
-DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the unit's machine is t3.medium")]] = 1
 
 
 @pytest.fixture
