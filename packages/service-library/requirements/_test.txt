@@ -53,7 +53,7 @@ charset-normalizer==3.5.2
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   requests
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
