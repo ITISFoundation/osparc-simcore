@@ -12,7 +12,7 @@ import contextlib
 import datetime
 import logging
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import suppress
 from decimal import Decimal
 from typing import Annotated, Any, Final, cast
@@ -766,13 +766,18 @@ _TTL_CACHE_PRICING_LOOKUPS: Final[
 ] = datetime.timedelta(seconds=5)
 
 
-@cached_stampede(
-    ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
-    lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
-    key_builder=lambda fn, *_args, **kw: (
-        f"{fn.__name__}_{kw['product_name']}_{kw['service_key']}_{kw['service_version']}"
-    ),
-)
+def _cache_pricing_lookup(*key_fields: str) -> Callable[..., Any]:
+    """The `cached_stampede` both pricing lookups share, keyed on the function's name and on
+    these keyword arguments' values. `_TTL_CACHE_PRICING_LOOKUPS` says why they are cached.
+    """
+    return cached_stampede(
+        ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
+        lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
+        key_builder=lambda fn, *_args, **kw: "_".join([f"{fn.__name__}", *(f"{kw[field]}" for field in key_fields)]),
+    )
+
+
+@_cache_pricing_lookup("product_name", "service_key", "service_version")
 async def _get_default_pricing_and_hardware_info(
     app: web.Application,
     # keyword-only: the cache key is built out of the arguments' names
@@ -910,13 +915,7 @@ def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
     return products_service.is_credit_computation_enabled(app, product=product)
 
 
-@cached_stampede(
-    ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
-    lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
-    key_builder=lambda fn, *_args, **kw: (
-        f"{fn.__name__}_{kw['product_name']}_{kw['pricing_plan_id']}_{kw['pricing_unit_id']}"
-    ),
-)
+@_cache_pricing_lookup("product_name", "pricing_plan_id", "pricing_unit_id")
 async def _aws_ec2_instances_of_pricing_link(
     app: web.Application,
     *,
@@ -926,8 +925,6 @@ async def _aws_ec2_instances_of_pricing_link(
 ) -> list[str] | None:
     """The machine types of a pricing link, or None when the resource-usage-tracker does not
     know that plan/unit in this product.
-
-    Cached like `_get_default_pricing_and_hardware_info`, whose docstring says why.
     """
     try:
         pricing_unit_get = await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
