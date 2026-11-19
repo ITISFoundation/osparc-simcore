@@ -3,6 +3,7 @@ from typing import Final
 from pydantic import TypeAdapter
 
 from ...rabbitmq_basic_types import RPCNamespace
+from .._notifications import PhoneNumberStr
 from ._email import (
     EmailAddressing,
     EmailAttachment,
@@ -19,7 +20,6 @@ from ._message import (
     SendMessageResponse,
 )
 from ._sms import (
-    PhoneNumberStr,
     SmsAddressing,
     SmsContact,
     SmsContent,
