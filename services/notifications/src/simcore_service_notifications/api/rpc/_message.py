@@ -1,19 +1,24 @@
+from celery_library.errors import TaskOrGroupNotFoundError
 from fastapi import FastAPI
 from models_library.notifications.errors import (
     NotificationsProductNotFoundError,
     NotificationsProductSMTPSettingsNotFoundError,
     NotificationsProductTwilioSettingsNotFoundError,
+    NotificationsTaskNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
 )
 from models_library.notifications.rpc import (
+    GetMessageStatusRequest,
+    GetMessageStatusResponse,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
 )
 from servicelib.rabbitmq import RPCRouter
 
+from ...clients.celery import get_task_manager
 from ...models.template import TemplateRef
 from .dependencies import get_message_service
 
@@ -70,3 +75,19 @@ async def send_message_from_template(
         owner_metadata=request.owner_metadata,
     )
     return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)
+
+
+@router.expose(reraise_if_error_type=(NotificationsTaskNotFoundError,))
+async def get_message_status(
+    app: FastAPI,
+    *,
+    request: GetMessageStatusRequest,
+) -> GetMessageStatusResponse:
+    assert app  # nosec
+
+    task_manager = get_task_manager(app)
+    try:
+        status = await task_manager.get_status(request.owner_metadata, request.task_or_group_uuid)
+    except TaskOrGroupNotFoundError as exc:
+        raise NotificationsTaskNotFoundError(task_or_group_uuid=request.task_or_group_uuid) from exc
+    return GetMessageStatusResponse(status=status)

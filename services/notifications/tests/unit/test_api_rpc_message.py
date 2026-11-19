@@ -3,13 +3,15 @@
 # pylint: disable=unused-argument
 import json
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from faker import Faker
-from models_library.celery import OwnerMetadata
+from models_library.celery import OwnerMetadata, TaskState, TaskStatus
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsProductTwilioSettingsNotFoundError,
+    NotificationsTaskNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -19,6 +21,7 @@ from models_library.notifications.rpc import (
     EmailContact,
     EmailContent,
     EmailMessage,
+    GetMessageStatusResponse,
     SendMessageResponse,
     SmsAddressing,
     SmsContact,
@@ -31,6 +34,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
+    get_message_status,
     send_message,
     send_message_from_template,
 )
@@ -368,3 +372,56 @@ def test_validate_product_channel_settings_email_needs_no_twilio(
     _message_module._validate_product_channel_settings(  # noqa: SLF001
         Channel.email, "thetestproduct", settings
     )
+
+
+async def test_get_message_status_reports_pending_task(
+    with_product: dict[str, Any],
+    product_name: ProductName,
+    rpc_client: RabbitMQRPCClient,
+    single_recipient_email_message: EmailMessage,
+):
+    owner_metadata = OwnerMetadata.model_validate(
+        {
+            "owner": "webserver",
+            "user_id": 42,
+            "product_name": "osparc",
+        }
+    )
+    response = await send_message(
+        rpc_client,
+        product_name=product_name,
+        message=single_recipient_email_message,
+        owner_metadata=owner_metadata,
+    )
+
+    status_response = await get_message_status(
+        rpc_client,
+        owner_metadata=owner_metadata,
+        task_or_group_uuid=response.task_or_group_uuid,
+    )
+    assert isinstance(status_response, GetMessageStatusResponse)
+    status = status_response.status
+    assert isinstance(status, TaskStatus)
+    assert status.task_uuid == response.task_or_group_uuid
+    # no worker consumes the queue in these tests, the enqueued task stays pending
+    assert status.task_state == TaskState.PENDING
+
+
+async def test_get_message_status_with_unknown_uuid_raises(
+    with_product: dict[str, Any],
+    product_name: ProductName,
+    rpc_client: RabbitMQRPCClient,
+):
+    owner_metadata = OwnerMetadata.model_validate(
+        {
+            "owner": "webserver",
+            "user_id": 42,
+            "product_name": "osparc",
+        }
+    )
+    with pytest.raises(NotificationsTaskNotFoundError):
+        await get_message_status(
+            rpc_client,
+            owner_metadata=owner_metadata,
+            task_or_group_uuid=uuid4(),
+        )
