@@ -610,7 +610,7 @@ async def clone_project_data(
         app,
         source_project_id=ProjectID(source_project["uuid"]),
         destination_project_id=ProjectID(new_project["uuid"]),
-        nodes_map=nodes_map,
+        old_to_new_node=nodes_map,
         product_name=product_name,
     )
     await link_default_pricing_units_and_size_computational_nodes(
@@ -1148,7 +1148,7 @@ async def copy_pricing_links(
     *,
     source_project_id: ProjectID,
     destination_project_id: ProjectID,
-    nodes_map: NodesMap,
+    old_to_new_node: NodesMap,
     product_name: ProductName,
 ) -> None:
     """Copies the source project's pricing links onto the copied nodes.
@@ -1173,7 +1173,7 @@ async def copy_pricing_links(
     # a unit, and an unreachable one would otherwise cost one timeout per node
     validated: dict[PricingPlanAndUnitIdsTuple, bool | None] = {}
 
-    for mapped_source_node_id, destination_node_id in nodes_map.items():
+    for mapped_source_node_id, destination_node_id in old_to_new_node.items():
         source_node_id = NodeID(mapped_source_node_id)
         link = await db.get_project_node_pricing_unit_id(project_uuid=source_project_id, node_uuid=source_node_id)
         if link is None:

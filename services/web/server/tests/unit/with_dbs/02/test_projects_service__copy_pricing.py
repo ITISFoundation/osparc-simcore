@@ -392,7 +392,7 @@ async def test_copy_pricing_links_asks_rut_once_per_unit_and_copies_what_it_can(
         client.app,
         source_project_id=ProjectID(user_project["uuid"]),
         destination_project_id=ProjectID(shared_project["uuid"]),
-        nodes_map=nodes_map,
+        old_to_new_node=nodes_map,
         product_name=osparc_product_name,
     )
 
@@ -436,7 +436,7 @@ async def test_copy_pricing_links_copies_nothing_in_a_product_that_does_not_bill
         client.app,
         source_project_id=ProjectID(user_project["uuid"]),
         destination_project_id=ProjectID(shared_project["uuid"]),
-        nodes_map=nodes_map,
+        old_to_new_node=nodes_map,
         product_name=osparc_product_name,
     )
 

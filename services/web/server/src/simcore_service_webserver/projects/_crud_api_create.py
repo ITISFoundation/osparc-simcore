@@ -3,7 +3,7 @@ import logging
 from collections.abc import AsyncIterator, Coroutine
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
@@ -127,6 +127,15 @@ type CopyFileCoro = Coroutine[Any, Any, None]
 type CopyProjectNodesCoro = Coroutine[Any, Any, dict[NodeID, ProjectNodeCreate]]
 
 
+class PreparedProjectCopy(NamedTuple):
+    """Everything `_prepare_project_copy` prepares for `create_project` to insert."""
+
+    project: ProjectDict
+    old_to_new_node: NodesMap
+    copy_project_nodes_coro: CopyProjectNodesCoro | None
+    copy_file_coro: CopyFileCoro | None
+
+
 async def _prepare_project_copy(
     app: web.Application,
     *,
@@ -137,7 +146,7 @@ async def _prepare_project_copy(
     deep_copy: bool,
     task_progress: TaskProgress,
     requested_tag_ids: list[int] | None = None,
-) -> tuple[ProjectDict, NodesMap, CopyProjectNodesCoro | None, CopyFileCoro | None]:
+) -> PreparedProjectCopy:
     """
     Raises:
         ProjectCopyingTrashedProjectError: if the source project is trashed
@@ -198,7 +207,12 @@ async def _prepare_project_copy(
             product_name,
             task_progress,
         )
-    return new_project, nodes_map, copy_project_nodes_coro, copy_file_coro
+    return PreparedProjectCopy(
+        project=new_project,
+        old_to_new_node=nodes_map,
+        copy_project_nodes_coro=copy_project_nodes_coro,
+        copy_file_coro=copy_file_coro,
+    )
 
 
 # Fields to clear when copying without data (snake_case names matching ProjectNodeCreate)
@@ -409,7 +423,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     new_project: ProjectDict = {}
     copy_file_coro = None
     project_nodes = None
-    nodes_map: NodesMap | None = None
+    old_to_new_node: NodesMap | None = None
     # Any failure raised after the project row has been inserted (signalled via
     # ``cleanup_ctx.mark_inserted(...)``) triggers a centralized cleanup,
     # so we never leave a half-created project behind.
@@ -446,12 +460,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             if from_study:  # Either clone or creation of template out of study
                 # 1.1 prepare copy
-                (
-                    new_project,
-                    nodes_map,
-                    project_node_coro,
-                    copy_file_coro,
-                ) = await _prepare_project_copy(
+                prepared_copy = await _prepare_project_copy(
                     app,
                     user_id=user_id,
                     product_name=product_name,
@@ -461,8 +470,11 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                     task_progress=progress,
                     requested_tag_ids=predefined_project.get("tags") if predefined_project else None,
                 )
-                if project_node_coro:
-                    project_nodes = await project_node_coro
+                new_project = prepared_copy.project
+                old_to_new_node = prepared_copy.old_to_new_node
+                copy_file_coro = prepared_copy.copy_file_coro
+                if prepared_copy.copy_project_nodes_coro:
+                    project_nodes = await prepared_copy.copy_project_nodes_coro
 
                 # 1.2 does project belong to some folder?
                 workspace_id = new_project["workspaceId"]
@@ -525,12 +537,12 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             # 3.2 pricing/resources: keep the source project's pricing choices (when copying) and link + size
             # the computational nodes. Dynamic services are linked and sized when they start
-            if from_study is not None and nodes_map is not None:
+            if from_study is not None and old_to_new_node is not None:
                 await _projects_service.copy_pricing_links(
                     app,
                     source_project_id=from_study,
                     destination_project_id=ProjectID(new_project["uuid"]),
-                    nodes_map=nodes_map,
+                    old_to_new_node=old_to_new_node,
                     product_name=product_name,
                 )
             await _projects_service.link_default_pricing_units_and_size_computational_nodes(
