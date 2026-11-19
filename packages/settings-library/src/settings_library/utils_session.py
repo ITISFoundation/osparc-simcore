@@ -2,14 +2,11 @@ import base64
 import binascii
 from typing import Annotated, Final
 
+from common_library.pydantic_validators import to_secret_str
 from pydantic import AfterValidator, BeforeValidator, SecretStr
 
 DEFAULT_SESSION_COOKIE_NAME: Final[str] = "osparc-sc2"
 _32_BYTES_LENGTH: Final[int] = 32
-
-
-def _to_secret_str[T](value: T) -> SecretStr | T:
-    return SecretStr(value) if isinstance(value, str) else value
 
 
 def _check_valid_fernet_key(v: SecretStr) -> SecretStr:
@@ -35,5 +32,5 @@ def _check_valid_fernet_key(v: SecretStr) -> SecretStr:
 type SessionSecretKey = Annotated[
     SecretStr,
     AfterValidator(_check_valid_fernet_key),
-    BeforeValidator(_to_secret_str),
+    BeforeValidator(to_secret_str),
 ]
