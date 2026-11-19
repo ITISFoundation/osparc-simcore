@@ -118,6 +118,24 @@ def app_environment(
                     },
                 }
             ),
+            "NOTIFICATIONS_TWILIO_SETTINGS": json.dumps(
+                {
+                    "accounts": {
+                        "local": {
+                            "TWILIO_ACCOUNT_SID": "ACdummy",
+                            "TWILIO_AUTH_TOKEN": "it_does_not_matter",
+                            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": ["41"],
+                        }
+                    },
+                    "products": {
+                        "thetestproduct": {
+                            "account": "local",
+                            "messaging_service_sid": "MGdummy",
+                            "alphanumeric_sender_id": "osparc",
+                        }
+                    },
+                }
+            ),
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
@@ -211,7 +229,7 @@ def mock_celery_worker(
 
     register_worker_tasks(ApplicationSettings.create_from_envs(), celery_app)
 
-    with start_worker(
+    with start_worker(  # pyright: ignore[reportGeneralTypeIssues]
         celery_app,
         pool="threads",
         concurrency=1,

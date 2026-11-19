@@ -11,6 +11,7 @@ from models_library.celery import (
 )
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
+    NotificationsProductTwilioSettingsNotFoundError,
     NotificationsTooManyRecipientsError,
     NotificationsUnsupportedChannelError,
 )
@@ -68,7 +69,28 @@ def _get_task_description(message: Message) -> str | None:
 
 
 def _get_max_recipients(channel: Channel, settings: ApplicationSettings) -> int | None:
-    return settings.NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE if channel == Channel.email else None
+    if channel == Channel.email:
+        return settings.NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE
+    if channel == Channel.sms:
+        return settings.NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE
+    return None
+
+
+def _validate_product_channel_settings(
+    channel: Channel,
+    product_name: ProductName,
+    settings: ApplicationSettings,
+) -> None:
+    # reject unconfigured products at publish time: a worker that fails after the
+    # task is enqueued is invisible to the RPC caller
+    # (email is validated while fanning out in EmailChannelHandler.prepare_messages)
+    if channel is not Channel.sms:
+        return
+
+    twilio_settings = settings.NOTIFICATIONS_TWILIO_SETTINGS
+    if twilio_settings is None:
+        raise NotificationsProductTwilioSettingsNotFoundError(product_name=product_name)
+    twilio_settings.get_product_twilio_settings(product_name)
 
 
 def _build_message(channel: Channel, addressing: Addressing, content: dict[str, Any]) -> Message:
@@ -104,6 +126,7 @@ class MessageService:
         resolved_owner = owner_metadata or _OWNER_METADATA
 
         product = await self.product_repository.get_product(product_name)
+        _validate_product_channel_settings(message.channel, product_name, self.settings)
         messages = _prepare_celery_messages(
             message,
             product=product,

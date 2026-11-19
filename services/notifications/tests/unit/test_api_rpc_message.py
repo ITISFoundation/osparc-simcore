@@ -1,5 +1,7 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+import json
 from typing import Any
 
 import pytest
@@ -7,6 +9,7 @@ from faker import Faker
 from models_library.celery import OwnerMetadata
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
+    NotificationsProductTwilioSettingsNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -17,15 +20,21 @@ from models_library.notifications.rpc import (
     EmailContent,
     EmailMessage,
     SendMessageResponse,
+    SmsAddressing,
+    SmsContact,
+    SmsContent,
+    SmsMessage,
     TemplateRef,
 )
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message,
     send_message_from_template,
 )
+from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.services import _message as _message_module
 
 pytest_simcore_core_services_selection = [
@@ -69,7 +78,7 @@ def multi_recipient_email_message(faker: Faker) -> EmailMessage:
 @pytest.fixture
 def email_addressing_single_recipient(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
-        to=[{"name": "Recipient", "email": faker.email()}],
+        to=[EmailContact(name="Recipient", email=faker.email())],
     )
 
 
@@ -77,8 +86,8 @@ def email_addressing_single_recipient(faker: Faker) -> EmailAddressing:
 def email_addressing_multiple_recipients(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
         to=[
-            {"name": "First Recipient", "email": faker.email()},
-            {"name": "Second Recipient", "email": faker.email()},
+            EmailContact(name="First Recipient", email=faker.email()),
+            EmailContact(name="Second Recipient", email=faker.email()),
         ],
     )
 
@@ -266,3 +275,96 @@ async def test_send_message_too_many_recipients(
             product_name=product_name,
             message=message,
         )
+
+
+async def test_send_message_sms_too_many_recipients(
+    with_product: dict[str, Any],
+    product_name: ProductName,
+    rpc_client: RabbitMQRPCClient,
+):
+    # NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE defaults to 20
+    message = SmsMessage(
+        addressing=SmsAddressing(
+            to=[SmsContact(phone_number=f"+417700{i:04d}") for i in range(21)],
+        ),
+        content=SmsContent(body="Your code is 123456"),
+    )
+
+    with pytest.raises(NotificationsTooManyRecipientsError):
+        await send_message(
+            rpc_client,
+            product_name=product_name,
+            message=message,
+        )
+
+
+def _twilio_settings_json(products: dict) -> str:
+    return json.dumps(
+        {
+            "accounts": {
+                "local": {
+                    "TWILIO_ACCOUNT_SID": "ACdummy",
+                    "TWILIO_AUTH_TOKEN": "it_does_not_matter",
+                    "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": ["41"],
+                }
+            },
+            "products": products,
+        }
+    )
+
+
+def test_validate_product_channel_settings_sms_requires_product_twilio_settings(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("NOTIFICATIONS_TWILIO_SETTINGS", _twilio_settings_json({}))
+    settings = ApplicationSettings.create_from_envs()
+
+    with pytest.raises(NotificationsProductTwilioSettingsNotFoundError):
+        _message_module._validate_product_channel_settings(  # noqa: SLF001
+            Channel.sms, "thetestproduct", settings
+        )
+
+
+def test_validate_product_channel_settings_sms_requires_twilio_settings_present(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("NOTIFICATIONS_TWILIO_SETTINGS", raising=False)
+    settings = ApplicationSettings.create_from_envs()
+
+    with pytest.raises(NotificationsProductTwilioSettingsNotFoundError):
+        _message_module._validate_product_channel_settings(  # noqa: SLF001
+            Channel.sms, "thetestproduct", settings
+        )
+
+
+def test_validate_product_channel_settings_passes_when_configured(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv(
+        "NOTIFICATIONS_TWILIO_SETTINGS",
+        _twilio_settings_json(
+            {
+                "thetestproduct": {
+                    "account": "local",
+                    "messaging_service_sid": "MGdummy",
+                    "alphanumeric_sender_id": "osparc",
+                }
+            }
+        ),
+    )
+    settings = ApplicationSettings.create_from_envs()
+
+    _message_module._validate_product_channel_settings(  # noqa: SLF001
+        Channel.sms, "thetestproduct", settings
+    )
+
+
+def test_validate_product_channel_settings_email_needs_no_twilio(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("NOTIFICATIONS_TWILIO_SETTINGS", raising=False)
+    settings = ApplicationSettings.create_from_envs()
+
+    _message_module._validate_product_channel_settings(  # noqa: SLF001
+        Channel.email, "thetestproduct", settings
+    )

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from models_library.notifications.errors import (
     NotificationsProductNotFoundError,
     NotificationsProductSMTPSettingsNotFoundError,
+    NotificationsProductTwilioSettingsNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -23,6 +24,7 @@ router = RPCRouter()
     reraise_if_error_type=(
         NotificationsProductNotFoundError,
         NotificationsProductSMTPSettingsNotFoundError,
+        NotificationsProductTwilioSettingsNotFoundError,
         NotificationsTooManyRecipientsError,
     )
 )
@@ -46,6 +48,7 @@ async def send_message(
     reraise_if_error_type=(
         NotificationsProductNotFoundError,
         NotificationsProductSMTPSettingsNotFoundError,
+        NotificationsProductTwilioSettingsNotFoundError,
         NotificationsTemplateNotFoundError,
         NotificationsTemplateContextValidationError,
     )
