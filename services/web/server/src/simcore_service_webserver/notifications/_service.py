@@ -3,7 +3,7 @@ from typing import Annotated, Any, Final
 from aiohttp import web
 from annotated_types import doc
 from common_library.gettext_support import SupportedLocale
-from models_library.celery import GroupUUID, TaskName, TaskUUID
+from models_library.celery import GroupStatus, GroupUUID, TaskName, TaskStatus, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
     Channel,
@@ -19,6 +19,9 @@ from models_library.notifications.rpc import TemplateRef as RpcTemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
+    get_message_status as remote_get_message_status,
+)
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template as remote_preview_template,
 )
@@ -309,3 +312,30 @@ async def send_message_from_template(
     )
 
     return response.task_or_group_uuid, response.task_name
+
+
+async def get_message_status(
+    app: web.Application,
+    *,
+    user_id: UserID | None,
+    product_name: ProductName,
+    task_or_group_uuid: TaskUUID | GroupUUID,
+) -> TaskStatus | GroupStatus:
+    """Retrieves the execution status of a message published by this web-server
+
+    The owner metadata is rebuilt exactly as at publish time, since the
+    notifications service keys task lookups by it.
+
+    Raises:
+        NotificationsTaskNotFoundError: If the notifications service has no record
+            of this task/group for this owner.
+    """
+    response = await remote_get_message_status(
+        get_rabbitmq_rpc_client(app),
+        owner_metadata=WebServerOwnerMetadata(
+            user_id=user_id,
+            product_name=product_name,
+        ),
+        task_or_group_uuid=task_or_group_uuid,
+    )
+    return response.status

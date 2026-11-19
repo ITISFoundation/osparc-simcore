@@ -7,10 +7,12 @@ Currently includes two parts:
 
 """
 
+import asyncio
 import hashlib
 import hmac
 import logging
 import secrets
+import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -20,6 +22,7 @@ from typing import Annotated, Final
 from aiohttp import web
 from annotated_types import doc
 from common_library.gettext_support import SupportedLocale
+from models_library.celery import GroupStatus, GroupUUID, TaskState, TaskUUID
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -273,6 +276,55 @@ class SMSError(RuntimeError):
     pass
 
 
+_SMS_DELIVERY_FAILED_MSG: Final = "SMS code delivery failed"
+_SMS_DELIVERY_POLL_INTERVAL_S: Final = 1.0
+_SMS_DELIVERY_MAX_WAIT_S: Final = 10.0
+
+
+async def _await_sms_delivery(
+    app: web.Application,
+    *,
+    user_id: UserID | None,
+    product_name: ProductName,
+    task_or_group_uuid: TaskUUID | GroupUUID,
+) -> None:
+    """Waits for a published SMS to reach a terminal delivery state
+
+    Publishing only acknowledges enqueueing, so a worker-side rejection (e.g. a
+    Twilio 4xx) would otherwise go unnoticed and login would report a code that
+    never arrives. Raises SMSError on delivery failure so the caller can give
+    the resend cooldown back. A delivery still in flight at the deadline
+    returns without raising: the task may still deliver, and freeing the
+    cooldown early would only invite duplicate codes.
+    """
+    deadline = time.monotonic() + _SMS_DELIVERY_MAX_WAIT_S
+    while True:
+        status = await notifications_service.get_message_status(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            task_or_group_uuid=task_or_group_uuid,
+        )
+        delivered: bool | None = None
+        if isinstance(status, GroupStatus):
+            if status.is_done:
+                delivered = status.is_successful
+        elif status.is_done:
+            delivered = status.task_state == TaskState.SUCCESS
+        if delivered is not None:
+            if not delivered:
+                raise SMSError(_SMS_DELIVERY_FAILED_MSG)
+            return
+        if time.monotonic() >= deadline:
+            _logger.warning(
+                "SMS delivery task %s still running after %.0f s, reporting success",
+                task_or_group_uuid,
+                _SMS_DELIVERY_MAX_WAIT_S,
+            )
+            return
+        await asyncio.sleep(_SMS_DELIVERY_POLL_INTERVAL_S)
+
+
 @log_decorator(_logger, level=logging.DEBUG)
 async def send_sms_code(
     app: web.Application,
@@ -288,7 +340,7 @@ async def send_sms_code(
     locale: SupportedLocale | None = None,
 ):
     try:
-        await notifications_service.send_message_from_template(
+        task_or_group_uuid, _task_name = await notifications_service.send_message_from_template(
             app,
             user_id=user_id,
             product_name=product_name,
@@ -310,6 +362,12 @@ async def send_sms_code(
                 "ttl": ttl,
             },
             locale=locale,
+        )
+        await _await_sms_delivery(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            task_or_group_uuid=task_or_group_uuid,
         )
     except Exception as exc:
         raise SendingVerificationSmsError(
