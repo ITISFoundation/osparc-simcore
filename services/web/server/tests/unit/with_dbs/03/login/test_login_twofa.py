@@ -16,6 +16,9 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
 from models_library.celery import TaskState, TaskStatus
+from models_library.notifications.errors import (
+    NotificationsProductTwilioSettingsNotFoundError,
+)
 from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
@@ -53,7 +56,6 @@ from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import (
     TwoFAFrontendUserPreference,
 )
-from twilio.base.exceptions import TwilioRestException
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -591,16 +593,11 @@ async def test_2fa_sms_failure_during_login(
     assert client.app
 
     mocker.patch(
-        # sms delivery fails when the code is submitted for sending; emulates the
-        # Twilio 'From' error in https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
-        # (2FA sms now goes through the notifications RPC, not the twilio client)
+        # publishing the sms fails (e.g. the product has no Twilio settings
+        # configured in the notifications service)
         f"{notifications_service.__name__}.send_message_from_template",
         autospec=True,
-        side_effect=TwilioRestException(
-            status=400,
-            uri="https://www.twilio.com/doc",
-            msg="Unable to create record: A 'From' phone number is required",
-        ),
+        side_effect=NotificationsProductTwilioSettingsNotFoundError(product_name="osparc"),
     )
 
     # A registered user ...

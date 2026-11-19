@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 
-import json
 import uuid
 from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from unittest.mock import AsyncMock
@@ -63,19 +62,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         },
     )
 
-    monkeypatch.delenv("LOGIN_TWILIO", raising=False)
-    app_environment.pop("LOGIN_TWILIO", None)
-
-    envs_twilio = setenvs_from_dict(
-        monkeypatch,
-        {
-            "TWILIO_ACCOUNT_SID": "fake-twilio-account",
-            "TWILIO_AUTH_TOKEN": "fake-twilio-token",
-            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": json.dumps(["41"]),
-        },
-    )
-
-    return {**app_environment, **envs_plugins, **envs_login, **envs_twilio}
+    return {**app_environment, **envs_plugins, **envs_login}
 
 
 @pytest.fixture

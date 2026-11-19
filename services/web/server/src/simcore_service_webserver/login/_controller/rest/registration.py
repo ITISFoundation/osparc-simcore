@@ -345,7 +345,7 @@ async def register_phone(request: web.Request):
                     error=err,
                     error_code=error_code,
                     error_context={"request": request, "registration": registration},
-                    tip="Check Twilio status and product's twilio_messaging_sid",
+                    tip="Check the notifications service and its per-product Twilio settings",
                 )
             )
 

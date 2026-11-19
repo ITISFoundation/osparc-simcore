@@ -41,7 +41,6 @@ async def test_check_registration_invitation_when_not_required(
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
-            LOGIN_TWILIO=None,
         ),
     )
 
@@ -129,7 +128,6 @@ async def test_registration_to_different_product(
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
-            LOGIN_TWILIO=None,
         ),
     )
 
