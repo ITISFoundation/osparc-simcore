@@ -180,7 +180,7 @@ six==1.17.0
     #   python-dateutil
 sortedcontainers==2.4.0
     # via fakeredis
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/_base.txt
     #   pytest-celery

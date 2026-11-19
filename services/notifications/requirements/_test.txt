@@ -157,7 +157,7 @@ sqlalchemy==2.1.6
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
