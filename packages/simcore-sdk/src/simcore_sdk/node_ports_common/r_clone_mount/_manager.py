@@ -363,7 +363,7 @@ class RCloneMountManager:
         if self._task_ensure_mounts_working is not None:
             await cancel_wait_task(self._task_ensure_mounts_working)
 
-        for tracked_mount in list(self._tracked_mounts.values()):
+        for tracked_mount in self._tracked_mounts.values():
             try:
                 await self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
             except (WaitingForQueueToBeEmptyError, WaitingForTransfersToCompleteError) as unmount_err:
