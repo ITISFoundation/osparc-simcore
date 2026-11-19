@@ -821,6 +821,9 @@ def wait_for_nodes_outputs_updated(
     happened.
     """
     waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
+    # NOTE: the db-listener TIP is only meaningful when the body completed: a raise from the
+    # body means the pipeline never produced outputs, so no push was ever expected
+    body_failed = False
     with (
         log_context(
             logging.INFO,
@@ -829,13 +832,21 @@ def wait_for_nodes_outputs_updated(
                 done="✅ received outputs push for all expected nodes",
                 raised=lambda: (
                     f"❌ missing outputs push for: {waiter.missing_outputs_report()}. "
-                    "TIP: check that the webserver's db-listener service is running properly!"
+                    + (
+                        "(the pipeline wait inside failed first, see its error above)"
+                        if body_failed
+                        else "TIP: check that the webserver's db-listener service is running properly!"
+                    )
                 ),
             ),
         ),
         websocket.expect_event("framereceived", waiter, timeout=timeout),
     ):
-        yield
+        try:
+            yield
+        except BaseException:
+            body_failed = True
+            raise
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("failed",)
@@ -1073,6 +1084,26 @@ _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
     RunningState.ABORTED,
 )
 
+_PIPELINE_SCHEDULING_STALL_HINT: Final[
+    Annotated[
+        str,
+        doc(
+            "appended when the pipeline times out in PUBLISHED/PENDING: director-v2 accepted it "
+            "but handed no task to the scheduler, a frequent cause being an unreachable dask-scheduler"
+        ),
+    ]
+] = (
+    "HINT: the backend accepted the pipeline but never scheduled it — check director-v2 logs "
+    "(DaskClientAcquisisitonError) and that the dask-scheduler service has running replicas"
+)
+
+
+def _pipeline_stall_raised_message(state: RunningState, expected_states: tuple[RunningState, ...]) -> str:
+    message = f"pipeline failed or timed out with {state}. Expected one of {expected_states=}"
+    if state in (RunningState.PUBLISHED, RunningState.PENDING):
+        message = f"{message}. {_PIPELINE_SCHEDULING_STALL_HINT}"
+    return message
+
 
 def wait_for_pipeline_state(
     current_state: RunningState,
@@ -1089,7 +1120,7 @@ def wait_for_pipeline_state(
             msg=ContextMessages(
                 starting=f"wait for one of {expected_states=} (timeout {timedelta(milliseconds=timeout_ms)})",
                 done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
-                raised=lambda: f"pipeline failed or timed out with {current_state}. Expected one of {expected_states=}",
+                raised=lambda: _pipeline_stall_raised_message(current_state, expected_states),
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(

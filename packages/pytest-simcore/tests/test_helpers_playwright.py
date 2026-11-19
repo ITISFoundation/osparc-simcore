@@ -2,14 +2,16 @@
 
 import asyncio
 import json
+import logging
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace, TracebackType
-from typing import Any, Final, Self, cast
+from typing import Annotated, Any, Final, NoReturn, Self, cast
 from unittest import mock
 
 import pytest
+from annotated_types import doc
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
 from playwright.sync_api import ElementHandle, Frame, Locator, Page, WebSocket
@@ -27,6 +29,8 @@ from pytest_simcore.helpers.playwright import (
     _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
     start_websocket_tracking,
+    wait_for_nodes_outputs_updated,
+    wait_for_pipeline_state,
 )
 
 _NODE_ID: Final[str] = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
@@ -487,6 +491,32 @@ class _FakeEventContextManager:
             self.cancelled_with.append(exc_val)
 
 
+_WAIT_TIMED_OUT_MSG: Final[Annotated[str, doc("mirrors the error text Playwright raises when a wait times out")]] = (
+    "Timeout exceeded"
+)
+
+
+class _TimedOutEventContextManager(_FakeEventContextManager):
+    """A wait that times out: the pending event is never delivered, so reading its
+    `value` raises, and an exit without a result reads it and surfaces the timeout."""
+
+    @property
+    def value(self) -> str:
+        self.value_read = True
+        raise PlaywrightTimeoutError(_WAIT_TIMED_OUT_MSG)
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if exc_val is None and not self.value_read:
+            self.value_read = True
+            raise PlaywrightTimeoutError(_WAIT_TIMED_OUT_MSG)
+        super().__exit__(exc_type, exc_val, exc_tb)
+
+
 def _make_reconnectable_waiter(
     predicate: Callable[[str], bool],
 ) -> tuple[_ReconnectableEventWaiter, _FakeEventContextManager]:
@@ -525,6 +555,98 @@ def test_reconnectable_waiter_waits_for_an_event_when_the_predicate_is_not_satis
 
     assert context_manager.value_read is True
     assert context_manager.cancelled_with == []
+
+
+def _timed_out_websocket() -> RobustWebSocket:
+    # NOTE: models a wait that times out: its pending event is never delivered and reading
+    # its value raises, as Playwright does
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.return_value = _TimedOutEventContextManager()
+    return cast(RobustWebSocket, websocket)
+
+
+def _satisfied_websocket() -> RobustWebSocket:
+    # NOTE: an already-settled wait, so exiting the outputs wait without a body error is
+    # not treated as a cancellation
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.return_value = _FakeEventContextManager(done=True)
+    return cast(RobustWebSocket, websocket)
+
+
+@pytest.mark.parametrize(
+    "state,expects_scheduling_hint",
+    [
+        pytest.param(RunningState.PUBLISHED, True, id="published-blames-backend-scheduling"),
+        pytest.param(RunningState.PENDING, True, id="pending-blames-backend-scheduling"),
+        pytest.param(RunningState.WAITING_FOR_CLUSTER, False, id="waiting-for-cluster-keeps-plain-message"),
+    ],
+)
+def test_pipeline_state_timeout_message_matches_the_scheduling_stage(
+    state: RunningState,
+    expects_scheduling_hint: Annotated[bool, doc("PUBLISHED/PENDING stalls must carry the scheduling HINT")],
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: a timeout while still PUBLISHED/PENDING means the backend accepted the pipeline but
+    # never handed work to the scheduler, and the failure message must carry that HINT
+    with pytest.raises(PlaywrightTimeoutError), caplog.at_level(logging.INFO):
+        wait_for_pipeline_state(
+            state,
+            websocket=_timed_out_websocket(),
+            project_uuid="project-a",
+            if_in_states=(state,),
+            expected_states=(RunningState.STARTED, RunningState.SUCCESS),
+            timeout_ms=100,
+        )
+
+    assert state.value in caplog.text
+    for fragment in ("never scheduled", "dask-scheduler", "director-v2"):
+        assert (fragment in caplog.text) is expects_scheduling_hint
+
+
+def test_outputs_wait_with_failed_body_does_not_blame_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: when the wrapped block raises, no output was ever expected, so blaming the
+    # db-listener for the missing push would misdirect the reader
+    def _pipeline_wait_failed() -> NoReturn:
+        msg = "pipeline wait failed"
+        raise RuntimeError(msg)
+
+    with (
+        pytest.raises(RuntimeError, match="pipeline wait failed"),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _satisfied_websocket(),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        _pipeline_wait_failed()
+
+    assert "missing outputs push" in caplog.text
+    assert "failed first" in caplog.text
+    assert "db-listener" not in caplog.text
+
+
+def test_outputs_wait_timeout_after_ok_body_still_suggests_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: outputs the backend pushed but the client never received IS a db-listener symptom,
+    # so the TIP must still fire when the body completed cleanly
+    with (
+        pytest.raises(PlaywrightTimeoutError),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _timed_out_websocket(),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        pass
+
+    assert "missing outputs push" in caplog.text
+    assert "db-listener" in caplog.text
+    assert "failed first" not in caplog.text
 
 
 _S4L_WS_URL: Final[str] = f"https://{_NODE_ID}.services.example.org/socket.io/?EIO=4&transport=websocket"
