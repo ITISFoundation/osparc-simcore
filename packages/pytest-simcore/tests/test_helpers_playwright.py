@@ -28,6 +28,7 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectStateUpdatedWaiter,
     _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
+    classify_backend_stall,
     start_websocket_tracking,
     wait_for_nodes_outputs_updated,
     wait_for_pipeline_state,
@@ -1158,3 +1159,57 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
 
     assert websocket.ws is reconnected
     assert healthy._bound_ws is reconnected  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    "state,node_statuses,expected_fragments",
+    [
+        pytest.param(
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.NOT_STARTED},
+            ("never scheduled", "dask-scheduler"),
+            id="published-with-no-task-scheduled-blames-scheduling",
+        ),
+        pytest.param(
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.STARTED},
+            (),
+            id="published-with-a-running-task-is-not-a-scheduling-stall",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_CLUSTER,
+            {_NODE_ID: RunningState.NOT_STARTED},
+            ("waiting on a cluster", "autoscaling"),
+            id="cluster-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(
+            RunningState.FAILED,
+            {_NODE_ID: RunningState.FAILED},
+            (_NODE_ID,),
+            id="failed-names-the-failed-node",
+        ),
+        pytest.param(
+            RunningState.SUCCESS,
+            {_NODE_ID: RunningState.SUCCESS},
+            (),
+            id="success-gets-no-hint",
+        ),
+    ],
+)
+def test_classify_backend_stall_hints_match_what_the_backend_reports(
+    state: RunningState,
+    node_statuses: dict[str, RunningState],
+    expected_fragments: tuple[str, ...],
+):
+    text = "\n".join(classify_backend_stall(state, node_statuses))
+    for fragment in expected_fragments:
+        assert fragment in text
+
+    # NOTE: the scheduling hint must appear exactly when the backend holds a computation
+    # whose nodes have all not started
+    stall_expected = state in (RunningState.PUBLISHED, RunningState.PENDING) and all(
+        status == RunningState.NOT_STARTED for status in node_statuses.values()
+    )
+    assert ("never scheduled" in text) is stall_expected
+    if not expected_fragments:
+        assert text == ""
