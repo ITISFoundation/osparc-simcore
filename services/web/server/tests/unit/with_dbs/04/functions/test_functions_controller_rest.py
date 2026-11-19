@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 
 from collections.abc import AsyncIterator
+from contextlib import AsyncExitStack
 from http import HTTPStatus
 from typing import Any
 from uuid import UUID, uuid4
@@ -21,6 +22,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.funcapi_api_access_rights_table import (
@@ -269,26 +271,29 @@ async def test_register_function_denied_for_guest_having_functions_api_access_ri
     logged_user: UserInfoDict,
     sqlalchemy_async_engine: AsyncEngine,
     mocked_function: dict[str, Any],
-) -> None:
-    """A GUEST session must be denied function registration by the role model
-    (`function.create` is not granted to GUEST), independently of any other
-    functions access layer.
-
-    Regression guard for the `register_function` route's RBAC check.
-    """
+):
     assert logged_user["role"] == UserRole.GUEST
 
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            funcapi_api_access_rights_table.insert().values(
-                group_id=logged_user["primary_gid"],
-                product_name=FRONTEND_APP_DEFAULT,
-                read_functions=True,
-                write_functions=True,
-                execute_functions=True,
-                read_function_jobs=True,
-                write_function_jobs=True,
-                execute_function_jobs=True,
+    async with AsyncExitStack() as stack:
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=funcapi_api_access_rights_table,
+                values={
+                    "group_id": logged_user["primary_gid"],
+                    "product_name": FRONTEND_APP_DEFAULT,
+                    "read_functions": True,
+                    "write_functions": True,
+                    "execute_functions": True,
+                    "read_function_jobs": True,
+                    "write_function_jobs": True,
+                    "execute_function_jobs": True,
+                    "read_function_job_collections": True,
+                    "write_function_job_collections": True,
+                    "execute_function_job_collections": True,
+                },
+                pk_col=funcapi_api_access_rights_table.c.group_id,
+                pk_value=logged_user["primary_gid"],
             )
         )
 
