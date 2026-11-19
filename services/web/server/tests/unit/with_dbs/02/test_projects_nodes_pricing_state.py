@@ -40,11 +40,18 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.project_nodes_pricing import (
+    DEFAULT_PRICING_PLAN_ID,
+    DEFAULT_PRICING_UNIT_ID,
+    T3_MEDIUM_DASK_WORKER_CPUS,
+    T3_MEDIUM_DASK_WORKER_LIMITS,
+    T3_MEDIUM_DASK_WORKER_RAM_BYTES,
+    T3_MEDIUM_DYNAMIC_SIDECAR_CPUS,
+    T3_MEDIUM_DYNAMIC_SIDECAR_LIMITS,
+    T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES,
     fake_compute_node_resources_for_hardware,
     get_node_pricing_state,
     make_pricing_unit,
     regex_for_rut_pricing_unit,
-    resources_limits,
     set_node_pricing_link,
     set_node_required_resources,
     single_container_required_resources,
@@ -199,14 +206,14 @@ async def test_project_creation_links_default_unit_and_sizes_only_comp_nodes(
 
     # comp node: linked to the default plan/unit and sized with the dask-worker formula
     comp_state = state[NodeID(_COMP_NODE_ID)]
-    assert comp_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+    assert comp_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
     assert comp_state.pricing_unit_id == mock_rut_default_pricing_unit.pricing_unit_id
     assert comp_state.required_resources
-    # t3.medium (2 CPU / 4 GiB) sized by the dask-worker formula: 1.9 CPU, 3865470566 RAM bytes
+    # t3.medium sized by the dask-worker formula
     comp_resources = comp_state.required_resources["container"]["resources"]
-    assert comp_resources["CPU"]["limit"] == pytest.approx(1.9)
-    assert comp_resources["RAM"]["limit"] == 3865470566
-    assert comp_resources["RAM"]["reservation"] == 3865470566
+    assert comp_resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DASK_WORKER_CPUS)
+    assert comp_resources["RAM"]["limit"] == T3_MEDIUM_DASK_WORKER_RAM_BYTES
+    assert comp_resources["RAM"]["reservation"] == T3_MEDIUM_DASK_WORKER_RAM_BYTES
 
     # dynamic and frontend nodes: NOT linked, catalog resources untouched
     for node_id in (_DYNAMIC_NODE_ID, _FILE_PICKER_NODE_ID):
@@ -220,13 +227,7 @@ async def test_project_creation_links_default_unit_and_sizes_only_comp_nodes(
 # starting a dynamic service in a billed product, on a node with no pricing link
 # (dynamic nodes are never linked at creation, so this path always fires for them)
 #
-# Hand-computed expectation (t3.medium = 2 CPU / 4 GiB, dynamic-sidecar formula):
-#   cpu = max(0.5, 2.0 - 1.4) = 0.6
-#   ram = int(4294967296 - 0.1*4294967296 - 1 GiB) = 2791728742
-#
 
-_DEFAULT_PRICING_PLAN_ID: Final[int] = 1
-_DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the product default, on t3.medium")]] = 1
 _PROJECT_WALLET_ID: Final[WalletID] = WalletID(7)
 
 
@@ -292,14 +293,14 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
 
     state_after = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     node_state = state_after[NodeID(dynamic_node_id)]
-    assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert node_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert node_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
 
     assert node_state.required_resources
     resources = node_state.required_resources["container"]["resources"]
-    assert resources["CPU"]["limit"] == pytest.approx(0.6)
-    assert resources["RAM"]["limit"] == 2791728742
-    assert resources["RAM"]["reservation"] == 2791728742
+    assert resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DYNAMIC_SIDECAR_CPUS)
+    assert resources["RAM"]["limit"] == T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES
+    assert resources["RAM"]["reservation"] == T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES
 
     # starting one dynamic service leaves every other node untouched
     for node_id, other_state in state_after.items():
@@ -405,12 +406,12 @@ async def test_repair_replaces_a_link_that_is_unknown_in_the_product(
 
     state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     node_state = state[node_id]
-    assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert node_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert node_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert node_state.required_resources
     resources = node_state.required_resources["container"]["resources"]
-    assert resources["CPU"]["limit"] == pytest.approx(1.9)
-    assert resources["RAM"]["limit"] == 3865470566
+    assert resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DASK_WORKER_CPUS)
+    assert resources["RAM"]["limit"] == T3_MEDIUM_DASK_WORKER_RAM_BYTES
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -436,20 +437,22 @@ async def test_repair_writes_nothing_for_a_node_already_sized(
     )
 
     # the node is linked to the default unit and its resources ARE the sizing result of
-    # that unit's machine (t3.medium, dask-worker formula: 1.9 CPU / 3865470566 B)
+    # that unit's machine (t3.medium, dask-worker formula)
     await set_node_pricing_link(
         sqlalchemy_async_engine,
         project_id,
         node_id,
-        pricing_plan_id=_DEFAULT_PRICING_PLAN_ID,
-        pricing_unit_id=_DEFAULT_PRICING_UNIT_ID,
+        pricing_plan_id=DEFAULT_PRICING_PLAN_ID,
+        pricing_unit_id=DEFAULT_PRICING_UNIT_ID,
     )
     await set_node_required_resources(
         sqlalchemy_async_engine,
         project_id,
         node_id,
         single_container_required_resources(
-            user_project["workbench"][f"{node_id}"]["key"], cpu=1.9, ram_bytes=3865470566
+            user_project["workbench"][f"{node_id}"]["key"],
+            cpu=T3_MEDIUM_DASK_WORKER_CPUS,
+            ram_bytes=T3_MEDIUM_DASK_WORKER_RAM_BYTES,
         ),
     )
     # the dynamic node still needs its default link and sizing, so it is the only node the
@@ -468,15 +471,15 @@ async def test_repair_writes_nothing_for_a_node_already_sized(
     # the already-sized node kept exactly what it had
     sized_resources = state[node_id].required_resources
     assert sized_resources
-    assert sized_resources["container"]["resources"] == resources_limits(cpu=1.9, ram_bytes=3865470566)
+    assert sized_resources["container"]["resources"] == T3_MEDIUM_DASK_WORKER_LIMITS
     # the dynamic node is the one the repair completed: linked to the default unit and sized
     # by the dynamic-sidecar formula (see the numbers computed at the top of this module)
     dynamic_state = state[dynamic_node_id]
-    assert dynamic_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert dynamic_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert dynamic_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert dynamic_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert dynamic_state.required_resources != dynamic_seed
     assert dynamic_state.required_resources
-    assert dynamic_state.required_resources["container"]["resources"] == resources_limits(cpu=0.6, ram_bytes=2791728742)
+    assert dynamic_state.required_resources["container"]["resources"] == T3_MEDIUM_DYNAMIC_SIDECAR_LIMITS
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -509,8 +512,8 @@ async def test_repair_fails_the_start_when_sizing_fails_and_completes_on_the_nex
 
     state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     node_state = state[node_id]
-    assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert node_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert node_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert node_state.required_resources == jsonable_encoder(seed)
 
     mocked_director_v2_node_sizing.side_effect = fake_compute_node_resources_for_hardware
@@ -520,8 +523,8 @@ async def test_repair_fails_the_start_when_sizing_fails_and_completes_on_the_nex
     required_resources = state[node_id].required_resources
     assert required_resources
     resources = required_resources["container"]["resources"]
-    assert resources["CPU"]["limit"] == pytest.approx(1.9)
-    assert resources["RAM"]["limit"] == 3865470566
+    assert resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DASK_WORKER_CPUS)
+    assert resources["RAM"]["limit"] == T3_MEDIUM_DASK_WORKER_RAM_BYTES
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -574,13 +577,13 @@ async def test_repair_fails_the_start_after_writing_the_nodes_it_could(
 
     state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     # the failing node is linked but not sized
-    assert state[comp_node_id].pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert state[comp_node_id].pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert state[comp_node_id].required_resources == jsonable_encoder(seed)
     # the dynamic node was repaired to the end (dynamic-sidecar on t3.medium)
     dynamic_resources = state[dynamic_node_id].required_resources
     assert dynamic_resources
-    assert dynamic_resources["container"]["resources"]["CPU"]["limit"] == pytest.approx(0.6)
-    assert dynamic_resources["container"]["resources"]["RAM"]["limit"] == 2791728742
+    assert dynamic_resources["container"]["resources"]["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DYNAMIC_SIDECAR_CPUS)
+    assert dynamic_resources["container"]["resources"]["RAM"]["limit"] == T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -600,10 +603,10 @@ async def test_repair_fails_the_start_when_the_product_has_no_default_pricing_un
     """
     assert client.app
     project_id = user_project["uuid"]
-    unit = make_pricing_unit(pricing_unit_id=_DEFAULT_PRICING_UNIT_ID, default=False, aws_ec2_instance="t3.medium")
+    unit = make_pricing_unit(pricing_unit_id=DEFAULT_PRICING_UNIT_ID, default=False, aws_ec2_instance="t3.medium")
     plan_without_default = RutPricingPlanGet.model_validate(
         RutPricingPlanGet.model_json_schema()["examples"][0]
-    ).model_copy(update={"pricing_plan_id": _DEFAULT_PRICING_PLAN_ID, "pricing_units": [unit]})
+    ).model_copy(update={"pricing_plan_id": DEFAULT_PRICING_PLAN_ID, "pricing_units": [unit]})
     settings = get_rut_plugin_settings(client.app)
     aioresponses_mocker.get(
         re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$"),
@@ -669,12 +672,10 @@ async def test_project_creation_asks_rut_once_per_service(
     state = await get_node_pricing_state(sqlalchemy_async_engine, new_project["uuid"])
     for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
         node_state = state[NodeID(node_id)]
-        assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-        assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+        assert node_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+        assert node_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
         assert node_state.required_resources
-        assert node_state.required_resources["container"]["resources"] == resources_limits(
-            cpu=1.9, ram_bytes=3865470566
-        )
+        assert node_state.required_resources["container"]["resources"] == T3_MEDIUM_DASK_WORKER_LIMITS
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -709,10 +710,10 @@ async def test_node_creation_links_default_unit_and_sizes_it(
     mocked_director_v2_node_sizing.assert_called_once()
     state = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     node_state = state[node_id]
-    assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert node_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert node_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert node_state.required_resources
-    assert node_state.required_resources["container"]["resources"] == resources_limits(cpu=1.9, ram_bytes=3865470566)
+    assert node_state.required_resources["container"]["resources"] == T3_MEDIUM_DASK_WORKER_LIMITS
 
     # now with director-v2 unreachable
     mocked_director_v2_node_sizing.side_effect = TimeoutError("director-v2 unreachable")
@@ -723,8 +724,8 @@ async def test_node_creation_links_default_unit_and_sizes_it(
 
     state = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     unsized_state = state[unsized_node_id]
-    assert unsized_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert unsized_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert unsized_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert unsized_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert unsized_state.required_resources == jsonable_encoder(mock_service_resources)
 
 
@@ -771,9 +772,7 @@ async def test_repair_asks_rut_once_per_distinct_pricing_unit(
     for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
         node_state = state[NodeID(node_id)]
         assert node_state.required_resources
-        assert node_state.required_resources["container"]["resources"] == resources_limits(
-            cpu=1.9, ram_bytes=3865470566
-        )
+        assert node_state.required_resources["container"]["resources"] == T3_MEDIUM_DASK_WORKER_LIMITS
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -807,8 +806,8 @@ async def test_project_creation_keeps_the_default_links_when_sizing_fails(
     # keep the catalog resources they were inserted with
     for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
         node_state = state[NodeID(node_id)]
-        assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-        assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+        assert node_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+        assert node_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
         assert node_state.required_resources == jsonable_encoder(mock_service_resources)
 
     # dynamic and frontend nodes are never linked at creation, failure or not

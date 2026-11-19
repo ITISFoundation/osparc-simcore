@@ -54,6 +54,12 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from pytest_simcore.helpers.project_nodes_pricing import (
+    DEFAULT_PRICING_PLAN_ID,
+    DEFAULT_PRICING_UNIT_ID,
+    T3_MEDIUM_DASK_WORKER_CPUS,
+    T3_MEDIUM_DASK_WORKER_RAM_BYTES,
+    T3_MEDIUM_DYNAMIC_SIDECAR_CPUS,
+    T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES,
     T3_MEDIUM_NAME,
     get_node_pricing_state,
     make_pricing_unit,
@@ -935,9 +941,8 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
     """A run fetches the requester's wallet when it has billable services, and repairs
     the nodes' pricing state only when the product pays for them.
 
-    Hand-computed t3.medium sizes for the resource-usage-tracker default unit: dask-worker 1.9 CPU /
-    3865470566 B, dynamic-sidecar 0.6 CPU / 2791728742 B. Frontend nodes are never
-    linked. `assert_called_once` pins the number of wallet fetches per run.
+    Frontend nodes are never linked. `assert_called_once` pins the number of wallet
+    fetches per run. Expected sizings are the named t3.medium constants.
     """
     assert client.app
 
@@ -989,20 +994,20 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
         NodeID(node_id) for node_id, node in user_project["workbench"].items() if "/dynamic/" in node["key"]
     )
     for node_id in (comp_node_id, dynamic_node_id):
-        assert state_after[node_id].pricing_plan_id == 1
-        assert state_after[node_id].pricing_unit_id == 1
+        assert state_after[node_id].pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+        assert state_after[node_id].pricing_unit_id == DEFAULT_PRICING_UNIT_ID
 
     comp_node_resources = state_after[comp_node_id].required_resources
     assert comp_node_resources
     comp_resources = comp_node_resources["container"]["resources"]
-    assert comp_resources["CPU"]["limit"] == pytest.approx(1.9)
-    assert comp_resources["RAM"]["limit"] == 3865470566
+    assert comp_resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DASK_WORKER_CPUS)
+    assert comp_resources["RAM"]["limit"] == T3_MEDIUM_DASK_WORKER_RAM_BYTES
 
     dynamic_node_resources = state_after[dynamic_node_id].required_resources
     assert dynamic_node_resources
     dynamic_resources = dynamic_node_resources["container"]["resources"]
-    assert dynamic_resources["CPU"]["limit"] == pytest.approx(0.6)
-    assert dynamic_resources["RAM"]["limit"] == 2791728742
+    assert dynamic_resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DYNAMIC_SIDECAR_CPUS)
+    assert dynamic_resources["RAM"]["limit"] == T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES
 
     for node_id, node_state in state_after.items():
         if node_id not in (comp_node_id, dynamic_node_id):

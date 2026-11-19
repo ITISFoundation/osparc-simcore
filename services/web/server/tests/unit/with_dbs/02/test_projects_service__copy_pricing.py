@@ -37,11 +37,15 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.project_nodes_pricing import (
+    DEFAULT_PRICING_PLAN_ID,
+    DEFAULT_PRICING_UNIT_ID,
+    R5_4XLARGE_DASK_WORKER_CPUS,
+    R5_4XLARGE_DASK_WORKER_RAM_BYTES,
     R5_4XLARGE_NAME,
+    T3_MEDIUM_DASK_WORKER_LIMITS,
     get_node_pricing_state,
     make_pricing_unit,
     regex_for_rut_pricing_unit,
-    resources_limits,
     set_node_pricing_link,
     set_node_required_resources,
     single_container_required_resources,
@@ -143,20 +147,14 @@ async def storage_subsystem_mock_override(mocker: MockerFixture, faker: Faker) -
 
 
 _SOURCED_SIZED_RESOURCES: Final[
-    Annotated[
-        dict[str, Any],
-        doc(
-            "a comp node sized for r5.4xlarge (16 CPU / 128 GiB) with the dask-worker formula:"
-            " cpu = 16 - 0.1 = 15.9, ram = int(128 GiB * 0.9) = 123695058124"
-        ),
-    ]
-] = single_container_required_resources("simcore/services/comp/itis/sleeper", cpu=15.9, ram_bytes=123695058124)
+    Annotated[dict[str, Any], doc("a comp node sized for r5.4xlarge with the dask-worker formula")]
+] = single_container_required_resources(
+    "simcore/services/comp/itis/sleeper",
+    cpu=R5_4XLARGE_DASK_WORKER_CPUS,
+    ram_bytes=R5_4XLARGE_DASK_WORKER_RAM_BYTES,
+)
 _PRICING_PLAN_ID: Final[Annotated[int, doc("a plan the product knows, not its default")]] = 1
 _PRICING_UNIT_ID: Final[int] = 2
-
-# the unit mocked by `mock_rut_default_pricing_unit` (t3.medium): 1.9 CPU, 3865470566 RAM bytes
-_DEFAULT_PRICING_PLAN_ID: Final[int] = 1
-_DEFAULT_PRICING_UNIT_ID: Final[int] = 1
 
 
 def _sleeper_node(nodes: dict[NodeID, ProjectNode]) -> ProjectNode:
@@ -164,11 +162,9 @@ def _sleeper_node(nodes: dict[NodeID, ProjectNode]) -> ProjectNode:
     return next(node for node in nodes.values() if node.label == "sleeper")
 
 
-async def _price_and_size_one_comp_node(
-    app: web.Application, engine: AsyncEngine, project_uuid: str
-) -> tuple[str, dict[str, Any]]:
+async def _price_and_size_one_comp_node(app: web.Application, engine: AsyncEngine, project_uuid: str) -> dict[str, Any]:
     """Directly (no endpoints) gives the project a comp node with a non-default
-    pricing-unit link and hand-sized `required_resources`.
+    pricing-unit link and hand-sized `required_resources`, and returns those resources.
     """
     nodes = await _get_inserted_nodes(app, project_uuid)
     comp_node = _sleeper_node(nodes)
@@ -180,7 +176,7 @@ async def _price_and_size_one_comp_node(
         pricing_unit_id=_PRICING_UNIT_ID,
     )
     await set_node_required_resources(engine, project_uuid, f"{comp_node.node_id}", _SOURCED_SIZED_RESOURCES)
-    return f"{comp_node.node_id}", _SOURCED_SIZED_RESOURCES
+    return _SOURCED_SIZED_RESOURCES
 
 
 async def _assert_clone_pricing_state(
@@ -205,12 +201,12 @@ async def _assert_clone_pricing_state(
     # dask-worker formula of that unit's machine
     second_comp_node = next(node for node in nodes.values() if node.label == "sleeper_2")
     default_state = state[second_comp_node.node_id]
-    assert default_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert default_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert default_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert default_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     # sizing rewrites the resources and keeps the rest of the payload (image...)
     assert default_state.required_resources
     sized = default_state.required_resources["container"]["resources"]
-    assert sized == resources_limits(cpu=1.9, ram_bytes=3865470566)
+    assert sized == T3_MEDIUM_DASK_WORKER_LIMITS
 
     # frontend nodes get no link
     for node in nodes.values():
@@ -250,7 +246,7 @@ async def test_clone_project_data_copies_pricing_links_and_sizes_unlinked_comp_n
     source_uuid = source["uuid"]
 
     # SETUP: source comp node is linked to a non-default unit and sized
-    _, sourced_resources = await _price_and_size_one_comp_node(client.app, sqlalchemy_async_engine, source_uuid)
+    sourced_resources = await _price_and_size_one_comp_node(client.app, sqlalchemy_async_engine, source_uuid)
 
     # the resource-usage-tracker knows the source's non-default unit (copy validation asks for it)
     settings = get_rut_plugin_settings(client.app)
@@ -472,7 +468,7 @@ async def test_a_link_copied_during_a_rut_outage_is_repaired_on_the_next_billed_
     """
     assert client.app
     source_uuid = user_project["uuid"]
-    _, sourced_resources = await _price_and_size_one_comp_node(client.app, sqlalchemy_async_engine, source_uuid)
+    sourced_resources = await _price_and_size_one_comp_node(client.app, sqlalchemy_async_engine, source_uuid)
     settings = get_rut_plugin_settings(client.app)
     source_link_url = regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID)
     # unreachable during the copy, and unknown in this product afterwards
@@ -510,10 +506,10 @@ async def test_a_link_copied_during_a_rut_outage_is_repaired_on_the_next_billed_
     # unit it links instead
     state = await get_node_pricing_state(sqlalchemy_async_engine, cloned_uuid)
     repaired = state[NodeID(copied_node_id)]
-    assert repaired.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
-    assert repaired.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert repaired.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+    assert repaired.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert repaired.required_resources
-    assert repaired.required_resources["container"]["resources"] == resources_limits(cpu=1.9, ram_bytes=3865470566)
+    assert repaired.required_resources["container"]["resources"] == T3_MEDIUM_DASK_WORKER_LIMITS
 
 
 async def test_compose_project_data_of_a_copy_says_nothing_about_the_nodes(
@@ -563,9 +559,7 @@ async def test_creating_a_copy_with_a_name_override_through_the_endpoint_keeps_t
     resources sized for it, on one node row per source node.
     """
     assert client.app
-    _, sourced_resources = await _price_and_size_one_comp_node(
-        client.app, sqlalchemy_async_engine, user_project["uuid"]
-    )
+    sourced_resources = await _price_and_size_one_comp_node(client.app, sqlalchemy_async_engine, user_project["uuid"])
     settings = get_rut_plugin_settings(client.app)
     aioresponses_mocker.get(
         regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID),
