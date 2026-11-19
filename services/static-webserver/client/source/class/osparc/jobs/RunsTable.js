@@ -44,14 +44,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const shouldShowCancel = cellInfo => {
-      if (cellInfo && cellInfo.rowData && cellInfo.rowData["state"]) {
-        return [
-          "Running",
-        ].includes(cellInfo.rowData["state"]);
-      }
-      return false;
-    }
+    const shouldShowCancel = cellInfo => Boolean(cellInfo && cellInfo.rowData &&
+      ["RUNNING", "STARTED"].includes(cellInfo.rowData.rawState));
     const iconPathStop = osparc.ui.switch.ThemeSwitcher.isLight() ? "osparc/icons/circle-xmark-black.svg" : "osparc/icons/circle-xmark-white.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop, shouldShowCancel);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
