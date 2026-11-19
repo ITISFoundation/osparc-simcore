@@ -91,6 +91,20 @@ _exceptions_handlers_map[DirectorV2ServiceError] = _handler_director_service_err
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    # the pricing repair the start runs before forwarding: same statuses as the nodes'
+    # endpoints, which link and size the same way
+    ClustersKeeperNotAvailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        user_message("The clusters-keeper service is currently unavailable.", _version=1),
+    ),
+    DefaultPricingPlanNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("The default pricing plan could not be found.", _version=1),
+    ),
+    DefaultPricingUnitNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("The default pricing unit could not be found.", _version=1),
+    ),
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
@@ -98,9 +112,17 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
             _version=1,
         ),
     ),
+    ProjectNodeResourcesInvalidError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        user_message("{message}", _version=1),
+    ),
     ProjectNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("Project {project_uuid} could not be found.", _version=1),
+    ),
+    ResourceUsageTrackerNotAvailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
     ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
@@ -119,28 +141,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
             "Your wallet does not have sufficient credits to run this computation: {details}",
             _version=1,
         ),
-    ),
-    # the pricing repair the start runs before forwarding: same statuses as the nodes'
-    # endpoints, which link and size the same way
-    DefaultPricingPlanNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        user_message("The default pricing plan could not be found.", _version=1),
-    ),
-    DefaultPricingUnitNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        user_message("The default pricing unit could not be found.", _version=1),
-    ),
-    ProjectNodeResourcesInvalidError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_CONTENT,
-        user_message("{message}", _version=1),
-    ),
-    ClustersKeeperNotAvailableError: HttpErrorInfo(
-        status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message("The clusters-keeper service is currently unavailable.", _version=1),
-    ),
-    ResourceUsageTrackerNotAvailableError: HttpErrorInfo(
-        status.HTTP_503_SERVICE_UNAVAILABLE,
-        MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
     ),
 }
 
