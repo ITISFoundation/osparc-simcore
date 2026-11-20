@@ -34,7 +34,6 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: buggregator
-          # Fake SMTP server plus error/dump collector with web UI — https://buggregator.dev
           image: ghcr.io/buggregator/server:2.11.2
           ports:
             - name: smtp
