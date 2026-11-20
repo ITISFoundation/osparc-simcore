@@ -18,11 +18,10 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...projects.exceptions import (
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-    ProjectProductMismatchError,
+from ...projects._controller._rest_exceptions import (
+    project_product_mismatch_exceptions_handlers_map,
 )
+from ...projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
 from ...workspaces.errors import WorkspaceAccessForbiddenError
@@ -94,13 +93,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_404_NOT_FOUND,
         user_message("Project {project_uuid} could not be found.", _version=1),
     ),
-    ProjectProductMismatchError: HttpErrorInfo(
-        status.HTTP_400_BAD_REQUEST,
-        user_message(
-            "The project belongs to a different product than the one requested.",
-            _version=1,
-        ),
-    ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message("Access to this workspace is forbidden: {details}", _version=1),
@@ -122,5 +114,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 _exceptions_handlers_map.update(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
+_exceptions_handlers_map.update(project_product_mismatch_exceptions_handlers_map)
 
 handle_rest_requests_exceptions = exception_handling_decorator(_exceptions_handlers_map)
