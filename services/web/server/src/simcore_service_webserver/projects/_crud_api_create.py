@@ -3,7 +3,7 @@ import logging
 from collections.abc import AsyncIterator, Coroutine
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
@@ -123,6 +123,15 @@ type CopyFileCoro = Coroutine[Any, Any, None]
 type CopyProjectNodesCoro = Coroutine[Any, Any, dict[NodeID, ProjectNodeCreate]]
 
 
+class PreparedProjectCopy(NamedTuple):
+    """Everything `_prepare_project_copy` prepares for `create_project` to insert."""
+
+    project: ProjectDict
+    old_to_new_node: NodesMap
+    copy_project_nodes_coro: CopyProjectNodesCoro | None
+    copy_file_coro: CopyFileCoro | None
+
+
 async def _prepare_project_copy(
     app: web.Application,
     *,
@@ -132,7 +141,7 @@ async def _prepare_project_copy(
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
-) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
+) -> PreparedProjectCopy:
     """
     Raises:
         ProjectCopyingTrashedProjectError: if the source project is trashed
@@ -189,7 +198,12 @@ async def _prepare_project_copy(
             product_name,
             task_progress,
         )
-    return new_project, copy_project_nodes_coro, copy_file_coro
+    return PreparedProjectCopy(
+        project=new_project,
+        old_to_new_node=nodes_map,
+        copy_project_nodes_coro=copy_project_nodes_coro,
+        copy_file_coro=copy_file_coro,
+    )
 
 
 # Fields to clear when copying without data (snake_case names matching ProjectNodeCreate)
@@ -398,6 +412,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     new_project: ProjectDict = {}
     copy_file_coro = None
     project_nodes = None
+    old_to_new_node: NodesMap | None = None
     # Any failure raised after the project row has been inserted (signalled via
     # ``cleanup_ctx.mark_inserted(...)``) triggers a centralized cleanup,
     # so we never leave a half-created project behind.
@@ -434,11 +449,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             if from_study:  # Either clone or creation of template out of study
                 # 1.1 prepare copy
-                (
-                    new_project,
-                    project_node_coro,
-                    copy_file_coro,
-                ) = await _prepare_project_copy(
+                prepared_copy = await _prepare_project_copy(
                     app,
                     user_id=user_id,
                     product_name=product_name,
@@ -447,8 +458,11 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                     deep_copy=copy_data,
                     task_progress=progress,
                 )
-                if project_node_coro:
-                    project_nodes = await project_node_coro
+                new_project = prepared_copy.project
+                old_to_new_node = prepared_copy.old_to_new_node
+                copy_file_coro = prepared_copy.copy_file_coro
+                if prepared_copy.copy_project_nodes_coro:
+                    project_nodes = await prepared_copy.copy_project_nodes_coro
 
                 # 1.2 does project belong to some folder?
                 workspace_id = new_project["workspaceId"]
@@ -469,13 +483,15 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             if predefined_project:
                 # 2. overrides with optional body and re-validate
-                new_project, project_nodes = await _compose_project_data(
+                new_project, override_project_nodes = await _compose_project_data(
                     app,
                     user_id=user_id,
                     product_name=product_name,
                     new_project=new_project,
                     predefined_project=predefined_project,
                 )
+                if override_project_nodes is not None:
+                    project_nodes = override_project_nodes
 
             # 3.1 save new project in DB
             new_project = await _projects_repository_legacy.insert_project(
@@ -499,7 +515,24 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
             await progress.update()
 
-            # 3.2 move project to proper folder
+            # 3.2 pricing/resources: keep the source project's pricing choices (when copying) and link + size
+            # the computational nodes. Dynamic services are linked and sized when they start
+            if from_study is not None and old_to_new_node is not None:
+                await _projects_service.copy_pricing_links(
+                    app,
+                    source_project_id=from_study,
+                    destination_project_id=ProjectID(new_project["uuid"]),
+                    old_to_new_node=old_to_new_node,
+                    product_name=product_name,
+                )
+            await _projects_service.link_default_pricing_units_and_size_computational_nodes(
+                app,
+                user_id=user_id,
+                project_id=ProjectID(new_project["uuid"]),
+                product_name=product_name,
+            )
+
+            # 3.3 move project to proper folder
             if folder_id:
                 await _folders_repository.insert_project_to_folder(
                     app,

@@ -1,17 +1,21 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
 
 
 import base64
-from collections.abc import AsyncIterator
+import re
+from collections.abc import AsyncIterator, Callable
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from aiohttp import ClientConnectionError
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_directorv2.comp_runs import (
@@ -28,6 +32,9 @@ from models_library.api_schemas_directorv2.encryption import (
     KMS_CIPHERTEXT_MAX_BYTES,
     JobEncryptionContextMetadata,
 )
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    RutPricingPlanGet,
+)
 from models_library.api_schemas_webserver.computations import (
     ComputationCollectionRunRestGet,
     ComputationCollectionRunTaskRestGet,
@@ -37,14 +44,26 @@ from models_library.api_schemas_webserver.computations import (
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID, WalletInfo
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
-from pytest_simcore.helpers.project_nodes_pricing import get_node_pricing_state
+from pytest_simcore.helpers.project_nodes_pricing import (
+    DEFAULT_PRICING_PLAN_ID,
+    DEFAULT_PRICING_UNIT_ID,
+    T3_MEDIUM_DASK_WORKER_CPUS,
+    T3_MEDIUM_DASK_WORKER_RAM_BYTES,
+    T3_MEDIUM_DYNAMIC_SIDECAR_CPUS,
+    T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES,
+    T3_MEDIUM_NAME,
+    get_node_pricing_state,
+    make_pricing_unit,
+)
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -62,6 +81,12 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.resource_usage._constants import (
+    MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
+)
+from simcore_service_webserver.resource_usage.settings import (
+    get_plugin_settings as get_rut_plugin_settings,
+)
 from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import PreferredWalletIdFrontendUserPreference
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -891,7 +916,6 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
 #
 
 
-@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
     "wallet_info_expected",
@@ -902,7 +926,7 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
         pytest.param(None, id="not_billed"),
     ],
 )
-async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_projects_nodes(
+async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_billed(
     director_v2_service_mock: AioResponsesMock,
     client: TestClient,
     logged_user: LoggedUser,
@@ -910,14 +934,15 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     mocker: MockerFixture,
     sqlalchemy_async_engine: AsyncEngine,
     wallet_info_expected: WalletInfo | None,
+    mock_rut_default_pricing_unit: None,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+    create_billed_product: Callable[[], None],
 ):
-    """W8/W9: starting a computation forwards `wallet_info` to director-v2 and the
-    web-server itself writes NOTHING to `projects_nodes` or
-    `projects_node_to_pricing_unit`.
+    """A run fetches the requester's wallet when it has billable services, and repairs
+    the nodes' pricing state only when the product pays for them.
 
-    ⚠️ In the pricing/resources ownership rework (PR 2), starting a billed project
-    will additionally REPAIR missing/stale pricing links and node resources here;
-    the "not_billed" case must keep writing nothing.
+    Frontend nodes are never linked. `assert_called_once` pins the number of wallet
+    fetches per run. Expected sizings are the named t3.medium constants.
     """
     assert client.app
 
@@ -933,8 +958,13 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
         return_value=(user_project["uuid"], status.HTTP_201_CREATED),
     )
 
+    if wallet_info_expected is not None:
+        # a product takes ownership of its nodes' pricing state only when it says so
+        create_billed_product()
+
     state_before = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     assert state_before, "the test project must have nodes"
+    assert all(node_state.pricing_unit_id is None for node_state in state_before.values())
 
     url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
     rsp = await client.post(f"{url}")
@@ -946,13 +976,135 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     assert mocked_start.call_count == 1
     assert mocked_start.call_args.kwargs["wallet_info"] == wallet_info_expected
 
-    # the web-server wrote nothing to the nodes' pricing state
     state_after = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
-    assert state_after == state_before
-    assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
+
+    if wallet_info_expected is None:
+        # not billed: the web-server wrote nothing to the nodes' pricing state
+        assert state_after == state_before
+        assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
+        mocked_director_v2_node_sizing.assert_not_called()
+        return
+
+    # billed: computational and dynamic nodes are linked to the default unit and
+    # sized for its machine, frontend nodes are untouched
+    comp_node_id = next(
+        NodeID(node_id) for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"]
+    )
+    dynamic_node_id = next(
+        NodeID(node_id) for node_id, node in user_project["workbench"].items() if "/dynamic/" in node["key"]
+    )
+    for node_id in (comp_node_id, dynamic_node_id):
+        assert state_after[node_id].pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+        assert state_after[node_id].pricing_unit_id == DEFAULT_PRICING_UNIT_ID
+
+    comp_node_resources = state_after[comp_node_id].required_resources
+    assert comp_node_resources
+    comp_resources = comp_node_resources["container"]["resources"]
+    assert comp_resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DASK_WORKER_CPUS)
+    assert comp_resources["RAM"]["limit"] == T3_MEDIUM_DASK_WORKER_RAM_BYTES
+
+    dynamic_node_resources = state_after[dynamic_node_id].required_resources
+    assert dynamic_node_resources
+    dynamic_resources = dynamic_node_resources["container"]["resources"]
+    assert dynamic_resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DYNAMIC_SIDECAR_CPUS)
+    assert dynamic_resources["RAM"]["limit"] == T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES
+
+    for node_id, node_state in state_after.items():
+        if node_id not in (comp_node_id, dynamic_node_id):
+            assert node_state == state_before[node_id]
+
+    assert mocked_director_v2_node_sizing.call_count == 2
 
 
-@pytest.mark.epic("sanderegg/T2", flips_in="PR2")
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "pricing_failure,expected_status,expected_msg",
+    [
+        pytest.param(
+            "sizing_unavailable",
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "The clusters-keeper service is currently unavailable.",
+            id="director-v2-unreachable",
+        ),
+        pytest.param(
+            "no_default_unit",
+            status.HTTP_404_NOT_FOUND,
+            "The default pricing unit could not be found.",
+            id="no-default-pricing-unit",
+        ),
+        pytest.param(
+            "tracker_unreachable",
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
+            id="resource-usage-tracker-unreachable",
+        ),
+    ],
+)
+async def test_start_computation_is_not_forwarded_when_a_node_cannot_be_priced(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    aioresponses_mocker: AioResponsesMock,
+    clear_pricing_lookup_caches: None,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+    with_billed_product: None,
+    pricing_failure: str,
+    expected_status: int,
+    expected_msg: str,
+):
+    """A node whose pricing cannot be brought up to date fails the start instead of
+    forwarding it, so the run never starts unbilled.
+
+    `expected_status`/`expected_msg` are what the web-server answers for the reason the node
+    cannot be priced: 503 when director-v2 (and with it clusters-keeper) or the
+    resource-usage-tracker is unreachable, 404 when the product has no DEFAULT pricing unit
+    for the service.
+    """
+    assert client.app
+    mocked_start = mocker.patch.object(
+        DirectorV2RestClient,
+        "start_computation",
+        autospec=True,
+        return_value=(user_project["uuid"], status.HTTP_201_CREATED),
+    )
+    # the wallet is resolved before the pricing repair, so it must not be what fails here
+    mocker.patch(
+        "simcore_service_webserver.director_v2._controller.rest._director_v2_service.get_wallet_info",
+        autospec=True,
+        return_value=WalletInfo(wallet_id=WalletID(1), wallet_name="Test Wallet", wallet_credit_amount=Decimal(100)),
+    )
+    unit = make_pricing_unit(
+        pricing_unit_id=1,
+        default=pricing_failure != "no_default_unit",
+        aws_ec2_instance=T3_MEDIUM_NAME,
+    )
+    plan = RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0]).model_copy(
+        update={"pricing_plan_id": 1, "pricing_units": [unit]}
+    )
+    settings = get_rut_plugin_settings(client.app)
+    pricing_plan_url = re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$")
+    if pricing_failure == "tracker_unreachable":
+        # the client turns a connection error into web.HTTPServiceUnavailable, which the repair raises as
+        # ResourceUsageTrackerNotAvailableError
+        aioresponses_mocker.get(
+            pricing_plan_url, exception=ClientConnectionError("resource usage tracker unreachable"), repeat=True
+        )
+    else:
+        aioresponses_mocker.get(pricing_plan_url, payload=jsonable_encoder(plan), repeat=True)
+    if pricing_failure == "sizing_unavailable":
+        mocked_director_v2_node_sizing.side_effect = TimeoutError("clusters-keeper unreachable")
+
+    url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
+    rsp = await client.post(f"{url}")
+    _, error = await assert_status(rsp, expected_status)
+
+    # not just any 404/503: the one of the node that could not be priced
+    assert error["message"] == expected_msg
+    mocked_start.assert_not_called()
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_start_computation_forwards_every_runnable_project(
     director_v2_service_mock: AioResponsesMock,
@@ -962,15 +1114,13 @@ async def test_start_computation_forwards_every_runnable_project(
     mocker: MockerFixture,
     faker: Faker,
 ):
-    """W11: when the product's run policy returns several runnable projects (e.g. a
-    project that must be forked per variant), the web-server forwards ONE start request
-    to director-v2 per project, all of them with the SAME wallet_info, and still answers
-    with the pipeline_id of the project the user started.
+    """When the product's run policy returns several runnable projects (e.g. a project
+    that must be forked per variant), the web-server forwards one start request to
+    director-v2 per project, all of them with the same `wallet_info`, and still answers with
+    the pipeline_id of the project the user started.
 
-    ⚠️ The pricing/resources ownership rework (PR 2) keeps the one-request-per-runnable-
-    project forwarding and identical wallet_info asserted here, but additionally
-    repairs each project's pricing links/resources before forwarding, so extra
-    interactions may appear around these calls.
+    The pricing repair before forwarding writes nothing here: this test's product does not
+    bill for resources.
     """
     assert client.app
 
@@ -982,8 +1132,9 @@ async def test_start_computation_forwards_every_runnable_project(
     )
 
     # the run policy yields 2 runnable variants: the caller project and a fork
-    forked_project_id = f"{faker.uuid4()}"
-    runnable_project_ids = [user_project["uuid"], forked_project_id]
+    # (a run policy always answers with ProjectIDs, which is what the repair below receives)
+    forked_project_id = ProjectID(f"{faker.uuid4()}")
+    runnable_project_ids: list[ProjectID] = [ProjectID(user_project["uuid"]), forked_project_id]
     run_policy = mocker.Mock()
     run_policy.get_or_create_runnable_projects = mocker.AsyncMock(return_value=(runnable_project_ids, []))
     mocker.patch(

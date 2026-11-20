@@ -89,12 +89,6 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
             _version=1,
         ),
     ),
-    # NOTE: renders the error's own message (e.g. which EC2 types were invalid),
-    # same as the explicit handling in nodes_rest for the manual-resources endpoint
-    ProjectNodeResourcesInvalidError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_CONTENT,
-        user_message("{message}", _version=1),
-    ),
 }
 
 
@@ -241,7 +235,13 @@ _WALLET_ERRORS: ExceptionToHttpErrorMap = {
 }
 
 
-_PRICING_ERRORS: ExceptionToHttpErrorMap = {
+# The errors the pricing of a node's resources can raise. The director-v2 controller reuses
+# this map: the start links and sizes the nodes the same way the nodes' endpoints do.
+PRICING_ERRORS: ExceptionToHttpErrorMap = {
+    ClustersKeeperNotAvailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        user_message("The clusters-keeper service is currently unavailable.", _version=1),
+    ),
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("The default pricing plan could not be found.", _version=1),
@@ -249,6 +249,12 @@ _PRICING_ERRORS: ExceptionToHttpErrorMap = {
     DefaultPricingUnitNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("The default pricing unit could not be found.", _version=1),
+    ),
+    # NOTE: renders the error's own message (e.g. which EC2 types were invalid),
+    # same as the explicit handling in nodes_rest for the manual-resources endpoint
+    ProjectNodeResourcesInvalidError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        user_message("{message}", _version=1),
     ),
 }
 
@@ -269,10 +275,6 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     CatalogNotAvailableRpcError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message("The catalog service is currently unavailable.", _version=1),
-    ),
-    ClustersKeeperNotAvailableError: HttpErrorInfo(
-        status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message("The clusters-keeper service is currently unavailable.", _version=1),
     ),
     CatalogForbiddenRpcError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
@@ -297,7 +299,7 @@ _ERRORS = [
     _FOLDER_ERRORS,
     _NODE_ERRORS,
     _OTHER_ERRORS,
-    _PRICING_ERRORS,
+    PRICING_ERRORS,
     _PROJECT_ERRORS,
     _WALLET_ERRORS,
     _WORKSPACE_ERRORS,

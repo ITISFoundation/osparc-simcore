@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ._application_keys import PRODUCTS_APPKEY
 from ._models import CreditResult, Product, ProductStripeInfo
 from ._repository import ProductRepository
@@ -103,8 +104,22 @@ async def get_credit_amount(
 
 
 async def is_product_billable(app: web.Application, *, product_name: ProductName) -> bool:
+    """Whether the product's payments are enabled in the database, independently of
+    this deployment's `WEBSERVER_CREDIT_COMPUTATION_ENABLED` switch.
+    """
     repo = ProductRepository.create_from_app(app)
     return await repo.is_product_billable(product_name=product_name)
+
+
+def is_product_credit_consumption_enabled(app: web.Application, *, product: Product) -> bool:
+    """True when this product's tasks must consume credits, i.e. when the product's
+    payments are enabled AND this deployment computes credits.
+
+    Narrower than `is_product_billable`: on a deployment with
+    `WEBSERVER_CREDIT_COMPUTATION_ENABLED` off, a billable product consumes no credits.
+    """
+    credit_computation_enabled = app[APP_SETTINGS_APPKEY].WEBSERVER_CREDIT_COMPUTATION_ENABLED
+    return bool(product.is_payment_enabled and credit_computation_enabled)
 
 
 async def get_product_stripe_info(app: web.Application, *, product_name: ProductName) -> ProductStripeInfo:

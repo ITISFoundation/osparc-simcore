@@ -289,12 +289,18 @@ class ProjectNodesRepo:
         pricing_plan_id: int,
         pricing_unit_id: int,
     ) -> None:
-        result = await connection.scalar(
+        """
+        Raises:
+            ProjectNodesNodeNotFoundError: the node is not in this project. Without this check,
+                the insert below fails on the foreign key instead.
+        """
+        project_node_id = await connection.scalar(
             sqlalchemy.select(projects_nodes.c.project_node_id).where(
                 (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )
-        project_node_id = int(result) if result else 0
+        if project_node_id is None:
+            raise ProjectNodesNodeNotFoundError(node_id=node_uuid, project_uuid=self.project_uuid)
 
         insert_stmt = pg_insert(projects_node_to_pricing_unit).values(
             project_node_id=project_node_id,

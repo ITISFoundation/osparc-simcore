@@ -18,7 +18,13 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from ...projects._controller._rest_exceptions import PRICING_ERRORS
+from ...projects.exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
+from ...resource_usage._constants import MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
+from ...resource_usage.errors import ResourceUsageTrackerNotAvailableError
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
 from ...workspaces.errors import WorkspaceAccessForbiddenError
@@ -79,6 +85,9 @@ _exceptions_handlers_map[DirectorV2ServiceError] = _handler_director_service_err
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    # the start runs the same pricing repair as the nodes' endpoints, so it answers the
+    # pricing errors with the same statuses
+    **PRICING_ERRORS,
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
@@ -89,6 +98,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("Project {project_uuid} could not be found.", _version=1),
+    ),
+    ResourceUsageTrackerNotAvailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE,
     ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,

@@ -284,7 +284,7 @@ class ProjectDBAPI(BaseProjectDB):
             insert_values["uuid"] = f"{uuid1()}"
 
         # extract workbench nodes
-        workbench: dict[str, Any] = insert_values.pop("workbench", {})
+        workbench: dict[str, dict[str, Any]] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
         insert_values.pop("access_rights", None)
 
