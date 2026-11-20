@@ -62,11 +62,11 @@ def _is_sensitive_prefix(flag: str) -> bool:
         ),
     ],
 )
-def test_sanitize_command(command: list[str], expected: list[str]) -> None:
+def test_sanitize_command(command: list[str], expected: list[str]):
     assert sanitize_command(command, is_sensitive_flag=_is_sensitive) == expected
 
 
-def test_sanitize_command_predicate_injection() -> None:
+def test_sanitize_command_predicate_injection():
     command = ["--secret-access-key", "key", "--token", "abc"]
     assert sanitize_command(command, is_sensitive_flag=_is_sensitive_prefix) == [
         "--secret-access-key",
@@ -76,14 +76,14 @@ def test_sanitize_command_predicate_injection() -> None:
     ]
 
 
-def test_sanitize_command_custom_placeholder() -> None:
+def test_sanitize_command_custom_placeholder():
     assert sanitize_command(["--token", "abc"], is_sensitive_flag=_is_sensitive, placeholder="REDACTED") == [
         "--token",
         "REDACTED",
     ]
 
 
-def test_sanitize_command_does_not_mutate_input() -> None:
+def test_sanitize_command_does_not_mutate_input():
     command = ["--token", "abc"]
     result = sanitize_command(command, is_sensitive_flag=_is_sensitive)
     assert command == ["--token", "abc"]
