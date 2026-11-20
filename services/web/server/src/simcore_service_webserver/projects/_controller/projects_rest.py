@@ -34,6 +34,7 @@ from ...web_requests_validation import (
 )
 from .. import _crud_api_create, _crud_api_read, _projects_service, projects_trash_service
 from .._permalink_service import update_or_pop_permalink_in_project
+from ..api import check_user_project_permission
 from ..models import ProjectDict
 from . import _rest_utils
 from ._rest_exceptions import handle_plugin_requests_exceptions
@@ -281,7 +282,16 @@ async def get_project(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_inactivity(request: web.Request):
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    await check_user_project_permission(
+        request.app,
+        project_id=path_params.project_id,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        permission="read",
+    )
 
     project_inactivity = await _projects_service.get_project_inactivity(
         app=request.app, project_id=path_params.project_id
