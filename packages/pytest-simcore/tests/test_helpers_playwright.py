@@ -2,20 +2,23 @@
 
 import asyncio
 import json
+import logging
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace, TracebackType
-from typing import Any, Final, Self, cast
+from typing import Annotated, Any, Final, NoReturn, Self, cast
 from unittest import mock
 
 import pytest
+from annotated_types import doc
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
 from playwright.sync_api import ElementHandle, Frame, Locator, Page, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, TypeAdapter, ValidationError
 from pytest_simcore.helpers import playwright as playwright_helpers
 from pytest_simcore.helpers.playwright import (
     REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE,
@@ -26,10 +29,21 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectStateUpdatedWaiter,
     _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
+    backend_computation_snapshot,
+    classify_backend_stall,
     start_websocket_tracking,
+    wait_for_nodes_outputs_updated,
+    wait_for_pipeline_state,
 )
 
 _NODE_ID: Final[str] = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
+_OTHER_NODE_ID: Final[str] = "2fb4808a-e403-4a46-b52c-892560d27862"
+
+# NOTE: each stall diagnosis is recognised here by a fragment of its own text, so a test case can
+# say which diagnosis it expects without repeating the hint sentences
+_SCHEDULING_STALL_MARKER: Final[str] = "never scheduled"
+_CLUSTER_WAIT_MARKER: Final[str] = "waiting on a cluster"
+_STALL_HINT_MARKERS: Final[tuple[str, ...]] = (_SCHEDULING_STALL_MARKER, _CLUSTER_WAIT_MARKER)
 
 
 def _socketio_message(name: str, obj: dict[str, Any]) -> str:
@@ -487,6 +501,32 @@ class _FakeEventContextManager:
             self.cancelled_with.append(exc_val)
 
 
+_WAIT_TIMED_OUT_MSG: Final[Annotated[str, doc("mirrors the error text Playwright raises when a wait times out")]] = (
+    "Timeout exceeded"
+)
+
+
+class _TimedOutEventContextManager(_FakeEventContextManager):
+    """A wait that times out: the pending event is never delivered, so reading its
+    `value` raises, and an exit without a result reads it and surfaces the timeout."""
+
+    @property
+    def value(self) -> str:
+        self.value_read = True
+        raise PlaywrightTimeoutError(_WAIT_TIMED_OUT_MSG)
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if exc_val is None and not self.value_read:
+            self.value_read = True
+            raise PlaywrightTimeoutError(_WAIT_TIMED_OUT_MSG)
+        super().__exit__(exc_type, exc_val, exc_tb)
+
+
 def _make_reconnectable_waiter(
     predicate: Callable[[str], bool],
 ) -> tuple[_ReconnectableEventWaiter, _FakeEventContextManager]:
@@ -525,6 +565,118 @@ def test_reconnectable_waiter_waits_for_an_event_when_the_predicate_is_not_satis
 
     assert context_manager.value_read is True
     assert context_manager.cancelled_with == []
+
+
+def _timed_out_websocket() -> RobustWebSocket:
+    # NOTE: models a wait that times out: its pending event is never delivered and reading
+    # its value raises, as Playwright does
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.return_value = _TimedOutEventContextManager()
+    return cast(RobustWebSocket, websocket)
+
+
+def _satisfied_websocket() -> RobustWebSocket:
+    # NOTE: an already-settled wait, so exiting the outputs wait without a body error is
+    # not treated as a cancellation
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.return_value = _FakeEventContextManager(done=True)
+    return cast(RobustWebSocket, websocket)
+
+
+@pytest.mark.parametrize(
+    "state,expected_fragments",
+    [
+        pytest.param(
+            RunningState.PUBLISHED,
+            (_SCHEDULING_STALL_MARKER, "director-v2"),
+            id="published-blames-backend-scheduling",
+        ),
+        pytest.param(
+            RunningState.PENDING,
+            (_SCHEDULING_STALL_MARKER, "dask-scheduler"),
+            id="pending-blames-backend-scheduling",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_CLUSTER,
+            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            id="cluster-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_RESOURCES,
+            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            id="resource-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(RunningState.STARTED, (), id="a-stuck-running-pipeline-names-no-layer"),
+    ],
+)
+def test_pipeline_state_timeout_message_names_the_stalled_layer(
+    state: RunningState,
+    expected_fragments: Annotated[tuple[str, ...], doc("fragments the failure message must carry for this state")],
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: PUBLISHED/PENDING means the backend accepted the pipeline but never handed a task to
+    # the scheduler, WAITING_FOR_* means it asked for a cluster that never arrived
+    with pytest.raises(PlaywrightTimeoutError), caplog.at_level(logging.INFO):
+        wait_for_pipeline_state(
+            state,
+            websocket=_timed_out_websocket(),
+            project_uuid="project-a",
+            if_in_states=(state,),
+            expected_states=(RunningState.STARTED, RunningState.SUCCESS),
+            timeout_ms=100,
+        )
+
+    assert state.value in caplog.text
+    for fragment in expected_fragments:
+        assert fragment in caplog.text
+    for marker in _STALL_HINT_MARKERS:
+        assert (marker in caplog.text) is (marker in expected_fragments)
+
+
+def test_outputs_wait_with_failed_body_does_not_blame_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: when the wrapped block raises, no output was ever expected, so blaming the
+    # db-listener for the missing push would misdirect the reader
+    def _pipeline_wait_failed() -> NoReturn:
+        msg = "pipeline wait failed"
+        raise RuntimeError(msg)
+
+    with (
+        pytest.raises(RuntimeError, match="pipeline wait failed"),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _satisfied_websocket(),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        _pipeline_wait_failed()
+
+    assert "missing outputs push" in caplog.text
+    assert "failed first" in caplog.text
+    assert "db-listener" not in caplog.text
+
+
+def test_outputs_wait_timeout_after_ok_body_still_suggests_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: outputs the backend pushed but the client never received IS a db-listener symptom,
+    # so the TIP must still fire when the body completed cleanly
+    with (
+        pytest.raises(PlaywrightTimeoutError),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _timed_out_websocket(),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        pass
+
+    assert "missing outputs push" in caplog.text
+    assert "db-listener" in caplog.text
+    assert "failed first" not in caplog.text
 
 
 _S4L_WS_URL: Final[str] = f"https://{_NODE_ID}.services.example.org/socket.io/?EIO=4&transport=websocket"
@@ -1036,3 +1188,105 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
 
     assert websocket.ws is reconnected
     assert healthy._bound_ws is reconnected  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    "state,node_statuses,expected_fragments",
+    [
+        pytest.param(
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.NOT_STARTED},
+            ("never scheduled", "dask-scheduler"),
+            id="published-with-no-task-scheduled-blames-scheduling",
+        ),
+        pytest.param(
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.STARTED},
+            (),
+            id="published-with-a-running-task-is-not-a-scheduling-stall",
+        ),
+        pytest.param(
+            # NOTE: one task reaching the scheduler is enough to rule out a scheduling stall
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.NOT_STARTED, _OTHER_NODE_ID: RunningState.STARTED},
+            (),
+            id="published-with-one-of-two-tasks-scheduled-is-not-a-scheduling-stall",
+        ),
+        pytest.param(
+            RunningState.PUBLISHED,
+            {},
+            (),
+            id="published-without-nodes-is-not-blamed-on-scheduling",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_CLUSTER,
+            {_NODE_ID: RunningState.NOT_STARTED},
+            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            id="cluster-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(
+            RunningState.FAILED,
+            {_NODE_ID: RunningState.FAILED},
+            (_NODE_ID,),
+            id="failed-names-the-failed-node",
+        ),
+        pytest.param(
+            RunningState.FAILED,
+            {_NODE_ID: RunningState.ABORTED},
+            (),
+            id="failed-without-failed-nodes-names-no-node",
+        ),
+        pytest.param(
+            RunningState.SUCCESS,
+            {_NODE_ID: RunningState.SUCCESS},
+            (),
+            id="success-gets-no-hint",
+        ),
+    ],
+)
+def test_classify_backend_stall_hints_match_what_the_backend_reports(
+    state: RunningState,
+    node_statuses: dict[str, RunningState],
+    expected_fragments: tuple[str, ...],
+):
+    text = "\n".join(classify_backend_stall(state, node_statuses))
+    for fragment in expected_fragments:
+        assert fragment in text
+
+    for marker in _STALL_HINT_MARKERS:
+        assert (marker in text) is (marker in expected_fragments)
+    if not expected_fragments:
+        assert text == ""
+
+
+_COMPUTATION_EXAMPLE: Final[dict[str, Any]] = ComputationGet.model_json_schema()["examples"][0]
+
+
+def test_backend_computation_snapshot_reads_the_list_the_web_server_returns():
+    # NOTE: GET /v0/computations/{project_id} answers with one ComputationGet per runnable
+    # variant of the project, not with a single object
+    computation = ComputationGet.model_validate(_COMPUTATION_EXAMPLE)
+    body = {"data": [computation.model_dump(mode="json")], "error": None}
+
+    snapshot = backend_computation_snapshot(body)
+
+    assert snapshot["state"] == computation.state.value
+    assert snapshot["node_statuses"] == {
+        f"{node_id}": node_state.current_status.value
+        for node_id, node_state in computation.pipeline_details.node_states.items()
+    }
+    # NOTE: the model's example is PUBLISHED with every node NOT_STARTED, i.e. a scheduling stall
+    reported = [marker for hint in snapshot["stall_hints"] for marker in _STALL_HINT_MARKERS if marker in hint]
+    assert reported == [_SCHEDULING_STALL_MARKER]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param({"data": {}}, id="single-object-body"),
+        pytest.param({"data": []}, id="empty-list-body"),
+    ],
+)
+def test_backend_computation_snapshot_rejects_a_body_without_a_computation(body: dict[str, Any]):
+    with pytest.raises((ValidationError, LookupError)):
+        backend_computation_snapshot(body)

@@ -16,10 +16,11 @@ import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import arrow
 import pytest
+from annotated_types import doc
 from faker import Faker
 from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
@@ -36,6 +37,7 @@ from pytest_simcore.helpers.playwright import (
     RunningState,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
+    backend_computation_snapshot,
     decode_socketio_42_message,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
@@ -173,10 +175,30 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="basic auth password, for portals protected by HTTP basic auth",
     )
+    group.addoption(
+        "--grafana-url",
+        action="store",
+        type=str,
+        default=None,
+        help="Grafana base URL used to build log explore links in the failure diagnostics, or GRAFANA_URL env var",
+    )
 
 
 # Dictionary to store start times of tests
 _test_start_times: dict[str, datetime.datetime] = {}
+
+# NOTE: pytest stashes share per-test state between hooks and fixtures: fixture teardowns
+# run after the call-phase makereport, so they can see the failure the hook recorded
+_CALL_FAILURE_STASH_KEY: Final[
+    Annotated[pytest.StashKey[pytest.ExceptionInfo], doc("the test's call-phase failure, if any")]
+] = pytest.StashKey()
+
+_BACKEND_COMPUTATIONS_STASH_KEY: Final[
+    Annotated[
+        pytest.StashKey[dict[str, dict[str, Any]]],
+        doc("backend view of every started computation, captured on failure before they were stopped"),
+    ]
+] = pytest.StashKey()
 
 
 def pytest_runtest_setup(item):
@@ -186,31 +208,97 @@ def pytest_runtest_setup(item):
     _test_start_times[item.name] = arrow.now().datetime
 
 
-_FORMAT: Final = "%Y-%m-%dT%H:%M:%S.%fZ"
+_GRAFANA_LOGS_DATASOURCE_UID: Final[Annotated[str, doc("VictoriaLogs datasource, same UID in every deployment")]] = (
+    "victoria-logs"
+)
+
+_FAILURE_DIAGNOSIS_LOGS_QUERY: Final[
+    Annotated[
+        str,
+        doc(
+            "LogsQL over the services implicated in pipeline stalls; the stack prefix is unknown "
+            "at test time, hence the leading .*"
+        ),
+    ]
+] = r'{service_name=~".*_(api-server|autoscaling|dask-sidecar|dask-scheduler|director-v2|webserver)"}'
 
 
-def _construct_graylog_url(
-    product_url: AnyUrl | None, start_time: datetime.datetime, end_time: datetime.datetime
+def _resolve_grafana_base_url(item: pytest.Item) -> str | None:
+    base = item.config.getoption("--grafana-url", default=None) or os.environ.get("GRAFANA_URL")
+    if not base:
+        return None
+    # NOTE: a URL copied from an address bar often carries ?orgId=..., which would end up in the
+    # middle of the explore link; only the origin and any path prefix are needed here
+    parsed = urllib.parse.urlsplit(str(base))
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", ""))
+
+
+def _construct_grafana_explore_url(
+    grafana_base_url: str, query: str, start_time: datetime.datetime, end_time: datetime.datetime
 ) -> str:
-    # Deduce monitoring url
-    if product_url:
-        scheme, tail = f"{product_url}".split("://", 1)
-    else:
-        scheme, tail = "https", "<UNDEFINED>"
-    monitoring_url = f"{scheme}://monitoring.{tail}".rstrip("/")
-
-    # build graylog URL
-    query = f"from={start_time.strftime(_FORMAT)}&to={end_time.strftime(_FORMAT)}"
-    return f"{monitoring_url}/graylog/search?{query}"
+    pane = {
+        "datasource": _GRAFANA_LOGS_DATASOURCE_UID,
+        "queries": [{"refId": "A", "expr": query, "queryType": "range"}],
+        "range": {"from": int(start_time.timestamp() * 1000), "to": int(end_time.timestamp() * 1000)},
+    }
+    left = urllib.parse.quote(json.dumps(pane, separators=(",", ":")))
+    return f"{grafana_base_url}/explore?left={left}"
 
 
+def _capture_backend_computation(
+    api_request_context: APIRequestContext, product_url: AnyUrl, pipeline_id: str
+) -> dict[str, Any]:
+    """What the backend reports about a computation. Any failure becomes an error entry, because it
+    must neither mask the test's own error nor skip stopping the computation."""
+    try:
+        response = api_request_context.get(f"{product_url}v0/computations/{pipeline_id}")
+        if not response.ok:
+            msg = f"HTTP {response.status}: {response.text()[:200]}"
+            raise RuntimeError(msg)  # noqa: TRY301
+        return backend_computation_snapshot(response.json())
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        return {"error": repr(err)[:500]}
+
+
+def _emit_backend_diagnostics(item: pytest.Item, report: pytest.TestReport) -> None:
+    snapshot = item.stash.get(_BACKEND_COMPUTATIONS_STASH_KEY, None)
+    if not snapshot:
+        return
+    try:
+        payload = json.dumps({"backend_computations": snapshot}, indent=2)
+        report.user_properties.append(("backend_computations", payload))
+        with log_context(
+            logging.WARNING,
+            f"Backend diagnostics for {item.name} (captured before the computations were stopped) ---",
+        ) as ctx:
+            ctx.logger.warning("\n%s", payload)
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        # NOTE: an exception escaping this hook aborts the session and truncates the junit report,
+        # which is worse than losing the diagnostics
+        logging.warning("could not report the backend snapshot for %s: %r", item.name, err)
+
+
+@pytest.hookimpl(wrapper=True)
 def pytest_runtest_makereport(item: pytest.Item, call):
     """
     Hook to add extra information when a test fails.
     """
+    report = yield
 
-    # Check if the test failed
-    if call.when == "call" and call.excinfo is not None:
+    failed_in_call = call.when == "call" and report.failed and call.excinfo is not None
+    if call.when == "call":
+        # NOTE: fixture teardowns run after this hook, so stashing the failure lets them capture
+        # backend state while the test error is still the one being reported. A passing attempt
+        # clears the entry: rerun plugins reuse the same item, and a stale failure would attach
+        # the previous attempt's snapshot to a passing test
+        excinfo = call.excinfo
+        if report.failed and excinfo is not None:
+            item.stash[_CALL_FAILURE_STASH_KEY] = excinfo
+        elif _CALL_FAILURE_STASH_KEY in item.stash:
+            del item.stash[_CALL_FAILURE_STASH_KEY]
+
+    if failed_in_call:
+        # Check if the test failed
         test_name = item.name
         test_location = item.location
         product_url = item.config.getoption("--product-url", default=None)
@@ -228,8 +316,16 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         end_time = arrow.now().datetime
 
         if start_time:
-            diagnostics["graylog_url"] = _construct_graylog_url(product_url, start_time, end_time)
             diagnostics["duration"] = str(end_time - start_time)
+            diagnostics["logs_query"] = _FAILURE_DIAGNOSIS_LOGS_QUERY
+            diagnostics["logs_window_ms"] = {
+                "from": int(start_time.timestamp() * 1000),
+                "to": int(end_time.timestamp() * 1000),
+            }
+            if grafana_base_url := _resolve_grafana_base_url(item):
+                diagnostics["grafana_explore_url"] = _construct_grafana_explore_url(
+                    grafana_base_url, _FAILURE_DIAGNOSIS_LOGS_QUERY, start_time, end_time
+                )
 
         with log_context(
             logging.WARNING,
@@ -237,11 +333,12 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         ) as ctx:
             ctx.logger.warning("\n%s", json.dumps(diagnostics, indent=2))
 
+    if call.when == "teardown" and item.stash.get(_CALL_FAILURE_STASH_KEY, None) is not None:
+        # NOTE: junitxml finalizes the testcase from the teardown-phase report, so properties
+        # appended here reach the XML
+        _emit_backend_diagnostics(item, report)
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_configure(config: pytest.Config):
-    config.pluginmanager.register(pytest_runtest_setup, "osparc_test_times_plugin")
-    config.pluginmanager.register(pytest_runtest_makereport, "osparc_makereport_plugin")
+    return report
 
 
 @pytest.fixture(autouse=True)
@@ -830,6 +927,7 @@ def create_project_from_service_dashboard(
 
 @pytest.fixture
 def start_and_stop_pipeline(
+    request: pytest.FixtureRequest,
     product_url: AnyUrl,
     page: Page,
     log_in_and_out: RobustWebSocket,
@@ -884,6 +982,14 @@ def start_and_stop_pipeline(
             return decode_socketio_42_message(event.value)
 
     yield _do
+
+    # NOTE: after a failed test, record what the backend says about each computation before
+    # stopping it; pytest_runtest_makereport logs it at the teardown phase
+    if request.node.stash.get(_CALL_FAILURE_STASH_KEY, None) is not None:
+        request.node.stash[_BACKEND_COMPUTATIONS_STASH_KEY] = {
+            pipeline_id: _capture_backend_computation(api_request_context, product_url, pipeline_id)
+            for pipeline_id in started_pipeline_ids
+        }
 
     # ensure all the pipelines are stopped properly
     for pipeline_id in started_pipeline_ids:

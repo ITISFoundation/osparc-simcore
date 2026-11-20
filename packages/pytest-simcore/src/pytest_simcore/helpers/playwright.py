@@ -24,6 +24,7 @@ from typing import Annotated, Any, Final
 import arrow
 import pytest
 from annotated_types import doc
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
 from playwright._impl._sync_base import EventContextManager, EventInfo
@@ -821,6 +822,9 @@ def wait_for_nodes_outputs_updated(
     happened.
     """
     waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
+    # NOTE: the db-listener TIP is only meaningful when the body completed: a raise from the
+    # body means the pipeline never produced outputs, so no push was ever expected
+    body_failed = False
     with (
         log_context(
             logging.INFO,
@@ -829,13 +833,21 @@ def wait_for_nodes_outputs_updated(
                 done="✅ received outputs push for all expected nodes",
                 raised=lambda: (
                     f"❌ missing outputs push for: {waiter.missing_outputs_report()}. "
-                    "TIP: check that the webserver's db-listener service is running properly!"
+                    + (
+                        "(the pipeline wait inside failed first, see its error above)"
+                        if body_failed
+                        else "TIP: check that the webserver's db-listener service is running properly!"
+                    )
                 ),
             ),
         ),
         websocket.expect_event("framereceived", waiter, timeout=timeout),
     ):
-        yield
+        try:
+            yield
+        except BaseException:
+            body_failed = True
+            raise
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("failed",)
@@ -1073,6 +1085,99 @@ _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
     RunningState.ABORTED,
 )
 
+_PIPELINE_SCHEDULING_STALL_STATES: Final[
+    Annotated[
+        tuple[RunningState, ...],
+        doc("the backend has accepted the computation but no task has reached the scheduler yet"),
+    ]
+] = (RunningState.PUBLISHED, RunningState.PENDING)
+
+_PIPELINE_SCHEDULING_STALL_HINT: Final[
+    Annotated[
+        str,
+        doc(
+            "appended when the pipeline times out in PUBLISHED/PENDING: director-v2 accepted it "
+            "but handed no task to the scheduler, a frequent cause being an unreachable dask-scheduler"
+        ),
+    ]
+] = (
+    "HINT: the backend accepted the pipeline but never scheduled it — check director-v2 logs "
+    "(DaskClientAcquisisitonError) and that the dask-scheduler service has running replicas"
+)
+
+_CLUSTER_WAIT_STATES: Final[
+    Annotated[
+        tuple[RunningState, ...],
+        doc("director-v2 asked for a cluster or resources and nothing came back"),
+    ]
+] = (RunningState.WAITING_FOR_CLUSTER, RunningState.WAITING_FOR_RESOURCES)
+
+_CLUSTER_WAIT_HINT: Final[
+    Annotated[
+        str,
+        doc("appended when the pipeline waits on a cluster that never arrives"),
+    ]
+] = "HINT: the computation is waiting on a cluster: check the autoscaling and dask-scheduler services"
+
+
+def _pipeline_stall_raised_message(state: RunningState, expected_states: tuple[RunningState, ...]) -> str:
+    message = f"pipeline failed or timed out with {state}. Expected one of {expected_states=}"
+    if state in _PIPELINE_SCHEDULING_STALL_STATES:
+        message = f"{message}. {_PIPELINE_SCHEDULING_STALL_HINT}"
+    elif state in _CLUSTER_WAIT_STATES:
+        message = f"{message}. {_CLUSTER_WAIT_HINT}"
+    return message
+
+
+def classify_backend_stall(
+    state: RunningState,
+    node_statuses: dict[str, RunningState],
+) -> list[str]:
+    """Hints about why a computation is stuck, derived from what the backend itself reports.
+    `node_statuses` maps each node id to its state on the backend.
+    """
+    hints: list[str] = []
+    # NOTE: an empty node_statuses has nothing to schedule, so it must not be reported as a
+    # pipeline the backend failed to schedule
+    if (
+        state in _PIPELINE_SCHEDULING_STALL_STATES
+        and node_statuses
+        and all(status == RunningState.NOT_STARTED for status in node_statuses.values())
+    ):
+        hints.append(_PIPELINE_SCHEDULING_STALL_HINT)
+    elif state in _CLUSTER_WAIT_STATES:
+        hints.append(_CLUSTER_WAIT_HINT)
+    if state == RunningState.FAILED:
+        failed_nodes = sorted(node_id for node_id, status in node_statuses.items() if status == RunningState.FAILED)
+        if failed_nodes:
+            hints.append(f"HINT: these nodes failed on the backend: {failed_nodes}, fetch their logs from director-v2")
+    return hints
+
+
+def backend_computation_snapshot(response_body: Any) -> dict[str, Any]:
+    """What the backend reports about a computation, from the body of a
+    `GET /v0/computations/{project_id}` request.
+
+    The web-server answers with a list, one entry per runnable variant of the project, so the
+    snapshot describes the first of them.
+    """
+    computations = [ComputationGet.model_validate(entry) for entry in response_body["data"]]
+    if not computations:
+        msg = "the backend reported no computation for this project"
+        raise LookupError(msg)
+
+    computation = computations[0]
+    node_states = computation.pipeline_details.node_states
+    node_statuses: dict[str, RunningState] = {
+        f"{node_id}": node_state.current_status for node_id, node_state in node_states.items()
+    }
+    return {
+        "state": computation.state.value,
+        "result": computation.result,
+        "node_statuses": {node_id: status.value for node_id, status in node_statuses.items()},
+        "stall_hints": classify_backend_stall(computation.state, node_statuses),
+    }
+
 
 def wait_for_pipeline_state(
     current_state: RunningState,
@@ -1089,7 +1194,7 @@ def wait_for_pipeline_state(
             msg=ContextMessages(
                 starting=f"wait for one of {expected_states=} (timeout {timedelta(milliseconds=timeout_ms)})",
                 done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
-                raised=lambda: f"pipeline failed or timed out with {current_state}. Expected one of {expected_states=}",
+                raised=lambda: _pipeline_stall_raised_message(current_state, expected_states),
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
