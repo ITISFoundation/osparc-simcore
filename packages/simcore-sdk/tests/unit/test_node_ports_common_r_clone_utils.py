@@ -366,20 +366,32 @@ def test_overwrite_command(edit: EditArguments, remove: RemoveArguments, expecte
         ),
     ],
 )
-def test_sanitize_rclone_command(command: list[str], expected_sanitized: list[str]) -> None:
+def test_sanitize_rclone_command(command: list[str], expected_sanitized: list[str]):
     """Test that sensitive data in rclone commands is properly masked."""
     assert _sanitize_rclone_command(command) == expected_sanitized
 
 
-def test_get_effective_vfs_write_back_seconds_error_messages_do_not_leak_credentials() -> None:
-    command = ["rclone", "--rc-user='user-uuid'", "--rc-pass='pass-uuid'", "mount"]
+@pytest.mark.parametrize(
+    "command",
+    [
+        pytest.param(
+            ["rclone", "--rc-user='user-uuid'", "--rc-pass='pass-uuid'", "mount"],
+            id="flag-not-found",
+        ),
+        pytest.param(
+            ["rclone", "--rc-user='user-uuid'", "--rc-pass='pass-uuid'", "--vfs-write-back"],
+            id="flag-missing-value",
+        ),
+    ],
+)
+def test_get_effective_vfs_write_back_seconds_error_messages_do_not_leak_credentials(command: list[str]):
     with pytest.raises(ValueError, match="--vfs-write-back") as exc_info:
         get_effective_vfs_write_back_seconds(command)
     assert "user-uuid" not in str(exc_info.value)
     assert "pass-uuid" not in str(exc_info.value)
 
 
-def test_overwrite_command_warning_log_does_not_leak_credentials(caplog: pytest.LogCaptureFixture) -> None:
+def test_overwrite_command_warning_log_does_not_leak_credentials(caplog: pytest.LogCaptureFixture):
     command = ["rclone", "--rc-pass='pass-uuid'", "sync", "src:", "dst"]
     with caplog.at_level(logging.WARNING):
         overwrite_command(command, edit={}, remove=[("--transfers", 1)])

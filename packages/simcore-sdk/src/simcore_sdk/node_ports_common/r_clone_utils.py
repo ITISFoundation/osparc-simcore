@@ -3,8 +3,9 @@ import datetime
 import logging
 import re
 from copy import deepcopy
-from typing import Final, Union
+from typing import Annotated, Final, Union
 
+from annotated_types import doc
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter, validate_call
 from servicelib.logging_utils import log_catch
@@ -16,7 +17,12 @@ from ._utils import BaseLogParser
 _logger = logging.getLogger(__name__)
 
 _PLACEHOLDER: Final[str] = "*" * 8
-_SENSITIVE_RCLONE_FLAGS: Final[frozenset[str]] = frozenset(
+_SENSITIVE_RCLONE_FLAGS: Final[
+    Annotated[
+        frozenset[str],
+        doc("flags carrying credentials on the rclone command line, including remote-control credentials"),
+    ]
+] = frozenset(
     {
         "--pass",
         "--password",
@@ -27,7 +33,6 @@ _SENSITIVE_RCLONE_FLAGS: Final[frozenset[str]] = frozenset(
         "--bearer-token",
         "--client-secret",
         "--client-id",
-        # rclone remote-control credentials (same command line as the S3 flags above)
         "--rc-user",
         "--rc-pass",
     }
@@ -212,8 +217,10 @@ def get_effective_vfs_write_back_seconds(resolved_command: list[str]) -> int:
 
     idx = resolved_command.index(_VFS_WRITE_BACK_FLAG)
     if idx + 1 >= len(resolved_command):
-        sanitized_cmd = _sanitize_rclone_command(resolved_command)
-        msg = f"'{_VFS_WRITE_BACK_FLAG}' is missing its value in resolved command={sanitized_cmd}"
+        msg = (
+            f"'{_VFS_WRITE_BACK_FLAG}' is missing its value in resolved command="
+            f"{_sanitize_rclone_command(resolved_command)}"
+        )
         raise ValueError(msg)
 
     value_str = resolved_command[idx + 1]
