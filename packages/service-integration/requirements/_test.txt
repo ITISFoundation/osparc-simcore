@@ -13,13 +13,13 @@ charset-normalizer==3.4.6
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==40.39.0
+faker==40.44.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 idna==3.19
     # via

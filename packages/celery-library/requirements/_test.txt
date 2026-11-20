@@ -44,7 +44,7 @@ click-repl==0.4.1
     # via
     #   -c requirements/_base.txt
     #   celery
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -54,11 +54,11 @@ docker==7.2.0
     # via
     #   pytest-celery
     #   pytest-docker-tools
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint
@@ -180,7 +180,7 @@ six==1.17.0
     #   python-dateutil
 sortedcontainers==2.4.0
     # via fakeredis
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
