@@ -339,3 +339,36 @@ async def test_connect_wallet_denied_when_claimed_product_mismatches_even_with_o
     )
     resp = await client.put(f"{base_url}", headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
     await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
+async def test_pay_project_debt_denied_when_claimed_product_mismatches_project_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    setup_wallets_db: list[WalletGet],
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
+    mock_pay_project_debt: MagicMock,
+    expected: HTTPStatus,
+):
+    """A debt payment claimed under another product must not reach the payment RPC."""
+    assert client.app
+
+    # attach a wallet under the project's own product
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
+    )
+    resp = await client.put(f"{base_url}")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # pay the debt with a second wallet, claiming a product other than the project's
+    base_url = client.app.router["pay_project_debt"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
+    )
+    resp = await client.post(f"{base_url}", json={"amount": -100}, headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
+    await assert_status(resp, expected)
+
+    mock_pay_project_debt.assert_not_called()
