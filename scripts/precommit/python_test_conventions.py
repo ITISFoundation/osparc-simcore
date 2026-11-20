@@ -117,7 +117,7 @@ def main(argv: list[str]) -> int:
             continue
         try:
             staged = path.read_text(encoding="utf-8")
-        except OSError, UnicodeDecodeError:
+        except (OSError, UnicodeDecodeError):
             continue
         for problem in check(path, staged, head_content(path)):
             print(problem)  # noqa: T201

@@ -624,6 +624,8 @@ wrapt==1.17.3
     #   opentelemetry-instrumentation-threading
 wsproto==1.2.0
     # via simple-websocket
+xxhash==4.1.0
+    # via -r requirements/_base.in
 yarl==1.25.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt

@@ -36,3 +36,4 @@ python-socketio
 PyYAML
 u-msgpack-python
 watchdog
+xxhash
