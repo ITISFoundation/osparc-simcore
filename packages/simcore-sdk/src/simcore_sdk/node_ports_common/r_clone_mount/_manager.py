@@ -6,6 +6,7 @@ from typing import Final
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from httpx2 import HTTPError
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import AnyUrl, NonNegativeInt
@@ -19,6 +20,8 @@ from ._errors import (
     InvalidRemotePathError,
     MountPathConflictError,
     NoMountFoundForRemotePathError,
+    WaitingForQueueToBeEmptyError,
+    WaitingForTransfersToCompleteError,
 )
 from ._models import DelegateInterface, MountActivity, MountId
 from ._utils import get_mount_id
@@ -30,6 +33,7 @@ _MIN_PATH_PARTS: Final[NonNegativeInt] = 3
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 _MOUNT_RESPONSIVE_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=6)
 _CONSECUTIVE_UNRESPONSIVE_THRESHOLD: Final[NonNegativeInt] = 3
+_MOUNT_RECOVERY_LOCK_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 _S3_SCHEME_PREFIX: Final[str] = "s3://"
 
 
@@ -203,6 +207,7 @@ class RCloneMountManager:
 
         self._tracked_mounts: dict[MountId, _TrackedMount] = {}
         self._reverse_path_search: dict[MountId, StorageFileID] = {}
+        self._mount_lifecycle_locks: dict[MountId, asyncio.Lock] = {}
         self._task_ensure_mounts_working: asyncio.Task[None] | None = None
 
     async def ensure_mounted(
@@ -247,6 +252,7 @@ class RCloneMountManager:
 
             self._tracked_mounts[mount_id] = tracked_mount
             self._reverse_path_search[mount_id] = remote_path
+            self._mount_lifecycle_locks[mount_id] = asyncio.Lock()
 
     def is_mount_tracked(self, local_mount_path: Path, index: NonNegativeInt) -> bool:
         mount_id = get_mount_id(local_mount_path, index)
@@ -255,12 +261,17 @@ class RCloneMountManager:
     async def ensure_unmounted(self, local_mount_path: Path, index: NonNegativeInt) -> None:
         with log_context(_logger, logging.INFO, f"unmounting {local_mount_path=}"):
             mount_id = get_mount_id(local_mount_path, index)
-            tracked_mount = self._tracked_mounts.pop(mount_id)
-            self._reverse_path_search.pop(mount_id)
+            tracked_mount = self._tracked_mounts[mount_id]
 
-            await tracked_mount.wait_for_all_transfers_to_complete()
+            # the lock keeps the responsiveness worker from recreating this mount mid-stop
+            async with self._mount_lifecycle_locks[mount_id]:
+                await tracked_mount.wait_for_all_transfers_to_complete()
 
-            await tracked_mount.stop_mount()
+                await tracked_mount.stop_mount()
+
+                # untrack only after the stop, so a failed wait leaves a retry path
+                self._tracked_mounts.pop(mount_id, None)
+                self._reverse_path_search.pop(mount_id, None)
 
     async def refresh_path(self, remote_path: StorageFileID, *, recursive: bool = False) -> None:
         # NOTE: always refreshes the containing directory, unless it's the top level directory if
@@ -296,11 +307,29 @@ class RCloneMountManager:
             dir_to_refresh = "/".join(relative_path_parts[:-1]) if relative_path_parts else ""
             await tracked_mount.refresh_path(dir_to_refresh=dir_to_refresh, recursive=recursive)
 
+    async def _try_lock_mount_lifecycle(self, mount_id: MountId) -> asyncio.Lock | None:
+        """Acquires the mount's lifecycle lock, or returns None when an unmount owns it"""
+        lock = self._mount_lifecycle_locks.get(mount_id)
+        if lock is None or lock.locked():
+            return None
+        try:
+            async with asyncio.timeout(_MOUNT_RECOVERY_LOCK_TIMEOUT.total_seconds()):
+                await lock.acquire()
+        except TimeoutError:
+            return None
+        return lock
+
     async def _worker_ensure_mount_is_responsive(self) -> None:
         mount_restored = False
         with log_context(_logger, logging.DEBUG, "ensuring rclone mount is responsive"):
-            for mount in self._tracked_mounts.values():
-                if not await mount.is_healthy():
+            for mount_id, mount in self._tracked_mounts.items():
+                lock = await self._try_lock_mount_lifecycle(mount_id)
+                if lock is None:
+                    continue
+                try:
+                    # the mount may have been unmounted while waiting for the lock
+                    if mount_id not in self._tracked_mounts or await mount.is_healthy():
+                        continue
                     with log_context(
                         _logger,
                         logging.WARNING,
@@ -309,6 +338,8 @@ class RCloneMountManager:
                         await mount.stop_mount(skip_transfer_wait=True)
                         await mount.start_mount()
                         mount_restored = True
+                finally:
+                    lock.release()
 
             if mount_restored:
                 with log_context(
@@ -332,10 +363,25 @@ class RCloneMountManager:
         if self._task_ensure_mounts_working is not None:
             await cancel_wait_task(self._task_ensure_mounts_working)
 
-        await asyncio.gather(
-            *[
-                self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
-                for tracked_mount in self._tracked_mounts.values()
-            ]
-        )
+        for tracked_mount in self._tracked_mounts.values():
+            try:
+                await self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
+            except (WaitingForQueueToBeEmptyError, WaitingForTransfersToCompleteError) as unmount_err:
+                _logger.warning(
+                    **create_troubleshooting_log_kwargs(
+                        f"rclone mount '{tracked_mount.local_mount_path}' left with pending transfers",
+                        error=unmount_err,
+                        error_context={
+                            "local_mount_path": f"{tracked_mount.local_mount_path}",
+                            "index": tracked_mount.index,
+                        },
+                        tip="stuck-transfer case: the agent reclaims the mount container after this sidecar exits",
+                    )
+                )
+            except Exception:  # pylint: disable=broad-exception-caught
+                _logger.exception(
+                    "unexpected error unmounting '%s', mount container may require external cleanup",
+                    tracked_mount.local_mount_path,
+                )
         self._tracked_mounts.clear()
+        self._mount_lifecycle_locks.clear()
