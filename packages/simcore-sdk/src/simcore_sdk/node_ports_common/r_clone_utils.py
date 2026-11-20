@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Annotated, Final, Union
 
 from annotated_types import doc
+from common_library.command_tools import sanitize_command
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter, validate_call
 from servicelib.logging_utils import log_catch
@@ -16,7 +17,6 @@ from ._utils import BaseLogParser
 
 _logger = logging.getLogger(__name__)
 
-_PLACEHOLDER: Final[str] = "*" * 8
 _SENSITIVE_RCLONE_FLAGS: Final[
     Annotated[
         frozenset[str],
@@ -46,26 +46,7 @@ def _is_sensitive_flag(flag: str) -> bool:
 
 def _sanitize_rclone_command(command: list[str]) -> list[str]:
     """Sanitize rclone command by masking sensitive credentials before logging."""
-    skip_indices: set[int] = set()
-    result: list[str] = []
-
-    for i, arg in enumerate(command):
-        if i in skip_indices:
-            continue
-
-        if "=" in arg:
-            flag_part = arg.split("=", 1)[0]
-            result.append(f"{flag_part}={_PLACEHOLDER}" if _is_sensitive_flag(flag_part) else arg)
-        elif _is_sensitive_flag(arg):
-            # rclone always binds the next token to these flags, even when it starts with '-'
-            result.append(arg)
-            if i + 1 < len(command):
-                result.append(_PLACEHOLDER)
-                skip_indices.add(i + 1)
-        else:
-            result.append(arg)
-
-    return result
+    return sanitize_command(command, is_sensitive_flag=_is_sensitive_flag)
 
 
 class _RCloneSyncMessageBase(BaseModel):
