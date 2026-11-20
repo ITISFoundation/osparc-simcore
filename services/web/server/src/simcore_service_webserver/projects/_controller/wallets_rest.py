@@ -61,23 +61,18 @@ async def connect_wallet_to_project(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 
-    # ensure the project exists
+    # ensure the project exists and belongs to the requested product
     await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_state=False,
-    )
-
-    project_product_name = await _projects_service.get_project_product_validated_against_claim(
-        request.app,
-        project_id=path_params.project_id,
-        claimed_product_name=req_ctx.product_name,
+        expected_product_name=req_ctx.product_name,
     )
 
     wallet: WalletGet = await _wallets_service.connect_wallet_to_project(
         request.app,
-        product_name=project_product_name,
+        product_name=req_ctx.product_name,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
@@ -103,18 +98,13 @@ async def pay_project_debt(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
     body_params = await parse_request_body_as(_PayProjectDebtBody, request)
 
-    # Ensure the project exists
+    # Ensure the project exists and belongs to the requested product
     await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_state=False,
-    )
-
-    project_product_name = await _projects_service.get_project_product_validated_against_claim(
-        request.app,
-        project_id=path_params.project_id,
-        claimed_product_name=req_ctx.product_name,
+        expected_product_name=req_ctx.product_name,
     )
 
     # Get currently associated wallet with the project
@@ -139,7 +129,7 @@ async def pay_project_debt(request: web.Request):
     # 2. Mark the project transactions as billed
     await _wallets_service.pay_debt_with_different_wallet(
         app=request.app,
-        product_name=project_product_name,
+        product_name=req_ctx.product_name,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         current_wallet_id=current_wallet.wallet_id,
