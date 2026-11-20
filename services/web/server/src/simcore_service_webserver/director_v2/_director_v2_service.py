@@ -238,7 +238,7 @@ async def get_wallet_info(
         project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
         await projects_wallets_service.connect_wallet_to_project(
             app,
-            claimed_product_name=product_name,
+            product_name=product_name,
             project_id=project_id,
             user_id=user_id,
             wallet_id=project_wallet_id,

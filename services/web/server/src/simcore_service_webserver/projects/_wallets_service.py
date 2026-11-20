@@ -71,7 +71,7 @@ async def check_project_financial_status_and_wallet_access(
 async def connect_wallet_to_project(
     app,
     *,
-    claimed_product_name: ProductName,
+    product_name: ProductName,
     project_id: ProjectID,
     user_id: UserID,
     wallet_id: WalletID,
@@ -87,11 +87,11 @@ async def connect_wallet_to_project(
         ProjectProductMismatchError: if the claimed product differs from the
             project's product
     """
-    product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
-    if product_name != claimed_product_name:
+    project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
+    if project_product_name != product_name:
         raise ProjectProductMismatchError(
-            claimed_product_name=claimed_product_name,
-            project_product_name=product_name,
+            claimed_product_name=product_name,
+            project_product_name=project_product_name,
         )
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
@@ -144,7 +144,7 @@ async def connect_wallet_to_project(
 async def pay_debt_with_different_wallet(
     app,
     *,
-    claimed_product_name: ProductName,
+    product_name: ProductName,
     project_id: ProjectID,
     user_id: UserID,
     current_wallet_id: WalletID,
@@ -175,11 +175,11 @@ async def pay_debt_with_different_wallet(
         ProjectProductMismatchError: if the claimed product differs from the
             project's product
     """
-    product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
-    if product_name != claimed_product_name:
+    project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
+    if project_product_name != product_name:
         raise ProjectProductMismatchError(
-            claimed_product_name=claimed_product_name,
-            project_product_name=product_name,
+            claimed_product_name=product_name,
+            project_product_name=project_product_name,
         )
 
     assert current_wallet_id != new_wallet_id  # nosec

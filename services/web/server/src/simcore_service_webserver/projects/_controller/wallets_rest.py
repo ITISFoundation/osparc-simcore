@@ -71,7 +71,7 @@ async def connect_wallet_to_project(request: web.Request):
 
     wallet: WalletGet = await _wallets_service.connect_wallet_to_project(
         request.app,
-        claimed_product_name=req_ctx.product_name,
+        product_name=req_ctx.product_name,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
@@ -127,7 +127,7 @@ async def pay_project_debt(request: web.Request):
     # 2. Mark the project transactions as billed
     await _wallets_service.pay_debt_with_different_wallet(
         app=request.app,
-        claimed_product_name=req_ctx.product_name,
+        product_name=req_ctx.product_name,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         current_wallet_id=current_wallet.wallet_id,
