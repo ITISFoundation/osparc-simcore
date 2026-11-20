@@ -76,17 +76,6 @@ async def connect_wallet_to_project(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> WalletGet:
-    """Attach `wallet_id` to the project, under the project's own product.
-
-    The product claimed by the client is checked against the project's product
-    (source of truth: the DB), and the wallet access and credit checks run
-    against the derived product, not the claim. Same guard as ``project:clone``
-    (see ``_crud_api_create.py``).
-
-    Raises:
-        ProjectProductMismatchError: if the claimed product differs from the
-            project's product
-    """
     project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
     if project_product_name != product_name:
         raise ProjectProductMismatchError(
@@ -170,10 +159,6 @@ async def pay_debt_with_different_wallet(
 
     Outcome:
     The project's debt is paid, Wallet A is credited, and Wallet B is debited.
-
-    Raises:
-        ProjectProductMismatchError: if the claimed product differs from the
-            project's product
     """
     project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
     if project_product_name != product_name:
