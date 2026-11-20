@@ -185,7 +185,6 @@ from .exceptions import (
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesSetByPricingUnitError,
-    ProjectProductMismatchError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
@@ -365,19 +364,10 @@ async def get_project_for_user(
     include_state: bool | None = False,
     include_trashed_by_primary_gid: bool = False,
     check_permissions: str = "read",
-    expected_product_name: Annotated[
-        ProductName | None,
-        doc("when set, the project must belong to it"),
-    ] = None,
 ) -> ProjectDict:
     """
     Raises:
         ProjectNotFoundError: _description_
-        ProjectProductMismatchError: if `expected_product_name` is set and the
-            project belongs to a different product. Money-scoped operations
-            (e.g. wallet attachment) must validate against the project's
-            product, not the one claimed in the request header; same guard as
-            ``project:clone`` (see ``_crud_api_create.py``).
 
     """
     db = ProjectDBAPI.get_from_app_context(app)
@@ -391,12 +381,6 @@ async def get_project_for_user(
         product_name=product_name,
         permission=cast(PermissionStr, check_permissions),
     )
-
-    if expected_product_name is not None and product_name != expected_product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=expected_product_name,
-            project_product_name=product_name,
-        )
 
     workspace_is_private = user_project_access.workspace_id is None
 
