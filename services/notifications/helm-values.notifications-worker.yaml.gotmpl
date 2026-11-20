@@ -6,15 +6,15 @@ service:
 env:
   CELERY_CONCURRENCY: {{ requiredEnv "NOTIFICATIONS_WORKER_CELERY_CONCURRENCY" | quote }}
   CELERY_POOL: "prefork"
-  CELERY_QUEUES: "notifications"
   HEALTHCHECK_MODE: "heartbeat"
   NODE_NAME:
     valueFrom:
       fieldRef:
         fieldPath: spec.nodeName
   NOTIFICATIONS_BOOT_SERVER_MODE: "AS_CELERY_WORKER"
+  NOTIFICATIONS_CELERY_QUEUES: "notifications-email"
   NOTIFICATIONS_EMAIL_RATE_LIMIT: {{ requiredEnv "NOTIFICATIONS_EMAIL_RATE_LIMIT" | quote }}
-  NOTIFICATIONS_WORKER_NAME: "notifications-worker-$(NODE_NAME)-$(POD_NAME)-$(POD_UID)"
+  NOTIFICATIONS_WORKER_NAME: "notifications-email-worker-$(NODE_NAME)-$(POD_NAME)-$(POD_UID)"
   POD_NAME:
     valueFrom:
       fieldRef:

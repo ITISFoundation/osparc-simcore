@@ -1,15 +1,18 @@
+from typing import Any
+
 from models_library.notifications import Channel
 
 from ..._channel_registry import ChannelRegistry
 from ._base import ChannelHandler
 from ._email import EmailChannelHandler
+from ._sms import SmsChannelHandler
 
-_CHANNEL_HANDLERS: ChannelRegistry[type[ChannelHandler]] = ChannelRegistry(
-    {Channel.email: EmailChannelHandler},
+_CHANNEL_HANDLERS: ChannelRegistry[type[ChannelHandler[Any]]] = ChannelRegistry(
+    {Channel.email: EmailChannelHandler, Channel.sms: SmsChannelHandler},
 )
 
 
-def for_channel(channel: Channel) -> type[ChannelHandler]:
+def for_channel(channel: Channel) -> type[ChannelHandler[Any]]:
     """Get the handler class for a specific channel.
 
     Raises:

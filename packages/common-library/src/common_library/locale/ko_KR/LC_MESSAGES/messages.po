@@ -1773,10 +1773,10 @@ msgstr "사용자에게 등록된 전화번호가 없습니다."
 # to the user after they have entered their username and password, requiring
 # two-factor authentication.
 #. @TRANSLATOR SMS message of at most 70 characters
-#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:137
-#, python-brace-format
-msgid "Dear {first_name}, your verification code is {code}"
-msgstr "안녕하세요 {first_name}, 인증 코드는 {code}입니다."
+#: services/notifications/src/simcore_service_notifications/templates/sms/new_2fa_code/body.j2:1
+#, python-format
+msgid "Dear %(first_name)s, your verification code is %(code)s"
+msgstr "안녕하세요 %(first_name)s, 인증 코드는 %(code)s입니다."
 
 # CTX-INTERPRETATION: This string appears in the login flow, indicating that a
 # verification code has been sent via SMS to the user's phone number.

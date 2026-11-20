@@ -8,12 +8,18 @@ import logging
 from contextlib import AsyncExitStack
 from http.cookies import SimpleCookie
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
+from models_library.celery import TaskState, TaskStatus
+from models_library.notifications.errors import (
+    NotificationsProductTwilioSettingsNotFoundError,
+)
+from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -50,7 +56,6 @@ from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import (
     TwoFAFrontendUserPreference,
 )
-from twilio.base.exceptions import TwilioRestException
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -588,14 +593,11 @@ async def test_2fa_sms_failure_during_login(
     assert client.app
 
     mocker.patch(
-        # MD: Emulates error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
-        "simcore_service_webserver.login._twofa_service.twilio.rest.Client",
+        # publishing the sms fails (e.g. the product has no Twilio settings
+        # configured in the notifications service)
+        f"{notifications_service.__name__}.send_message_from_template",
         autospec=True,
-        side_effect=TwilioRestException(
-            status=400,
-            uri="https://www.twilio.com/doc",
-            msg="Unable to create record: A 'From' phone number is required",
-        ),
+        side_effect=NotificationsProductTwilioSettingsNotFoundError(product_name="osparc"),
     )
 
     # A registered user ...
@@ -626,6 +628,63 @@ async def test_2fa_sms_failure_during_login(
 
             # Expects logs like 'Failed while setting up 2FA code and sending SMS to 157XXXXXXXX3 [OEC:140392495277888]'
             assert f"{user_phone_number[:3]}" in caplog.text
+
+
+async def test_2fa_sms_delivery_failure_releases_resend_cooldown(
+    client: TestClient,
+    user_email: str,
+    user_password: str,
+    user_phone_number: str,
+    mocker: MockerFixture,
+    cleanup_db_tables: None,
+):
+    assert client.app
+
+    # publishing succeeds but the worker fails to deliver the SMS
+    task_uuid = uuid4()
+    mocker.patch(
+        f"{notifications_service.__name__}.send_message_from_template",
+        autospec=True,
+        return_value=(task_uuid, "send_sms_message_task"),
+    )
+    mocker.patch(
+        f"{notifications_service.__name__}.get_message_status",
+        autospec=True,
+        return_value=TaskStatus(
+            task_uuid=task_uuid,
+            task_state=TaskState.FAILURE,
+            progress_report=ProgressReport(actual_value=1),
+        ),
+    )
+
+    async with NewUser(
+        user_data={
+            "email": user_email,
+            "password": user_password,
+        },
+        app=client.app,
+    ):
+        # login leaves the account on the register-phone page (no SMS is sent yet)
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": user_email, "password": user_password},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+
+        url = client.app.router["auth_register_phone"].url_for()
+        body = {
+            "email": user_email,
+            "phone": user_phone_number,
+        }
+
+        response = await client.post(f"{url}", json=body)
+        _, error = await assert_status(response, status.HTTP_503_SERVICE_UNAVAILABLE)
+        assert error["message"].startswith("Currently we cannot register phone numbers")
+
+        # the failed delivery gave the cooldown back, so the retry is treated as
+        # a fresh send (503 again) and not bounced with 429
+        response = await client.post(f"{url}", json=body)
+        await assert_status(response, status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 async def test_phone_reconfirmation_cannot_take_over_another_account(

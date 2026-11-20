@@ -1,3 +1,3 @@
-from ._models import EmailContact
+from ._models import EmailContact, SmsContact
 
-__all__: tuple[str, ...] = ("EmailContact",)
+__all__: tuple[str, ...] = ("EmailContact", "SmsContact")

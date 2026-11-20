@@ -12,6 +12,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.users import MyProfileRestGet
 from models_library.products import ProductName
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_error, assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -145,7 +146,7 @@ async def test_registration_with_registered_user(
     assert client.app
 
     async with NewUser(app=client.app) as user:
-        await auto_add_user_to_product_group(client.app, user_id=user["id"], product_name=default_product_name)
+        await auto_add_user_to_product_group(client.app, user_id=UserID(user["id"]), product_name=default_product_name)
 
         url = client.app.router["auth_register"].url_for()
         response = await client.post(
@@ -177,7 +178,6 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
-            LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
@@ -262,7 +262,6 @@ async def test_registration_with_invalid_confirmation_code(
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,  # <----- NO invitation
-            LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
@@ -292,7 +291,6 @@ async def test_registration_without_confirmation(
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
-            LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
@@ -353,7 +351,6 @@ async def test_registration_with_invitation(
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
-            LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
@@ -413,7 +410,6 @@ async def test_registraton_with_invitation_for_trial_account(
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
-            LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
         ),

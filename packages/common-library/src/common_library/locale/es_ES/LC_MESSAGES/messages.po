@@ -2036,10 +2036,10 @@ msgstr "El usuario no tiene un número de teléfono registrado"
 # verification code to a user. verification code to a user's phone number,
 # with placeholders for the user's first name and the code.
 #. @TRANSLATOR SMS message of at most 70 characters
-#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:137
-#, python-brace-format
-msgid "Dear {first_name}, your verification code is {code}"
-msgstr "Estimado {first_name}, su código de verificación es {code}"
+#: services/notifications/src/simcore_service_notifications/templates/sms/new_2fa_code/body.j2:1
+#, python-format
+msgid "Dear %(first_name)s, your verification code is %(code)s"
+msgstr "Estimado %(first_name)s, su código de verificación es %(code)s"
 
 # CTX-INTERPRETATION: This string is a user notification message indicating
 # that a verification code has been sent to the user's phone number. that a

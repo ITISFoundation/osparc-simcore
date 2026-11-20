@@ -3,6 +3,7 @@ from typing import Any
 from common_library.network import extract_email_domain
 from common_library.sequence_tools import interleave_by_key
 from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
+from models_library.notifications.errors import NotificationsProductSMTPSettingsNotFoundError
 from models_library.notifications.rpc import EmailContact, EmailMessage, SenderIdentity
 
 from ...core.settings import ApplicationSettings, ProductSMTPSettings
@@ -22,7 +23,7 @@ def get_email(identity: SenderIdentity, product_smtp_settings: ProductSMTPSettin
     return f"{local_part}@{product_smtp_settings.domain}"
 
 
-class EmailChannelHandler(ChannelHandler):
+class EmailChannelHandler(ChannelHandler[EmailMessage]):
     """Handles email channel: validates and fans out into per-recipient payloads."""
 
     @staticmethod
@@ -34,7 +35,7 @@ class EmailChannelHandler(ChannelHandler):
         """Resolve a from_identity into a concrete EmailContact using product data."""
         smtp_config = settings.NOTIFICATIONS_SMTP_SETTINGS
         if smtp_config is None:
-            raise RuntimeError("NOTIFICATIONS_SMTP_SETTINGS must be configured to send email notifications")
+            raise NotificationsProductSMTPSettingsNotFoundError(product_name=product.name)
         smtp_settings = smtp_config.get_product_smtp_settings(product.name)
         match from_identity:
             case SenderIdentity.SUPPORT:

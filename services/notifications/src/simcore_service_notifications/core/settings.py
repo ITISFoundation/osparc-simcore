@@ -1,12 +1,17 @@
-from typing import Annotated, Any, Self
+import re
+from typing import Annotated, Any, Final, Self
 
+from annotated_types import doc
 from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.pydantic_validators import to_secret_str
+from models_library.basic_regex import TWILIO_ALPHANUMERIC_SENDER_ID_RE
 from models_library.basic_types import LogLevel
+from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsProductSMTPSettingsNotFoundError,
+    NotificationsProductTwilioSettingsNotFoundError,
 )
 from models_library.notifications.rpc import SenderIdentity
 from pydantic import (
@@ -14,19 +19,40 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    ValidationError,
+    ValidationInfo,
     field_validator,
     model_validator,
 )
 from pydantic.types import SecretStr
+from servicelib.celery.async_jobs.notifications import (
+    channel_from_notifications_queue_name,
+    notifications_queue_name,
+)
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import PortInt
 from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
+from settings_library.twilio import TwilioSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+from ..exceptions.errors import InvalidNotificationsChannelSettingsError
 from ..models.smtp import ALLOWED_HEADERS, EmailProtocol
+
+_CHANNEL_REQUIRED_SETTINGS: Final[
+    Annotated[
+        dict[Channel, str],
+        doc(
+            "settings field each consumed channel requires: without it a worker boots "
+            "and only fails once a task of that channel runs"
+        ),
+    ]
+] = {
+    Channel.email: "NOTIFICATIONS_SMTP_SETTINGS",
+    Channel.sms: "NOTIFICATIONS_TWILIO_SETTINGS",
+}
 
 
 class SMTPSettings(BaseModel):
@@ -170,6 +196,58 @@ class NotificationsSMTPSettings(BaseModel):
         return self.mail_servers[product.mail_server]
 
 
+class ProductTwilioSettings(BaseModel):
+    """Per-product Twilio configuration referencing a named account profile."""
+
+    model_config = ConfigDict(frozen=True)
+
+    account: Annotated[
+        str,
+        Field(description="Name of the twilio account profile from accounts dict"),
+    ]
+    messaging_service_sid: Annotated[str, Field(description="Twilio Messaging Service SID")]
+    alphanumeric_sender_id: Annotated[
+        str,
+        Field(pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE)),
+    ]
+
+
+class NotificationsTwilioSettings(BaseModel):
+    """Root model for Twilio settings with named account profiles and per-product config."""
+
+    model_config = ConfigDict(frozen=True)
+
+    accounts: dict[str, TwilioSettings]
+    products: dict[str, ProductTwilioSettings]
+
+    @model_validator(mode="after")
+    def _validate_account_references(self) -> Self:
+        for product_name, product_settings in self.products.items():
+            if product_settings.account not in self.accounts:
+                msg = (
+                    f"Product '{product_name}' references account "
+                    f"'{product_settings.account}' which is not defined in accounts. "
+                    f"Available: {sorted(self.accounts.keys())}"
+                )
+                raise ValueError(msg)
+        return self
+
+    def get_product_twilio_settings(self, product_name: str) -> ProductTwilioSettings:
+        if product_name not in self.products:
+            raise NotificationsProductTwilioSettingsNotFoundError(product_name=product_name)
+        return self.products[product_name]
+
+    def get_twilio_account_settings(self, product_name: str) -> TwilioSettings:
+        product = self.get_product_twilio_settings(product_name)
+        return self.accounts[product.account]
+
+
+_CHANNEL_SETTINGS_MODELS: Final[dict[str, type[BaseModel]]] = {
+    "NOTIFICATIONS_TWILIO_SETTINGS": NotificationsTwilioSettings,
+    "NOTIFICATIONS_SMTP_SETTINGS": NotificationsSMTPSettings,
+}
+
+
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
@@ -244,15 +322,65 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(description="Boot mode: REST API server or Celery worker"),
     ] = BootServerMode.AS_REST_API_SERVER
 
+    NOTIFICATIONS_CELERY_QUEUES: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Comma-separated queues consumed when booting as Celery worker, e.g. "
+                "'notifications-email'. Passed to the Celery CLI by docker/boot.sh and "
+                "checked against the per-channel settings at boot. When unset, the "
+                "worker is assumed to consume the email channel."
+            ),
+        ),
+    ] = None
+
     NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
         int,
         Field(description="Maximum number of recipients per email message"),
+    ] = 20
+
+    NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
+        int,
+        Field(description="Maximum number of recipients per sms message"),
     ] = 20
 
     NOTIFICATIONS_EMAIL_RATE_LIMIT: Annotated[
         str,
         Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
     ] = "1/s"
+
+    NOTIFICATIONS_SMS_RATE_LIMIT: Annotated[
+        str,
+        Field(description="Rate limit for sending sms, e.g. '0.2/s' means 1 sms every 5 seconds"),
+    ] = "1/s"
+
+    NOTIFICATIONS_TWILIO_SETTINGS: Annotated[
+        NotificationsTwilioSettings | None,
+        Field(
+            description=(
+                "Per-product Twilio settings with named account profiles and product-to-profile mapping. "
+                "Used by the worker to deliver sms."
+            ),
+            examples=[
+                {
+                    "accounts": {
+                        "main": {
+                            "TWILIO_ACCOUNT_SID": "AC...",
+                            "TWILIO_AUTH_TOKEN": "***",
+                            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": ["41"],
+                        }
+                    },
+                    "products": {
+                        "osparc": {
+                            "account": "main",
+                            "messaging_service_sid": "MG...",
+                            "alphanumeric_sender_id": "osparc",
+                        }
+                    },
+                }
+            ],
+        ),
+    ] = None
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
         NotificationsSMTPSettings | None,
@@ -289,21 +417,55 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = None
 
+    @field_validator("NOTIFICATIONS_TWILIO_SETTINGS", "NOTIFICATIONS_SMTP_SETTINGS", mode="before")
+    @classmethod
+    def _parse_channel_settings(cls, value, info: ValidationInfo) -> BaseModel | None:
+        # a blank env var (e.g. an unset passthrough `${SMTP_SETTINGS}`) means unset; a
+        # malformed value is reported by field name and reason only: pydantic echoes the
+        # offending input in ValidationError, which here contains credentials
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return None
+        assert info.field_name is not None  # nosec
+        model = _CHANNEL_SETTINGS_MODELS[info.field_name]
+        try:
+            if isinstance(value, str):
+                return model.model_validate_json(value)
+            return model.model_validate(value)
+        except ValidationError as exc:
+            reasons = "; ".join(f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in exc.errors())
+            # non-ValueError on purpose: pydantic wraps ValueError/AssertionError
+            # and echoes the offending input, which here holds credentials
+            raise InvalidNotificationsChannelSettingsError(env_name=info.field_name, errors=reasons) from None
+
     @field_validator("LOG_LEVEL")
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))
 
     @model_validator(mode="after")
-    def _worker_requires_smtp_settings(self) -> ApplicationSettings:
-        if (
-            self.NOTIFICATIONS_BOOT_SERVER_MODE is BootServerMode.AS_CELERY_WORKER
-            and self.NOTIFICATIONS_SMTP_SETTINGS is None
-        ):
-            msg = (
-                "NOTIFICATIONS_SMTP_SETTINGS must be configured when "
-                "NOTIFICATIONS_BOOT_SERVER_MODE is AS_CELERY_WORKER "
-                "(per-product SMTP settings are required by the worker)."
-            )
-            raise ValueError(msg)
+    def _worker_requires_channel_settings(self) -> Self:
+        if self.NOTIFICATIONS_BOOT_SERVER_MODE is not BootServerMode.AS_CELERY_WORKER:
+            return self
+
+        if self.NOTIFICATIONS_CELERY_QUEUES:
+            queue_names = [name.strip() for name in self.NOTIFICATIONS_CELERY_QUEUES.split(",") if name.strip()]
+        else:
+            queue_names = [notifications_queue_name(Channel.email)]
+
+        for channel in sorted({channel_from_notifications_queue_name(name) for name in queue_names}):
+            required_field = _CHANNEL_REQUIRED_SETTINGS.get(channel)
+            if required_field is None:
+                msg = (
+                    f"NOTIFICATIONS_CELERY_QUEUES consumes the '{channel}' channel "
+                    f"({notifications_queue_name(channel)}) but this service version "
+                    f"does not support delivering it."
+                )
+                raise ValueError(msg)
+            if getattr(self, required_field) is None:
+                msg = (
+                    f"{required_field} must be configured when "
+                    f"NOTIFICATIONS_BOOT_SERVER_MODE is AS_CELERY_WORKER and the worker "
+                    f"consumes the '{channel}' channel (see NOTIFICATIONS_CELERY_QUEUES)."
+                )
+                raise ValueError(msg)
         return self

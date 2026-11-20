@@ -3,9 +3,10 @@ from models_library.notifications import Channel
 from ..._channel_registry import ChannelRegistry
 from ._content import Content
 from ._email import EmailContent
+from ._sms import SmsContent
 
 _CONTENT_MODELS: ChannelRegistry[type[Content]] = ChannelRegistry(
-    {Channel.email: EmailContent},
+    {Channel.email: EmailContent, Channel.sms: SmsContent},
 )
 
 
