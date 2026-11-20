@@ -45,7 +45,6 @@ def _is_sensitive_flag(flag: str) -> bool:
 
 
 def _sanitize_rclone_command(command: list[str]) -> list[str]:
-    """Sanitize rclone command by masking sensitive credentials before logging."""
     return sanitize_command(command, is_sensitive_flag=_is_sensitive_flag)
 
 

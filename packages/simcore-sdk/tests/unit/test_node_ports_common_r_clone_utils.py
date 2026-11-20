@@ -378,7 +378,6 @@ def test_overwrite_command(edit: EditArguments, remove: RemoveArguments, expecte
     ],
 )
 def test_sanitize_rclone_command(command: list[str], expected_sanitized: list[str]):
-    """Test that sensitive data in rclone commands is properly masked."""
     assert _sanitize_rclone_command(command) == expected_sanitized
 
 
