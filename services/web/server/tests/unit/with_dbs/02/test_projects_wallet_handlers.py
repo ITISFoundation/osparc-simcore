@@ -8,6 +8,7 @@
 from collections.abc import Iterator
 from decimal import Decimal
 from http import HTTPStatus
+from typing import Final
 from unittest.mock import MagicMock
 
 import pytest
@@ -232,26 +233,23 @@ async def test_pay_project_debt(
 
 # --- product-bound wallet attachment (see project:clone guard precedent) -----
 
-
-@pytest.fixture(scope="session")
-def s4l_product_name() -> ProductName:
-    return "s4l"
+S4L_PRODUCT_NAME: Final[ProductName] = ProductName("s4l")
 
 
 @pytest.fixture
-def s4l_products_db(postgres_db: sa.engine.Engine, s4l_product_name: ProductName) -> Iterator[ProductName]:
+def s4l_products_db(postgres_db: sa.engine.Engine) -> Iterator[ProductName]:
     with postgres_db.connect() as conn:
         conn.execute(
             products.insert().values(
-                name=s4l_product_name,
+                name=S4L_PRODUCT_NAME,
                 host_regex="pytest",
                 base_url="https://pytest.com",
                 display_name="pytest",
             )
         )
-    yield s4l_product_name
+    yield S4L_PRODUCT_NAME
     with postgres_db.connect() as conn:
-        conn.execute(products.delete().where(products.c.name == s4l_product_name))
+        conn.execute(products.delete().where(products.c.name == S4L_PRODUCT_NAME))
 
 
 @pytest.fixture
@@ -295,7 +293,7 @@ def wallet_in_second_product(
         con.execute(wallets.delete().where(wallets.c.name == "My wallet in other product"))
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
 async def test_connect_wallet_denied_when_claimed_product_mismatches_project_product(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -313,7 +311,7 @@ async def test_connect_wallet_denied_when_claimed_product_mismatches_project_pro
         project_id=user_project["uuid"], wallet_id=f"{wallet_in_second_product}"
     )
     resp = await client.put(f"{base_url}", headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
-    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+    await assert_status(resp, expected)
 
     # and nothing was attached
     base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
@@ -322,7 +320,7 @@ async def test_connect_wallet_denied_when_claimed_product_mismatches_project_pro
     assert data is None
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
 async def test_connect_wallet_denied_when_claimed_product_mismatches_even_with_own_wallet(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -340,4 +338,4 @@ async def test_connect_wallet_denied_when_claimed_product_mismatches_even_with_o
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
     )
     resp = await client.put(f"{base_url}", headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
-    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+    await assert_status(resp, expected)

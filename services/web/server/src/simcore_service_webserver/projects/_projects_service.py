@@ -356,6 +356,24 @@ def _is_node_dynamic(node_key: ServiceKey) -> bool:
     return "/dynamic/" in node_key
 
 
+async def get_project_product_validated_against_claim(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    claimed_product_name: ProductName,
+) -> ProductName:
+    """Return the project's product, rejecting a claimed product that differs.
+
+    Money-scoped operations run against the project's product (source of truth:
+    the DB), not the product claimed in the request header. Same guard as
+    ``project:clone`` (see ``_crud_api_create.py``).
+    """
+    project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
+    if project_product_name != claimed_product_name:
+        raise web.HTTPBadRequest(text=f"Project product name mismatch {claimed_product_name=} {project_product_name=}")
+    return project_product_name
+
+
 async def get_project_for_user(
     app: web.Application,
     project_uuid: str,

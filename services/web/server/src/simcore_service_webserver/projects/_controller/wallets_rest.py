@@ -4,7 +4,6 @@ from typing import Annotated
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,7 +14,7 @@ from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from ...web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
-from .. import _projects_repository, _projects_service, _wallets_service
+from .. import _projects_service, _wallets_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
@@ -23,20 +22,6 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-async def _get_project_product_validated_against_claim(request: web.Request, project_id: ProjectID) -> ProductName:
-    """Return the product the project belongs to (source of truth: DB).
-
-    Money-scoped project operations must run against the project's product, not the
-    product claimed in the request (``x-simcore-product-name`` header). Same guard
-    as ``project:clone`` (see ``projects/_crud_api_create.py``).
-    """
-    req_ctx = AuthenticatedRequestContext.model_validate(request)
-    project_product_name = await _projects_repository.get_project_product(request.app, project_uuid=project_id)
-    if project_product_name != req_ctx.product_name:
-        raise web.HTTPBadRequest(text=f"Project product name mismatch {req_ctx.product_name=} {project_product_name=}")
-    return project_product_name
 
 
 @routes.get(f"/{API_VTAG}/projects/{{project_id}}/wallet", name="get_project_wallet")
@@ -84,7 +69,11 @@ async def connect_wallet_to_project(request: web.Request):
         include_state=False,
     )
 
-    project_product_name = await _get_project_product_validated_against_claim(request, path_params.project_id)
+    project_product_name = await _projects_service.get_project_product_validated_against_claim(
+        request.app,
+        project_id=path_params.project_id,
+        claimed_product_name=req_ctx.product_name,
+    )
 
     wallet: WalletGet = await _wallets_service.connect_wallet_to_project(
         request.app,
@@ -122,7 +111,11 @@ async def pay_project_debt(request: web.Request):
         include_state=False,
     )
 
-    project_product_name = await _get_project_product_validated_against_claim(request, path_params.project_id)
+    project_product_name = await _projects_service.get_project_product_validated_against_claim(
+        request.app,
+        project_id=path_params.project_id,
+        claimed_product_name=req_ctx.product_name,
+    )
 
     # Get currently associated wallet with the project
     current_wallet: WalletGet | None = await _wallets_service.get_project_wallet(request.app, path_params.project_id)
