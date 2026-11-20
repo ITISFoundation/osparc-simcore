@@ -68,7 +68,7 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
     record.digest_mtime_ns = stat_after.st_mtime_ns
 
 
-class PortFingerprint:
+class PortFingerprint:  # pylint: disable=too-many-instance-attributes
     """Tracks one port directory: cheap scans flag changes, hashes confirm content."""
 
     def __init__(

@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=protected-access
+# pylint: disable=unused-argument
 
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
