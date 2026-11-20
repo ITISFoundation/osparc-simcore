@@ -52,6 +52,7 @@ from .exceptions import (
     ParentProjectNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
+    ProjectProductMismatchError,
 )
 from .models import ProjectDict
 from .utils import (
@@ -349,6 +350,20 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
+def _check_project_product_match(*, claimed_product_name: ProductName, project_product_name: ProductName) -> None:
+    """Same check as projects_api.check_project_product_match, without the DB read:
+    the clone flow reads the product through its legacy dbapi bound to the insert.
+
+    Raises:
+        ProjectProductMismatchError: if the project belongs to another product
+    """
+    if claimed_product_name != project_product_name:
+        raise ProjectProductMismatchError(
+            claimed_product_name=claimed_product_name,
+            project_product_name=project_product_name,
+        )
+
+
 async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0912, PLR0913, PLR0915
     progress: TaskProgress,
     *,
@@ -569,9 +584,11 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             _project_product_name = await _projects_repository_legacy.get_project_product(
                 project_uuid=new_project["uuid"]
             )
-            if _project_product_name != product_name:
-                # Cleanup is handled centrally by the context manager.
-                raise web.HTTPBadRequest(text=f"Project product name mismatch {product_name=} {_project_product_name=}")
+            # Cleanup is handled centrally by the context manager.
+            _check_project_product_match(
+                claimed_product_name=product_name,
+                project_product_name=_project_product_name,
+            )
 
             data = ProjectGet.from_domain_model(new_project).model_dump(**RESPONSE_MODEL_POLICY)
 
@@ -588,6 +605,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
             raise web.HTTPForbidden from exc
+
+        except ProjectProductMismatchError as exc:
+            raise web.HTTPBadRequest(text=f"{exc}") from exc
 
         except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
             raise web.HTTPNotFound(text=f"{exc}") from exc

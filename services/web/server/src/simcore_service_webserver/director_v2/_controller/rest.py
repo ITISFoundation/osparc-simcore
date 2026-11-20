@@ -25,7 +25,10 @@ from ...constants import RQ_PRODUCT_KEY
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...products import products_web
-from ...projects.api import check_user_project_permission
+from ...projects.api import (
+    check_project_product_match,
+    check_user_project_permission,
+)
 from ...projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
 )
@@ -60,6 +63,12 @@ async def start_computation(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         permission="write",
+    )
+
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
     )
 
     subgraph: set[str] = set()
@@ -212,6 +221,12 @@ async def stop_computation(request: web.Request) -> web.Response:
         permission="write",
     )
 
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
+    )
+
     project_ids = await run_policy.get_runnable_projects_ids(request, path_params.project_id)
     _logger.debug("Project %s will stop %d variants", path_params.project_id, len(project_ids))
 
@@ -238,6 +253,12 @@ async def get_computation(request: web.Request) -> web.Response:
         user_id=user_id,
         product_name=request[RQ_PRODUCT_KEY],
         permission="read",
+    )
+
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=request[RQ_PRODUCT_KEY],
     )
 
     project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(request, path_params.project_id)

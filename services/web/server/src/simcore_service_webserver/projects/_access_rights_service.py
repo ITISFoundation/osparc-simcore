@@ -11,10 +11,34 @@ from ..users import users_service
 from ..users.errors import UserNotFoundError
 from ..workspaces.workspaces_service import get_workspace
 from ._access_rights_repository import get_project_owner, is_published_project
+from ._projects_repository import get_project_product
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+    ProjectProductMismatchError,
+)
 from .models import UserProjectAccessRightsWithWorkspace
+
+
+async def check_project_product_match(
+    app: web.Application, *, project_id: ProjectID, product_name: ProductName
+) -> None:
+    """Ensure the project belongs to 'product_name', the product claimed by the request.
+
+    Money-scoped operations (wallets, computations) must resolve against the
+    project's product in the DB, not the product claimed in the request headers.
+
+    Raises:
+        ProjectProductMismatchError: if the project belongs to another product
+    """
+    project_product_name = await get_project_product(app, project_uuid=project_id)
+    if project_product_name != product_name:
+        raise ProjectProductMismatchError(
+            claimed_product_name=product_name,
+            project_product_name=project_product_name,
+        )
 
 
 async def validate_project_ownership(
@@ -153,7 +177,7 @@ async def has_user_project_access_rights(
             app, project_id=project_id, user_id=user_id, product_name=product_name
         )
         return getattr(prj_access_rights, permission, False) is not False
-    except (ProjectInvalidRightsError, ProjectNotFoundError, UserNotFoundError):
+    except ProjectInvalidRightsError, ProjectNotFoundError, UserNotFoundError:
         return False
 
 

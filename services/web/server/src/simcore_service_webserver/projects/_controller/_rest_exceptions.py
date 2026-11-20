@@ -205,13 +205,6 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
             _version=1,
         ),
     ),
-    ProjectProductMismatchError: HttpErrorInfo(
-        status.HTTP_400_BAD_REQUEST,
-        user_message(
-            "The project belongs to a different product than the one requested.",
-            _version=1,
-        ),
-    ),
 }
 
 
@@ -300,6 +293,17 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
 }
 
 
+_PROJECT_PRODUCT_MISMATCH_ERRORS: ExceptionToHttpErrorMap = {
+    ProjectProductMismatchError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "The project belongs to a different product than the one requested.",
+            _version=1,
+        ),
+    ),
+}
+
+
 _ERRORS = [
     _CONVERSATION_ERRORS,
     _FOLDER_ERRORS,
@@ -307,6 +311,7 @@ _ERRORS = [
     _OTHER_ERRORS,
     _PRICING_ERRORS,
     _PROJECT_ERRORS,
+    _PROJECT_PRODUCT_MISMATCH_ERRORS,
     _WALLET_ERRORS,
     _WORKSPACE_ERRORS,
 ]
@@ -327,6 +332,12 @@ def _assert_duplicate():
 assert _assert_duplicate()  # nosec
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {k: v for dikt in _ERRORS for k, v in dikt.items()}
+
+# other modules (e.g. director-v2) reuse this so the same error renders the same
+# response on every endpoint that raises ProjectProductMismatchError
+project_product_mismatch_exceptions_handlers_map: ExceptionHandlersMap = to_exceptions_handlers_map(
+    _PROJECT_PRODUCT_MISMATCH_ERRORS
+)
 
 
 _handlers: ExceptionHandlersMap = {
