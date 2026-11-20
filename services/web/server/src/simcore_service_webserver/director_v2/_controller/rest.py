@@ -25,6 +25,7 @@ from ...constants import RQ_PRODUCT_KEY
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...products import products_web
+from ...projects import _projects_repository
 from ...projects.api import check_user_project_permission
 from ...projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
@@ -39,6 +40,17 @@ from .._director_v2_abc_service import get_project_run_policy
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
+
+
+async def _ensure_project_product_matches_claim(request: web.Request, project_id: ProjectID) -> None:
+    """Money-scoped run operations must execute against the project's product (DB),
+    not the product claimed by the request (``x-simcore-product-name`` header).
+    Same guard as ``project:clone`` (see ``projects/_crud_api_create.py``).
+    """
+    claimed_product_name = request[RQ_PRODUCT_KEY]
+    project_product_name = await _projects_repository.get_project_product(request.app, project_uuid=project_id)
+    if project_product_name != claimed_product_name:
+        raise web.HTTPBadRequest(text=f"Project product name mismatch {claimed_product_name=} {project_product_name=}")
 
 
 routes = web.RouteTableDef()
@@ -61,6 +73,8 @@ async def start_computation(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         permission="write",
     )
+
+    await _ensure_project_product_matches_claim(request, path_params.project_id)
 
     subgraph: set[str] = set()
     force_restart: bool = False  # NOTE: deprecate this entry
@@ -212,6 +226,8 @@ async def stop_computation(request: web.Request) -> web.Response:
         permission="write",
     )
 
+    await _ensure_project_product_matches_claim(request, path_params.project_id)
+
     project_ids = await run_policy.get_runnable_projects_ids(request, path_params.project_id)
     _logger.debug("Project %s will stop %d variants", path_params.project_id, len(project_ids))
 
@@ -239,6 +255,8 @@ async def get_computation(request: web.Request) -> web.Response:
         product_name=request[RQ_PRODUCT_KEY],
         permission="read",
     )
+
+    await _ensure_project_product_matches_claim(request, path_params.project_id)
 
     project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(request, path_params.project_id)
 
