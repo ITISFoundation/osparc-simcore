@@ -29,6 +29,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_postgres_database.models.groups import groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import api_version_prefix
@@ -249,7 +250,10 @@ def s4l_products_db(postgres_db: sa.engine.Engine) -> Iterator[ProductName]:
         )
     yield S4L_PRODUCT_NAME
     with postgres_db.connect() as conn:
+        group_id = conn.scalar(sa.select(products.c.group_id).where(products.c.name == S4L_PRODUCT_NAME))
         conn.execute(products.delete().where(products.c.name == S4L_PRODUCT_NAME))
+        if group_id:
+            conn.execute(groups.delete().where(groups.c.gid == group_id))
 
 
 @pytest.fixture
