@@ -180,7 +180,7 @@ services:
       ]
 
   redis:
-    image: "valkey/valkey:7.2.15@sha256:828b1cbb1c258e02b9cd9588063fa997e097444e610d3f3c00d43e21400e2b8d"
+    image: "valkey/valkey:7.2.16@sha256:edf27a750238c2a8be56d6c365d21930926cfee23385efe88cc6df9df2c911a1"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command: [
