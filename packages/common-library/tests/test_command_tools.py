@@ -4,14 +4,7 @@ import pytest
 from common_library.command_tools import sanitize_command
 
 _PLACEHOLDER: Final[str] = "*" * 8
-
-
-def _is_sensitive(flag: str) -> bool:
-    return flag in {"--token", "--secret"}
-
-
-def _is_sensitive_prefix(flag: str) -> bool:
-    return flag.startswith("--secret")
+_SENSITIVE_FLAGS: Final[frozenset[str]] = frozenset({"--token", "--secret"})
 
 
 @pytest.mark.parametrize(
@@ -62,29 +55,36 @@ def _is_sensitive_prefix(flag: str) -> bool:
         ),
     ],
 )
-def test_sanitize_command(command: list[str], expected: list[str]):
-    assert sanitize_command(command, is_sensitive_flag=_is_sensitive) == expected
+def test_sanitize_command(command: list[str], expected: list[str]) -> None:
+    assert sanitize_command(command, sensitive_flags=_SENSITIVE_FLAGS) == expected
 
 
-def test_sanitize_command_predicate_injection():
-    command = ["--secret-access-key", "key", "--token", "abc"]
-    assert sanitize_command(command, is_sensitive_flag=_is_sensitive_prefix) == [
-        "--secret-access-key",
-        _PLACEHOLDER,
-        "--token",
-        "abc",
-    ]
+@pytest.mark.parametrize(
+    "command,expected",
+    [
+        pytest.param(
+            ["rclone", "--s3-secret", "abc"],
+            ["rclone", "--s3-secret", _PLACEHOLDER],
+            id="backend-prefixed-space-separated",
+        ),
+        pytest.param(
+            ["rclone", "--s3-secret=abc"],
+            ["rclone", f"--s3-secret={_PLACEHOLDER}"],
+            id="backend-prefixed-equals-form",
+        ),
+        pytest.param(
+            ["rclone", "--secretive", "abc"],
+            ["rclone", "--secretive", "abc"],
+            id="similar-but-unsensitive-flag-passthrough",
+        ),
+    ],
+)
+def test_sanitize_command_flag_matching(command: list[str], expected: list[str]) -> None:
+    assert sanitize_command(command, sensitive_flags=_SENSITIVE_FLAGS) == expected
 
 
-def test_sanitize_command_custom_placeholder():
-    assert sanitize_command(["--token", "abc"], is_sensitive_flag=_is_sensitive, placeholder="REDACTED") == [
-        "--token",
-        "REDACTED",
-    ]
-
-
-def test_sanitize_command_does_not_mutate_input():
+def test_sanitize_command_does_not_mutate_input() -> None:
     command = ["--token", "abc"]
-    result = sanitize_command(command, is_sensitive_flag=_is_sensitive)
+    result = sanitize_command(command, sensitive_flags=_SENSITIVE_FLAGS)
     assert command == ["--token", "abc"]
     assert result is not command

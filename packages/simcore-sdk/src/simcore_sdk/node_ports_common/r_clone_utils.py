@@ -39,13 +39,8 @@ _SENSITIVE_RCLONE_FLAGS: Final[
 )
 
 
-def _is_sensitive_flag(flag: str) -> bool:
-    """True for a sensitive flag or a backend-prefixed variant (e.g. --s3-access-key-id)."""
-    return any(flag == name or flag.endswith(f"-{name.removeprefix('--')}") for name in _SENSITIVE_RCLONE_FLAGS)
-
-
 def _sanitize_rclone_command(command: list[str]) -> list[str]:
-    return sanitize_command(command, is_sensitive_flag=_is_sensitive_flag)
+    return sanitize_command(command, sensitive_flags=_SENSITIVE_RCLONE_FLAGS)
 
 
 class _RCloneSyncMessageBase(BaseModel):

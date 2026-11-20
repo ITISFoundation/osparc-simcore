@@ -1,24 +1,23 @@
-from collections.abc import Callable, Sequence
-from typing import Annotated, Final
-
-from annotated_types import doc
+from collections.abc import Collection, Sequence
+from typing import Final
 
 _PLACEHOLDER: Final[str] = "*" * 8
 
-type SensitiveFlagPredicate = Annotated[
-    Callable[[str], bool],
-    doc("returns True for a flag token whose value must be masked, e.g. '--rc-pass'"),
-]
+
+def _is_sensitive_flag(flag: str, sensitive_flags: Collection[str]) -> bool:
+    """True for a listed flag or a backend-prefixed variant (e.g. '--s3-access-key-id' for '--access-key-id')."""
+    return any(flag == name or flag.endswith(f"-{name.removeprefix('--')}") for name in sensitive_flags)
 
 
 def sanitize_command(
     command: Sequence[str],
     *,
-    is_sensitive_flag: SensitiveFlagPredicate,
-    placeholder: str = _PLACEHOLDER,
+    sensitive_flags: Collection[str],
 ) -> list[str]:
     """Masks the values of sensitive flags so a command list can be logged safely.
 
+    A flag token matches an entry of `sensitive_flags` either exactly or as a
+    backend-prefixed variant, e.g. '--s3-access-key-id' matches '--access-key-id'.
     A token of the form ``--flag=value`` keeps its flag part and replaces the value.
     A sensitive flag written as a separate token always consumes the following token
     as its value, even when that token starts with '-'. The input is not modified.
@@ -32,11 +31,11 @@ def sanitize_command(
 
         if "=" in arg:
             flag_part = arg.split("=", 1)[0]
-            sanitized.append(f"{flag_part}={placeholder}" if is_sensitive_flag(flag_part) else arg)
-        elif is_sensitive_flag(arg):
+            sanitized.append(f"{flag_part}={_PLACEHOLDER}" if _is_sensitive_flag(flag_part, sensitive_flags) else arg)
+        elif _is_sensitive_flag(arg, sensitive_flags):
             sanitized.append(arg)
             if i + 1 < len(command):
-                sanitized.append(placeholder)
+                sanitized.append(_PLACEHOLDER)
                 skip_indices.add(i + 1)
         else:
             sanitized.append(arg)
