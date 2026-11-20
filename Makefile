@@ -379,7 +379,7 @@ printf "%.$${TableWidth}s\n" "$$separator";\
 printf "$$rows" "oSparc platform" "http://$(get_my_ip).nip.io:9081";\
 printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc";\
 printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
-printf "$$rows" "Buggregator" "http://$(get_my_ip).nip.io:8000";\
+printf "$$rows" "Buggregator" "http://$(get_my_ip).nip.io:8025";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Dy-scheduler Dashboard" "http://$(get_my_ip).nip.io:8012";\
 printf "$$rows" "Flower" "http://$(get_my_ip).nip.io:5555";\
