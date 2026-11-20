@@ -14,11 +14,6 @@ from simcore_service_webserver.rest.healthcheck import HealthCheckError
 
 
 @pytest.fixture
-def app() -> web.Application:
-    return web.Application()
-
-
-@pytest.fixture
 def settings() -> GarbageCollectorSettings:
     return GarbageCollectorSettings(
         GARBAGE_COLLECTOR_TASK_STALE_FACTOR=2.0,
