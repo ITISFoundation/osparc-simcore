@@ -77,6 +77,16 @@ def test_sanitize_command(command: list[str], expected: list[str]) -> None:
             ["rclone", "--secretive", "abc"],
             id="similar-but-unsensitive-flag-passthrough",
         ),
+        pytest.param(
+            ["rclone", "-token", "abc"],
+            ["rclone", "-token", "abc"],
+            id="single-dash-flag-not-matched",
+        ),
+        pytest.param(
+            ["copy", "my-token", "dst"],
+            ["copy", "my-token", "dst"],
+            id="bare-word-suffix-not-matched-as-flag",
+        ),
     ],
 )
 def test_sanitize_command_flag_matching(command: list[str], expected: list[str]) -> None:

@@ -5,8 +5,12 @@ _PLACEHOLDER: Final[str] = "*" * 8
 
 
 def _is_sensitive_flag(flag: str, sensitive_flags: Collection[str]) -> bool:
-    """True for a listed flag or a backend-prefixed variant (e.g. '--s3-access-key-id' for '--access-key-id')."""
-    return any(flag == name or flag.endswith(f"-{name.removeprefix('--')}") for name in sensitive_flags)
+    """True for a '--flag' or a backend-prefixed variant (e.g. '--s3-access-key-id' for '--access-key-id').
+
+    The flag must carry the double-dash prefix, so tokens like '-access-key-id'
+    or 'foo-access-key-id' never match.
+    """
+    return any(flag.startswith("--") and flag.endswith(f"-{name.removeprefix('--')}") for name in sensitive_flags)
 
 
 def sanitize_command(
