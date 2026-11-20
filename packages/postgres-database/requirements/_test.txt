@@ -15,13 +15,13 @@ charset-normalizer==3.5.1
     # via
     #   -c requirements/_migration.txt
     #   requests
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 idna==3.19
     # via
@@ -86,7 +86,7 @@ requests==2.34.2
     #   types-docker
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
