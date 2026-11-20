@@ -25,7 +25,7 @@ nodes:
       - { containerPort: 31808, hostPort: 18080 }  # adminer
       - { containerPort: 30555, hostPort: 5555 }   # flower
       - { containerPort: 31025, hostPort: 1025 }   # buggregator SMTP
-      - { containerPort: 31825, hostPort: 8000 }   # buggregator web UI
+      - { containerPort: 31825, hostPort: 8025 }   # buggregator web UI
       - { containerPort: 32000, hostPort: 9001 }   # rustfs S3 API
       - { containerPort: 32001, hostPort: 9090 }   # rustfs console
       - { containerPort: 31686, hostPort: 16686 }  # jaeger UI

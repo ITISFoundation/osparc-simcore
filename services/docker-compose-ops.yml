@@ -79,7 +79,7 @@ services:
     init: true
     ports:
       - "1025:1025" # SMTP
-      - "8000:8000" # Web UI
+      - "8025:8000" # Web UI
     networks:
       - simcore_default
     healthcheck:

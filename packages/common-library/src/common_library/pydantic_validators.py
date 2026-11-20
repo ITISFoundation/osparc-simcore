@@ -2,7 +2,7 @@ import datetime as dt
 import re
 import warnings
 
-from pydantic import TypeAdapter, field_validator
+from pydantic import SecretStr, TypeAdapter, field_validator
 
 
 def _validate_legacy_timedelta_str(time_str: str | dt.timedelta) -> str | dt.timedelta:
@@ -57,3 +57,7 @@ def validate_numeric_string_as_timedelta(field: str):
         return v
 
     return field_validator(field, mode="before")(_numeric_string_as_timedelta)
+
+
+def to_secret_str[T](value: T) -> SecretStr | T:
+    return SecretStr(value) if isinstance(value, str) else value

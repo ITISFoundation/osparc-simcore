@@ -71,6 +71,10 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
             env_ignore_empty=env_settings.env_ignore_empty,
             env_parse_none_str=env_settings.env_parse_none_str,
             env_parse_enums=env_settings.env_parse_enums,
+            # Shared with the other built-in sources of this resolution. Read from the
+            # instance pydantic built rather than rebuilt, so the source replacing it
+            # keeps reporting incomplete fields only once.
+            _init_state=env_settings._init_state,  # noqa: SLF001
         )
 
     def prepare_field_value(

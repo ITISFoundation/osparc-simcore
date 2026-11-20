@@ -8,19 +8,16 @@ Target the Python version in `.python-version`.
 
 ## Tooling
 
-- Use `uv pip install`, `uv run --with <pkg> <tool>`, and `make reqs`.
-  Never use bare `pip` or `pip-compile`. See
+- Use `uv`, never bare `pip` or `pip-compile`. See
   [Python Dependencies](../../requirements/python-dependencies.md).
-- Run Ruff, Pylint, and mypy through repository commands or pre-commit. Global
-  tool configuration may differ from CI.
-- Pylint is not a pre-commit hook; CI runs it via `make pylint`. After editing
-  Python files, run `pylint --rcfile=.pylintrc <changed files>` before
-  finishing: a line-level `# noqa` satisfies ruff only, and pylint needs a
-  matching `# pylint: disable=` directive.
+- Check a change with `pre-commit run --files <changed files>`, then
+  `make mypy` and `make pylint` in the project directory. pre-commit covers
+  ruff, pyright and file hygiene, not mypy or pylint.
+- Fix lint findings rather than suppressing them. Add `# noqa` or
+  `# pylint: disable=` only where a fix is not possible.
 
 ## Typing
 
-- Use `X | None`, not `Optional[X]`.
 - Use PEP 695 syntax for new type aliases and generics:
   `type SortField = Literal["name", "email"]`, `class EnvelopeE[ErrorT](BaseModel)`.
   Keep assignment-based aliases when the alias must be callable at runtime
@@ -30,6 +27,9 @@ Target the Python version in `.python-version`.
 - Do not rewrite existing code solely to modernize syntax.
 - Fully annotate parameters and return types of all functions and methods,
   including private helpers. Annotate class attributes and non-obvious values.
+- Return a `NamedTuple` rather than a raw `tuple` when a function returns more
+  than one value: the field names say which element is which at the call site,
+  and the declaration is one class.
 - Declare module-level constants as `NAME: Final[T] = value` with an explicit
   type, including private ones and constants in test modules. Document
   non-obvious constant rationale with `Final[Annotated[T, doc(...)]]` instead
