@@ -85,7 +85,7 @@ email-validator==2.3.0
     #   pydantic
 execnet==2.1.2
     # via pytest-xdist
-faker==40.38.0
+faker==40.44.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

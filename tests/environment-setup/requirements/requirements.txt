@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/requirements.txt requirements/requirements.in
 annotated-types==0.8.0
     # via pydantic
-faker==40.39.0
+faker==40.44.0
     # via -r requirements/requirements.in
 filelock==4.2.9
     # via -r requirements/requirements.in
