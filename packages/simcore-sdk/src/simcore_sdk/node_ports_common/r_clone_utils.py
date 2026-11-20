@@ -46,8 +46,8 @@ def _is_sensitive_flag(flag: str) -> bool:
 
 def _sanitize_rclone_command(command: list[str]) -> list[str]:
     """Sanitize rclone command by masking sensitive credentials before logging."""
-    skip_indices = set()
-    result = []
+    skip_indices: set[int] = set()
+    result: list[str] = []
 
     for i, arg in enumerate(command):
         if i in skip_indices:

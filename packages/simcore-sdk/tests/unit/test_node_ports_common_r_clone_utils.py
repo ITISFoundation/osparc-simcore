@@ -364,6 +364,17 @@ def test_overwrite_command(edit: EditArguments, remove: RemoveArguments, expecte
             ],
             id="mask-dash-prefixed-value",
         ),
+        pytest.param(
+            [
+                "rclone",
+                "--rc-user",
+            ],
+            [
+                "rclone",
+                "--rc-user",
+            ],
+            id="trailing-flag-without-value",
+        ),
     ],
 )
 def test_sanitize_rclone_command(command: list[str], expected_sanitized: list[str]):
