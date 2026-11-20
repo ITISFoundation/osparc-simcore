@@ -8,6 +8,7 @@
 from collections.abc import Iterator
 from decimal import Decimal
 from http import HTTPStatus
+from pathlib import Path
 from typing import Final
 from unittest.mock import MagicMock
 
@@ -27,6 +28,7 @@ from models_library.wallets import WalletID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_projects import NewProject
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.groups import groups
@@ -376,3 +378,31 @@ async def test_pay_project_debt_denied_when_claimed_product_mismatches_project_p
     await assert_status(resp, expected)
 
     mock_pay_project_debt.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
+async def test_open_project_denied_when_claimed_product_mismatches_project_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+    tests_data_dir: Path,
+    osparc_product_name: ProductName,
+    expected: HTTPStatus,
+):
+    """Opening a project must not run its wallet/debt checks under another product."""
+    assert client.app
+
+    # empty workbench: opening it must fail at the product check before any service start
+    async with NewProject(
+        {"workbench": {}},
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        base_url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+        resp = await client.post(
+            f"{base_url}", json="a-client-session-id", headers={X_PRODUCT_NAME_HEADER: s4l_products_db}
+        )
+        await assert_status(resp, expected)

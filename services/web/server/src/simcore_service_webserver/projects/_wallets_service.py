@@ -39,6 +39,13 @@ async def get_project_wallet(app, project_id: ProjectID) -> WalletGet | None:
 async def check_project_financial_status_and_wallet_access(
     app, *, project_id: ProjectID, user_id: UserID, product_name: ProductName
 ):
+    project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
+    if project_product_name != product_name:
+        raise ProjectProductMismatchError(
+            claimed_product_name=product_name,
+            project_product_name=project_product_name,
+        )
+
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     current_project_wallet = await db.get_project_wallet(project_uuid=project_id)
