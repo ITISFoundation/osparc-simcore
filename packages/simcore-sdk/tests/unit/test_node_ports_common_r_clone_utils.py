@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Final
 from unittest.mock import AsyncMock
 
@@ -13,6 +14,7 @@ from simcore_sdk.node_ports_common.r_clone_utils import (
     _RCloneSyncTransferringMessage,
     _RCloneSyncUpdatedMessage,
     _sanitize_rclone_command,
+    get_effective_vfs_write_back_seconds,
     overwrite_command,
 )
 
@@ -328,8 +330,58 @@ def test_overwrite_command(edit: EditArguments, remove: RemoveArguments, expecte
             ],
             id="mask-storage-and-rc-credentials-together",
         ),
+        pytest.param(
+            [
+                "rclone",
+                "sync",
+                "--s3-access-key-id",
+                "AKIAIOSFODNN7EXAMPLE",
+                "--s3-secret-access-key=wJalrXUtnFEMI",
+                "src:",
+                "dst",
+            ],
+            [
+                "rclone",
+                "sync",
+                "--s3-access-key-id",
+                "********",
+                "--s3-secret-access-key=********",
+                "src:",
+                "dst",
+            ],
+            id="mask-backend-prefixed-credentials",
+        ),
+        pytest.param(
+            [
+                "rclone",
+                "--pass",
+                "-dash-prefixed-password",
+            ],
+            [
+                "rclone",
+                "--pass",
+                "********",
+            ],
+            id="mask-dash-prefixed-value",
+        ),
     ],
 )
 def test_sanitize_rclone_command(command: list[str], expected_sanitized: list[str]) -> None:
     """Test that sensitive data in rclone commands is properly masked."""
     assert _sanitize_rclone_command(command) == expected_sanitized
+
+
+def test_get_effective_vfs_write_back_seconds_error_messages_do_not_leak_credentials() -> None:
+    command = ["rclone", "--rc-user='user-uuid'", "--rc-pass='pass-uuid'", "mount"]
+    with pytest.raises(ValueError, match="--vfs-write-back") as exc_info:
+        get_effective_vfs_write_back_seconds(command)
+    assert "user-uuid" not in str(exc_info.value)
+    assert "pass-uuid" not in str(exc_info.value)
+
+
+def test_overwrite_command_warning_log_does_not_leak_credentials(caplog: pytest.LogCaptureFixture) -> None:
+    command = ["rclone", "--rc-pass='pass-uuid'", "sync", "src:", "dst"]
+    with caplog.at_level(logging.WARNING):
+        overwrite_command(command, edit={}, remove=[("--transfers", 1)])
+    assert "--transfers" in caplog.text
+    assert "pass-uuid" not in caplog.text

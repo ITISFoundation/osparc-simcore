@@ -16,20 +16,27 @@ from ._utils import BaseLogParser
 _logger = logging.getLogger(__name__)
 
 _PLACEHOLDER: Final[str] = "*" * 8
-_SENSITIVE_RCLONE_FLAGS: Final[set[str]] = {
-    "--pass",
-    "--password",
-    "--secret-access-key",
-    "--access-key-id",
-    "--auth",
-    "--api-key",
-    "--bearer-token",
-    "--client-secret",
-    "--client-id",
-    # rclone remote-control credentials (same command line as the S3 flags above)
-    "--rc-user",
-    "--rc-pass",
-}
+_SENSITIVE_RCLONE_FLAGS: Final[frozenset[str]] = frozenset(
+    {
+        "--pass",
+        "--password",
+        "--secret-access-key",
+        "--access-key-id",
+        "--auth",
+        "--api-key",
+        "--bearer-token",
+        "--client-secret",
+        "--client-id",
+        # rclone remote-control credentials (same command line as the S3 flags above)
+        "--rc-user",
+        "--rc-pass",
+    }
+)
+
+
+def _is_sensitive_flag(flag: str) -> bool:
+    """True for a sensitive flag or a backend-prefixed variant (e.g. --s3-access-key-id)."""
+    return any(flag == name or flag.endswith(f"-{name.removeprefix('--')}") for name in _SENSITIVE_RCLONE_FLAGS)
 
 
 def _sanitize_rclone_command(command: list[str]) -> list[str]:
@@ -43,10 +50,11 @@ def _sanitize_rclone_command(command: list[str]) -> list[str]:
 
         if "=" in arg:
             flag_part = arg.split("=", 1)[0]
-            result.append(f"{flag_part}={_PLACEHOLDER}" if flag_part in _SENSITIVE_RCLONE_FLAGS else arg)
-        elif arg in _SENSITIVE_RCLONE_FLAGS:
+            result.append(f"{flag_part}={_PLACEHOLDER}" if _is_sensitive_flag(flag_part) else arg)
+        elif _is_sensitive_flag(arg):
+            # rclone always binds the next token to these flags, even when it starts with '-'
             result.append(arg)
-            if i + 1 < len(command) and not command[i + 1].startswith("-"):
+            if i + 1 < len(command):
                 result.append(_PLACEHOLDER)
                 skip_indices.add(i + 1)
         else:
