@@ -226,7 +226,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
                 try:
                     stat_result = entry.stat(follow_symlinks=True)
                 except OSError:
-                    entries[rel_path] = _special_record(f"x{Path(entry.path).readlink()}")
+                    entries[rel_path] = _special_record(_broken_link_kind(entry))
                     continue
                 if entry.is_dir(follow_symlinks=False):
                     entries[rel_path] = _special_record("d")
@@ -270,6 +270,13 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         entries[rel_path] = record
         if quiet_since_last_scan:
             hash_jobs.append((str(path), record))
+
+
+def _broken_link_kind(entry: os.DirEntry[str]) -> str:
+    """Identifies an unstatable entry; the readlink can fail too (e.g. ENAMETOOLONG deep links)."""
+    with suppress(OSError):
+        return f"x{Path(entry.path).readlink()}"
+    return f"n{entry.name}"
 
 
 def _special_record(kind: str) -> _FileRecord:

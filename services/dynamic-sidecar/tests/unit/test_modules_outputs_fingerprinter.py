@@ -170,6 +170,19 @@ async def test_broken_symlink_settles_without_raising(fingerprinter: PortFingerp
     await _record_upload(fingerprinter)
 
 
+async def test_unstatable_entry_with_failing_readlink_settles_without_raising(
+    fingerprinter: PortFingerprint, port_dir: Path, mocker: MockerFixture
+):
+    # a link too deep for stat also breaks readlink (ENAMETOOLONG on FUSE mount loops)
+    (port_dir / "deep_loop").symlink_to(port_dir / "deep_loop")
+    mocker.patch.object(Path, "readlink", side_effect=OSError(36, "File name too long"))
+
+    await _settle(fingerprinter)
+    await _record_upload(fingerprinter)
+
+    (port_dir / "deep_loop").unlink()  # the self-loop would block tmp cleanup
+
+
 async def test_ports_never_share_change_state(
     hash_pool: ThreadPoolExecutor, tmp_path: Path, no_scan_interval_cap: None
 ):
