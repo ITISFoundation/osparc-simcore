@@ -28,6 +28,7 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
+from simcore_service_dynamic_sidecar.modules.outputs import _fingerprinter
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from tenacity import retry
 from tenacity.after import after_log
@@ -40,6 +41,12 @@ logger = logging.getLogger(__name__)
 
 _CONCURRENT_RUN_TIMEOUT_S: Final[float] = 10
 _COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
+
+
+@pytest.fixture
+def no_scan_interval_cap(mocker: MockerFixture) -> None:
+    """lifts the outputs fingerprint scan pace so tests do not wait for production delays"""
+    mocker.patch.object(_fingerprinter, "_DEFAULT_MIN_SCAN_INTERVAL", 0.0)
 
 
 #

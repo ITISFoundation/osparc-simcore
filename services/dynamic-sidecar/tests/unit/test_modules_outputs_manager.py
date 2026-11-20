@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import functools
 import inspect
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
@@ -189,7 +190,7 @@ async def outputs_context(
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_context: OutputsContext, port_notifier: PortNotifier
+    outputs_context: OutputsContext, port_notifier: PortNotifier, no_scan_interval_cap: None
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
         outputs_context=outputs_context,
@@ -255,7 +256,8 @@ async def test_recovers_after_raising_error(
     with pytest.raises(UploadPortsFailedError) as exec_info:
         await outputs_manager.wait_for_all_uploads_to_finish()
 
-    assert set(exec_info.value.failures.keys()) == set(port_keys) | set(non_file_type_port_keys)
+    failures = exec_info.value.failures  # pyright: ignore[reportAttributeAccessIssue]
+    assert set(failures.keys()) == set(port_keys) | set(non_file_type_port_keys)
 
     def _assert_same_exceptions(first: list[str | None], second: list[type[BaseException]]) -> None:
         for formatted_traceback, error_class in zip(first, second, strict=True):
@@ -264,8 +266,8 @@ async def test_recovers_after_raising_error(
             assert mock_error.message in formatted_traceback
 
     _assert_same_exceptions(
-        list(exec_info.value.failures.values()),
-        [mock_error.error_class] * len(exec_info.value.failures),
+        list(failures.values()),
+        [mock_error.error_class] * len(failures),
     )
 
     # the second time uploading there is no error to be raised
@@ -410,6 +412,7 @@ async def test_regression_io_log_redirect_cb(
         assert outputs_manager.io_log_redirect_cb is not None
 
         # ensure callback signature passed to nodeports does not change
+        assert isinstance(outputs_manager.io_log_redirect_cb, functools.partial)
         argspec = inspect.getfullargspec(outputs_manager.io_log_redirect_cb.func)
         assert argspec.args == ["app", "log"]
         assert argspec.varargs is None
@@ -448,7 +451,7 @@ def _uploaded_port_keys(mock_upload_outputs: AsyncMock) -> list[str]:
 
 @pytest.fixture
 async def single_port_manager(
-    tmp_path: Path, port_notifier: PortNotifier
+    tmp_path: Path, port_notifier: PortNotifier, no_scan_interval_cap: None
 ) -> AsyncIterator[tuple[OutputsManager, Path]]:
     outputs_dir = tmp_path / "outputs"
     outputs_dir.mkdir()

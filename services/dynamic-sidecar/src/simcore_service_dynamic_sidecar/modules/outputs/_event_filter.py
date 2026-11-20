@@ -95,6 +95,7 @@ class EventFilter:
 
             port_key = port_event
 
+            self.outputs_manager.on_port_key_change(port_key)
             if port_key not in self._port_key_tracked_event:
                 self._port_key_tracked_event[port_key] = TrackedEvent(last_detection=time.time())
             else:
