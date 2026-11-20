@@ -45,6 +45,7 @@ from ..exceptions import (
     ProjectNodeResourcesInvalidError,
     ProjectNodeResourcesSetByPricingUnitError,
     ProjectNotFoundError,
+    ProjectProductMismatchError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyNodesError,
     ProjectTooManyProjectOpenedError,
@@ -201,6 +202,13 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         status.HTTP_400_BAD_REQUEST,
         user_message(
             "The project type and template type combination is not valid",
+            _version=1,
+        ),
+    ),
+    ProjectProductMismatchError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "The project belongs to a different product than the one requested.",
             _version=1,
         ),
     ),

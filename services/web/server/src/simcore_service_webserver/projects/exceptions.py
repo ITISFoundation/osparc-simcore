@@ -3,6 +3,7 @@
 # mypy: disable-error-code=truthy-function
 from typing import Any, Final
 
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -55,6 +56,17 @@ class ProjectOwnerNotFoundError(BaseProjectError):
     def __init__(self, *, project_uuid, **ctx):
         super().__init__(**ctx)
         self.project_uuid = project_uuid
+
+
+class ProjectProductMismatchError(BaseProjectError):
+    msg_template = (
+        "Claimed product '{claimed_product_name}' does not match the project's product '{project_product_name}'"
+    )
+
+    def __init__(self, *, claimed_product_name: ProductName, project_product_name: ProductName, **ctx):
+        super().__init__(**ctx)
+        self.claimed_product_name = claimed_product_name
+        self.project_product_name = project_product_name
 
 
 class ProjectNotFoundError(BaseProjectError):
