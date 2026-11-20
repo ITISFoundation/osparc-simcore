@@ -27,6 +27,7 @@ from ...models import AuthenticatedRequestContext
 from ...products import products_web
 from ...projects import _projects_repository
 from ...projects.api import check_user_project_permission
+from ...projects.exceptions import ProjectProductMismatchError
 from ...projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
 )
@@ -50,7 +51,10 @@ async def _ensure_project_product_matches_claim(request: web.Request, project_id
     claimed_product_name = request[RQ_PRODUCT_KEY]
     project_product_name = await _projects_repository.get_project_product(request.app, project_uuid=project_id)
     if project_product_name != claimed_product_name:
-        raise web.HTTPBadRequest(text=f"Project product name mismatch {claimed_product_name=} {project_product_name=}")
+        raise ProjectProductMismatchError(
+            claimed_product_name=claimed_product_name,
+            project_product_name=project_product_name,
+        )
 
 
 routes = web.RouteTableDef()
