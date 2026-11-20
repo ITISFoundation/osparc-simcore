@@ -20,13 +20,23 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
 from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.products import ProductName
+from models_library.users import UserID
+from models_library.wallets import WalletID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.groups._groups_service import get_product_group_for_user
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
+from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
+from simcore_service_webserver.products._service import load_products
+from simcore_service_webserver.products.products_service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
@@ -218,3 +228,116 @@ async def test_pay_project_debt(
     resp = await client.post(f"{base_url}", json={"amount": -100})
     data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
     assert mock_pay_project_debt.assert_called_once
+
+
+# --- product-bound wallet attachment (see project:clone guard precedent) -----
+
+
+@pytest.fixture(scope="session")
+def s4l_product_name() -> ProductName:
+    return "s4l"
+
+
+@pytest.fixture
+def s4l_products_db(postgres_db: sa.engine.Engine, s4l_product_name: ProductName) -> Iterator[ProductName]:
+    with postgres_db.connect() as conn:
+        conn.execute(
+            products.insert().values(
+                name=s4l_product_name,
+                host_regex="pytest",
+                base_url="https://pytest.com",
+                display_name="pytest",
+            )
+        )
+    yield s4l_product_name
+    with postgres_db.connect() as conn:
+        conn.execute(products.delete().where(products.c.name == s4l_product_name))
+
+
+@pytest.fixture
+async def user_group_in_second_product(
+    client: TestClient, logged_user: UserInfoDict, s4l_products_db: ProductName
+) -> int:
+    assert client.app
+    await auto_add_user_to_product_group(client.app, user_id=UserID(logged_user["id"]), product_name=s4l_products_db)
+    # products are cached in the app on startup: reload so the new product is discoverable
+    client.app[PRODUCTS_APPKEY] = {product.name: product for product in await load_products(client.app)}
+    product = get_product(client.app, s4l_products_db)
+    assert product.group_id
+    group, _ = await get_product_group_for_user(
+        client.app, user_id=UserID(logged_user["id"]), product_gid=product.group_id
+    )
+    return group.gid
+
+
+@pytest.fixture
+def wallet_in_second_product(
+    postgres_db: sa.engine.Engine,
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+) -> Iterator[WalletID]:
+    with postgres_db.connect() as con:
+        result = con.execute(
+            wallets.insert()
+            .values(
+                name="My wallet in other product",
+                owner=user_group_in_second_product,
+                status="ACTIVE",
+                product_name=s4l_products_db,
+            )
+            .returning(sa.literal_column("*"))
+        )
+        row = result.fetchone()
+        assert row is not None
+        wallet_id = WalletID(row.wallet_id)
+    yield wallet_id
+    with postgres_db.connect() as con:
+        con.execute(wallets.delete().where(wallets.c.name == "My wallet in other product"))
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_connect_wallet_denied_when_claimed_product_mismatches_project_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    s4l_products_db: ProductName,
+    wallet_in_second_product: WalletID,
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
+    expected: HTTPStatus,
+):
+    """A wallet valid in the *claimed* product must not attach to a project of another product."""
+    assert client.app
+
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{wallet_in_second_product}"
+    )
+    resp = await client.put(f"{base_url}", headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+
+    # and nothing was attached
+    base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
+    resp = await client.get(f"{base_url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data is None
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_connect_wallet_denied_when_claimed_product_mismatches_even_with_own_wallet(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    setup_wallets_db: list[WalletGet],
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
+    expected: HTTPStatus,
+):
+    assert client.app
+
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
+    )
+    resp = await client.put(f"{base_url}", headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
