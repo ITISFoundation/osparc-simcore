@@ -4,7 +4,6 @@ from typing import Annotated
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,7 +15,6 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from ...web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from .. import _projects_service, _wallets_service
-from ..exceptions import ProjectProductMismatchError
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
@@ -63,24 +61,17 @@ async def connect_wallet_to_project(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 
-    # ensure the project exists and belongs to the requested product
-    # (the DB product on the project is the source of truth, not the claimed
-    # header — same guard as project:clone, see _crud_api_create.py)
-    project = await _projects_service.get_project_for_user(
+    # ensure the project exists
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    if project["productName"] != req_ctx.product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=req_ctx.product_name,
-            project_product_name=ProductName(project["productName"]),
-        )
 
     wallet: WalletGet = await _wallets_service.connect_wallet_to_project(
         request.app,
-        product_name=req_ctx.product_name,
+        claimed_product_name=req_ctx.product_name,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
@@ -106,20 +97,13 @@ async def pay_project_debt(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
     body_params = await parse_request_body_as(_PayProjectDebtBody, request)
 
-    # Ensure the project exists and belongs to the requested product
-    # (the DB product on the project is the source of truth, not the claimed
-    # header — same guard as project:clone, see _crud_api_create.py)
-    project = await _projects_service.get_project_for_user(
+    # Ensure the project exists
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    if project["productName"] != req_ctx.product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=req_ctx.product_name,
-            project_product_name=ProductName(project["productName"]),
-        )
 
     # Get currently associated wallet with the project
     current_wallet: WalletGet | None = await _wallets_service.get_project_wallet(request.app, path_params.project_id)
@@ -143,7 +127,7 @@ async def pay_project_debt(request: web.Request):
     # 2. Mark the project transactions as billed
     await _wallets_service.pay_debt_with_different_wallet(
         app=request.app,
-        product_name=req_ctx.product_name,
+        claimed_product_name=req_ctx.product_name,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         current_wallet_id=current_wallet.wallet_id,

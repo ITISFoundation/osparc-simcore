@@ -18,10 +18,12 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ..wallets import _api as wallets_service
+from . import _projects_repository
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectInDebtCanNotChangeWalletError,
     ProjectInDebtCanNotOpenError,
+    ProjectProductMismatchError,
     ProjectWalletPendingTransactionError,
 )
 
@@ -69,11 +71,29 @@ async def check_project_financial_status_and_wallet_access(
 async def connect_wallet_to_project(
     app,
     *,
-    product_name: ProductName,
+    claimed_product_name: ProductName,
     project_id: ProjectID,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> WalletGet:
+    """Attach `wallet_id` to the project, under the project's own product.
+
+    The product claimed by the client is checked against the project's product
+    (source of truth: the DB), and the wallet access and credit checks run
+    against the derived product, not the claim. Same guard as ``project:clone``
+    (see ``_crud_api_create.py``).
+
+    Raises:
+        ProjectProductMismatchError: if the claimed product differs from the
+            project's product
+    """
+    product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
+    if product_name != claimed_product_name:
+        raise ProjectProductMismatchError(
+            claimed_product_name=claimed_product_name,
+            project_product_name=product_name,
+        )
+
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     # ensure the wallet can be used by the user
@@ -124,7 +144,7 @@ async def connect_wallet_to_project(
 async def pay_debt_with_different_wallet(
     app,
     *,
-    product_name: ProductName,
+    claimed_product_name: ProductName,
     project_id: ProjectID,
     user_id: UserID,
     current_wallet_id: WalletID,
@@ -150,7 +170,17 @@ async def pay_debt_with_different_wallet(
 
     Outcome:
     The project's debt is paid, Wallet A is credited, and Wallet B is debited.
+
+    Raises:
+        ProjectProductMismatchError: if the claimed product differs from the
+            project's product
     """
+    product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
+    if product_name != claimed_product_name:
+        raise ProjectProductMismatchError(
+            claimed_product_name=claimed_product_name,
+            project_product_name=product_name,
+        )
 
     assert current_wallet_id != new_wallet_id  # nosec
 
@@ -181,7 +211,9 @@ async def pay_debt_with_different_wallet(
         user_id=user_id,
         user_email=user["email"],
         osparc_credits=debt_amount,  # <-- Negative number
-        payment_transaction_id=f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}. Project id {project_id}.",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}. Project id {project_id}."
+        ),
         created_at=_created_at,
     )
 
@@ -192,7 +224,9 @@ async def pay_debt_with_different_wallet(
         user_id=user_id,
         user_email=user["email"],
         osparc_credits=-debt_amount,  # <-- Positive number
-        payment_transaction_id=f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}. Project id {project_id}.",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}. Project id {project_id}."
+        ),
         created_at=_created_at,
     )
 
