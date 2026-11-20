@@ -9,6 +9,7 @@ import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
 from math import ceil
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
@@ -24,6 +25,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 from models_library.api_schemas_webserver.projects import ProjectStateOutputSchema
 from models_library.products import ProductName
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import (
@@ -36,7 +38,8 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
     standard_user_role_response,
 )
-from pytest_simcore.helpers.webserver_users import UserInfoDict
+from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.rabbit import RabbitSettings
@@ -340,7 +343,7 @@ async def logged_user_registered_in_two_products(
     group, _ = await get_product_group_for_user(
         # should not raise
         client.app,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_gid=osparc_product.group_id,
     )
     assert group.gid == osparc_product.group_id
@@ -350,15 +353,19 @@ async def logged_user_registered_in_two_products(
     assert s4l_product.group_id
 
     with pytest.raises(GroupNotFoundError):
-        await get_product_group_for_user(client.app, user_id=logged_user["id"], product_gid=s4l_product.group_id)
+        await get_product_group_for_user(
+            client.app, user_id=UserID(logged_user["id"]), product_gid=s4l_product.group_id
+        )
 
     # register
-    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=s4l_products_db_name)
+    await auto_add_user_to_product_group(
+        client.app, user_id=UserID(logged_user["id"]), product_name=s4l_products_db_name
+    )
 
     group, _ = await get_product_group_for_user(
         # should not raise
         client.app,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_gid=s4l_product.group_id,
     )
     assert group.gid == s4l_product.group_id
@@ -374,7 +381,7 @@ async def test_list_projects_reports_unknown_when_computation_states_are_unavail
 ):
     mocked_director_v2.return_value = None
 
-    data, *_ = await _list_and_assert_projects(client, status.HTTP_200_OK, {"type": "user"})
+    data, *_ = await _list_and_assert_projects(client, HTTPStatus(status.HTTP_200_OK), {"type": "user"})
 
     assert len(data) == 1
     assert data[0]["uuid"] == user_project["uuid"]
@@ -431,7 +438,7 @@ async def test_get_project(
     await _assert_get_same_project(client, user_project, expected)
 
     # with a template
-    template_expected = status.HTTP_403_FORBIDDEN if user_role == UserRole.GUEST else expected
+    template_expected = HTTPStatus(status.HTTP_403_FORBIDDEN if user_role == UserRole.GUEST else expected)
     await _assert_get_same_project(client, template_project, template_expected)
 
 
@@ -646,7 +653,7 @@ async def test_new_template_from_project(
     if new_template_prj:
         template_project = new_template_prj
 
-        templates, *_ = await _list_and_assert_projects(client, status.HTTP_200_OK, {"type": "template"})
+        templates, *_ = await _list_and_assert_projects(client, HTTPStatus(status.HTTP_200_OK), {"type": "template"})
 
         assert len(templates) == 1
         assert_equal_ignoring_none(template_project, templates[0])
@@ -723,8 +730,8 @@ async def test_new_template_from_project(
 
 
 @pytest.fixture
-def mock_dynamic_scheduler_inactivity(mocker: MockerFixture, is_inactive: bool) -> None:
-    mocker.patch(
+def mock_dynamic_scheduler_inactivity(mocker: MockerFixture, is_inactive: bool) -> mock.AsyncMock:
+    return mocker.patch(
         "simcore_service_webserver.dynamic_scheduler.api.get_project_inactivity",
         autospec=True,
         return_value=GetProjectInactivityResponse(is_inactive=is_inactive),
@@ -740,19 +747,17 @@ def mock_dynamic_scheduler_inactivity(mocker: MockerFixture, is_inactive: bool) 
 )
 @pytest.mark.parametrize("is_inactive", [True, False])
 async def test_get_project_inactivity(
-    mock_dynamic_scheduler_inactivity: None,
+    mock_dynamic_scheduler_inactivity: mock.AsyncMock,
     logged_user: UserInfoDict,
+    user_project: ProjectDict,
     client: TestClient,
-    faker: Faker,
     user_role: UserRole,
     expected: HTTPStatus,
     is_inactive: bool,
 ):
-    mock_project_id = faker.uuid4()
-
     assert client.app
-    url = client.app.router["get_project_inactivity"].url_for(project_id=mock_project_id)
-    assert f"/v0/projects/{mock_project_id}/inactivity" == url.path
+    url = client.app.router["get_project_inactivity"].url_for(project_id=user_project["uuid"])
+    assert f"/v0/projects/{user_project['uuid']}/inactivity" == url.path
     response = await client.get(f"{url}")
     data, error = await assert_status(response, expected)
     if user_role == UserRole.ANONYMOUS:
@@ -761,3 +766,50 @@ async def test_get_project_inactivity(
     assert data
     assert error is None
     assert data["is_inactive"] is is_inactive
+
+
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.USER
+
+
+@pytest.mark.parametrize("is_inactive", [False])
+async def test_get_project_inactivity_of_foreign_project_is_forbidden(
+    mock_dynamic_scheduler_inactivity: mock.AsyncMock,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    osparc_product_name: ProductName,
+    tests_data_dir: Path,
+):
+    assert client.app
+
+    async with (
+        NewUser({}, client.app) as other_user,
+        NewProject(
+            {"name": "foreign-project"},
+            client.app,
+            user_id=other_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as other_project,
+    ):
+        url = client.app.router["get_project_inactivity"].url_for(project_id=other_project["uuid"])
+        response = await client.get(f"{url}")
+
+        await assert_status(response, status.HTTP_403_FORBIDDEN)
+        mock_dynamic_scheduler_inactivity.assert_not_called()
+
+
+@pytest.mark.parametrize("is_inactive", [False])
+async def test_get_project_inactivity_of_nonexistent_project_is_not_found(
+    mock_dynamic_scheduler_inactivity: mock.AsyncMock,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+):
+    assert client.app
+    url = client.app.router["get_project_inactivity"].url_for(project_id=faker.uuid4())
+    response = await client.get(f"{url}")
+
+    await assert_status(response, status.HTTP_404_NOT_FOUND)
+    mock_dynamic_scheduler_inactivity.assert_not_called()
