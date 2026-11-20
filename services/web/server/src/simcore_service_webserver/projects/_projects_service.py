@@ -185,6 +185,7 @@ from .exceptions import (
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesSetByPricingUnitError,
+    ProjectProductMismatchError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
@@ -367,10 +368,17 @@ async def get_project_product_validated_against_claim(
     Money-scoped operations run against the project's product (source of truth:
     the DB), not the product claimed in the request header. Same guard as
     ``project:clone`` (see ``_crud_api_create.py``).
+
+    Raises:
+        ProjectProductMismatchError: if the claimed product differs from the
+            project's product
     """
     project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
     if project_product_name != claimed_product_name:
-        raise web.HTTPBadRequest(text=f"Project product name mismatch {claimed_product_name=} {project_product_name=}")
+        raise ProjectProductMismatchError(
+            claimed_product_name=claimed_product_name,
+            project_product_name=project_product_name,
+        )
     return project_product_name
 
 
