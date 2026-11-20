@@ -15,7 +15,7 @@ from common_library.logging.logging_errors import (
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import ProgressType
-from pydantic import PositiveFloat
+from pydantic import PositiveFloat, PositiveInt
 from servicelib import progress_bar
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
@@ -26,6 +26,7 @@ from ...core.settings import ApplicationSettings
 from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
 from ._context import OutputsContext
+from ._fingerprinter import PortContentFingerprinter
 
 _logger = logging.getLogger(__name__)
 
@@ -84,6 +85,19 @@ class _PortKeyTracker:
         async with self._lock:
             return list(self._uploading_port_keys)
 
+    async def get_pending(self) -> set[str]:
+        async with self._lock:
+            return self._pending_port_keys
+
+    async def remove_pending(self, *port_keys: str) -> None:
+        async with self._lock:
+            self._pending_port_keys.difference_update(port_keys)
+
+    async def move_to_uploading(self, *port_keys: str) -> None:
+        async with self._lock:
+            self._uploading_port_keys.update(port_keys)
+            self._pending_port_keys.difference_update(port_keys)
+
     async def move_all_uploading_to_pending(self) -> None:
         async with self._lock:
             self._pending_port_keys.update(self._uploading_port_keys)
@@ -105,6 +119,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         upload_upon_api_request: bool = True,
         task_cancellation_timeout_s: PositiveFloat = 5,
         task_monitor_interval_s: PositiveFloat = 1.0,
+        required_stable_looks: PositiveInt = 5,
     ):
         self.outputs_context = outputs_context
         self.port_notifier = port_notifier
@@ -115,6 +130,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self.task_progress_cb = progress_cb
 
         self._port_key_tracker = _PortKeyTracker()
+        self._content_fingerprinter = PortContentFingerprinter(required_stable_looks=required_stable_looks)
         self._task_uploading: Task | None = None
         self._task_uploading_followup: Task | None = None
         self._task_scheduler_worker: Task | None = None
@@ -160,16 +176,34 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 )
 
             # keep track of the last result for each port
+            failed_port_keys: set[str] = set()
             for port_key in port_keys:
                 try:
                     future.result()
                     self._last_upload_error_tracker[port_key] = None
                 except Exception as e:  # pylint: disable=broad-except
                     self._last_upload_error_tracker[port_key] = format_exception_as_string(e)
+                    failed_port_keys.add(port_key)
 
-            self._task_uploading_followup = create_task(self._port_key_tracker.remove_all_uploading())
+            self._task_uploading_followup = create_task(self._uploaded_ports_followup(port_keys, failed_port_keys))
 
         self._task_uploading.add_done_callback(_remove_downloads)
+
+    async def _uploaded_ports_followup(self, port_keys: list[str], failed_port_keys: set[str]) -> None:
+        requeue_port_keys: set[str] = set()
+        for port_key in port_keys:
+            if port_key in failed_port_keys or port_key not in self.outputs_context.file_type_port_keys:
+                continue
+            same_content_fingerprint = await self._content_fingerprinter.note_upload_succeeded(
+                port_key, self.outputs_context.outputs_path / port_key
+            )
+            if not same_content_fingerprint:
+                _logger.info("Port %s changed during upload, scheduling another upload", port_key)
+                requeue_port_keys.add(port_key)
+
+        await self._port_key_tracker.remove_all_uploading()
+        for port_key in requeue_port_keys:
+            await self._port_key_tracker.add_pending(port_key)
 
     async def _uploading_task_cancel(self) -> None:
         if self._task_uploading is not None:
@@ -180,13 +214,27 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await _cancel_task(self._task_uploading_followup, self.task_cancellation_timeout_s)
             self._task_uploading_followup = None
 
+    async def _get_schedulable_port_keys(self) -> list[str]:
+        file_port_keys = set(self.outputs_context.file_type_port_keys)
+        pending_port_keys = await self._port_key_tracker.get_pending()
+        schedulable_port_keys = pending_port_keys - file_port_keys
+        for port_key in sorted(pending_port_keys & file_port_keys):
+            status = await self._content_fingerprinter.observe(port_key, self.outputs_context.outputs_path / port_key)
+            if status.matches_last_upload:
+                await self._port_key_tracker.remove_pending(port_key)
+                _logger.info("Skipping upload of port %s: content matches the last successful upload", port_key)
+            elif status.is_settled:
+                schedulable_port_keys.add(port_key)
+        return sorted(schedulable_port_keys)
+
     async def _scheduler_worker(self) -> None:
         if await self._port_key_tracker.are_pending_ports_uploading():
             await self._uploading_task_cancel()
             await self._port_key_tracker.move_all_uploading_to_pending()
 
-        if await self._port_key_tracker.can_schedule_ports_to_upload():
-            await self._port_key_tracker.move_all_ports_to_uploading()
+        schedulable_port_keys = await self._get_schedulable_port_keys()
+        if schedulable_port_keys and await self._port_key_tracker.can_schedule_ports_to_upload():
+            await self._port_key_tracker.move_to_uploading(*schedulable_port_keys)
 
             await self._uploading_task_start()
 
@@ -248,7 +296,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         # for each port. If any error is detected this will raise.
         any_failed_upload = any(True for v in self._last_upload_error_tracker.values() if v is not None)
         if any_failed_upload:
-            raise UploadPortsFailedError(failures=self._last_upload_error_tracker)
+            raise UploadPortsFailedError(failures=self._last_upload_error_tracker)  # pyright: ignore[reportCallIssue]
 
 
 def configure_outputs_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
