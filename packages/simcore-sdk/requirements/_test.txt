@@ -327,13 +327,13 @@ types-aiobotocore==3.8.0
     # via -r requirements/_test.in
 types-aiobotocore-s3==3.8.0
     # via types-aiobotocore
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
 types-awscrt==0.31.3
     # via botocore-stubs
 types-greenlet==3.5.0.20260518
     # via sqlalchemy
-types-tqdm==4.70.0.20261102
+types-tqdm==4.70.0.20261106
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
