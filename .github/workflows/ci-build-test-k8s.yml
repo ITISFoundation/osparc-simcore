@@ -1,0 +1,102 @@
+name: CI Build Test K8s
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ci-build-test-k8s.yml"
+      - ".github/workflows/ci-k8s-charts.yml"
+      - "charts/**"
+      - "k8s/**"
+      - "services/**/helmfile*"
+      - "services/**/helm-values*"
+      - ".env-devel"
+      - "scripts/makefiles/k8s.mk"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Suites whose tests need no infra (no docker, swarm or k8s services).
+  unit-test-no-infra:
+    name: "[unit][k8s] ${{ matrix.suite }}"
+    timeout-minutes: 18
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        suite:
+          - aws-library
+          - common-library
+          - dask-task-models-library
+          - datcore-adapter
+          - invitations
+          - models-library
+          - service-integration
+          - settings-library
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: "3.14"
+          cache-dependency-glob: "**/${{ matrix.suite }}/requirements/ci.txt"
+
+      - name: Install
+        run: ./ci/github/unit-testing/${{ matrix.suite }}.bash install
+
+      - name: Typecheck
+        run: ./ci/github/unit-testing/${{ matrix.suite }}.bash typecheck
+
+      - name: Test
+        run: ./ci/github/unit-testing/${{ matrix.suite }}.bash test
+
+  unit-test-api:
+    name: "[unit][k8s] api"
+    timeout-minutes: 18
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: "3.14"
+          cache-dependency-glob: "**/api/requirements/ci.txt"
+
+      - name: Install
+        run: ./ci/github/unit-testing/api.bash install
+
+      - name: Test
+        run: ./ci/github/unit-testing/api.bash test
+
+  unit-test-static-webserver:
+    name: "[unit][k8s] static-webserver"
+    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Test
+        working-directory: services/static-webserver/client/tests
+        run: node --test
