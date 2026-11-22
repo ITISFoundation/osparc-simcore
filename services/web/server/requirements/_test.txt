@@ -435,7 +435,7 @@ typer==0.27.3
     #   -c requirements/_base.txt
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
 types-greenlet==3.5.0.20260518
     # via sqlalchemy
