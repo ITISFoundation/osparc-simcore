@@ -629,7 +629,7 @@ truststore==0.10.5
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   httpcore2
     #   httpx2
-typer==0.27.3
+typer==0.28.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/_base.in

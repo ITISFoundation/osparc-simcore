@@ -129,7 +129,7 @@ six==1.17.0
     # via python-dateutil
 text-unidecode==1.3
     # via python-slugify
-typer==0.27.3
+typer==0.28.0
     # via -r requirements/_base.in
 typing-extensions==4.16.0
     # via
