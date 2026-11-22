@@ -142,7 +142,7 @@ httpx2==2.16.0
     # via
     #   -c requirements/_base.txt
     #   fastapi
-hypothesis==6.170.14
+hypothesis==6.170.15
     # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
