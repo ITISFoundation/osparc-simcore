@@ -16,6 +16,9 @@ on:
 permissions:
   contents: read
 
+env:
+  SIMCORE_ORCHESTRATOR: k8s
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -23,7 +26,7 @@ concurrency:
 jobs:
   # Suites whose tests need no infra (no docker, swarm or k8s services).
   unit-test-no-infra:
-    name: "[unit][k8s] ${{ matrix.suite }}"
+    name: "[unit] ${{ matrix.suite }}"
     timeout-minutes: 18
     runs-on: ubuntu-24.04
     strategy:
@@ -60,7 +63,7 @@ jobs:
         run: ./ci/github/unit-testing/${{ matrix.suite }}.bash test
 
   unit-test-api:
-    name: "[unit][k8s] api"
+    name: "[unit] api"
     timeout-minutes: 18
     runs-on: ubuntu-24.04
     steps:
@@ -81,8 +84,55 @@ jobs:
       - name: Test
         run: ./ci/github/unit-testing/api.bash test
 
+  unit-test-webserver-isolated:
+    name: "[unit] webserver (isolated)"
+    timeout-minutes: 25
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: "3.14"
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
+
+      - name: Install
+        run: ./ci/github/unit-testing/webserver.bash install
+
+      - name: Typecheck
+        run: ./ci/github/unit-testing/webserver.bash typecheck
+
+      - name: Test
+        run: ./ci/github/unit-testing/webserver.bash test_isolated
+
+  system-test-environment-setup:
+    name: "[sys] environment setup"
+    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: "3.14"
+          cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
+
+      - name: Install
+        run: ./ci/github/system-testing/environment-setup.bash install
+
+      - name: Test
+        run: ./ci/github/system-testing/environment-setup.bash test
+
   unit-test-static-webserver:
-    name: "[unit][k8s] static-webserver"
+    name: "[unit] static-webserver"
     timeout-minutes: 10
     runs-on: ubuntu-24.04
     steps:
