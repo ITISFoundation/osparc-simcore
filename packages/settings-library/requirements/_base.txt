@@ -34,7 +34,7 @@ rich==14.3.4
     #   typer
 shellingham==1.5.4
     # via typer
-typer==0.27.3
+typer==0.28.0
     # via -r requirements/_base.in
 typing-extensions==4.16.0
     # via
