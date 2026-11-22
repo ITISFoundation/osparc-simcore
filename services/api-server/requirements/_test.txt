@@ -400,7 +400,7 @@ tenacity==9.2.1
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
 types-awscrt==0.34.1
     # via
