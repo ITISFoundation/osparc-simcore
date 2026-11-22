@@ -52,6 +52,11 @@ All tests.
 
 Everything must be green, except tests of Swarm-based logic.
 
+### Swarm-only (non-backend) tests
+
+Tests of pure Swarm artifacts (e.g. compose files), not backend logic, are skipped:
+`SIMCORE_ORCHESTRATOR=k8s` (set in the workflow) + `@pytest.mark.skipif` on the test.
+
 ### Cluster & deploy
 
 Reuse `k8s/Makefile` only (`create-cluster`, `load-images-into-cluster`, `helmfile-apply`, `delete-cluster`). No custom kubectl/kind/helm steps in CI.
