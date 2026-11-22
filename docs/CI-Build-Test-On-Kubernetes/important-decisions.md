@@ -1,15 +1,13 @@
 # CI Build & Test on Kubernetes — Important Decisions
 
-Add a Kubernetes flavor to `ci-build-test.yml`. No backend changes; Swarm-based services may fail.
+Add a Kubernetes flavor to the CI Build Tests (`ci-build-test.yml`). 
+No backend changes; Swarm-based services may fail.
 
 ## ❓ Open questions
 
 ### Flavor wiring
 
 How is the Kubernetes flavor passed through each layer?
-
-**GitHub Actions:** 
-What does a k8s-flavor job look like (e.g. e2e)? Matrix axis or separate job?
 
 **Flavor selection:**
 How is the flavor set? (env var, e.g. `SIMCORE_FLAVOR=k8s|swarm`, make variable, pytest option?)
@@ -28,6 +26,15 @@ How do fixtures pick the flavor? How are Swarm-logic tests marked (e.g. `@pytest
 
 ## ✅ Decided
 
+### Workflow
+
+Own workflow file (e.g. `.github/workflows/ci-build-test-k8s.yml`). `ci-build-test.yml` stays untouched.
+
+### Interfaces
+
+Minimal changes to existing interfaces (Makefiles, test invocation, CI scripts, ...).
+New ones shall resemble existing ones
+
 ### Rollout strategy
 
 Step by step, starting with the simplest unit tests:
@@ -39,7 +46,7 @@ Step by step, starting with the simplest unit tests:
 
 ### Scope
 
-All tests. ⚠️ Some unit tests use Swarm as test infra (e.g. `web/server/tests/unit/with_dbs`) — keep Swarm on the runner for them.
+All tests.
 
 ### Expected failures
 
@@ -51,4 +58,4 @@ Reuse `k8s/Makefile` only (`create-cluster`, `load-images-into-cluster`, `helmfi
 
 ### Triggers
 
-Same as `ci-build-test.yml` (push, pull_request, merge_group, workflow_dispatch).
+Only on changes in k8s files (`pull_request` with `paths`, like `ci-k8s-charts.yml`) + `workflow_dispatch`.
