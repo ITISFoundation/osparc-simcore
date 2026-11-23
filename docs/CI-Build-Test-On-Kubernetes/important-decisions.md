@@ -1,6 +1,6 @@
 # CI Build & Test on Kubernetes — Important Decisions
 
-Add a Kubernetes flavor to the CI Build Tests (`ci-build-test.yml`). 
+Add a Kubernetes flavor to the CI Build Tests (`ci-build-test.yml`).
 No backend changes; Swarm-based services may fail.
 
 ## ❓ Open questions
@@ -55,7 +55,7 @@ Everything must be green, except tests of Swarm-based logic.
 ### Swarm-only (non-backend) tests
 
 Tests of pure Swarm artifacts (e.g. compose files), not backend logic, are skipped:
-`SIMCORE_ORCHESTRATOR=k8s` (set in the workflow) + `@pytest.mark.skipif` on the test.
+`SIMCORE_CLUSTER_ORCHESTRATOR=k8s` (set in the workflow) + `@pytest.mark.skipif` on the test.
 
 ### Cluster & deploy
 

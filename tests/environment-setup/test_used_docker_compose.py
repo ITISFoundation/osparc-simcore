@@ -102,7 +102,7 @@ def docker_compose_config_bash(osparc_simcore_scripts_dir: Path) -> Path:
 
 
 @pytest.mark.skipif(
-    environ.get("SIMCORE_ORCHESTRATOR") == "k8s",
+    environ.get("SIMCORE_CLUSTER_ORCHESTRATOR") == "k8s",
     reason="validates compose files with 'docker stack config' (swarm only)",
 )
 @pytest.mark.parametrize("compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir)))
