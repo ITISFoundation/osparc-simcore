@@ -30,8 +30,6 @@ from ._watchdog_extensions import ExtendedInotifyObserver, SafeFileSystemEventHa
 
 _HEART_BEAT_MARK: Final = 1
 
-_EVENT_LOG_EVERY: Final = 100
-
 _logger = logging.getLogger(__name__)
 
 
@@ -49,28 +47,12 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         self.outputs_path: Path = outputs_path
         self.port_key_events_queue: Queue[str | None] = port_key_events_queue
         self._outputs_port_keys: set[str] = set()
-        self._verdict_counts: dict[str, int] = {}
 
     def handle_set_outputs_port_keys(self, *, outputs_port_keys: set[str]) -> None:
         self._outputs_port_keys = outputs_port_keys
-        _logger.info("event handler outputs port keys set to %s", sorted(outputs_port_keys))
 
     def handle_toggle_event_propagation(self, *, is_enabled: bool) -> None:
         self._is_event_propagation_enabled = is_enabled
-        _logger.info("event handler propagation enabled=%s", is_enabled)
-
-    def _log_verdict(self, verdict: str, event: FileSystemEvent) -> None:
-        """Log accepted events every time; dropped events on the first and every Nth occurrence"""
-        count = self._verdict_counts.get(verdict, 0) + 1
-        self._verdict_counts[verdict] = count
-        if verdict.startswith("accepted") or count == 1 or count % _EVENT_LOG_EVERY == 0:
-            _logger.debug(
-                "watchdog verdict %s (n=%s): %s %s",
-                verdict,
-                count,
-                event.event_type,
-                Path(os.fsdecode(event.src_path)).name,
-            )
 
     def _get_relative_path_parents(self, path: bytes | str) -> list[str]:
         try:
@@ -81,7 +63,6 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
 
     def event_handler(self, event: FileSystemEvent) -> None:
         if not self._is_event_propagation_enabled:
-            self._log_verdict("dropped: propagation disabled", event)
             return
 
         # NOTE: ignoring all events which are not relative to modifying
@@ -96,7 +77,6 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         # discard event if not part of a subfolder
         event_in_subdirs = len(src_relative_path_parents) > 0 or len(dst_relative_path_parents) > 0
         if not event_in_subdirs:
-            self._log_verdict("dropped: outside outputs subfolders", event)
             return
 
         # only accept events generated inside `port_key` subfolder
@@ -111,11 +91,7 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
                 # will be consumed by the asyncio thread
                 detected_port_key_candidates.add(port_key_candidate)
 
-        if not detected_port_key_candidates:
-            self._log_verdict(f"dropped: unknown port key (known={sorted(self._outputs_port_keys)})", event)
-
         for port_key_candidate in detected_port_key_candidates:
-            self._log_verdict(f"accepted: port {port_key_candidate}", event)
             self.port_key_events_queue.put(port_key_candidate)
 
 

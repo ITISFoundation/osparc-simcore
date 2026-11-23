@@ -33,7 +33,6 @@ class OutputsWatcher:
             if event is None:
                 break
 
-            _logger.debug("event queue delivered port_key %s", event)
             self.outputs_manager.on_port_key_change(event)
 
     async def enable_event_propagation(self) -> None:
