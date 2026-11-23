@@ -100,10 +100,12 @@ async def get_conversation(
     app: web.Application,
     *,
     conversation_id: ConversationID,
+    project_uuid_or_none: ProjectID | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get(
         app,
         conversation_id=conversation_id,
+        project_uuid_or_none=project_uuid_or_none,
     )
 
 
@@ -119,6 +121,7 @@ async def update_conversation(
         app,
         conversation_id=conversation_id,
         updates=updates,
+        project_uuid_or_none=project_id,
     )
 
     if project_id:
@@ -157,6 +160,7 @@ async def delete_conversation(
     await _conversation_repository.delete(
         app,
         conversation_id=conversation_id,
+        project_uuid_or_none=project_id,
     )
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
