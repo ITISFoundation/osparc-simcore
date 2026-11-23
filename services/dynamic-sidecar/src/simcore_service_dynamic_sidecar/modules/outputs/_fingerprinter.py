@@ -323,8 +323,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         ):
             entries[rel_path] = old  # size and mtime unchanged: the stored digest stands
             return
-        # a file hashes only once its stat repeated from one scan to the next: mid-write
-        # content is incomplete, and re-reading it every scan would be pure waste
+        # mid-write content is incomplete: hashing waits for a size and mtime repeat
         quiet_since_last_scan = (
             old is not None and old.seen_size == stat_result.st_size and old.seen_mtime_ns == stat_result.st_mtime_ns
         )
