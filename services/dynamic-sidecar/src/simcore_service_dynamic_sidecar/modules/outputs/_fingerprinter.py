@@ -93,9 +93,20 @@ def _broken_link_kind(entry: os.DirEntry[str]) -> str:
 def _nonfile_record(kind: str) -> _FileRecord:
     """Ledger entry for a non-regular file: identified by kind, never hashed, always stable."""
     return _FileRecord(
-        digest=f"s{kind}".encode(),
-        digest_size=0,
-        digest_mtime_ns=0,
+        digest=os.fsencode(f"s{kind}"),
+        digest_size=None,
+        digest_mtime_ns=None,
+        seen_size=-1,
+        seen_mtime_ns=-1,
+    )
+
+
+def _unlistable_record() -> _FileRecord:
+    """Ledger entry for a directory that cannot be listed: pending forever, so nothing certifies it."""
+    return _FileRecord(
+        digest=None,
+        digest_size=None,
+        digest_mtime_ns=None,
         seen_size=-1,
         seen_mtime_ns=-1,
     )
@@ -107,11 +118,11 @@ def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
         record = entries[rel_path]
         if record.digest is None:
             entry_text = f"p\x00{rel_path}"  # pending hash: never equals a settled entry record
-        elif record.digest_size == 0:  # non-file entry, digest carries the kind
-            entry_text = f"{record.digest.decode(errors='replace')}\x00{rel_path}"
+        elif record.seen_size < 0:  # non-file entry, digest carries the kind
+            entry_text = f"{os.fsdecode(record.digest)}\x00{rel_path}"
         else:
             entry_text = f"f\x00{rel_path}\x00{record.digest_size}\x00{record.digest.hex()}"
-        hasher.update(entry_text.encode(errors="replace"))
+        hasher.update(os.fsencode(entry_text))
         hasher.update(b"\n")
     return hasher.hexdigest()
 
@@ -255,6 +266,11 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         """Records the captured fingerprint the upload is sending, verified after the PUT."""
         self._upload_candidate = fingerprint
 
+    def note_upload_uncertified(self) -> None:
+        """Drops what an unidentified PUT would have certified: its content can never be skipped."""
+        self._upload_candidate = None
+        self._uploaded_fingerprint = None
+
     async def verify_upload_completed(self) -> bool:
         """Rescans after a successful PUT; records the content as uploaded unless it changed."""
         if self._episode_task is not None and not self._episode_task.done():
@@ -275,20 +291,30 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         """Walk + stat pass: the cheap checks run first so a change is flagged before any hashing."""
         entries: dict[str, _FileRecord] = {}
         hash_jobs: list[tuple[str, _FileRecord]] = []
-        self._walk(self._directory, "", entries, hash_jobs)
+        pending_directories: list[tuple[str, str]] = [(str(self._directory), "")]
+        while pending_directories:
+            directory, prefix = pending_directories.pop()
+            self._list_directory(directory, prefix, entries, hash_jobs, pending_directories)
         return entries, hash_jobs
 
-    def _walk(
+    def _list_directory(
         self,
-        directory: Path,
+        directory: str,
         prefix: str,
         entries: dict[str, _FileRecord],
         hash_jobs: list[tuple[str, _FileRecord]],
+        pending_directories: list[tuple[str, str]],
     ) -> None:
+        """Lists one directory; subdirectories join `pending_directories` for a later round"""
         try:
             scandir_iterator = os.scandir(directory)
-        except OSError:
+        except FileNotFoundError:
             return  # the directory vanished mid-scan: the next scan sees what is there now
+        except OSError as err:
+            # an unlistable directory hides content: the port stays pending until it can be read again
+            _logger.warning("port directory %s cannot be listed (%s), content unverified", directory, err)
+            entries[f"{prefix}."] = _unlistable_record()
+            return
         with scandir_iterator:
             for entry in scandir_iterator:
                 rel_path = f"{prefix}{entry.name}"
@@ -299,7 +325,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
                     continue
                 if entry.is_dir(follow_symlinks=False):
                     entries[rel_path] = _nonfile_record("d")
-                    self._walk(Path(entry.path), f"{rel_path}/", entries, hash_jobs)
+                    pending_directories.append((entry.path, f"{rel_path}/"))
                     continue
                 if not stat_module.S_ISREG(stat_result.st_mode):
                     entries[rel_path] = _nonfile_record(f"x{entry.path}")

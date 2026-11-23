@@ -4,8 +4,10 @@
 
 import asyncio
 import logging
+import os
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Final
 from unittest.mock import AsyncMock
@@ -71,6 +73,34 @@ async def _record_upload(fingerprint: PortFingerprint) -> str:
     fingerprint.note_upload_started(candidate)
     assert await fingerprint.verify_upload_completed() is True
     return candidate
+
+
+@contextmanager
+def _directory_that_cannot_be_listed(path: Path) -> Iterator[None]:
+    path.chmod(0o000)
+    try:
+        yield
+    finally:
+        path.chmod(0o700)
+
+
+def _build_deep_chain(port_dir: Path, depth: int) -> None:
+    # Path.mkdir(parents=True) costs one frame per level: build the chain one mkdir at a time
+    deep = port_dir
+    for _ in range(depth):
+        deep = deep / "a"
+        deep.mkdir()
+    (deep / "leaf.dat").write_bytes(b"leaf")
+
+
+def _place_name(port_dir: Path, name: str, *, as_directory: bool) -> None:
+    target = port_dir / name
+    if target.is_dir():
+        target.rmdir()
+    if as_directory:
+        target.mkdir()
+    else:
+        target.write_bytes(b"")
 
 
 # --- quiet trigger -------------------------------------------------------------
@@ -294,3 +324,72 @@ async def test_unreadable_file_keeps_upload_eligible_with_warning(
         assert any("poison.dat" in r.message for r in caplog.records)
     finally:
         poison.chmod(0o600)
+
+
+async def test_unreadable_port_directory_cannot_be_certified(
+    fingerprinter: PortFingerprint, port_dir: Path, caplog: pytest.LogCaptureFixture
+):
+    # an unlistable port must not look like an empty port that is already uploaded
+    (port_dir / "a.dat").write_bytes(b"hello")
+    with _directory_that_cannot_be_listed(port_dir), caplog.at_level(logging.WARNING):
+        outcome = await fingerprinter.check_now()
+
+    assert outcome is CheckOutcome.UNSTABLE
+    assert fingerprinter.take_upload_candidate() is None
+    assert any("cannot be listed" in r.message for r in caplog.records)
+
+
+async def test_deep_directory_chain_is_scanned_without_recursion(fingerprinter: PortFingerprint, port_dir: Path):
+    # one frame per level dies below PATH_MAX; user code has produced chains this deep
+    _build_deep_chain(port_dir, depth=1200)
+
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
+    assert any(key.endswith("leaf.dat") for key in fingerprinter._entries)  # noqa: SLF001
+
+
+async def test_symlink_with_undecodable_target_is_scanned(
+    fingerprinter: PortFingerprint, port_dir: Path, caplog: pytest.LogCaptureFixture
+):
+    (port_dir / "link").symlink_to(os.fsdecode(b"missing-\xff\xfe-target"))
+
+    with caplog.at_level(logging.WARNING):
+        outcome = await fingerprinter.check_now()
+
+    assert outcome is CheckOutcome.STABLE_NEW
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+async def test_names_that_are_not_valid_utf8_are_distinguished(fingerprinter: PortFingerprint, port_dir: Path):
+    (port_dir / os.fsdecode(b"calf\xe9")).write_bytes(b"x")
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
+    first = fingerprinter._fingerprint  # noqa: SLF001
+
+    (port_dir / os.fsdecode(b"calf\xe9")).unlink()
+    (port_dir / os.fsdecode(b"calf\xea")).write_bytes(b"x")
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
+
+    assert fingerprinter._fingerprint != first  # noqa: SLF001
+
+
+async def test_empty_file_and_directory_at_the_same_name_differ(fingerprinter: PortFingerprint, port_dir: Path):
+    # non-file records are told apart by their sentinel, not by a size empty files also have
+    _place_name(port_dir, "x", as_directory=True)
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
+    first = fingerprinter._fingerprint  # noqa: SLF001
+
+    _place_name(port_dir, "x", as_directory=False)
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
+
+    assert fingerprinter._fingerprint != first  # noqa: SLF001
+
+
+async def test_uncertified_upload_is_never_matched_against(fingerprinter: PortFingerprint, port_dir: Path):
+    # a PUT that archived unidentified content must not let a later settle skip the port
+    (port_dir / "a.dat").write_bytes(b"hello")
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
+    await _record_upload(fingerprinter)
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_MATCHING
+
+    fingerprinter.note_upload_uncertified()
+
+    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW

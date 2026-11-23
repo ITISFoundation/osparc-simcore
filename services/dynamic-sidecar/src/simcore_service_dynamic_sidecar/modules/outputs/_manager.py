@@ -45,6 +45,14 @@ async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -
         await wait((task,), timeout=task_cancellation_timeout_s)
 
 
+def _log_unawaited_task_exception(future: Task[None]) -> None:
+    """Logs an exception no one awaited, instead of losing it to a garbage-collection warning"""
+    if future.cancelled():
+        return
+    if (exception := future.exception()) is not None:
+        _logger.warning("task %s failed: %s", future.get_name(), exception, exc_info=exception)
+
+
 class UploadPortsFailedError(OsparcErrorMixin, RuntimeError):
     code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"  # type: ignore[assignment]
     msg_template: str = "Failed while uploading: failures={failures}"
@@ -152,6 +160,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_uploading: Task | None = None
         self._task_uploading_followup: Task | None = None
         self._task_scheduler_worker: Task | None = None
+        self._task_sweep: Task | None = None
         self._next_sweep_mono: float = 0.0
 
         # keep track if a port was uploaded and there was an error, remove said error if last upload was ok
@@ -198,6 +207,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             # capture the candidate as late as possible: it is what the PUT is about to send
             if (candidate := fingerprint.take_upload_candidate()) is not None:
                 fingerprint.note_upload_started(candidate)
+            else:
+                # this PUT archives content the scan could not identify, so it certifies nothing
+                fingerprint.note_upload_uncertified()
 
         async def _upload_ports() -> None:
             with log_context(_logger, logging.INFO, f"Uploading port keys: {port_keys}"):
@@ -241,27 +253,33 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     self._last_upload_error_tracker[port_key] = format_exception_as_string(e)
                     failed_port_keys.add(port_key)
 
-            self._task_uploading_followup = create_task(self._uploaded_ports_followup(port_keys, failed_port_keys))
+            self._task_uploading_followup = create_task(
+                self._uploaded_ports_followup(port_keys, failed_port_keys), name="outputs_upload_followup"
+            )
+            self._task_uploading_followup.add_done_callback(_log_unawaited_task_exception)
 
         self._task_uploading.add_done_callback(_remove_downloads)
 
     async def _uploaded_ports_followup(self, port_keys: list[str], failed_port_keys: set[str]) -> None:
         rearm_port_keys: set[str] = set()
-        for port_key in port_keys:
-            if port_key in failed_port_keys:
-                continue  # the safety sweep retries unuploaded content once the port quiets down
-            fingerprint = self._get_fingerprint(port_key)
-            if fingerprint is None:
-                continue
-            if not await fingerprint.verify_upload_completed():
-                _logger.info("Port %s changed during upload, waiting for it to settle", port_key)
-                rearm_port_keys.add(port_key)
+        try:
+            for port_key in port_keys:
+                if port_key in failed_port_keys:
+                    continue  # the safety sweep retries unuploaded content once the port quiets down
+                fingerprint = self._get_fingerprint(port_key)
+                if fingerprint is None:
+                    continue
+                with log_catch(_logger, reraise=False):
+                    if not await fingerprint.verify_upload_completed():
+                        _logger.info("Port %s changed during upload, waiting for it to settle", port_key)
+                        rearm_port_keys.add(port_key)
 
-        # re-arm first: a waiter must not see a cleared tracker with an episode pending
-        for port_key in rearm_port_keys:
-            (fingerprint := self._get_fingerprint(port_key)).note_event()  # type: ignore[union-attr]
-
-        await self._port_key_tracker.remove_all_uploading()
+            # re-arm first: a waiter must not see a cleared tracker with an episode pending
+            for port_key in rearm_port_keys:
+                (fingerprint := self._get_fingerprint(port_key)).note_event()  # type: ignore[union-attr]
+        finally:
+            # the uploading set must never outlive this task: it blocks every later upload
+            await self._port_key_tracker.remove_all_uploading()
 
     async def _uploading_task_cancel(self) -> None:
         if self._task_uploading is not None:
@@ -274,17 +292,25 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
     async def _run_safety_sweep(self) -> None:
         uploading_port_keys = await self._port_key_tracker.get_uploading()
-        for port_key, fingerprint in self._fingerprints.items():
-            if port_key in uploading_port_keys:
-                continue
-            with log_catch(_logger, reraise=False):
-                await fingerprint.sweep()
+        try:
+            for port_key, fingerprint in list(self._fingerprints.items()):
+                if port_key in uploading_port_keys:
+                    continue
+                with log_catch(_logger, reraise=False):
+                    await fingerprint.sweep()
+        finally:
+            self._next_sweep_mono = time.monotonic() + _SWEEP_INTERVAL_S
+
+    def _start_safety_sweep(self) -> None:
+        """Runs the sweep beside the tick: a slow mount must not delay upload scheduling"""
+        if self._task_sweep is not None and not self._task_sweep.done():
+            return
+        self._task_sweep = create_task(self._run_safety_sweep(), name="outputs_safety_sweep")
+        self._task_sweep.add_done_callback(_log_unawaited_task_exception)
 
     async def _scheduler_worker(self) -> None:
-        now = time.monotonic()
-        if now >= self._next_sweep_mono:
-            self._next_sweep_mono = now + _SWEEP_INTERVAL_S
-            await self._run_safety_sweep()
+        if time.monotonic() >= self._next_sweep_mono:
+            self._start_safety_sweep()
 
         if await self._port_key_tracker.are_pending_ports_uploading():
             await self._uploading_task_cancel()
@@ -313,6 +339,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
                 await cancel_wait_task(self._task_scheduler_worker, max_delay=self.task_monitor_interval_s)
+            if self._task_sweep is not None:
+                await _cancel_task(self._task_sweep, self.task_cancellation_timeout_s)
             for fingerprint in self._fingerprints.values():
                 fingerprint.shutdown()
             self._hash_executor.shutdown(wait=False, cancel_futures=True)
@@ -365,6 +393,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             raise UploadPortsFailedError(failures=self._last_upload_error_tracker)  # pyright: ignore[reportCallIssue]
 
     async def _no_outputs_work_left(self) -> bool:
+        if self._task_sweep is not None and not self._task_sweep.done():
+            return False  # a running sweep can still schedule an upload
         if not await self._port_key_tracker.no_tracked_ports():
             return False
         file_port_keys = set(self.outputs_context.file_type_port_keys)

@@ -35,6 +35,7 @@ from simcore_service_dynamic_sidecar.modules.outputs._context import (
     OutputsContext,
     configure_outputs_context,
 )
+from simcore_service_dynamic_sidecar.modules.outputs._fingerprinter import _ScanResult
 from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     OutputsManager,
     UploadPortsFailedError,
@@ -656,3 +657,112 @@ async def test_regression_io_log_redirect_cb(
                 "log": str,
             },
         )
+
+
+# TESTS: failure containment
+
+
+async def test_raising_post_upload_check_does_not_wedge_the_manager(
+    mock_upload_outputs: AsyncMock,
+    outputs_manager: OutputsManager,
+    port_keys: list[str],
+    mocker: MockerFixture,
+):
+    verify = mocker.patch.object(
+        fingerprinter_module.PortFingerprint,
+        "verify_upload_completed",
+        new_callable=AsyncMock,
+        side_effect=RuntimeError("mocked_check_raised"),
+    )
+
+    await outputs_manager.port_key_content_changed(port_keys[0])
+    await outputs_manager.wait_for_all_uploads_to_finish()
+
+    # an unawaited check failure must not leave a port in `uploading`: that blocks every later upload
+    assert await outputs_manager._port_key_tracker.get_uploading() == []  # noqa: SLF001
+
+    verify.side_effect = None
+    verify.return_value = True
+    uploads_before = len(mock_upload_outputs.call_args_list)
+
+    await outputs_manager.port_key_content_changed(port_keys[0])
+    await outputs_manager.wait_for_all_uploads_to_finish()
+
+    assert len(mock_upload_outputs.call_args_list) > uploads_before
+
+
+async def test_upload_that_certified_nothing_is_uploaded_again(
+    mock_upload_outputs: AsyncMock,
+    short_quiet: None,
+    outputs_manager: OutputsManager,
+    port_keys: list[str],
+    mocker: MockerFixture,
+) -> None:
+    port_key = port_keys[0]
+    fingerprint = outputs_manager._get_fingerprint(port_key)  # noqa: SLF001
+    assert fingerprint is not None
+    real_take_upload_candidate = fingerprint.take_upload_candidate
+
+    uncertified = True
+
+    def _take_upload_candidate_uncertified_once() -> str | None:
+        # the first PUT races a write: the scan offers no candidate, so it archives unknown bytes
+        nonlocal uncertified
+        if uncertified:
+            uncertified = False
+            return None
+        return real_take_upload_candidate()
+
+    mocker.patch.object(fingerprint, "take_upload_candidate", side_effect=_take_upload_candidate_uncertified_once)
+
+    await outputs_manager.port_key_content_changed(port_key)
+    await outputs_manager.wait_for_all_uploads_to_finish()
+
+    deadline = asyncio.get_running_loop().time() + 20
+    while _uploaded_port_keys(mock_upload_outputs).count(port_key) < 2:
+        if asyncio.get_running_loop().time() > deadline:
+            pytest.fail(f"{port_key} stayed skipped after an upload that certified nothing")
+        await asyncio.sleep(0.05)
+
+
+async def test_slow_safety_sweep_on_one_port_does_not_delay_another_port(
+    mock_upload_outputs: AsyncMock,
+    short_quiet: None,
+    outputs_path: Path,
+    outputs_manager: OutputsManager,
+    port_keys: list[str],
+    mocker: MockerFixture,
+) -> None:
+    if len(port_keys) < 2:
+        pytest.skip("needs one blocked and one healthy port")
+
+    release = asyncio.Event()
+    slow_fingerprint = outputs_manager._get_fingerprint(port_keys[0])  # noqa: SLF001
+    assert slow_fingerprint is not None
+    real_scan = fingerprinter_module.PortFingerprint._scan  # noqa: SLF001
+
+    async def _scan_when_slow(self, *args, **kwargs) -> _ScanResult:
+        if self is slow_fingerprint:
+            await release.wait()
+            return _ScanResult(fingerprint="blocked", pending_hashes=0)
+        return await real_scan(self, *args, **kwargs)
+
+    mocker.patch.object(fingerprinter_module.PortFingerprint, "_scan", new=_scan_when_slow)
+
+    outputs_manager.set_all_ports_for_upload()
+    await asyncio.sleep(outputs_manager.task_monitor_interval_s * 5)  # let the sweep block
+    for port_key in port_keys:
+        _write_port_version(outputs_path / port_key, b"content")
+        outputs_manager.on_port_key_change(port_key)
+
+    healthy_port_key = port_keys[1]
+    deadline = asyncio.get_running_loop().time() + 10
+    while healthy_port_key not in _uploaded_port_keys(mock_upload_outputs):
+        if asyncio.get_running_loop().time() > deadline:
+            pytest.fail(f"{healthy_port_key} did not upload while another port's scan was blocked")
+        await asyncio.sleep(0.05)
+
+    # the blocked port never settled, so nothing may certify it as uploaded
+    assert port_keys[0] not in _uploaded_port_keys(mock_upload_outputs)
+
+    release.set()
