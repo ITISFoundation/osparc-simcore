@@ -11,7 +11,7 @@
 qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(openSettings) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
@@ -25,6 +25,16 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       wrap: true
     });
     this._add(intro);
+
+    const defaultTagsButton = new qx.ui.form.Button().set({
+      label: this.tr("Choose default study tags in Settings"),
+      icon: "@FontAwesomeSolid/arrow-right/16",
+      iconPosition: "right",
+      appearance: "form-button-outlined",
+      allowGrowX: false
+    });
+    defaultTagsButton.addListener("execute", openSettings);
+    this._add(defaultTagsButton);
 
     this.__renderLayout();
   },

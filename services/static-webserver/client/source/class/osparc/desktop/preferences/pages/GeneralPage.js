@@ -40,6 +40,8 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this.__addSetting(() => this.__addLowDiskSpaceSetting());
     }
 
+    this.__addSetting(() => this.__addDefaultStudyTagsSetting());
+
     if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addSetting(() => this.__addInactivitySetting());
     }
@@ -208,6 +210,68 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       diskUsageSpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
       form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
       box.add(new qx.ui.form.renderer.Single(form));
+      this._add(box);
+    },
+
+    __addDefaultStudyTagsSetting: function() {
+      osparc.store.Tags.getInstance().fetchTags()
+        .then(tags => this.__addDefaultStudyTagsSettingContent(tags))
+        .catch(err => console.error("Failed to load tags for default study settings", err));
+    },
+
+    __addDefaultStudyTagsSettingContent: function(tags) {
+      if (!tags.length) {
+        return;
+      }
+
+      const box = new osparc.widget.SectionBox(this.tr("Default Study Tags"));
+      box.addHelper(this.tr("Selected tags are automatically added to studies you create."));
+
+      const preferences = osparc.Preferences.getInstance();
+      const selectedTagIds = preferences.getDefaultStudyTagIds();
+      const checkboxes = [];
+      let isRestoring = false;
+      const tagsList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      tags.forEach(tag => {
+        const tagId = tag.getTagId();
+        const checkbox = new qx.ui.form.CheckBox(tag.getName()).set({
+          value: selectedTagIds.includes(tagId)
+        });
+        checkboxes.push({
+          checkbox,
+          tagId
+        });
+        checkbox.addListener("changeValue", () => {
+          if (isRestoring) {
+            return;
+          }
+          const newTagIds = checkboxes
+            .filter(item => item.checkbox.getValue())
+            .map(item => item.tagId);
+          const oldTagIds = preferences.getDefaultStudyTagIds();
+          if (newTagIds.length === oldTagIds.length && newTagIds.every(tagId => oldTagIds.includes(tagId))) {
+            return;
+          }
+
+          box.setEnabled(false);
+          osparc.Preferences.patchPreference("defaultStudyTagIds", newTagIds)
+            .then(() => preferences.setDefaultStudyTagIds(newTagIds))
+            .catch(err => {
+              osparc.FlashMessenger.logError(err);
+              isRestoring = true;
+              checkboxes.forEach(item => item.checkbox.setValue(oldTagIds.includes(item.tagId)));
+              isRestoring = false;
+            })
+            .finally(() => box.setEnabled(true));
+        });
+        tagsList.add(checkbox);
+      });
+
+      const scroll = new qx.ui.container.Scroll(tagsList).set({
+        height: Math.min(tagsList.getSizeHint().height, 240)
+      });
+      box.add(scroll);
       this._add(box);
     },
 

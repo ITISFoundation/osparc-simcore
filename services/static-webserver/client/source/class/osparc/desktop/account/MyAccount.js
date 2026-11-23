@@ -107,6 +107,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
 
   members: {
     __profilePage: null,
+    __settingsPage: null,
     __usagePage: null,
     __tagsPage: null,
 
@@ -136,9 +137,8 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       const title = this.tr("Settings");
       const iconSrc = "@FontAwesomeSolid/cogs/22";
       const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
-      if (generalPage.getChildrenCount() > 0) {
-        // avoid adding the tab if there are no settings to show
-        this.addTab(title, iconSrc, generalPage);
+      if (generalPage.getChildrenCount() > 0 || osparc.data.Permissions.getInstance().canDo("user.tag")) {
+        this.__settingsPage = this.addTab(title, iconSrc, generalPage);
       }
     },
 
@@ -159,7 +159,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
     __addTagsPage: function() {
       const title = this.tr("Create/Edit Tags");
       const iconSrc = "@FontAwesomeSolid/tags/22";
-      const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
+      const tagsPage = new osparc.desktop.preferences.pages.TagsPage(() => this._openPage(this.__settingsPage));
       const page = this.__tagsPage = this.addTab(title, iconSrc, tagsPage);
       osparc.utils.Utils.setIdToWidget(page.getChildControl("button"), "preferencesTagsTabBtn");
     },

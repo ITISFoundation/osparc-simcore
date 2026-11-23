@@ -895,6 +895,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         studyOptions.addListener("startStudy", () => {
           const newName = studyOptions.getChildControl("title-field").getValue();
           const selectedTagIds = studyOptions.getSelectedTags();
+          const defaultTagIds = osparc.Preferences.getInstance().getDefaultStudyTagIds();
           const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
           const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
           win.close();
@@ -926,7 +927,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               });
               // remove the tags that are not selected anymore
               newStudyData["tags"].forEach(tagId => {
-                const found = selectedTagIds.includes(tagId);
+                const found = selectedTagIds.includes(tagId) || defaultTagIds.includes(tagId);
                 if (!found) {
                   // remove the tag
                   promises.push(osparc.store.Study.getInstance().removeTag(newStudyData["uuid"], tagId));

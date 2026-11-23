@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Final
 
-from pydantic import EmailStr, Field
+from pydantic import EmailStr, Field, PositiveInt
 
 from .authentication import TwoFactorAuthenticationMethod
 from .user_preferences import FrontendUserPreference, PreferenceIdentifier
@@ -108,3 +108,8 @@ class TwoFAFrontendUserPreference(FrontendUserPreference):
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
     value: list[int] | None = None
+
+
+class DefaultStudyTagIdsFrontendUserPreference(FrontendUserPreference):
+    preference_identifier: PreferenceIdentifier = "defaultStudyTagIds"
+    value: list[PositiveInt] = Field(default_factory=list)

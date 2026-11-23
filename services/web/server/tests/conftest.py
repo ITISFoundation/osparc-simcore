@@ -249,6 +249,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        expected_tags: list[int] | None = None,
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
     ):
@@ -302,6 +303,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 if key in OVERRIDABLE_DOCUMENT_KEYS and not project_data[key] and from_study:
                     expected_data[key] = from_study[key]
 
+        if expected_tags is not None:
+            expected_data["tags"] = expected_tags
+
         # POST /v0/projects -> returns 202 or denied access
         assert client.app
         url: URL = client.app.router["create_project"].url_for()
@@ -334,6 +338,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        expected_tags: list[int] | None = None,
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> ProjectDict:
@@ -345,6 +350,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             from_study=from_study,
             as_template=as_template,
             copy_data=copy_data,
+            expected_tags=expected_tags,
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
