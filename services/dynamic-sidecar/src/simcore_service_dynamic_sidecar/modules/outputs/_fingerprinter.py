@@ -1,9 +1,9 @@
-"""Per-port content tracking for the outputs upload policy.
+"""Quiet-trigger content tracking for the outputs upload policy.
 
 One `PortFingerprint` object per output port owns the whole lifecycle of that port:
-its file ledger, its fingerprint, its settle counter, and the fingerprint of its last
-successful upload. Objects never share state, so activity on one port can never make
-another port look changed.
+its file ledger, its fingerprint, its quiet-period timer, and the fingerprint of its
+last successful upload. An upload is requested `_QUIET_SECONDS` after the last
+filesystem event, once repeated scans agree the content stopped moving.
 """
 
 import asyncio
@@ -11,10 +11,12 @@ import logging
 import os
 import stat as stat_module
 import time
+from asyncio import CancelledError
+from collections.abc import Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import timedelta
+from enum import Enum, auto
 from pathlib import Path
 from typing import Annotated, Final
 
@@ -24,19 +26,31 @@ from pydantic import ByteSize, PositiveFloat, PositiveInt, TypeAdapter
 
 _logger = logging.getLogger(__name__)
 
+_QUIET_SECONDS: Final[Annotated[PositiveFloat, doc("time without events after which the content is checked")]] = 3.0
+
+_EPISODE_MAX_SCANS: Final[Annotated[PositiveInt, doc("scans an episode may use to prove the content stable")]] = 3
+
 _HASH_CHUNK_SIZE: Final[
     Annotated[ByteSize, doc("read size per hashing step; a power of two above the OS page size")]
 ] = TypeAdapter(ByteSize).validate_python("4MiB")
 
 DEFAULT_HASH_WORKERS: Final[Annotated[int, doc("files hashed concurrently by the shared pool")]] = 4
 
-_DEFAULT_REQUIRED_STABLE_LOOKS: Final[
-    Annotated[PositiveInt, doc("scans with an unchanged fingerprint required before an upload is allowed")]
-] = 5
+type OnStableChangeCB = Callable[[str], Awaitable[None]]
 
-_DEFAULT_MIN_SCAN_INTERVAL: Final[Annotated[PositiveFloat, doc("minimum time between two scans of the same port")]] = (
-    timedelta(seconds=1).total_seconds()
-)
+
+class CheckOutcome(Enum):
+    """Result of a content check episode"""
+
+    STABLE_MATCHING = auto()  # content static and equal to the last recorded upload
+    STABLE_NEW = auto()  # content static and different from the last recorded upload
+    UNSTABLE = auto()  # content still moving within the episode
+
+
+@dataclass(slots=True)
+class _ScanResult:
+    fingerprint: str
+    pending_hashes: int
 
 
 @dataclass(slots=True)
@@ -69,83 +83,169 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
 
 
 class PortFingerprint:  # pylint: disable=too-many-instance-attributes
-    """Tracks one port directory: cheap scans flag changes, hashes confirm content."""
+    """Tracks one port directory: events arm a timer; quiet expiry runs the scan checks."""
 
     def __init__(
         self,
         *,
+        port_key: str,
         directory: Path,
         hash_executor: ThreadPoolExecutor,
+        on_stable_change: OnStableChangeCB,
     ) -> None:
+        self._port_key = port_key
         self._directory = directory
         self._hash_executor = hash_executor
+        self._on_stable_change = on_stable_change
 
         self._entries: dict[str, _FileRecord] = {}
         self._fingerprint: str | None = None
         self._uploaded_fingerprint: str | None = None
         self._upload_candidate: str | None = None
-        self._stable_looks: int = 0
         self._pending_hashes: int = 0
-        self._dirty: bool = True
-        self._changed_mid_scan: bool = False
-        self._last_scan_mono: float = 0.0
-        self._scan_task: asyncio.Task[None] | None = None
 
-    # -- scan scheduling -------------------------------------------------------
+        self._scan_lock = asyncio.Lock()
+        self._episode_seq = 0
+        self._episode_task: asyncio.Task[None] | None = None
+        self._is_checking = False
 
-    def mark_dirty(self) -> None:
-        """Records filesystem activity for this port; the scan itself runs on a later tick."""
-        self._dirty = True
+    # -- event entry point ------------------------------------------------------
 
-    def request_scan(self, *, force: bool = False) -> None:
-        """Starts a background scan when one is due; at most one scan runs per port at a time."""
-        if self._is_scanning():
+    def note_event(self) -> None:
+        """Records filesystem activity: the check episode starts `_QUIET_SECONDS` after the last one."""
+        self._episode_seq += 1  # invalidates any episode already running
+        if self._episode_task is not None and not self._episode_task.done():
+            self._episode_task.cancel()
+        self._episode_task = asyncio.create_task(
+            self._armed_episode(self._episode_seq), name=f"fingerprint_quiet_{self._port_key}"
+        )
+
+    def has_pending_work(self) -> bool:
+        """True while an armed timer or a running check could still schedule an upload."""
+        return self._episode_task is not None and not self._episode_task.done()
+
+    async def _armed_episode(self, seq: int) -> None:
+        with suppress(asyncio.CancelledError):
+            await asyncio.sleep(_QUIET_SECONDS)
+        if seq != self._episode_seq:
+            return  # a newer event took over
+        outcome = await self._run_episode(seq)
+        if outcome is CheckOutcome.STABLE_NEW and seq == self._episode_seq:
+            await self._on_stable_change(self._port_key)
+
+    async def check_now(self) -> CheckOutcome:
+        """Runs a check episode immediately (save path); cancels any armed episode."""
+        self._episode_seq += 1
+        if self._episode_task is not None and not self._episode_task.done():
+            self._episode_task.cancel()
+            with suppress(CancelledError):
+                await self._episode_task
+        seq = self._episode_seq
+        outcome = await self._run_episode(seq)
+        return outcome if outcome is not None else CheckOutcome.UNSTABLE
+
+    async def sweep(self) -> None:
+        """Background safety check for lost events; skips ports whose own timer owns the decision."""
+        if self.has_pending_work():
             return
-        if not (self._dirty or force):
-            return
-        if time.monotonic() - self._last_scan_mono < _DEFAULT_MIN_SCAN_INTERVAL:
-            return
-        self._scan_task = asyncio.create_task(self._guarded_scan(), name=f"fingerprint_scan_{self._directory.name}")
-
-    def _is_scanning(self) -> bool:
-        return self._scan_task is not None and not self._scan_task.done()
-
-    def has_unscanned_demand(self) -> bool:
-        """True while an event or a tick asked for a scan that has not completed yet."""
-        return self._dirty or self._is_scanning()
-
-    async def _scan_now(self) -> None:
-        """Runs a scan inline, bypassing the interval cap; waits out a scan already running."""
-        if self._scan_task is not None:
-            with suppress(asyncio.CancelledError):
-                await self._scan_task
-        await self._scan()
+        outcome = await self._run_episode(self._episode_seq)
+        if outcome is CheckOutcome.STABLE_NEW:
+            _logger.info("port %s: safety sweep found unuploaded content", self._port_key)
+            await self._on_stable_change(self._port_key)
 
     def shutdown(self) -> None:
-        if self._scan_task is not None and not self._scan_task.done():
-            self._scan_task.cancel()
+        self._episode_seq += 1  # late continuations of a running episode see the stale sequence
+        if self._episode_task is not None and not self._episode_task.done():
+            self._episode_task.cancel()
 
-    # -- upload decision interface ---------------------------------------------
+    # -- the check episode --------------------------------------------------------
 
-    def is_settled(self) -> bool:
-        """True when the confirmed fingerprint stopped changing for the required number of scans.
+    async def _run_episode(self, seq: int) -> CheckOutcome | None:
+        """Scans until two finished scans agree; None when an event abandoned the episode."""
+        self._is_checking = True
+        previous: _ScanResult | None = None
+        outcome: CheckOutcome | None = None
+        try:
+            for _ in range(_EPISODE_MAX_SCANS):
+                if seq != self._episode_seq:
+                    break
+                try:
+                    result = await self._scan()
+                except asyncio.CancelledError:
+                    break
+                if seq != self._episode_seq:
+                    break
+                if result.pending_hashes > 0:
+                    previous = None  # a half-scanned port cannot confirm anything
+                    continue
+                if previous is not None and result.fingerprint == previous.fingerprint:
+                    outcome = (
+                        CheckOutcome.STABLE_MATCHING
+                        if result.fingerprint == self._uploaded_fingerprint
+                        else CheckOutcome.STABLE_NEW
+                    )
+                    break
+                previous = result
+            else:
+                outcome = CheckOutcome.UNSTABLE
+        except Exception:  # pylint: disable=broad-except
+            _logger.warning("port %s content check failed, will retry", self._port_key, exc_info=True)
+            return None
+        finally:
+            self._is_checking = False
+        return outcome
 
-        The in-scan change flag is deliberately not consulted: it is the early signal only,
-        and a persistent change always shifts the fingerprint or leaves a pending hash.
-        """
-        if self._pending_hashes > 0:
-            return False
-        if self._fingerprint is None:
-            return False
-        return self._stable_looks >= _DEFAULT_REQUIRED_STABLE_LOOKS
+    # -- the scan -----------------------------------------------------------------
 
-    def matches_last_upload(self) -> bool:
-        """True when the settled fingerprint is the one recorded by the last successful upload."""
-        return self.is_settled() and self._fingerprint == self._uploaded_fingerprint
+    async def _scan(self) -> _ScanResult:
+        async with self._scan_lock:
+            scan_started = time.perf_counter()
+            result = await self._scan_impl()
+            _logger.debug(
+                "port %s scan took %.3fs: %s entries, %s awaiting hashes, fp=%s",
+                self._port_key,
+                time.perf_counter() - scan_started,
+                len(self._entries),
+                result.pending_hashes,
+                result.fingerprint,
+            )
+            return result
+
+    async def _scan_impl(self) -> _ScanResult:
+        loop = asyncio.get_running_loop()
+        entries, hash_jobs = await asyncio.to_thread(self._collect_entries)
+        if hash_jobs:
+            # heavy step last: digests of changed files, capped by the hash pool size
+            await asyncio.gather(*(loop.run_in_executor(self._hash_executor, _fill_digest, job) for job in hash_jobs))
+        fingerprint = await asyncio.to_thread(_compute_fingerprint, entries)
+
+        self._entries = entries
+        self._fingerprint = fingerprint
+        self._pending_hashes = sum(1 for record in entries.values() if record.digest is None)
+        return _ScanResult(fingerprint=fingerprint, pending_hashes=self._pending_hashes)
+
+    def progress_line(self) -> str:
+        """One-line state summary the manager logs while this port is tracked."""
+        return (
+            f"state={self._state_name()} "
+            f"entries={len(self._entries)} awaiting_hashes={self._pending_hashes} "
+            f"fp={self._fingerprint or '-'} uploaded_fp={self._uploaded_fingerprint or '-'}"
+        )
+
+    def _state_name(self) -> str:
+        if self._is_checking:
+            return "checking"
+        if self.has_pending_work():
+            return "armed"
+        return "idle"
+
+    # -- upload bookkeeping ---------------------------------------------------------
 
     def take_upload_candidate(self) -> str | None:
-        """Atomically captures the settled fingerprint an upload would send; None while unsettled."""
-        return self._fingerprint if self.is_settled() else None
+        """Captures the confirmed fingerprint an upload would send; None while content is in motion."""
+        if self._pending_hashes > 0 or self._fingerprint is None:
+            return None
+        return self._fingerprint
 
     def note_upload_started(self, fingerprint: str) -> None:
         """Records the captured fingerprint the upload is sending, verified after the PUT."""
@@ -153,7 +253,11 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
 
     async def verify_upload_completed(self) -> bool:
         """Rescans after a successful PUT; records the content as uploaded unless it changed."""
-        await self._scan_now()
+        if self._episode_task is not None and not self._episode_task.done():
+            self._episode_task.cancel()
+            with suppress(CancelledError):
+                await self._episode_task
+        await self._scan()
         unchanged = (
             self._pending_hashes == 0 and self._fingerprint is not None and self._fingerprint == self._upload_candidate
         )
@@ -161,44 +265,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
             self._uploaded_fingerprint = self._fingerprint
         return unchanged
 
-    # -- the scan ---------------------------------------------------------------
-
-    async def _guarded_scan(self) -> None:
-        try:
-            await self._scan()
-        except Exception:  # pylint: disable=broad-except
-            self._dirty = True  # retry on the next tick with the demand kept alive
-            _logger.warning("port %s fingerprint scan failed, will retry", self._directory.name, exc_info=True)
-
-    async def _scan(self) -> None:
-        self._dirty = False
-        self._changed_mid_scan = False
-        self._last_scan_mono = time.monotonic()
-        scan_started = time.perf_counter()
-        loop = asyncio.get_running_loop()
-
-        entries, hash_jobs = await asyncio.to_thread(self._collect_entries)
-        if hash_jobs:
-            # the heavier step runs last: digests of quiet-changed files, pool-sized at a time
-            await asyncio.gather(*(loop.run_in_executor(self._hash_executor, _fill_digest, job) for job in hash_jobs))
-        fingerprint = await asyncio.to_thread(_compute_fingerprint, entries)
-
-        self._pending_hashes = sum(1 for record in entries.values() if record.digest is None)
-        if self._pending_hashes == 0 and fingerprint == self._fingerprint:
-            self._stable_looks = min(self._stable_looks + 1, _DEFAULT_REQUIRED_STABLE_LOOKS)
-        else:
-            self._fingerprint = fingerprint
-            self._stable_looks = 0
-        self._entries = entries
-        _logger.debug(
-            "port %s scan took %.3fs: %s entries, %s hashed, %s awaiting hashes, changed=%s",
-            self._directory.name,
-            time.perf_counter() - scan_started,
-            len(entries),
-            len(hash_jobs),
-            self._pending_hashes,
-            self._changed_mid_scan,
-        )
+    # -- the walk --------------------------------------------------------------------
 
     def _collect_entries(self) -> tuple[dict[str, _FileRecord], list[tuple[str, _FileRecord]]]:
         """Walk + stat pass: the cheap checks run first so a change is flagged before any hashing."""
@@ -217,9 +284,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         try:
             scandir_iterator = os.scandir(directory)
         except OSError:
-            # the directory vanished mid-scan: the next scan sees what is there now
-            self._changed_mid_scan = True
-            return
+            return  # the directory vanished mid-scan: the next scan sees what is there now
         with scandir_iterator:
             for entry in scandir_iterator:
                 rel_path = f"{prefix}{entry.name}"
@@ -254,7 +319,6 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         ):
             entries[rel_path] = old  # size and mtime unchanged: the stored digest stands
             return
-        self._changed_mid_scan = True
         # a file hashes only once its stat repeated from one scan to the next: mid-write
         # content is incomplete, and re-reading it every scan would be pure waste
         quiet_since_last_scan = (

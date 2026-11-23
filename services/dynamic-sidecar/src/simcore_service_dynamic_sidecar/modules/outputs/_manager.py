@@ -1,12 +1,15 @@
 import asyncio
 import logging
+import time
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from datetime import timedelta
 from functools import partial
+from typing import Annotated, Final
 
+from annotated_types import doc
 from common_library.async_tools import cancel_wait_task
 from common_library.errors_classes import OsparcErrorMixin
 from common_library.logging.logging_errors import (
@@ -16,7 +19,7 @@ from common_library.logging.logging_errors import (
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import ProgressType
-from pydantic import PositiveFloat
+from pydantic import NonNegativeFloat, PositiveFloat
 from servicelib import progress_bar
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
@@ -27,9 +30,17 @@ from ...core.settings import ApplicationSettings
 from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
 from ._context import OutputsContext
-from ._fingerprinter import DEFAULT_HASH_WORKERS, PortFingerprint
+from ._fingerprinter import DEFAULT_HASH_WORKERS, CheckOutcome, PortFingerprint
 
 _logger = logging.getLogger(__name__)
+
+_PROGRESS_LOG_INTERVAL_S: Final[
+    Annotated[NonNegativeFloat, doc("heartbeat period for the per-port outputs progress log line")]
+] = 30.0
+
+_SWEEP_INTERVAL_S: Final[
+    Annotated[PositiveFloat, doc("background content re-check period catching lost filesystem events")]
+] = 60.0
 
 
 async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -> None:
@@ -137,7 +148,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_uploading: Task | None = None
         self._task_uploading_followup: Task | None = None
         self._task_scheduler_worker: Task | None = None
-        self._schedule_all_ports_for_upload: bool = False
+        self._last_progress: dict[str, tuple[str, float]] = {}
+        self._next_sweep_mono: float = 0.0
 
         # keep track if a port was uploaded and there was an error, remove said error if last upload was ok
         self._last_upload_error_tracker: dict[str, str | None] = {}
@@ -148,15 +160,31 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         fingerprint = self._fingerprints.get(port_key)
         if fingerprint is None:
             fingerprint = PortFingerprint(
-                directory=self.outputs_context.outputs_path / port_key, hash_executor=self._hash_executor
+                port_key=port_key,
+                directory=self.outputs_context.outputs_path / port_key,
+                hash_executor=self._hash_executor,
+                on_stable_change=self._on_stable_change,
             )
             self._fingerprints[port_key] = fingerprint
         return fingerprint
 
     def on_port_key_change(self, port_key: str) -> None:
-        """called when something in the prot could have changed"""
-        if (fingerprint := self._get_fingerprint(port_key)) is not None:
-            fingerprint.mark_dirty()
+        """called on filesystem activity for a port: (re)starts the quiet countdown"""
+        fingerprint = self._get_fingerprint(port_key)
+        if fingerprint is None:
+            _logger.debug("port key %s changed but is not a file port: ignored", port_key)
+            return
+        fingerprint.note_event()
+
+    async def _on_stable_change(self, port_key: str) -> None:
+        """a quiet-proven fingerprint differing from the last upload: schedule the upload"""
+        if port_key in await self._port_key_tracker.get_uploading():
+            _logger.info(
+                "port %s: new content while an upload is in flight, the post-upload check picks it up", port_key
+            )
+            return
+        _logger.info("port %s: quiet content differs from the last upload, scheduling upload", port_key)
+        await self.port_key_content_changed(port_key)
 
     async def _uploading_task_start(self) -> None:
         port_keys = await self._port_key_tracker.get_uploading()
@@ -216,20 +244,22 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_uploading.add_done_callback(_remove_downloads)
 
     async def _uploaded_ports_followup(self, port_keys: list[str], failed_port_keys: set[str]) -> None:
-        requeue_port_keys: set[str] = set()
+        rearm_port_keys: set[str] = set()
         for port_key in port_keys:
             if port_key in failed_port_keys:
-                continue
+                continue  # the safety sweep retries unuploaded content once the port quiets down
             fingerprint = self._get_fingerprint(port_key)
             if fingerprint is None:
                 continue
             if not await fingerprint.verify_upload_completed():
-                _logger.info("Port %s changed during upload, scheduling another upload", port_key)
-                requeue_port_keys.add(port_key)
+                _logger.info("Port %s changed during upload, waiting for it to settle", port_key)
+                rearm_port_keys.add(port_key)
+
+        # re-arm first: a waiter must not see a cleared tracker with an episode pending
+        for port_key in rearm_port_keys:
+            (fingerprint := self._get_fingerprint(port_key)).note_event()  # type: ignore[union-attr]
 
         await self._port_key_tracker.remove_all_uploading()
-        for port_key in requeue_port_keys:
-            await self._port_key_tracker.add_pending(port_key)
 
     async def _uploading_task_cancel(self) -> None:
         if self._task_uploading is not None:
@@ -240,41 +270,48 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await _cancel_task(self._task_uploading_followup, self.task_cancellation_timeout_s)
             self._task_uploading_followup = None
 
-    async def _get_schedulable_port_keys(self) -> list[str]:
-        file_port_keys = set(self.outputs_context.file_type_port_keys)
-        pending_port_keys = await self._port_key_tracker.get_pending()
-        schedulable_port_keys = pending_port_keys - file_port_keys
-        for port_key in sorted(pending_port_keys & file_port_keys):
-            fingerprint = self._get_fingerprint(port_key)
-            assert fingerprint is not None  # nosec
-            if fingerprint.has_unscanned_demand():
-                # the newest content is not in the ledger yet: no skip/settle verdict on stale state
+    async def _run_safety_sweep(self) -> None:
+        uploading_port_keys = await self._port_key_tracker.get_uploading()
+        for port_key, fingerprint in self._fingerprints.items():
+            if port_key in uploading_port_keys:
                 continue
-            if fingerprint.matches_last_upload():
-                await self._port_key_tracker.remove_pending(port_key)
-                _logger.info("Skipping upload of port %s: content matches the last successful upload", port_key)
-            elif fingerprint.is_settled():
-                schedulable_port_keys.add(port_key)
-        return sorted(schedulable_port_keys)
+            with log_catch(_logger, reraise=False):
+                await fingerprint.sweep()
 
     async def _scheduler_worker(self) -> None:
         pending_port_keys = await self._port_key_tracker.get_pending()
         for port_key, fingerprint in self._fingerprints.items():
-            # pending ports are probed every tick; idle ports only scan after an event
-            fingerprint.request_scan(force=port_key in pending_port_keys)
+            self._log_port_progress(port_key, fingerprint, pending=port_key in pending_port_keys)
+
+        now = time.monotonic()
+        if now >= self._next_sweep_mono:
+            self._next_sweep_mono = now + _SWEEP_INTERVAL_S
+            await self._run_safety_sweep()
 
         if await self._port_key_tracker.are_pending_ports_uploading():
             await self._uploading_task_cancel()
             await self._port_key_tracker.move_all_uploading_to_pending()
 
-        schedulable_port_keys = await self._get_schedulable_port_keys()
+        # pending port keys carry a finished decision (quiet check or save path): schedule them
+        schedulable_port_keys = await self._port_key_tracker.get_pending()
         if schedulable_port_keys and await self._port_key_tracker.can_schedule_ports_to_upload():
-            await self._port_key_tracker.move_to_uploading(*schedulable_port_keys)
+            await self._port_key_tracker.move_to_uploading(*sorted(schedulable_port_keys))
 
             await self._uploading_task_start()
 
+    def _log_port_progress(self, port_key: str, fingerprint: PortFingerprint, *, pending: bool) -> None:
+        """Logs the port state when it changes, and at least every interval while tracked"""
+        line = f"pending={pending} {fingerprint.progress_line()}"
+        last_line, last_logged = self._last_progress.get(port_key, ("", 0.0))
+        now = time.monotonic()
+        if line != last_line or now - last_logged >= _PROGRESS_LOG_INTERVAL_S:
+            self._last_progress[port_key] = (line, now)
+            _logger.info("outputs progress: port %s: %s", port_key, line)
+
     def set_all_ports_for_upload(self) -> None:
-        self._schedule_all_ports_for_upload = True
+        """watchdog was rebooted: its events were lost, run a safety sweep on the next tick"""
+        _logger.warning("watchdog restarted, scheduling an immediate outputs safety sweep")
+        self._next_sweep_mono = 0.0
 
     async def start(self) -> None:
         self._task_scheduler_worker = create_periodic_task(
@@ -293,7 +330,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             self._hash_executor.shutdown(wait=False, cancel_futures=True)
 
     async def port_key_content_changed(self, port_key: str) -> None:
-        self.on_port_key_change(port_key)
+        """schedules `port_key` for upload on the next tick; no check is performed here"""
         await self._port_key_tracker.add_pending(port_key)
 
     async def wait_for_all_uploads_to_finish(self) -> None:
@@ -311,23 +348,25 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             _logger.info("Adding non file port key %s", non_file_port_key)
             await self.port_key_content_changed(non_file_port_key)
 
-        # NOTE: the file system watchdog was found unhealthy and to make
-        # sure we are not uploading a partially updated state we mark all
-        # ports changed.
-        # This will cancel and reupload all the data, ensuring no data
-        # is missed.
-        if self._schedule_all_ports_for_upload:
-            self._schedule_all_ports_for_upload = False
-            _logger.warning(
-                "Scheduled %s for upload. The watchdog was rebooted. "
-                "This is a safety measure to make sure no data is lost. ",
-                self.outputs_context.outputs_path,
-            )
-            for file_port_key in self.outputs_context.file_type_port_keys:
+        # let an in-flight upload record first: its verification decides the remaining save work
+        await self._wait_in_flight_upload_round()
+
+        # save means upload now: check each port without quiet and upload all not proven uploaded
+        for file_port_key in self.outputs_context.file_type_port_keys:
+            fingerprint = self._get_fingerprint(file_port_key)
+            assert fingerprint is not None  # nosec
+            outcome = await fingerprint.check_now()
+            if outcome is CheckOutcome.STABLE_MATCHING:
+                _logger.info("Skipping upload of port %s: content matches the last successful upload", file_port_key)
+            else:
+                if outcome is CheckOutcome.UNSTABLE:
+                    _logger.warning(
+                        "port %s content is still moving at save time, uploading the current state", file_port_key
+                    )
                 await self.port_key_content_changed(file_port_key)
 
         _logger.info("Port status before waiting %s", f"{self._port_key_tracker}")
-        while not await self._port_key_tracker.no_tracked_ports():  # noqa: ASYNC110
+        while not await self._no_outputs_work_left():  # noqa: ASYNC110
             await asyncio.sleep(self.task_monitor_interval_s)
         _logger.info("Port status after waiting %s", f"{self._port_key_tracker}")
 
@@ -336,6 +375,26 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         any_failed_upload = any(True for v in self._last_upload_error_tracker.values() if v is not None)
         if any_failed_upload:
             raise UploadPortsFailedError(failures=self._last_upload_error_tracker)  # pyright: ignore[reportCallIssue]
+
+    async def _no_outputs_work_left(self) -> bool:
+        if not await self._port_key_tracker.no_tracked_ports():
+            return False
+        file_port_keys = set(self.outputs_context.file_type_port_keys)
+        return not any(
+            fingerprint.has_pending_work()
+            for port_key, fingerprint in self._fingerprints.items()
+            if port_key in file_port_keys
+        )
+
+    async def _in_flight_upload_round_running(self) -> bool:
+        return (self._task_uploading is not None and not self._task_uploading.done()) or (
+            self._task_uploading_followup is not None and not self._task_uploading_followup.done()
+        )
+
+    async def _wait_in_flight_upload_round(self) -> None:
+        """Waits for the current upload task and its follow-up verification, if any are running"""
+        while await self._in_flight_upload_round_running():  # noqa: ASYNC110
+            await asyncio.sleep(self.task_monitor_interval_s)
 
 
 def configure_outputs_manager(app_lifespan: LifespanManager[FastAPI]) -> None:

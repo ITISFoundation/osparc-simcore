@@ -17,7 +17,7 @@ from threading import Event as ThreadingEvent
 from threading import Thread
 from time import sleep as blocking_sleep
 from typing import Any, Final
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import aiofiles
 import pytest
@@ -26,7 +26,6 @@ from faker import Faker
 from models_library.services import ServiceRunID
 from pydantic import (
     ByteSize,
-    NonNegativeFloat,
     NonNegativeInt,
     PositiveFloat,
     TypeAdapter,
@@ -36,16 +35,11 @@ from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
+from simcore_service_dynamic_sidecar.modules.outputs import _fingerprinter as fingerprinter_module
 from simcore_service_dynamic_sidecar.modules.outputs import (
     _watcher as outputs_watcher_core,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
-from simcore_service_dynamic_sidecar.modules.outputs._directory_utils import (
-    get_directory_total_size,
-)
-from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
-    BaseDelayPolicy,
-)
 from simcore_service_dynamic_sidecar.modules.outputs._event_handler import (
     _HEART_BEAT_MARK,
     _PortKeysEventHandler,
@@ -107,8 +101,11 @@ async def outputs_context(mounted_volumes: MountedVolumes, port_keys: list[str])
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_context: OutputsContext, port_notifier: PortNotifier
+    mocker: MockerFixture,
+    outputs_context: OutputsContext,
+    port_notifier: PortNotifier,
 ) -> AsyncIterable[OutputsManager]:
+    mocker.patch.object(fingerprinter_module, "_QUIET_SECONDS", 0.1)
     outputs_manager = OutputsManager(
         outputs_context=outputs_context,
         port_notifier=port_notifier,
@@ -135,25 +132,13 @@ async def outputs_watcher(
 
 
 @pytest.fixture
-def mock_event_filter_upload_trigger(mocker: MockerFixture, outputs_watcher: OutputsWatcher) -> AsyncMock:
-    mock_enqueue = AsyncMock(return_value=None)
+def mock_event_filter_upload_trigger(mocker: MockerFixture, outputs_manager: OutputsManager) -> MagicMock:
+    # every delivered event reaches the manager; the quiet-trigger check runs afterwards
+    mock_on_event = MagicMock()
 
-    mocker.patch.object(
-        outputs_watcher._event_filter.outputs_manager,  # noqa: SLF001
-        "port_key_content_changed",
-        mock_enqueue,
-    )
+    mocker.patch.object(outputs_manager, "on_port_key_change", mock_on_event)
 
-    class FastDelayPolicy(BaseDelayPolicy):
-        def get_min_interval(self) -> NonNegativeFloat:
-            return _WAIT_INTERVAL
-
-        def get_wait_interval(self, _: NonNegativeInt) -> NonNegativeFloat:
-            return _WAIT_INTERVAL
-
-    outputs_watcher._event_filter.delay_policy = FastDelayPolicy()  # noqa: SLF001
-
-    return mock_enqueue
+    return mock_on_event
 
 
 @pytest.fixture
@@ -350,7 +335,8 @@ async def test_does_not_trigger_on_attribute_change(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert mock_event_filter_upload_trigger.call_count == 1
+            assert mock_event_filter_upload_trigger.call_count > 0
+    call_count_after_touch = mock_event_filter_upload_trigger.call_count
 
     # apply an attribute change
     file_path_1.chmod(0o744)
@@ -359,7 +345,8 @@ async def test_does_not_trigger_on_attribute_change(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert mock_event_filter_upload_trigger.call_count == 1
+            assert mock_event_filter_upload_trigger.call_count > 0
+            assert mock_event_filter_upload_trigger.call_count == call_count_after_touch
 
 
 async def test_port_key_sequential_event_generation(
@@ -375,7 +362,6 @@ async def test_port_key_sequential_event_generation(
     await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # writing ports sequentially
-    wait_interval_for_port: list[float] = []
     for port_key in port_keys:
         port_dir = mounted_volumes.disk_outputs_path / port_key
         port_dir.mkdir(parents=True, exist_ok=True)
@@ -385,17 +371,9 @@ async def test_port_key_sequential_event_generation(
             size=file_generation_info.size,
             chunk_size=file_generation_info.chunk_size,
         )
-        wait_interval_for_port.append(
-            outputs_watcher._event_filter.delay_policy.get_wait_interval(  # noqa: SLF001
-                get_directory_total_size(port_dir)
-            )
-        )
 
-    # Waiting for events to finish propagation and changes to be uploaded
-    MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER = 1
-    sleep_for = max(max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3)
-    print(f"max {sleep_for=} interval")
-    async for attempt in AsyncRetrying(**{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(sleep_for)}):
+    # wait for event propagation and the quiet checks to trigger uploads
+    async for attempt in AsyncRetrying(**{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(30)}):
         with attempt:
             await asyncio.sleep(0)
             assert mock_long_running_upload_outputs.call_count > 0
@@ -528,12 +506,9 @@ async def test_notification_queue_stays_bounded_under_event_storm(
     await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, quiet_port_key)
 
     # stall the consumer so nothing drains the queue while the storm runs
-    block_enqueue = asyncio.Event()
-    mocker.patch.object(
-        outputs_watcher._event_filter,  # noqa: SLF001
-        "enqueue",
-        AsyncMock(side_effect=block_enqueue.wait),
-    )
+    # (the event worker thread calls on_port_key_change synchronously)
+    block_enqueue = ThreadingEvent()
+    mock_event_filter_upload_trigger.side_effect = block_enqueue.wait
 
     def _flood_with_files() -> None:
         for i in range(_EVENT_STORM_FILES):

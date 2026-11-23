@@ -9,7 +9,6 @@ from servicelib.logging_utils import log_context
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
 from ._context import OutputsContext
-from ._event_filter import EventFilter
 from ._event_handler import EventHandlerObserver
 from ._manager import OutputsManager
 
@@ -22,7 +21,6 @@ class OutputsWatcher:
         self.outputs_context = outputs_context
 
         self._task_events_worker: Task | None = None
-        self._event_filter = EventFilter(outputs_manager=outputs_manager)
         self._observer_monitor: EventHandlerObserver = EventHandlerObserver(
             outputs_context=self.outputs_context,
             outputs_manager=self.outputs_manager,
@@ -35,7 +33,8 @@ class OutputsWatcher:
             if event is None:
                 break
 
-            await self._event_filter.enqueue(event)
+            _logger.debug("event queue delivered port_key %s", event)
+            self.outputs_manager.on_port_key_change(event)
 
     async def enable_event_propagation(self) -> None:
         await self.outputs_context.toggle_event_propagation(is_enabled=True)
@@ -47,13 +46,11 @@ class OutputsWatcher:
         with log_context(_logger, logging.INFO, f"{OutputsWatcher.__name__} start"):
             self._task_events_worker = create_task(self._worker_events(), name="outputs_watcher_events_worker")
 
-            await self._event_filter.start()
             await self._observer_monitor.start()
 
     async def shutdown(self) -> None:
         """cleans up spawned tasks which might be pending"""
         with log_context(_logger, logging.INFO, f"{OutputsWatcher.__name__} shutdown"):
-            await self._event_filter.shutdown()
             await self._observer_monitor.stop()
 
             if self._task_events_worker is not None:

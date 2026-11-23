@@ -44,9 +44,9 @@ _COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
 
 
 @pytest.fixture
-def no_scan_interval_cap(mocker: MockerFixture) -> None:
-    """lifts the outputs fingerprint scan pace so tests do not wait for production delays"""
-    mocker.patch.object(_fingerprinter, "_DEFAULT_MIN_SCAN_INTERVAL", 0.0)
+def no_quiet_delay(mocker: MockerFixture) -> None:
+    """lifts the outputs quiet period so tests do not wait for production delays"""
+    mocker.patch.object(_fingerprinter, "_QUIET_SECONDS", 0.0)
 
 
 #

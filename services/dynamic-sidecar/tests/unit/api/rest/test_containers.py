@@ -9,7 +9,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from inspect import signature
 from pathlib import Path
 from typing import Any, Final
-from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import aiodocker
@@ -42,7 +42,6 @@ from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
-from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -331,10 +330,10 @@ def mock_aiodocker_containers_get(mocker: MockerFixture, faker: Faker) -> int:
 
 
 @pytest.fixture
-def mock_event_filter_enqueue(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
-    mock = AsyncMock(return_value=None)
-    outputs_watcher: OutputsWatcher = app.state.outputs_watcher
-    monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)  # noqa: SLF001
+def mock_outputs_event_delivery(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    mock = MagicMock()
+    outputs_manager: OutputsManager = app.state.outputs_manager
+    monkeypatch.setattr(outputs_manager, "on_port_key_change", mock)
     return mock
 
 
@@ -429,7 +428,7 @@ async def test_container_docker_error(
 
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
-    mock_event_filter_enqueue: AsyncMock,
+    mock_outputs_event_delivery: MagicMock,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     assert isinstance(test_client.application, FastAPI)
@@ -438,7 +437,7 @@ async def test_outputs_watcher_disabling(
     outputs_manager.task_monitor_interval_s = _WAIT_FOR_OUTPUTS_WATCHER / 10
 
     def _get_propagated_port_keys() -> set[str]:
-        return {c.args[0] for c in mock_event_filter_enqueue.call_args_list}
+        return {c.args[0] for c in mock_outputs_event_delivery.call_args_list}
 
     async def _create_port_key_events(*, is_propagation_enabled: bool) -> str:
         port_key = f"{uuid4()}"
@@ -519,7 +518,7 @@ async def test_outputs_watcher_disabling(
 async def test_container_create_outputs_dirs(
     test_client: TestClient,
     mock_outputs_labels: dict[str, ServiceOutput],
-    mock_event_filter_enqueue: AsyncMock,
+    mock_outputs_event_delivery: MagicMock,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     assert isinstance(test_client.application, FastAPI)
@@ -529,7 +528,7 @@ async def test_container_create_outputs_dirs(
     await _assert_enable_output_ports(test_client, wait_for_command_delivered)
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
 
-    assert mock_event_filter_enqueue.call_count == 0
+    assert mock_outputs_event_delivery.call_count == 0
 
     json_outputs_labels = {k: v.model_dump(by_alias=True) for k, v in mock_outputs_labels.items()}
     response = await test_client.post(
@@ -544,7 +543,7 @@ async def test_container_create_outputs_dirs(
 
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
     EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS = 0
-    assert mock_event_filter_enqueue.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
+    assert mock_outputs_event_delivery.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
 
 
 def _get_entrypoint_container_name(test_client: TestClient) -> str:

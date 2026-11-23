@@ -7,7 +7,7 @@ from collections.abc import AsyncIterable
 from inspect import signature
 from pathlib import Path
 from typing import Any, Final
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import aiodocker
 import pytest
@@ -44,6 +44,7 @@ from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import InputsState
+from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from simcore_service_dynamic_sidecar.services.container_extensions import (
     _TIMEOUT_PERMISSION_CHANGES,
@@ -110,10 +111,10 @@ def mock_outputs_labels() -> dict[str, ServiceOutput]:
 
 
 @pytest.fixture
-def mock_event_filter_enqueue(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
-    mock = AsyncMock(return_value=None)
-    outputs_watcher: OutputsWatcher = app.state.outputs_watcher
-    monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)  # noqa: SLF001
+def mock_outputs_event_delivery(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    mock = MagicMock()
+    outputs_manager: OutputsManager = app.state.outputs_manager
+    monkeypatch.setattr(outputs_manager, "on_port_key_change", mock)
     return mock
 
 
@@ -121,7 +122,7 @@ async def test_container_create_outputs_dirs(
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_outputs_labels: dict[str, ServiceOutput],
-    mock_event_filter_enqueue: AsyncMock,
+    mock_outputs_event_delivery: MagicMock,
 ):
     app_state = AppState(app)
 
@@ -135,7 +136,7 @@ async def test_container_create_outputs_dirs(
     assert result is None
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
 
-    assert mock_event_filter_enqueue.call_count == 0
+    assert mock_outputs_event_delivery.call_count == 0
 
     result = await container_extensions.create_output_dirs(
         rpc_client,
@@ -148,7 +149,7 @@ async def test_container_create_outputs_dirs(
 
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
     EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS = 0
-    assert mock_event_filter_enqueue.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
+    assert mock_outputs_event_delivery.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
 
 
 _SELF_CONTAINER_NAME: Final[str] = "test-self-container"

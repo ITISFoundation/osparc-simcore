@@ -5,6 +5,7 @@
 import asyncio
 import functools
 import inspect
+import logging
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from inspect import FullArgSpec
@@ -29,6 +30,7 @@ from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
+from simcore_service_dynamic_sidecar.modules.outputs import _fingerprinter as fingerprinter_module
 from simcore_service_dynamic_sidecar.modules.outputs import configure_outputs
 from simcore_service_dynamic_sidecar.modules.outputs._context import (
     OutputsContext,
@@ -42,6 +44,8 @@ from simcore_service_dynamic_sidecar.modules.outputs._manager import (
 )
 
 # UTILS
+
+_SHORT_QUIET_S: PositiveFloat = 0.5
 
 
 @dataclass
@@ -83,14 +87,15 @@ def test_configure_outputs_preserves_lifespan_order(mocker: MockerFixture):
 # FIXTURES
 
 
+@pytest.fixture
+def short_quiet(mocker: MockerFixture) -> None:
+    """short quiet period so event-driven tests do not wait for the production delay"""
+    mocker.patch.object(fingerprinter_module, "_QUIET_SECONDS", _SHORT_QUIET_S)
+
+
 @pytest.fixture(params=[0.01])
 def upload_duration(request: pytest.FixtureRequest) -> PositiveFloat:
     return request.param
-
-
-@pytest.fixture
-def wait_upload_finished(upload_duration: PositiveFloat) -> PositiveFloat:
-    return upload_duration * 100
 
 
 @pytest.fixture
@@ -143,16 +148,20 @@ def outputs_path(tmp_path: Path) -> Path:
     return tmp_path
 
 
+def _uploaded_port_keys(mock: AsyncMock) -> list[str]:
+    uploaded: list[str] = []
+    for call_args in mock.call_args_list:
+        uploaded.extend(call_args.kwargs["port_keys"])
+    return uploaded
+
+
 def _assert_ports_uploaded(
     mock_upload_outputs: AsyncMock,
     port_keys: list[str],
     non_file_type_port_keys: list[str],
 ) -> None:
-    uploaded_port_keys = []
+    uploaded_port_keys = _uploaded_port_keys(mock_upload_outputs)
     assert len(mock_upload_outputs.call_args_list) > 0
-    for call_arts in mock_upload_outputs.call_args_list:
-        uploaded_port_keys.extend(call_arts.kwargs["port_keys"])
-
     assert set(uploaded_port_keys) == set(port_keys) | set(non_file_type_port_keys)
 
 
@@ -190,7 +199,7 @@ async def outputs_context(
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_context: OutputsContext, port_notifier: PortNotifier, no_scan_interval_cap: None
+    outputs_context: OutputsContext, port_notifier: PortNotifier, short_quiet: None
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
         outputs_context=outputs_context,
@@ -204,7 +213,7 @@ async def outputs_manager(
     await outputs_manager.shutdown()
 
 
-# TESTS
+# TESTS: explicit scheduling (save-style entry points)
 
 
 async def test_upload_port_wait_sequential(
@@ -230,7 +239,6 @@ async def test_upload_port_wait_parallel_parallel(
     port_keys: list[str],
     non_file_type_port_keys: list[str],
     outputs_path: Path,
-    wait_upload_finished: PositiveFloat,
 ):
     upload_tasks = [outputs_manager.port_key_content_changed(port_key=port_key) for port_key in port_keys]
 
@@ -238,6 +246,33 @@ async def test_upload_port_wait_parallel_parallel(
     await outputs_manager.wait_for_all_uploads_to_finish()
 
     _assert_ports_uploaded(mock_upload_outputs, port_keys, non_file_type_port_keys)
+
+
+async def test_progress_log_reports_port_state_changes(
+    outputs_context: OutputsContext, port_notifier: PortNotifier, caplog: pytest.LogCaptureFixture
+):
+    # an unstarted manager: the periodic scheduler would log its own progress lines in between
+    manager = OutputsManager(
+        outputs_context=outputs_context,
+        port_notifier=port_notifier,
+        io_log_redirect_cb=None,
+        progress_cb=None,
+    )
+    port_key = next(iter(outputs_context.file_type_port_keys))
+    fingerprint = manager._get_fingerprint(port_key)  # noqa: SLF001
+    assert fingerprint is not None
+
+    with caplog.at_level(logging.INFO):
+        manager._log_port_progress(port_key, fingerprint, pending=True)  # noqa: SLF001
+        first = [r for r in caplog.records if "outputs progress" in r.message]
+        assert len(first) == 1
+        assert "pending=True" in first[0].message
+
+        manager._log_port_progress(port_key, fingerprint, pending=True)  # noqa: SLF001
+        assert len([r for r in caplog.records if "outputs progress" in r.message]) == 1
+
+        manager._log_port_progress(port_key, fingerprint, pending=False)  # noqa: SLF001
+        assert len([r for r in caplog.records if "outputs progress" in r.message]) == 2
 
 
 async def test_recovers_after_raising_error(
@@ -278,6 +313,201 @@ async def test_recovers_after_raising_error(
         await asyncio.sleep(outputs_manager.task_monitor_interval_s * 10)
 
     await outputs_manager.wait_for_all_uploads_to_finish()
+
+
+# TESTS: event-driven quiet-trigger uploads
+
+
+@pytest.fixture
+async def single_port_manager(
+    tmp_path: Path, port_notifier: PortNotifier, short_quiet: None
+) -> AsyncIterator[tuple[OutputsManager, Path]]:
+    outputs_dir = tmp_path / "outputs"
+    outputs_dir.mkdir()
+    outputs_context = OutputsContext(outputs_path=outputs_dir)
+    await outputs_context.set_file_type_port_keys(["output_1"])
+    outputs_manager = OutputsManager(
+        outputs_context=outputs_context,
+        port_notifier=port_notifier,
+        io_log_redirect_cb=None,
+        task_monitor_interval_s=0.01,
+        progress_cb=None,
+    )
+    await outputs_manager.start()
+    yield outputs_manager, outputs_dir / "output_1"
+    await outputs_manager.shutdown()
+
+
+@dataclass
+class PausableUpload:
+    started: asyncio.Event
+    release: asyncio.Event
+    calls: list[list[str]] = field(default_factory=list)
+
+
+@pytest.fixture
+async def pausable_upload(mocker: MockerFixture) -> PausableUpload:
+    pausable = PausableUpload(started=asyncio.Event(), release=asyncio.Event())
+
+    async def _mock_upload_outputs(*args: Any, **kwargs: Any) -> None:
+        pausable.calls.append(kwargs["port_keys"])
+        pausable.started.set()
+        await pausable.release.wait()
+
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
+        side_effect=_mock_upload_outputs,
+    )
+    return pausable
+
+
+def _write_port_version(port_dir: Path, data: bytes) -> None:
+    port_dir.mkdir(exist_ok=True)
+    (port_dir / "f.dat").write_bytes(data)
+
+
+async def test_event_uploads_only_after_the_quiet_period(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"v1")
+
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.sleep(_SHORT_QUIET_S * 0.1)
+    assert pausable_upload.calls == []  # quiet not elapsed yet
+
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    pausable_upload.release.set()
+
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 1
+
+
+async def test_late_events_postpone_the_upload(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"v1")
+    outputs_manager.on_port_key_change("output_1")
+
+    await asyncio.sleep(_SHORT_QUIET_S * 0.4)
+    _write_port_version(port_dir, b"v2")
+    outputs_manager.on_port_key_change("output_1")  # timer restarts, nothing uploaded yet
+
+    await asyncio.sleep(_SHORT_QUIET_S * 0.4)
+    assert pausable_upload.calls == []
+
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    pausable_upload.release.set()
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 1
+
+
+async def test_upload_of_all_the_burst_content_happens_once_content_stops_changing(
+    mock_upload_outputs: AsyncMock,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"start")
+
+    for counter in range(20):
+        (port_dir / "f.dat").write_bytes(b"chunk-" * counter)
+        outputs_manager.on_port_key_change("output_1")
+        await asyncio.sleep(_SHORT_QUIET_S * 0.05)
+
+    # the quiet period has not elapsed since the last write: nothing uploaded yet
+    assert "output_1" not in _uploaded_port_keys(mock_upload_outputs)
+
+    # the save checks without waiting for quiet and uploads the final content once
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert _uploaded_port_keys(mock_upload_outputs).count("output_1") == 1
+
+
+async def test_unchanged_content_is_not_uploaded_again(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"v1")
+    outputs_manager.on_port_key_change("output_1")
+
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    pausable_upload.release.set()
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 1
+
+    # an event without a content change: the check proves equality and skips
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.sleep(_SHORT_QUIET_S * 3)
+    assert pausable_upload.calls.count(["output_1"]) == 1
+
+    _write_port_version(port_dir, b"a longer v2")
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    pausable_upload.release.set()
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 2
+
+
+async def test_failed_upload_is_retried_by_the_safety_sweep(
+    mock_upload_outputs_raises_error: ToggleErrorRaising,
+    outputs_manager: OutputsManager,
+    mocker: MockerFixture,
+    port_keys: list[str],
+):
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs._manager._SWEEP_INTERVAL_S",
+        0.2,
+    )
+    port_key = port_keys[0]
+    await outputs_manager.port_key_content_changed(port_key)
+    with pytest.raises(UploadPortsFailedError):
+        await outputs_manager.wait_for_all_uploads_to_finish()
+
+    mock_upload_outputs_raises_error.stop_raising_errors()
+    # no new event and no save: only the periodic safety sweep notices the unuploaded content
+    await asyncio.sleep(1)
+    assert port_key in _uploaded_port_keys(mock_upload_outputs_raises_error.mock)
+
+
+async def test_content_changed_during_upload_is_reuploaded_without_new_event(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"v1")
+
+    await outputs_manager.port_key_content_changed("output_1")
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+
+    (port_dir / "f.dat").write_bytes(b"v2 changed during the put while the watcher slept")
+    pausable_upload.release.set()
+
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 2
+
+
+async def test_content_change_event_during_upload_cancels_and_reschedules(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"v1")
+
+    await outputs_manager.port_key_content_changed("output_1")
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+
+    (port_dir / "f.dat").write_bytes(b"v2 arrived while the first upload was in flight")
+    await asyncio.sleep(_SHORT_QUIET_S * 2)  # let the quiet check notice the change
+    pausable_upload.release.set()
+
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 2
+
+
+# TESTS: port key tracker
 
 
 async def test_port_key_tracker_add_pending(port_key_tracker: _PortKeyTracker, port_keys: list[str]):
@@ -368,6 +598,9 @@ async def test_port_key_tracker_workflow(port_key_tracker: _PortKeyTracker, port
     assert set(await port_key_tracker.get_uploading()) == expected_uploading
 
 
+# TESTS: wiring regressions
+
+
 async def test_regression_io_log_redirect_cb(
     mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ):
@@ -440,161 +673,3 @@ async def test_regression_io_log_redirect_cb(
                 "log": str,
             },
         )
-
-
-def _uploaded_port_keys(mock_upload_outputs: AsyncMock) -> list[str]:
-    uploaded: list[str] = []
-    for call_args in mock_upload_outputs.call_args_list:
-        uploaded.extend(call_args.kwargs["port_keys"])
-    return uploaded
-
-
-@pytest.fixture
-async def single_port_manager(
-    tmp_path: Path, port_notifier: PortNotifier, no_scan_interval_cap: None
-) -> AsyncIterator[tuple[OutputsManager, Path]]:
-    outputs_dir = tmp_path / "outputs"
-    outputs_dir.mkdir()
-    outputs_context = OutputsContext(outputs_path=outputs_dir)
-    await outputs_context.set_file_type_port_keys(["output_1"])
-    outputs_manager = OutputsManager(
-        outputs_context=outputs_context,
-        port_notifier=port_notifier,
-        io_log_redirect_cb=None,
-        task_monitor_interval_s=0.01,
-        progress_cb=None,
-    )
-    await outputs_manager.start()
-    yield outputs_manager, outputs_dir / "output_1"
-    await outputs_manager.shutdown()
-
-
-@dataclass
-class PausableUpload:
-    started: asyncio.Event
-    release: asyncio.Event
-    calls: list[list[str]] = field(default_factory=list)
-
-
-@pytest.fixture
-async def pausable_upload(mocker: MockerFixture) -> PausableUpload:
-    pausable = PausableUpload(started=asyncio.Event(), release=asyncio.Event())
-
-    async def _mock_upload_outputs(*args: Any, **kwargs: Any) -> None:
-        pausable.calls.append(kwargs["port_keys"])
-        pausable.started.set()
-        await pausable.release.wait()
-
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
-        side_effect=_mock_upload_outputs,
-    )
-    return pausable
-
-
-def _write_port_version(port_dir: Path, data: bytes) -> None:
-    port_dir.mkdir()
-    (port_dir / "f.dat").write_bytes(data)
-
-
-async def test_file_port_uploads_only_after_content_stops_changing(
-    mock_upload_outputs: AsyncMock,
-    outputs_manager: OutputsManager,
-    outputs_context: OutputsContext,
-    outputs_path: Path,
-):
-    port_key = outputs_context.file_type_port_keys[0]
-    port_dir = outputs_path / port_key
-    port_dir.mkdir()
-
-    await outputs_manager.port_key_content_changed(port_key)
-    for counter in range(40):
-        (port_dir / "f.dat").write_bytes(b"chunk-" * counter)
-        await asyncio.sleep(outputs_manager.task_monitor_interval_s * 2)
-
-    assert port_key not in _uploaded_port_keys(mock_upload_outputs)
-
-    await outputs_manager.wait_for_all_uploads_to_finish()
-    assert _uploaded_port_keys(mock_upload_outputs).count(port_key) == 1
-
-
-async def test_unchanged_content_is_not_uploaded_again(
-    mock_upload_outputs: AsyncMock,
-    outputs_manager: OutputsManager,
-    outputs_context: OutputsContext,
-    outputs_path: Path,
-):
-    port_key = outputs_context.file_type_port_keys[0]
-    port_dir = outputs_path / port_key
-    port_dir.mkdir()
-    (port_dir / "f.dat").write_bytes(b"v1")
-
-    await outputs_manager.port_key_content_changed(port_key)
-    await outputs_manager.wait_for_all_uploads_to_finish()
-    assert _uploaded_port_keys(mock_upload_outputs).count(port_key) == 1
-
-    await outputs_manager.port_key_content_changed(port_key)
-    await asyncio.sleep(outputs_manager.task_monitor_interval_s * 100)
-    assert _uploaded_port_keys(mock_upload_outputs).count(port_key) == 1
-
-    (port_dir / "f.dat").write_bytes(b"a longer v2")
-    await outputs_manager.port_key_content_changed(port_key)
-    await outputs_manager.wait_for_all_uploads_to_finish()
-    assert _uploaded_port_keys(mock_upload_outputs).count(port_key) == 2
-
-
-async def test_failed_upload_uploads_again_on_next_event(
-    mock_upload_outputs_raises_error: ToggleErrorRaising,
-    outputs_manager: OutputsManager,
-    outputs_context: OutputsContext,
-    outputs_path: Path,
-):
-    port_key = outputs_context.file_type_port_keys[0]
-    port_dir = outputs_path / port_key
-    port_dir.mkdir()
-    (port_dir / "f.dat").write_bytes(b"v1")
-
-    await outputs_manager.port_key_content_changed(port_key)
-    with pytest.raises(UploadPortsFailedError):
-        await outputs_manager.wait_for_all_uploads_to_finish()
-    assert _uploaded_port_keys(mock_upload_outputs_raises_error.mock).count(port_key) == 1
-
-    mock_upload_outputs_raises_error.stop_raising_errors()
-    await outputs_manager.port_key_content_changed(port_key)
-    await outputs_manager.wait_for_all_uploads_to_finish()
-    assert _uploaded_port_keys(mock_upload_outputs_raises_error.mock).count(port_key) == 2
-
-
-async def test_content_changed_during_upload_is_reuploaded_without_new_event(
-    pausable_upload: PausableUpload,
-    single_port_manager: tuple[OutputsManager, Path],
-):
-    outputs_manager, port_dir = single_port_manager
-    _write_port_version(port_dir, b"v1")
-
-    await outputs_manager.port_key_content_changed("output_1")
-    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
-
-    (port_dir / "f.dat").write_bytes(b"v2 changed during the put while the watcher slept")
-    pausable_upload.release.set()
-
-    await outputs_manager.wait_for_all_uploads_to_finish()
-    assert pausable_upload.calls.count(["output_1"]) == 2
-
-
-async def test_content_change_event_during_upload_cancels_and_reschedules(
-    pausable_upload: PausableUpload,
-    single_port_manager: tuple[OutputsManager, Path],
-):
-    outputs_manager, port_dir = single_port_manager
-    _write_port_version(port_dir, b"v1")
-
-    await outputs_manager.port_key_content_changed("output_1")
-    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
-
-    (port_dir / "f.dat").write_bytes(b"v2 arrived while the first upload was in flight")
-    await outputs_manager.port_key_content_changed("output_1")
-    pausable_upload.release.set()
-
-    await outputs_manager.wait_for_all_uploads_to_finish()
-    assert pausable_upload.calls.count(["output_1"]) == 2

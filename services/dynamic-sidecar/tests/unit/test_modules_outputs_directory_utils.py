@@ -18,7 +18,7 @@ def _create_files(path: Path, files: NonNegativeInt) -> PositiveInt:
     total = 0
     for _ in range(files):
         file_path = path / f"f{uuid4()}"
-        file_path.write_bytes(randbytes(1))
+        file_path.write_bytes(randbytes(1))  # noqa: S311
         total += file_path.stat().st_size
     return total
 
@@ -57,3 +57,34 @@ def test_get_directory_total_size(dir_with_files: tuple[Path, PositiveInt]):
     print(f"runtime {runtime:04}")
 
     assert expected_size == dir_size
+
+
+def test_get_directory_total_size_with_symlink_to_ancestor_directory(
+    tmp_path: Path,
+):
+    # the walk must not follow a directory symlink back to an ancestor: ELOOP
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "afile.txt").write_text("data")
+    (tmp_path / "sub" / "up").symlink_to(tmp_path)
+
+    assert get_directory_total_size(tmp_path) == len("data")
+
+
+def test_get_directory_total_size_with_self_looping_symlink(tmp_path: Path):
+    loop = tmp_path / "loop"
+    loop.symlink_to(loop)
+    (tmp_path / "afile.txt").write_bytes(b"12345")
+
+    assert get_directory_total_size(tmp_path) == 5
+
+    loop.unlink()
+
+
+def test_get_directory_total_size_with_broken_symlink(tmp_path: Path):
+    (tmp_path / "broken").symlink_to(tmp_path / "missing_target")
+
+    assert get_directory_total_size(tmp_path) == 0
+
+
+def test_get_directory_total_size_on_missing_directory(tmp_path: Path):
+    assert get_directory_total_size(tmp_path / "does_not_exist") == 0
