@@ -18,6 +18,7 @@ from collections.abc import (
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
+from typing import Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -51,6 +52,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_postgres_database.models.groups import groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -648,6 +650,29 @@ async def app_products_names(
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(products_prices.delete())
         await conn.execute(products.delete().where(products.c.name != FRONTEND_APP_DEFAULT))
+
+
+S4L_PRODUCT_NAME: Final[ProductName] = ProductName("s4l")
+
+
+@pytest.fixture
+def s4l_products_db(postgres_db: sa.engine.Engine) -> Iterator[ProductName]:
+    """A second product, distinct from the default one, for product-binding tests"""
+    with postgres_db.connect() as conn:
+        conn.execute(
+            products.insert().values(
+                name=S4L_PRODUCT_NAME,
+                host_regex="pytest",
+                base_url="https://pytest.com",
+                display_name="pytest",
+            )
+        )
+    yield S4L_PRODUCT_NAME
+    with postgres_db.connect() as conn:
+        group_id = conn.scalar(sa.select(products.c.group_id).where(products.c.name == S4L_PRODUCT_NAME))
+        conn.execute(products.delete().where(products.c.name == S4L_PRODUCT_NAME))
+        if group_id:
+            conn.execute(groups.delete().where(groups.c.gid == group_id))
 
 
 @pytest.fixture

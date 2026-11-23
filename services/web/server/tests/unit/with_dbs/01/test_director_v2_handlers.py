@@ -57,7 +57,7 @@ from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMo
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
-from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
 from simcore_postgres_database.models.workspaces import workspaces
@@ -1021,40 +1021,26 @@ async def test_start_computation_forwards_every_runnable_project(
 
 
 @pytest.fixture
-async def second_product(client: TestClient, postgres_db: sa.engine.Engine) -> AsyncIterator[ProductName]:
-    assert client.app
-    product_name = ProductName("s4l")
-    with postgres_db.connect() as conn:
-        conn.execute(
-            products.insert().values(
-                name=product_name,
-                host_regex="pytest",
-                base_url="https://pytest.com",
-                display_name="pytest",
-            )
-        )
-    # products are cached in the app on startup: reload so the new product is discoverable
-    client.app[PRODUCTS_APPKEY] = {product.name: product for product in await load_products(client.app)}
-    yield product_name
-    with postgres_db.connect() as conn:
-        conn.execute(products.delete().where(products.c.name == product_name))
-
-
-@pytest.fixture
 async def project_in_second_product(
     client: TestClient,
     logged_user: UserInfoDict,
-    second_product: ProductName,
-) -> ProjectID:
+    postgres_db: sa.engine.Engine,
+    s4l_products_db: ProductName,
+) -> AsyncIterator[ProjectID]:
     assert client.app
-    await auto_add_user_to_product_group(client.app, user_id=UserID(logged_user["id"]), product_name=second_product)
+    await auto_add_user_to_product_group(client.app, user_id=UserID(logged_user["id"]), product_name=s4l_products_db)
+    # products are cached in the app on startup: reload so the new product is discoverable
+    client.app[PRODUCTS_APPKEY] = {product.name: product for product in await load_products(client.app)}
     project = await create_project(
         client.app,
         params_override={"uuid": f"{uuidlib.uuid4()}", "name": "project in second product"},
         user_id=logged_user["id"],
-        product_name=second_product,
+        product_name=s4l_products_db,
     )
-    return ProjectID(project["uuid"])
+    project_id = ProjectID(project["uuid"])
+    yield project_id
+    with postgres_db.connect() as conn:
+        conn.execute(projects.delete().where(projects.c.uuid == f"{project_id}"))
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
