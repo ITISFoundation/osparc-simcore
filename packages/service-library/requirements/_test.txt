@@ -272,13 +272,13 @@ sqlalchemy==2.1.8
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
 types-greenlet==3.5.0.20260518
     # via sqlalchemy
 types-psutil==7.2.2.20260906
     # via -r requirements/_test.in
-types-tqdm==4.70.0.20261102
+types-tqdm==4.70.0.20261106
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
