@@ -881,7 +881,7 @@ async def update_project_node_resources_from_hardware_info(
 
     db = ProjectDBAPI.get_from_app_context(app)
     persisted_resources = (await db.get_project_node(project_id, node_id)).required_resources
-    if _db_needs_update(persisted_resources, new_node_resources):
+    if _resources_differ(persisted_resources, new_node_resources):
         await db.update_project_node(
             user_id,
             project_id,
@@ -894,8 +894,8 @@ async def update_project_node_resources_from_hardware_info(
         )
 
 
-def _db_needs_update(persisted: dict[str, Any], sized: ServiceResourcesDict) -> bool:
-    """True when the node's persisted resources are not yet the sizing result"""
+def _resources_differ(persisted: dict[str, Any], sized: ServiceResourcesDict) -> bool:
+    """True when the node's persisted resources are not the sizing result"""
     try:
         return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(persisted) != sized
     except ValidationError:
