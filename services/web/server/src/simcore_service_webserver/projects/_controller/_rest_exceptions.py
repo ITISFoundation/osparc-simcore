@@ -45,7 +45,6 @@ from ..exceptions import (
     ProjectNodeResourcesInvalidError,
     ProjectNodeResourcesSetByPricingUnitError,
     ProjectNotFoundError,
-    ProjectProductMismatchError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyNodesError,
     ProjectTooManyProjectOpenedError,
@@ -54,6 +53,7 @@ from ..exceptions import (
     ProjectWalletPendingTransactionError,
     WrongTagIdsInQueryError,
 )
+from ..rest_exceptions import _PROJECT_PRODUCT_MISMATCH_ERRORS
 
 _logger = logging.getLogger(__name__)
 
@@ -293,17 +293,6 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
 }
 
 
-_PROJECT_PRODUCT_MISMATCH_ERRORS: ExceptionToHttpErrorMap = {
-    ProjectProductMismatchError: HttpErrorInfo(
-        status.HTTP_400_BAD_REQUEST,
-        user_message(
-            "The project belongs to a different product than the one requested.",
-            _version=1,
-        ),
-    ),
-}
-
-
 _ERRORS = [
     _CONVERSATION_ERRORS,
     _FOLDER_ERRORS,
@@ -332,13 +321,6 @@ def _assert_duplicate():
 assert _assert_duplicate()  # nosec
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {k: v for dikt in _ERRORS for k, v in dikt.items()}
-
-# other modules (e.g. director-v2) reuse this so the same error renders the same
-# response on every endpoint that raises ProjectProductMismatchError
-project_product_mismatch_exceptions_handlers_map: ExceptionHandlersMap = to_exceptions_handlers_map(
-    _PROJECT_PRODUCT_MISMATCH_ERRORS
-)
-
 
 _handlers: ExceptionHandlersMap = {
     **catalog_exceptions_handlers_map,

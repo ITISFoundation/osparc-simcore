@@ -18,9 +18,7 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...projects._controller._rest_exceptions import (
-    project_product_mismatch_exceptions_handlers_map,
-)
+from ...projects import rest_exceptions
 from ...projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
@@ -114,6 +112,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 _exceptions_handlers_map.update(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
-_exceptions_handlers_map.update(project_product_mismatch_exceptions_handlers_map)
+_exceptions_handlers_map.update(rest_exceptions.project_product_mismatch_exceptions_handlers_map)
 
 handle_rest_requests_exceptions = exception_handling_decorator(_exceptions_handlers_map)
