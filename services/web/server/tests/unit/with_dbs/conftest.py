@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=protected-access
 
+import contextlib
 import random
 import textwrap
 import uuid
@@ -18,7 +19,7 @@ from collections.abc import (
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -43,7 +44,6 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
@@ -53,7 +53,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_postgres_database.models.groups import groups
+from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -653,28 +653,45 @@ async def app_products_names(
         await conn.execute(products.delete().where(products.c.name != FRONTEND_APP_DEFAULT))
 
 
+async def _delete_product_group(engine: AsyncEngine, product_name: str) -> None:
+    # the app creates the product's group when a user joins it (get_or_create_product_group)
+    # and create_product deletes only the product row, so the group is removed here by name
+    async with engine.begin() as conn:
+        await conn.execute(sa.delete(groups).where(groups.c.name == product_name, groups.c.type == GroupType.STANDARD))
+
+
+@pytest.fixture
+async def new_product(
+    create_product: Callable[..., Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[ProductName]]]:
+    stack = contextlib.AsyncExitStack()
+
+    async def _create(name: str, **overrides) -> ProductName:
+        stack.push_async_callback(_delete_product_group, sqlalchemy_async_engine, name)
+        await create_product(
+            name=name,
+            host_regex="pytest",  # never matches the test client host, so requests
+            # without an explicit x-product-name header keep resolving the default product
+            base_url="https://pytest.com",
+            display_name=name,
+            **overrides,
+        )
+        return ProductName(name)
+
+    try:
+        yield _create
+    finally:
+        await stack.aclose()
+
+
 S4L_PRODUCT_NAME: Final[ProductName] = ProductName("s4l")
 
 
 @pytest.fixture
-async def s4l_products_db(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[ProductName]:
+async def s4l_products_db(new_product: Callable[..., Awaitable[ProductName]]) -> ProductName:
     """A second product, distinct from the default one, for product-binding tests"""
-    group_id: int | None = None
-    async with insert_and_get_product_lifespan(
-        sqlalchemy_async_engine,
-        name=S4L_PRODUCT_NAME,
-        host_regex="pytest",
-        base_url="https://pytest.com",
-        display_name="pytest",
-    ) as product_row:
-        assert product_row["name"] == S4L_PRODUCT_NAME
-        yield S4L_PRODUCT_NAME
-        async with sqlalchemy_async_engine.connect() as conn:
-            group_id = await conn.scalar(sa.select(products.c.group_id).where(products.c.name == S4L_PRODUCT_NAME))
-
-    if group_id:
-        async with sqlalchemy_async_engine.begin() as conn:
-            await conn.execute(sa.delete(groups).where(groups.c.gid == group_id))
+    return await new_product(S4L_PRODUCT_NAME)
 
 
 @pytest.fixture
