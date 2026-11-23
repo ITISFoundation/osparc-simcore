@@ -109,6 +109,44 @@ jobs:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  unit-test-celery-library:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] celery-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/celery-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/celery-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/celery-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/celery-library.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/celery-library/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   unit-test-common-library:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] common-library"
@@ -304,6 +342,31 @@ jobs:
           files: packages/models-library/junit.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-python-linting:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] python-linting"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14", "3.15"]
+        # ARM runners have 4 vCPUs (vs 2 on x64)
+        os: [ubuntu-24.04-arm]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/pylint/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/python-linting.bash install
+      - name: test
+        run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-service-integration:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests

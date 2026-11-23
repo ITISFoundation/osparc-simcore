@@ -65,7 +65,7 @@ the workflow. Each line reads: suite, infra it needs, docker files, whether
   `packages/aws-library/tests`
 - `catalog`: postgres, rabbit (5/25, k8s: no)
   `services/catalog/tests/unit`
-- `celery-library`: none, memory broker and in-memory redis (0/9, k8s: missing)
+- `celery-library`: none, memory broker and in-memory redis (0/9, k8s: yes)
   `packages/celery-library/tests`
 - `clusters-keeper`: docker (4/21, k8s: no)
   `services/clusters-keeper/tests/unit`
@@ -97,7 +97,7 @@ the workflow. Each line reads: suite, infra it needs, docker files, whether
   `packages/postgres-database/tests`
 - `pytest-simcore`: docker, its own fixtures (3/16, k8s: no)
   `packages/pytest-simcore/tests`
-- `python-linting`: none (k8s: missing)
+- `python-linting`: none (k8s: yes)
   repo-wide `make pylint`, no test files
 - `resource-usage-tracker`: postgres, rabbit, redis (17/25, k8s: no)
   `services/resource-usage-tracker/tests/unit`
@@ -154,8 +154,6 @@ pushes only.
   `test_services_payments__get_invoice.py`,
   `api/test__one_time_payment_workflows.py`,
   `api/test__payment_method_workflows.py`.
-- `celery-library` and `python-linting` need no infra and have no job in the
-  K8s workflow.
 - Suites that need Docker in a few files only cannot join the no-infra jobs
   without a split: `api-server` (`_with_db`, 5 files), `simcore-sdk`
   (`test_node_ports_common_r_clone_mount.py`), `dask-sidecar`
