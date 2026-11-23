@@ -298,8 +298,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await self._uploading_task_start()
 
     def set_all_ports_for_upload(self) -> None:
-        """watchdog was rebooted: its events were lost, run a safety sweep on the next tick"""
-        _logger.warning("watchdog restarted, scheduling an immediate outputs safety sweep")
+        _logger.warning("watchdog restarted: outputs events were lost, running a safety sweep on the next tick")
         self._next_sweep_mono = 0.0
 
     async def start(self) -> None:
