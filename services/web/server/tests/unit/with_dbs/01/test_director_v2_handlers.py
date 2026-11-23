@@ -1050,7 +1050,7 @@ async def test_computation_ops_denied_when_claimed_product_mismatches_project_pr
     logged_user: UserInfoDict,
     project_in_second_product: ProjectID,
     osparc_product_name: ProductName,
-) -> None:
+):
     """Endpoints must refuse to act on a project of another product (money-path binding)."""
     assert client.app
     headers = {
