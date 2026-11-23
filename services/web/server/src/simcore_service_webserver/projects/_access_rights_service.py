@@ -36,11 +36,7 @@ def _check_product_names_match(*, claimed_product_name: ProductName, project_pro
 async def check_project_product_match(
     app: web.Application, *, project_id: ProjectID, product_name: ProductName
 ) -> None:
-    """Ensure the project belongs to 'product_name', the product claimed by the request.
-
-    Money-scoped operations (wallets, computations) must resolve against the
-    project's product in the DB, not the product claimed in the request headers.
-
+    """
     Raises:
         ProjectProductMismatchError: if the project belongs to another product
     """
