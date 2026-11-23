@@ -9,7 +9,6 @@ from collections.abc import Iterator
 from decimal import Decimal
 from http import HTTPStatus
 from pathlib import Path
-from typing import Final
 from unittest.mock import MagicMock
 
 import pytest
@@ -31,8 +30,6 @@ from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
-from simcore_postgres_database.models.groups import groups
-from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -235,27 +232,6 @@ async def test_pay_project_debt(
 
 
 # --- product-bound wallet attachment (see project:clone guard precedent) -----
-
-S4L_PRODUCT_NAME: Final[ProductName] = ProductName("s4l")
-
-
-@pytest.fixture
-def s4l_products_db(postgres_db: sa.engine.Engine) -> Iterator[ProductName]:
-    with postgres_db.connect() as conn:
-        conn.execute(
-            products.insert().values(
-                name=S4L_PRODUCT_NAME,
-                host_regex="pytest",
-                base_url="https://pytest.com",
-                display_name="pytest",
-            )
-        )
-    yield S4L_PRODUCT_NAME
-    with postgres_db.connect() as conn:
-        group_id = conn.scalar(sa.select(products.c.group_id).where(products.c.name == S4L_PRODUCT_NAME))
-        conn.execute(products.delete().where(products.c.name == S4L_PRODUCT_NAME))
-        if group_id:
-            conn.execute(groups.delete().where(groups.c.gid == group_id))
 
 
 @pytest.fixture
