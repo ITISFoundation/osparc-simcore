@@ -41,6 +41,16 @@ async def move_folder_into_workspace(
         )
         workspace_is_private = False
 
+    # Private folders (workspace_id is NULL) belong to their owner: only the
+    # owner can move them out.
+    await _folders_repository.get_for_user_or_workspace(
+        app,
+        folder_id=folder_id,
+        product_name=product_name,
+        user_id=user_id if workspace_is_private else None,
+        workspace_id=folder_db.workspace_id,
+    )
+
     # 2. User needs to have write permission on destination workspace
     if workspace_id is not None:
         await workspaces_service.check_user_workspace_access(
