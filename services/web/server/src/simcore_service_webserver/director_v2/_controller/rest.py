@@ -57,18 +57,18 @@ async def start_computation(request: web.Request) -> web.Response:  # pylint: di
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
+    )
+
     await check_user_project_permission(
         request.app,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         permission="write",
-    )
-
-    await check_project_product_match(
-        request.app,
-        project_id=path_params.project_id,
-        product_name=req_ctx.product_name,
     )
 
     subgraph: set[str] = set()
@@ -213,18 +213,18 @@ async def stop_computation(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
+    )
+
     await check_user_project_permission(
         request.app,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         permission="write",
-    )
-
-    await check_project_product_match(
-        request.app,
-        project_id=path_params.project_id,
-        product_name=req_ctx.product_name,
     )
 
     project_ids = await run_policy.get_runnable_projects_ids(request, path_params.project_id)
@@ -247,18 +247,18 @@ async def get_computation(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=request[RQ_PRODUCT_KEY],
+    )
+
     await check_user_project_permission(
         request.app,
         project_id=path_params.project_id,
         user_id=user_id,
         product_name=request[RQ_PRODUCT_KEY],
         permission="read",
-    )
-
-    await check_project_product_match(
-        request.app,
-        project_id=path_params.project_id,
-        product_name=request[RQ_PRODUCT_KEY],
     )
 
     project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(request, path_params.project_id)
