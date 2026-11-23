@@ -5,7 +5,6 @@
 import asyncio
 import functools
 import inspect
-import logging
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from inspect import FullArgSpec
@@ -246,33 +245,6 @@ async def test_upload_port_wait_parallel_parallel(
     await outputs_manager.wait_for_all_uploads_to_finish()
 
     _assert_ports_uploaded(mock_upload_outputs, port_keys, non_file_type_port_keys)
-
-
-async def test_progress_log_reports_port_state_changes(
-    outputs_context: OutputsContext, port_notifier: PortNotifier, caplog: pytest.LogCaptureFixture
-):
-    # an unstarted manager: the periodic scheduler would log its own progress lines in between
-    manager = OutputsManager(
-        outputs_context=outputs_context,
-        port_notifier=port_notifier,
-        io_log_redirect_cb=None,
-        progress_cb=None,
-    )
-    port_key = next(iter(outputs_context.file_type_port_keys))
-    fingerprint = manager._get_fingerprint(port_key)  # noqa: SLF001
-    assert fingerprint is not None
-
-    with caplog.at_level(logging.INFO):
-        manager._log_port_progress(port_key, fingerprint, pending=True)  # noqa: SLF001
-        first = [r for r in caplog.records if "outputs progress" in r.message]
-        assert len(first) == 1
-        assert "pending=True" in first[0].message
-
-        manager._log_port_progress(port_key, fingerprint, pending=True)  # noqa: SLF001
-        assert len([r for r in caplog.records if "outputs progress" in r.message]) == 1
-
-        manager._log_port_progress(port_key, fingerprint, pending=False)  # noqa: SLF001
-        assert len([r for r in caplog.records if "outputs progress" in r.message]) == 2
 
 
 async def test_recovers_after_raising_error(

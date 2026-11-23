@@ -19,7 +19,7 @@ from common_library.logging.logging_errors import (
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import ProgressType
-from pydantic import NonNegativeFloat, PositiveFloat
+from pydantic import PositiveFloat
 from servicelib import progress_bar
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
@@ -33,10 +33,6 @@ from ._context import OutputsContext
 from ._fingerprinter import DEFAULT_HASH_WORKERS, CheckOutcome, PortFingerprint
 
 _logger = logging.getLogger(__name__)
-
-_PROGRESS_LOG_INTERVAL_S: Final[
-    Annotated[NonNegativeFloat, doc("heartbeat period for the per-port outputs progress log line")]
-] = 30.0
 
 _SWEEP_INTERVAL_S: Final[
     Annotated[PositiveFloat, doc("background content re-check period catching lost filesystem events")]
@@ -156,7 +152,6 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_uploading: Task | None = None
         self._task_uploading_followup: Task | None = None
         self._task_scheduler_worker: Task | None = None
-        self._last_progress: dict[str, tuple[str, float]] = {}
         self._next_sweep_mono: float = 0.0
 
         # keep track if a port was uploaded and there was an error, remove said error if last upload was ok
@@ -286,10 +281,6 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 await fingerprint.sweep()
 
     async def _scheduler_worker(self) -> None:
-        pending_port_keys = await self._port_key_tracker.get_pending()
-        for port_key, fingerprint in self._fingerprints.items():
-            self._log_port_progress(port_key, fingerprint, pending=port_key in pending_port_keys)
-
         now = time.monotonic()
         if now >= self._next_sweep_mono:
             self._next_sweep_mono = now + _SWEEP_INTERVAL_S
@@ -305,15 +296,6 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await self._port_key_tracker.move_to_uploading(*sorted(schedulable_port_keys))
 
             await self._uploading_task_start()
-
-    def _log_port_progress(self, port_key: str, fingerprint: PortFingerprint, *, pending: bool) -> None:
-        """Logs the port state when it changes, and at least every interval while tracked"""
-        line = f"pending={pending} {fingerprint.progress_line()}"
-        last_line, last_logged = self._last_progress.get(port_key, ("", 0.0))
-        now = time.monotonic()
-        if line != last_line or now - last_logged >= _PROGRESS_LOG_INTERVAL_S:
-            self._last_progress[port_key] = (line, now)
-            _logger.info("outputs progress: port %s: %s", port_key, line)
 
     def set_all_ports_for_upload(self) -> None:
         """watchdog was rebooted: its events were lost, run a safety sweep on the next tick"""

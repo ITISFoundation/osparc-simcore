@@ -10,7 +10,6 @@ import asyncio
 import logging
 import os
 import stat as stat_module
-import time
 from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -41,8 +40,6 @@ type OnStableChangeCB = Callable[[str], Awaitable[None]]
 
 
 class CheckOutcome(Enum):
-    """Result of a content check episode"""
-
     STABLE_MATCHING = auto()  # content static and equal to the last recorded upload
     STABLE_NEW = auto()  # content static and different from the last recorded upload
     UNSTABLE = auto()  # content still moving within the episode
@@ -66,7 +63,7 @@ class _FileRecord:
 def _hash_file(path: Path) -> tuple[bytes, os.stat_result]:
     hasher = xxhash.xxh3_64()
     with path.open("rb") as file:
-        while chunk := file.read(int(_HASH_CHUNK_SIZE)):
+        while chunk := file.read(_HASH_CHUNK_SIZE):
             hasher.update(chunk)
         stat_after = os.fstat(file.fileno())
     return hasher.digest(), stat_after
@@ -84,6 +81,39 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
     record.digest = digest
     record.digest_size = stat_after.st_size
     record.digest_mtime_ns = stat_after.st_mtime_ns
+
+
+def _broken_link_kind(entry: os.DirEntry[str]) -> str:
+    """Identifies an unstatable entry; the readlink can fail too (e.g. ENAMETOOLONG deep links)."""
+    with suppress(OSError):
+        return f"x{Path(entry.path).readlink()}"
+    return f"n{entry.name}"
+
+
+def _nonfile_record(kind: str) -> _FileRecord:
+    """Ledger entry for a non-regular file: identified by kind, never hashed, always stable."""
+    return _FileRecord(
+        digest=f"s{kind}".encode(),
+        digest_size=0,
+        digest_mtime_ns=0,
+        seen_size=-1,
+        seen_mtime_ns=-1,
+    )
+
+
+def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
+    hasher = xxhash.xxh3_64()
+    for rel_path in sorted(entries):
+        record = entries[rel_path]
+        if record.digest is None:
+            entry_text = f"p\x00{rel_path}"  # pending hash: never equals a settled entry record
+        elif record.digest_size == 0:  # non-file entry, digest carries the kind
+            entry_text = f"{record.digest.decode(errors='replace')}\x00{rel_path}"
+        else:
+            entry_text = f"f\x00{rel_path}\x00{record.digest_size}\x00{record.digest.hex()}"
+        hasher.update(entry_text.encode(errors="replace"))
+        hasher.update(b"\n")
+    return hasher.hexdigest()
 
 
 class PortFingerprint:  # pylint: disable=too-many-instance-attributes
@@ -111,7 +141,6 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         self._scan_lock = asyncio.Lock()
         self._episode_seq = 0
         self._episode_task: asyncio.Task[None] | None = None
-        self._is_checking = False
 
     # -- event entry point ------------------------------------------------------
 
@@ -166,7 +195,6 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
 
     async def _run_episode(self, seq: int) -> CheckOutcome | None:
         """Scans until two finished scans agree; None when an event abandoned the episode."""
-        self._is_checking = True
         previous: _ScanResult | None = None
         outcome: CheckOutcome | None = None
         try:
@@ -195,53 +223,25 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         except Exception:  # pylint: disable=broad-except
             _logger.warning("port %s content check failed, will retry", self._port_key, exc_info=True)
             return None
-        finally:
-            self._is_checking = False
         return outcome
 
     # -- the scan -----------------------------------------------------------------
 
     async def _scan(self) -> _ScanResult:
         async with self._scan_lock:
-            scan_started = time.perf_counter()
-            result = await self._scan_impl()
-            _logger.debug(
-                "port %s scan took %.3fs: %s entries, %s awaiting hashes, fp=%s",
-                self._port_key,
-                time.perf_counter() - scan_started,
-                len(self._entries),
-                result.pending_hashes,
-                result.fingerprint,
-            )
-            return result
+            loop = asyncio.get_running_loop()
+            entries, hash_jobs = await asyncio.to_thread(self._collect_entries)
+            if hash_jobs:
+                # heavy step last: digests of changed files, capped by the hash pool size
+                await asyncio.gather(
+                    *(loop.run_in_executor(self._hash_executor, _fill_digest, job) for job in hash_jobs)
+                )
+            fingerprint = await asyncio.to_thread(_compute_fingerprint, entries)
 
-    async def _scan_impl(self) -> _ScanResult:
-        loop = asyncio.get_running_loop()
-        entries, hash_jobs = await asyncio.to_thread(self._collect_entries)
-        if hash_jobs:
-            # heavy step last: digests of changed files, capped by the hash pool size
-            await asyncio.gather(*(loop.run_in_executor(self._hash_executor, _fill_digest, job) for job in hash_jobs))
-        fingerprint = await asyncio.to_thread(_compute_fingerprint, entries)
-
-        self._entries = entries
-        self._fingerprint = fingerprint
-        self._pending_hashes = sum(1 for record in entries.values() if record.digest is None)
-        return _ScanResult(fingerprint=fingerprint, pending_hashes=self._pending_hashes)
-
-    def progress_line(self) -> str:
-        """One-line state summary the manager logs while this port is tracked."""
-        return (
-            f"state={self._state_name()} "
-            f"entries={len(self._entries)} awaiting_hashes={self._pending_hashes} "
-            f"fp={self._fingerprint or '-'} uploaded_fp={self._uploaded_fingerprint or '-'}"
-        )
-
-    def _state_name(self) -> str:
-        if self._is_checking:
-            return "checking"
-        if self.has_pending_work():
-            return "armed"
-        return "idle"
+            self._entries = entries
+            self._fingerprint = fingerprint
+            self._pending_hashes = sum(1 for record in entries.values() if record.digest is None)
+            return _ScanResult(fingerprint=fingerprint, pending_hashes=self._pending_hashes)
 
     # -- upload bookkeeping ---------------------------------------------------------
 
@@ -295,14 +295,14 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
                 try:
                     stat_result = entry.stat(follow_symlinks=True)
                 except OSError:
-                    entries[rel_path] = _special_record(_broken_link_kind(entry))
+                    entries[rel_path] = _nonfile_record(_broken_link_kind(entry))
                     continue
                 if entry.is_dir(follow_symlinks=False):
-                    entries[rel_path] = _special_record("d")
+                    entries[rel_path] = _nonfile_record("d")
                     self._walk(Path(entry.path), f"{rel_path}/", entries, hash_jobs)
                     continue
                 if not stat_module.S_ISREG(stat_result.st_mode):
-                    entries[rel_path] = _special_record(f"x{entry.path}")
+                    entries[rel_path] = _nonfile_record(f"x{entry.path}")
                     continue
                 self._track_file(rel_path, Path(entry.path), stat_result, entries, hash_jobs)
 
@@ -337,35 +337,3 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         entries[rel_path] = record
         if quiet_since_last_scan:
             hash_jobs.append((str(path), record))
-
-
-def _broken_link_kind(entry: os.DirEntry[str]) -> str:
-    """Identifies an unstatable entry; the readlink can fail too (e.g. ENAMETOOLONG deep links)."""
-    with suppress(OSError):
-        return f"x{Path(entry.path).readlink()}"
-    return f"n{entry.name}"
-
-
-def _special_record(kind: str) -> _FileRecord:
-    return _FileRecord(
-        digest=f"s{kind}".encode(),
-        digest_size=0,
-        digest_mtime_ns=0,
-        seen_size=-1,
-        seen_mtime_ns=-1,
-    )
-
-
-def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
-    hasher = xxhash.xxh3_64()
-    for rel_path in sorted(entries):
-        record = entries[rel_path]
-        if record.digest is None:
-            entry_text = f"p\x00{rel_path}"  # pending hash: never equals a settled entry record
-        elif record.digest_size == 0:  # directory or special entry, digest carries the kind
-            entry_text = f"{record.digest.decode(errors='replace')}\x00{rel_path}"
-        else:
-            entry_text = f"f\x00{rel_path}\x00{record.digest_size}\x00{record.digest.hex()}"
-        hasher.update(entry_text.encode(errors="replace"))
-        hasher.update(b"\n")
-    return hasher.hexdigest()

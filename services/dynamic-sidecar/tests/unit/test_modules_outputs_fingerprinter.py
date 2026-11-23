@@ -144,21 +144,21 @@ async def test_failed_episode_waits_for_the_next_event(
     (port_dir / "a.dat").write_bytes(b"hello")
 
     # the content never looks identical across two scans: every scan reports a new fingerprint
-    real_impl = fingerprinter._scan_impl  # noqa: SLF001
+    real_scan = fingerprinter._scan  # noqa: SLF001
     counter = iter(range(1000))
 
     async def _always_moving_scan() -> _ScanResult:
-        result = await real_impl()
+        result = await real_scan()
         return _ScanResult(fingerprint=f"moving-{next(counter)}", pending_hashes=result.pending_hashes)
 
-    mocker.patch.object(fingerprinter, "_scan_impl", _always_moving_scan)
+    mocker.patch.object(fingerprinter, "_scan", _always_moving_scan)
 
     fingerprinter.note_event()
     await asyncio.sleep(0.3)
     assert on_stable_change.call_count == 0
 
     # a later event re-arms the mechanism (here: the scans stabilize again)
-    mocker.patch.object(fingerprinter, "_scan_impl", real_impl)
+    mocker.patch.object(fingerprinter, "_scan", real_scan)
     fingerprinter.note_event()
     await _wait_for(on_stable_change)
 
@@ -187,7 +187,7 @@ async def test_unstable_content_never_requests_upload(fingerprinter: PortFingerp
         fingerprinter._fingerprint = "in-motion"  # noqa: SLF001
         return _ScanResult(fingerprint="in-motion", pending_hashes=3)
 
-    mocker.patch.object(fingerprinter, "_scan_impl", _pending_scan)
+    mocker.patch.object(fingerprinter, "_scan", _pending_scan)
 
     assert await fingerprinter.check_now() is CheckOutcome.UNSTABLE
     assert fingerprinter.take_upload_candidate() is None
@@ -257,7 +257,7 @@ async def test_sweep_skips_armed_ports(fingerprinter: PortFingerprint, port_dir:
     (port_dir / "a.dat").write_bytes(b"hello")
 
     fingerprinter.note_event()
-    scan_spy = mocker.spy(fingerprinter, "_scan_impl")
+    scan_spy = mocker.spy(fingerprinter, "_scan")
     await fingerprinter.sweep()
     assert scan_spy.call_count == 0
 
@@ -294,11 +294,3 @@ async def test_unreadable_file_keeps_upload_eligible_with_warning(
         assert any("poison.dat" in r.message for r in caplog.records)
     finally:
         poison.chmod(0o600)
-
-
-async def test_progress_line_reports_state_and_fingerprints(fingerprinter: PortFingerprint, port_dir: Path):
-    assert "state=idle" in fingerprinter.progress_line()
-
-    (port_dir / "a.dat").write_bytes(b"hello")
-    assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
-    assert "fp=" in fingerprinter.progress_line()
