@@ -12,8 +12,9 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_projects import create_project
-from pytest_simcore.helpers.webserver_users import UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import setup_db
@@ -90,7 +91,7 @@ async def moving_folder_id(
             "parentFolderId": f"{second_folder['folderId']}",
         },
     )
-    third_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    _third_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     ### Move projects to subfolder
     # add first project to the folder
@@ -242,3 +243,56 @@ async def test_moving_between_private_and_shared_workspaces(
 
     # 5. (Corner case) Private workspace -> Private workspace
     await _move_folder_to_workspace_and_assert(client, folder_id=moving_folder_id, workspace_id="null")
+
+
+async def test_moving_another_users_private_folder_is_forbidden(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    workspaces_clean_db: None,
+):
+    assert client.app
+
+    # one user creates a private folder (workspace_id is NULL)
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(f"{url}", json={"name": "Owner private folder"})
+    owner_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    async with NewUser(app=client.app) as other_user:
+        assert client.app
+        async with switch_client_session_to(client, other_user):
+            # the second user owns a workspace, which passes the destination check
+            url = client.app.router["create_workspace"].url_for()
+            resp = await client.post(
+                f"{url}",
+                json={"name": "Other user workspace", "description": "", "thumbnail": None},
+            )
+            other_user_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+            url = client.app.router["move_folder_to_workspace"].url_for(
+                folder_id=f"{owner_folder['folderId']}",
+                workspace_id=f"{other_user_workspace['workspaceId']}",
+            )
+            resp = await client.post(f"{url}")
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+            # delete the second user's workspace before the account cleanup below
+            url = client.app.router["delete_workspace"].url_for(
+                workspace_id=f"{other_user_workspace['workspaceId']}",
+            )
+            resp = await client.delete(f"{url}")
+            await assert_status(resp, NO_CONTENT)
+
+    # the folder was not moved: the owner still sees it and can move it
+    async with switch_client_session_to(client, logged_user):
+        url = client.app.router["get_folder"].url_for(folder_id=f"{owner_folder['folderId']}")
+        resp = await client.get(f"{url}")
+        folder, _ = await assert_status(resp, status.HTTP_200_OK)
+        assert folder["name"] == "Owner private folder"
+
+        url = client.app.router["move_folder_to_workspace"].url_for(
+            folder_id=f"{owner_folder['folderId']}",
+            workspace_id="null",
+        )
+        resp = await client.post(f"{url}")
+        await assert_status(resp, NO_CONTENT)
