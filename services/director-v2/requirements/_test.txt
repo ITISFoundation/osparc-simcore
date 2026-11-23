@@ -37,7 +37,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.5.0
+click==8.5.1
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -258,7 +258,7 @@ tornado==6.6.1
     #   distributed
 types-greenlet==3.5.0.20260518
     # via sqlalchemy
-types-networkx==3.6.1.20261031
+types-networkx==3.6.1.20261108
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20261103
     # via -r requirements/_test.in
