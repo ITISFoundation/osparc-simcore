@@ -16,10 +16,6 @@ variable, pytest option?)
 **Makefile:**
 Which targets change? Does the root `Makefile` delegate to `k8s/Makefile`?
 
-**pytest:**
-How do fixtures pick the flavor? How are Swarm-logic tests marked (e.g.
-`@pytest.mark.swarm_only`)?
-
 ### Debug artifacts
 
 `kubectl` logs/events on failure?
@@ -37,6 +33,12 @@ Own workflow file (e.g. `.github/workflows/ci-build-test-k8s.yml`).
 
 Minimal changes to existing interfaces (Makefiles, test invocation, CI
 scripts, ...). New ones shall resemble existing ones
+
+### pytest flavor selection
+
+pytest option `--simcore-cluster-orchestrator=k8s|docker_swarm` in the
+`simcore` option group of `pytest-simcore`, like `--keep-docker-up`. The
+default comes from `SIMCORE_CLUSTER_ORCHESTRATOR`, else `docker_swarm`.
 
 ### Rollout strategy
 
@@ -58,21 +60,16 @@ Everything must be green, except tests of Swarm-based logic.
 
 ### Swarm-only (non-backend) tests
 
-Tests of pure Swarm artifacts (e.g. compose files), not backend logic, are
-skipped: `SIMCORE_CLUSTER_ORCHESTRATOR=k8s` (set in the workflow) +
-`@pytest.mark.skipif` on the test.
+Do not touch them.
 
 ### Cluster & deploy
 
-Reuse `k8s/Makefile` only (`create-cluster`, `load-images-into-cluster`,
-`helmfile-apply`, `delete-cluster`). No custom kubectl/kind/helm steps in CI.
+Reuse `k8s/Makefile` only. No custom kubectl/kind/helm calls.
 
 ### Infra lifecycle
 
-The cluster and its releases are created outside pytest: by the workflow in
-CI, by the developer locally, both via `k8s/Makefile`. In k8s mode, pytest
-never calls `create-cluster`, `helmfile-apply` or similar; it only connects to
-the deployed services.
+pytest fixtures create and remove the cluster and its releases, as for
+Swarm.
 
 ### Triggers
 

@@ -20,6 +20,13 @@ HELMFILE_ENV := HELM_DIFF_OUTPUT_CONTEXT=5
 HELMFILE_GLOBAL_FLAGS := --environment local
 HELMFILE_COMMAND_FLAGS ?=
 
+# Shortcut for the common case `--selector name=<release>`.
+# Example: make helmfile-diff RELEASE=postgres
+RELEASE ?=
+ifneq ($(strip $(RELEASE)),)
+override HELMFILE_COMMAND_FLAGS += --selector 'name=$(RELEASE)'
+endif
+
 #
 # utils
 #
