@@ -25,7 +25,10 @@ from ...constants import RQ_PRODUCT_KEY
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...products import products_web
-from ...projects.api import check_user_project_permission
+from ...projects.api import (
+    check_project_product_match,
+    check_user_project_permission,
+)
 from ...projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
 )
@@ -49,10 +52,16 @@ routes = web.RouteTableDef()
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 @handle_rest_requests_exceptions
-async def start_computation(request: web.Request) -> web.Response:
+async def start_computation(request: web.Request) -> web.Response:  # pylint: disable=too-many-statements
     simcore_user_agent = request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE)
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
+
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
+    )
 
     await check_user_project_permission(
         request.app,
@@ -204,6 +213,12 @@ async def stop_computation(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
+    )
+
     await check_user_project_permission(
         request.app,
         project_id=path_params.project_id,
@@ -231,6 +246,12 @@ async def get_computation(request: web.Request) -> web.Response:
 
     user_id = request[RQT_USERID_KEY]
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
+
+    await check_project_product_match(
+        request.app,
+        project_id=path_params.project_id,
+        product_name=request[RQ_PRODUCT_KEY],
+    )
 
     await check_user_project_permission(
         request.app,
