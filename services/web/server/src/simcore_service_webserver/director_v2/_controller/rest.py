@@ -52,7 +52,7 @@ routes = web.RouteTableDef()
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 @handle_rest_requests_exceptions
-async def start_computation(request: web.Request) -> web.Response:
+async def start_computation(request: web.Request) -> web.Response:  # pylint: disable=too-many-statements
     simcore_user_agent = request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE)
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)

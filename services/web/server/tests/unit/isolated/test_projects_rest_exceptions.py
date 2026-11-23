@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
 
 import json
 
