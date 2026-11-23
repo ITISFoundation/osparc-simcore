@@ -43,6 +43,7 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
@@ -656,23 +657,24 @@ S4L_PRODUCT_NAME: Final[ProductName] = ProductName("s4l")
 
 
 @pytest.fixture
-def s4l_products_db(postgres_db: sa.engine.Engine) -> Iterator[ProductName]:
+async def s4l_products_db(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[ProductName]:
     """A second product, distinct from the default one, for product-binding tests"""
-    with postgres_db.connect() as conn:
-        conn.execute(
-            products.insert().values(
-                name=S4L_PRODUCT_NAME,
-                host_regex="pytest",
-                base_url="https://pytest.com",
-                display_name="pytest",
-            )
-        )
-    yield S4L_PRODUCT_NAME
-    with postgres_db.connect() as conn:
-        group_id = conn.scalar(sa.select(products.c.group_id).where(products.c.name == S4L_PRODUCT_NAME))
-        conn.execute(products.delete().where(products.c.name == S4L_PRODUCT_NAME))
-        if group_id:
-            conn.execute(groups.delete().where(groups.c.gid == group_id))
+    group_id: int | None = None
+    async with insert_and_get_product_lifespan(
+        sqlalchemy_async_engine,
+        name=S4L_PRODUCT_NAME,
+        host_regex="pytest",
+        base_url="https://pytest.com",
+        display_name="pytest",
+    ) as product_row:
+        assert product_row["name"] == S4L_PRODUCT_NAME
+        yield S4L_PRODUCT_NAME
+        async with sqlalchemy_async_engine.connect() as conn:
+            group_id = await conn.scalar(sa.select(products.c.group_id).where(products.c.name == S4L_PRODUCT_NAME))
+
+    if group_id:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(sa.delete(groups).where(groups.c.gid == group_id))
 
 
 @pytest.fixture
