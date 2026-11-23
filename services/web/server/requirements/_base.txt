@@ -108,7 +108,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   requests
-click==8.5.0
+click==8.5.1
     # via
     #   celery
     #   click-didyoumean
@@ -413,7 +413,7 @@ pamqp==5.0.0
     #   aiormq
 passlib==1.7.4
     # via -r requirements/_base.in
-phonenumbers==9.0.42
+phonenumbers==9.0.43
     # via -r requirements/_base.in
 pillow==13.0.0
     # via captcha
@@ -585,7 +585,7 @@ truststore==0.10.5
     #   httpx2
 twilio==7.17.0
     # via -r requirements/_base.in
-typer==0.27.3
+typer==0.28.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in

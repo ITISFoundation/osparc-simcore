@@ -85,7 +85,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.5.0
+click==8.5.1
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -404,7 +404,7 @@ tenacity==9.2.1
     #   pytest-celery
 termcolor==3.3.0
     # via pytest-sugar
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
 types-greenlet==3.5.0.20260518
     # via sqlalchemy
