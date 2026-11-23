@@ -22,7 +22,7 @@ def fake_request() -> web.Request:
 
 async def test_product_mismatch_error_renders_identically_in_all_domains(
     fake_request: web.Request,
-) -> None:
+):
     """The guard is owned by projects; other domains must render it the same way."""
     error = ProjectProductMismatchError(
         claimed_product_name="osparc",
