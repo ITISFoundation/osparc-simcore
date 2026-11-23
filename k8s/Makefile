@@ -19,10 +19,15 @@ KIND_CLUSTER_NAME := simcore
 
 ##@ Environment
 
+.PHONY: cluster-exists
+cluster-exists: _require-valid-kind
+	@kind get clusters | grep --quiet --line-regexp '$(KIND_CLUSTER_NAME)'
+
 .PHONY: create-cluster
-create-cluster: _require-valid-kind .init-swarm ## Creates Kubernetes cluster
-	@cd $(CURDIR) && \
-	kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
+create-cluster: _require-valid-kind .init-swarm ## Creates Kubernetes cluster unless it exists
+	@if ! $(MAKE) --no-print-directory cluster-exists; then \
+		cd $(CURDIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml; \
+	fi
 
 .PHONY: delete-cluster
 delete-cluster: _require-valid-kind ## Deletes Kubernetes cluster
@@ -42,8 +47,11 @@ load-images-into-cluster: _require-valid-kind ## Loads simcore images into Kuber
 ##@ Development
 
 .PHONY: down-devel up-devel
-down-devel: helmfile-destroy ## Destroys services
-up-devel: ## Deploys services
+down-devel: ## Stops local development environment
+	@$(MAKE) helmfile-destroy
+	@$(MAKE) delete-cluster
+
+up-devel: create-cluster ## Start local development environment
 	@$(MAKE) load-images-into-cluster
 	@$(MAKE) helmfile-apply
 
