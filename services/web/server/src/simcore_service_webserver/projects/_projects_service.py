@@ -770,10 +770,15 @@ def _cache_pricing_lookup(*key_fields: str) -> Callable[..., Any]:
     """The `cached_stampede` both pricing lookups share, keyed on the function's name and on
     these keyword arguments' values. `_TTL_CACHE_PRICING_LOOKUPS` says why they are cached.
     """
-    return cached_stampede(
-        ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
-        lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
-        key_builder=lambda fn, *_args, **kw: "_".join([f"{fn.__name__}", *(f"{kw[field]}" for field in key_fields)]),
+    return cast(
+        Callable[..., Any],
+        cached_stampede(
+            ttl=_TTL_CACHE_PRICING_LOOKUPS.total_seconds(),
+            lease=int(_TTL_CACHE_PRICING_LOOKUPS.total_seconds()),
+            key_builder=lambda fn, *_args, **kw: "_".join(
+                [f"{fn.__name__}", *(f"{kw[field]}" for field in key_fields)]
+            ),
+        ),
     )
 
 
