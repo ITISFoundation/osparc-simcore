@@ -22,6 +22,17 @@ from .exceptions import (
 from .models import UserProjectAccessRightsWithWorkspace
 
 
+def _check_product_names_match(*, claimed_product_name: ProductName, project_product_name: ProductName) -> None:
+    """Raises:
+    ProjectProductMismatchError: if the project belongs to another product
+    """
+    if claimed_product_name != project_product_name:
+        raise ProjectProductMismatchError(
+            claimed_product_name=claimed_product_name,
+            project_product_name=project_product_name,
+        )
+
+
 async def check_project_product_match(
     app: web.Application, *, project_id: ProjectID, product_name: ProductName
 ) -> None:
@@ -34,11 +45,7 @@ async def check_project_product_match(
         ProjectProductMismatchError: if the project belongs to another product
     """
     project_product_name = await get_project_product(app, project_uuid=project_id)
-    if project_product_name != product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=product_name,
-            project_product_name=project_product_name,
-        )
+    _check_product_names_match(claimed_product_name=product_name, project_product_name=project_product_name)
 
 
 async def validate_project_ownership(

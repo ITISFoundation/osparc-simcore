@@ -44,6 +44,7 @@ from ..storage.api import copy_data_folders_from_project, get_project_total_size
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
 from . import _folders_repository, _projects_repository, _projects_service, _trash_service
+from ._access_rights_service import _check_product_names_match
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
 from ._projects_repository_legacy import ProjectDBAPI
@@ -350,20 +351,6 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
-def _check_project_product_match(*, claimed_product_name: ProductName, project_product_name: ProductName) -> None:
-    """Same check as projects_api.check_project_product_match, without the DB read:
-    the clone flow reads the product through its legacy dbapi bound to the insert.
-
-    Raises:
-        ProjectProductMismatchError: if the project belongs to another product
-    """
-    if claimed_product_name != project_product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=claimed_product_name,
-            project_product_name=project_product_name,
-        )
-
-
 async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0912, PLR0913, PLR0915
     progress: TaskProgress,
     *,
@@ -584,8 +571,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             _project_product_name = await _projects_repository_legacy.get_project_product(
                 project_uuid=new_project["uuid"]
             )
-            # Cleanup is handled centrally by the context manager.
-            _check_project_product_match(
+            # Cleanup is handled centrally by the context manager. The clone flow
+            # reads the product through its legacy dbapi bound to the insert.
+            _check_product_names_match(
                 claimed_product_name=product_name,
                 project_product_name=_project_product_name,
             )
