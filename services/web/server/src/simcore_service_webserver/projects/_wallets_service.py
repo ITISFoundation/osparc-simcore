@@ -18,12 +18,11 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ..wallets import _api as wallets_service
-from . import _projects_repository
+from ._access_rights_service import check_project_product_match
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectInDebtCanNotChangeWalletError,
     ProjectInDebtCanNotOpenError,
-    ProjectProductMismatchError,
     ProjectWalletPendingTransactionError,
 )
 
@@ -39,12 +38,7 @@ async def get_project_wallet(app, project_id: ProjectID) -> WalletGet | None:
 async def check_project_financial_status_and_wallet_access(
     app, *, project_id: ProjectID, user_id: UserID, product_name: ProductName
 ):
-    project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
-    if project_product_name != product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=product_name,
-            project_product_name=project_product_name,
-        )
+    await check_project_product_match(app, project_id=project_id, product_name=product_name)
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
@@ -83,12 +77,7 @@ async def connect_wallet_to_project(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> WalletGet:
-    project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
-    if project_product_name != product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=product_name,
-            project_product_name=project_product_name,
-        )
+    await check_project_product_match(app, project_id=project_id, product_name=product_name)
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
@@ -167,12 +156,7 @@ async def pay_debt_with_different_wallet(
     Outcome:
     The project's debt is paid, Wallet A is credited, and Wallet B is debited.
     """
-    project_product_name = await _projects_repository.get_project_product(app, project_uuid=project_id)
-    if project_product_name != product_name:
-        raise ProjectProductMismatchError(
-            claimed_product_name=product_name,
-            project_product_name=project_product_name,
-        )
+    await check_project_product_match(app, project_id=project_id, product_name=product_name)
 
     assert current_wallet_id != new_wallet_id  # nosec
 
