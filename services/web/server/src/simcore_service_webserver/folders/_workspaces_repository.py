@@ -29,6 +29,7 @@ async def move_folder_into_workspace(
     product_name: ProductName,
     client_session_id: ClientSessionID | None = None,
 ) -> None:
+    # In a personal workspace, the user's folder implicitly has read, write, and delete permissions.
     # 1. User needs to have delete permission on source folder
     folder_db = await _folders_repository.get(app, folder_id=folder_id, product_name=product_name)
     workspace_is_private = True
