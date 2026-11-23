@@ -15,6 +15,7 @@ from ..projects.api import check_user_project_permission, patch_project_and_noti
 from ..users import users_service
 from ..workspaces import workspaces_service
 from . import _folders_repository
+from .errors import FolderAccessForbiddenError
 
 _logger = logging.getLogger(__name__)
 
@@ -40,13 +41,15 @@ async def move_folder_into_workspace(
             permission="delete",
         )
         workspace_is_private = False
-    else:
-        await _folders_repository.get_for_user_or_workspace(
-            app,
-            folder_id=folder_id,
-            product_name=product_name,
-            user_id=user_id,
-            workspace_id=None,
+    elif not await _folders_repository.exists_for_user_or_workspace(
+        app,
+        folder_id=folder_id,
+        product_name=product_name,
+        user_id=user_id,
+        workspace_id=None,
+    ):
+        raise FolderAccessForbiddenError(
+            details=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
         )
 
     # 2. User needs to have write permission on destination workspace
