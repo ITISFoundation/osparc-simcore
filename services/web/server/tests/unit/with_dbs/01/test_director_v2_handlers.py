@@ -1057,9 +1057,7 @@ async def test_computation_ops_denied_when_claimed_product_mismatches_project_pr
 ):
     """Endpoints must refuse to act on a project of another product (money-path binding)."""
     assert client.app
-    headers = {
-        X_PRODUCT_NAME_HEADER: osparc_product_name
-    }  # claim the request-context product while the project belongs to the second one
+    headers = {X_PRODUCT_NAME_HEADER: osparc_product_name}
 
     url = client.app.router["start_computation"].url_for(project_id=f"{project_in_second_product}")
     rsp = await client.post(f"{url}", headers=headers)

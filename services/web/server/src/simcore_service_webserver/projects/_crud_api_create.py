@@ -571,8 +571,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             _project_product_name = await _projects_repository_legacy.get_project_product(
                 project_uuid=new_project["uuid"]
             )
-            # Cleanup is handled centrally by the context manager. The clone flow
-            # reads the product through its legacy dbapi bound to the insert.
             _check_product_names_match(
                 claimed_product_name=product_name,
                 project_product_name=_project_product_name,
