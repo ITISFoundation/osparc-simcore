@@ -1157,8 +1157,6 @@ async def copy_pricing_links(
     of another product) is dropped. A link it cannot be asked about is copied unvalidated.
     Nothing is written on a product that does not pay for its nodes.
 
-    The caller removes the copied project when this raises.
-
     Raises:
         ProjectNodesNodeNotFoundError: a destination node is not in the destination project
     """
