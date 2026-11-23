@@ -1027,9 +1027,13 @@ async def project_in_second_product(
     postgres_db: sa.engine.Engine,
     s4l_products_db: ProductName,
 ) -> AsyncIterator[ProjectID]:
+    """A project owned by the logged user in the s4l product.
+
+    The app caches products at startup, so the product map is reloaded to make
+    the newly inserted product discoverable.
+    """
     assert client.app
     await auto_add_user_to_product_group(client.app, user_id=UserID(logged_user["id"]), product_name=s4l_products_db)
-    # products are cached in the app on startup: reload so the new product is discoverable
     client.app[PRODUCTS_APPKEY] = {product.name: product for product in await load_products(client.app)}
     project = await create_project(
         client.app,
