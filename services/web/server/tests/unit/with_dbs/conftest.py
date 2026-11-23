@@ -654,8 +654,6 @@ async def app_products_names(
 
 
 async def _delete_product_group(engine: AsyncEngine, product_name: str) -> None:
-    # the app creates the product's group when a user joins it (get_or_create_product_group)
-    # and create_product deletes only the product row, so the group is removed here by name
     async with engine.begin() as conn:
         await conn.execute(sa.delete(groups).where(groups.c.name == product_name, groups.c.type == GroupType.STANDARD))
 
