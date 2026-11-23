@@ -3,6 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
+import logging
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -274,6 +275,25 @@ async def test_unstatable_entry_with_failing_readlink_survives_check(
     assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
 
     (port_dir / "deep_loop").unlink()  # the self-loop would block tmp cleanup
+
+
+async def test_unreadable_file_keeps_upload_eligible_with_warning(
+    fingerprinter: PortFingerprint, port_dir: Path, caplog: pytest.LogCaptureFixture
+):
+    # a file that never hashes must keep the port eligible for upload, not stuck pending
+    poison = port_dir / "poison.dat"
+    poison.write_bytes(b"secret")
+    poison.chmod(0o000)
+    try:
+        with caplog.at_level(logging.WARNING):
+            outcome = await fingerprinter.check_now()
+
+        assert outcome is CheckOutcome.UNSTABLE  # a new random digest per scan: always a change
+        assert fingerprinter._pending_hashes == 0  # noqa: SLF001
+        assert fingerprinter.take_upload_candidate() is not None
+        assert any("poison.dat" in r.message for r in caplog.records)
+    finally:
+        poison.chmod(0o600)
 
 
 async def test_progress_line_reports_state_and_fingerprints(fingerprinter: PortFingerprint, port_dir: Path):

@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 from typing import Annotated, Final
+from uuid import uuid4
 
 import xxhash
 from annotated_types import doc
@@ -75,8 +76,11 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
     path_str, record = job
     try:
         digest, stat_after = _hash_file(Path(path_str))
-    except OSError:
-        return  # the digest stays missing; the next scan sees the file gone or changed
+    except OSError as err:
+        # a random digest marks each scan as changed: an unhashable file keeps saves uploading
+        _logger.warning("port file %s cannot be hashed (%s), treating it as changed", path_str, err)
+        record.digest = uuid4().bytes
+        return
     record.digest = digest
     record.digest_size = stat_after.st_size
     record.digest_mtime_ns = stat_after.st_mtime_ns

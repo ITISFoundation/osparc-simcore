@@ -518,6 +518,17 @@ async def test_port_key_tracker_add_pending(port_key_tracker: _PortKeyTracker, p
         assert key not in port_key_tracker._uploading_port_keys  # noqa: SLF001
 
 
+async def test_port_key_tracker_add_pending_unless_uploading(port_key_tracker: _PortKeyTracker):
+    assert await port_key_tracker.add_pending_unless_uploading("port_a") is True
+    assert "port_a" in port_key_tracker._pending_port_keys  # noqa: SLF001
+
+    await port_key_tracker.move_all_ports_to_uploading()
+
+    # the port is uploading: the schedule request is refused inside the same lock
+    assert await port_key_tracker.add_pending_unless_uploading("port_a") is False
+    assert "port_a" not in port_key_tracker._pending_port_keys  # noqa: SLF001
+
+
 async def test_port_key_tracker_are_pending_ports_uploading(
     port_key_tracker_with_ports: _PortKeyTracker, port_keys: list[str]
 ):

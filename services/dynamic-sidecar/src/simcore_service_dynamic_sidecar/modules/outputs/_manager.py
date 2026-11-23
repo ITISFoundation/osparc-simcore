@@ -76,6 +76,14 @@ class _PortKeyTracker:
         async with self._lock:
             self._pending_port_keys.add(port_key)
 
+    async def add_pending_unless_uploading(self, port_key: str) -> bool:
+        """Schedules the port unless an upload of it is in flight; reports whether it scheduled"""
+        async with self._lock:
+            if port_key in self._uploading_port_keys:
+                return False
+            self._pending_port_keys.add(port_key)
+            return True
+
     async def are_pending_ports_uploading(self) -> bool:
         async with self._lock:
             return len(self._pending_port_keys & self._uploading_port_keys) > 0
@@ -178,13 +186,12 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
     async def _on_stable_change(self, port_key: str) -> None:
         """a quiet-proven fingerprint differing from the last upload: schedule the upload"""
-        if port_key in await self._port_key_tracker.get_uploading():
+        if not await self._port_key_tracker.add_pending_unless_uploading(port_key):
             _logger.info(
                 "port %s: new content while an upload is in flight, the post-upload check picks it up", port_key
             )
             return
         _logger.info("port %s: quiet content differs from the last upload, scheduling upload", port_key)
-        await self.port_key_content_changed(port_key)
 
     async def _uploading_task_start(self) -> None:
         port_keys = await self._port_key_tracker.get_uploading()
