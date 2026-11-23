@@ -1,11 +1,3 @@
-"""Public HTTP rendering of the projects errors shared with other domains.
-
-``project_product_mismatch_exceptions_handlers_map`` is reused by other domains
-(e.g. director-v2) so ``ProjectProductMismatchError`` renders the same response
-on every endpoint that raises it. Consumers import this module as a namespace;
-the ``_PROJECT_PRODUCT_MISMATCH_ERRORS`` map is private to the projects domain.
-"""
-
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
