@@ -49,6 +49,7 @@ pydantic==2.14.3
     #   osparc-client
     #   pydantic-extra-types
     #   pydantic-settings
+    #   typer
 pydantic-core==2.50.4
     # via pydantic
 pydantic-extra-types==2.11.1
@@ -75,7 +76,7 @@ tenacity==9.2.1
     # via osparc
 tqdm==4.70.1
     # via osparc
-typer==0.28.0
+typer==0.29.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.16.0
     # via

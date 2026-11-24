@@ -393,6 +393,7 @@ pydantic==2.14.3
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
+    #   typer
 pydantic-core==2.50.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
@@ -504,7 +505,7 @@ truststore==0.10.5
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   httpcore2
     #   httpx2
-typer==0.28.0
+typer==0.29.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
