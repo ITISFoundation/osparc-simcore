@@ -467,20 +467,22 @@ async def test_repair_keeps_the_link_of_a_unit_that_defines_no_machine(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.usefixtures(
+    "project_db_cleaner",
+    "mock_dynamic_scheduler",
+    "mocked_dynamic_services_interface",
+    "mock_catalog_api",
+    "mock_service_resources",
+    "mock_rut_default_pricing_unit",
+    "mocked_director_v2_node_sizing",
+)
 async def test_repair_links_the_default_unit_on_every_node_sharing_an_unknown_link(
     client: TestClient,
     create_project: Callable[[str, dict[str, Any]], Awaitable[ProjectDict]],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     sqlalchemy_async_engine: AsyncEngine,
-    project_db_cleaner: None,
-    mock_dynamic_scheduler: None,
-    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
-    mock_catalog_api: dict[str, mock.Mock],
-    mock_service_resources: ServiceResourcesDict,
     aioresponses_mocker: AioResponsesMock,
-    mock_rut_default_pricing_unit: RutPricingUnitGet,
-    mocked_director_v2_node_sizing: mock.AsyncMock,
     mocker: MockerFixture,
     create_billed_product: Callable[[], None],
 ):
