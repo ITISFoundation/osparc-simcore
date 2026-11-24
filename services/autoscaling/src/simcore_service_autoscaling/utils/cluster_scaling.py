@@ -56,20 +56,44 @@ def associate_ec2_instances_with_nodes(
 
 
 async def ec2_startup_script(ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings) -> str:
-    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
+    """Composes the user-data script a cold-started machine runs once on first boot.
+
+    The registry login comes before the swarm join on purpose: the service accepts a machine into the
+    cluster as soon as it finds its swarm node, so joining first would let a machine without registry
+    credentials be assigned user tasks it cannot pull. Aborting here instead leaves it unattached, and the
+    broken-instance logic terminates it.
+    """
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    startup_commands: list[str] = []
+    for index, custom_script in enumerate(ec2_boot_specific.custom_boot_scripts, start=1):
+        startup_commands.append(utils_docker.get_boot_step_marker_bash_command(f"custom-script-{index}"))
+        startup_commands.append(custom_script)
+
+    if app_settings.AUTOSCALING_REGISTRY:
+        retry_policy = utils_docker.compute_docker_login_retry_policy(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+        )
+        startup_commands.append(utils_docker.get_boot_step_marker_bash_command("registry-login"))
+        startup_commands.append(
+            utils_docker.get_docker_login_on_start_bash_command(
+                app_settings.AUTOSCALING_REGISTRY, retry_policy=retry_policy
+            )
+        )
+
+    startup_commands.append(utils_docker.get_boot_step_marker_bash_command("swarm-join"))
     startup_commands.append(
         await utils_docker.get_docker_swarm_join_bash_command(
             join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED, idempotent=False
         )
     )
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if app_settings.AUTOSCALING_REGISTRY:
-        startup_commands.append(utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY))
 
-        if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
+    if app_settings.AUTOSCALING_REGISTRY and (
+        pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-        ):
-            startup_commands.append(pull_image_cmd)
+        )
+    ):
+        startup_commands.append(utils_docker.get_boot_step_marker_bash_command("cold-start-pull"))
+        startup_commands.append(pull_image_cmd)
 
     return " && ".join(startup_commands)
 

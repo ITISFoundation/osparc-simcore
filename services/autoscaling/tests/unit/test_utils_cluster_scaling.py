@@ -4,11 +4,13 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import asyncio
 import datetime
 import json
-import re
 import secrets
+import shutil
 from collections.abc import Callable
+from pathlib import Path
 from random import choice, shuffle
 
 import arrow
@@ -20,6 +22,7 @@ from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_autoscaling.constants import BOOT_STEP_MARKER_PREFIX
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceData
 from simcore_service_autoscaling.utils.cluster_scaling import (
@@ -32,6 +35,27 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from types_aiobotocore_ec2.literals import InstanceTypeType
+
+
+def _boot_steps(startup_script: str) -> list[str]:
+    return startup_script.split(" && ")
+
+
+def _boot_step_names(steps: list[str]) -> list[str]:
+    """Names of the boot steps, as marked in the script"""
+    marker = f'echo "{BOOT_STEP_MARKER_PREFIX} '
+    return [step.removeprefix(marker).removesuffix('"') for step in steps if step.startswith(marker)]
+
+
+def _write_executable(path: Path, content: str) -> None:
+    path.write_text(content)
+    path.chmod(0o755)
+
+
+def _link_tool(bin_dir: Path, tool: str) -> None:
+    tool_path = shutil.which(tool)
+    assert tool_path
+    (bin_dir / tool).symlink_to(tool_path)
 
 
 @pytest.fixture
@@ -153,8 +177,10 @@ async def test_ec2_startup_script_just_ami(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert not instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 2
-    assert re.fullmatch(r"^docker swarm join --availability=drain --token .*$", startup_script)
+
+    steps = _boot_steps(startup_script)
+    assert _boot_step_names(steps) == ["registry-login", "swarm-join"]
+    assert steps[-1].startswith("docker swarm join --availability=drain --token ")
 
 
 @pytest.fixture
@@ -216,12 +242,63 @@ async def test_ec2_startup_script_with_pre_pulling(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 6
-    assert re.fullmatch(
-        r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && "
-        r"(echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh)$",
+
+    steps = _boot_steps(startup_script)
+    assert _boot_step_names(steps) == ["registry-login", "swarm-join", "cold-start-pull"]
+    login = next(step for step in steps if " docker login " in step)
+    join = next(step for step in steps if step.startswith("docker swarm join "))
+    assert login.startswith("( ")
+    pull = next(index for index, step in enumerate(steps) if step == "./docker-pull-script.sh")
+    # the machine logs in before it can be accepted into the cluster, and pulls only after joining
+    assert steps.index(login) < steps.index(join) < pull
+
+
+async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
+    minimal_configuration: None,
+    ec2_instances_boot_ami_pre_pull: EnvVarsDict,
+    with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
+    app_settings: ApplicationSettings,
+    tmp_path: Path,
+):
+    """A machine that cannot log in must not join the swarm
+
+    The service accepts a machine as soon as it sees its swarm node, so a machine joining without registry
+    credentials gets tasks it cannot pull. This is the behaviour private-issues#703 is about, hence running
+    the boot script instead of only reading it.
+    """
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
+    startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
+
+    executed = tmp_path / "executed"
+    executed.write_text("")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for tool in ("bash", "cat", "chmod", "sleep", "timeout"):
+        _link_tool(bin_dir, tool)
+    _write_executable(
+        bin_dir / "docker",
+        """#!/usr/bin/env bash
+echo "$*" >> "$EXECUTED"
+test "$1" != login
+""",
+    )
+
+    process = await asyncio.create_subprocess_exec(
+        str(bin_dir / "bash"),
+        "-c",
         startup_script,
-    ), f"{startup_script=}"
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env={"PATH": f"{bin_dir}", "EXECUTED": str(executed)},
+        cwd=tmp_path,
+    )
+    _, stderr = await asyncio.wait_for(process.communicate(), timeout=60)
+
+    assert process.returncode != 0, stderr
+    recorded = executed.read_text()
+    assert "login" in recorded
+    assert "swarm join" not in recorded, "the machine joined the swarm without credentials"
 
 
 async def test_ec2_startup_script_with_custom_scripts(
@@ -234,11 +311,15 @@ async def test_ec2_startup_script_with_custom_scripts(
         instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
         assert not instance_boot_specific.pre_pull_images
         startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-        assert len(startup_script.split("&&")) == 2 + len(ec2_instances_boot_ami_scripts)
-        assert re.fullmatch(
-            rf"^([^&&]+ &&){{{len(ec2_instances_boot_ami_scripts)}}} (docker swarm join .+)$",
-            startup_script,
-        ), f"{startup_script=}"
+
+        steps = _boot_steps(startup_script)
+        names = _boot_step_names(steps)
+        assert names[: len(ec2_instances_boot_ami_scripts)] == [
+            f"custom-script-{index}" for index in range(1, len(ec2_instances_boot_ami_scripts) + 1)
+        ]
+        assert names[-1] == "swarm-join"
+        assert steps[1 : 2 * len(ec2_instances_boot_ami_scripts) : 2] == ec2_instances_boot_ami_scripts
+        assert steps[-1].startswith("docker swarm join ")
 
 
 async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
@@ -251,8 +332,10 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 1
-    assert re.fullmatch(r"^docker swarm join --availability=drain --token .*$", startup_script)
+
+    steps = _boot_steps(startup_script)
+    assert _boot_step_names(steps) == ["swarm-join"]
+    assert "docker login" not in startup_script
 
 
 def test_sort_empty_drained_nodes(

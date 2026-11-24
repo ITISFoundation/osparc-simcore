@@ -8,8 +8,12 @@ import datetime
 import itertools
 import random
 import secrets
-from collections.abc import AsyncIterator, Awaitable, Callable
+import shutil
+import subprocess
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import aiodocker
@@ -35,7 +39,7 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.services_metadata_runtime import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
 )
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
@@ -47,11 +51,13 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+    DockerLoginRetryPolicy,
     Node,
     _by_created_dt,
     attach_node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
+    compute_docker_login_retry_policy,
     compute_full_list_of_pre_pulled_images,
     compute_node_used_resources,
     compute_tasks_needed_resources,
@@ -167,6 +173,12 @@ async def test_get_monitored_nodes_with_valid_label(
     assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(exclude=EXCLUDED_KEYS)
 
 
+def _creation_date(node: Node) -> arrow.Arrow:
+    """Creation date of a node built with an explicit ``CreatedAt``, which aiodocker types as optional"""
+    assert node.created_at
+    return arrow.get(node.created_at)
+
+
 async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
     mocker: MockerFixture,
     autoscaling_docker: AutoscalingDocker,
@@ -178,9 +190,9 @@ async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
     mocked_aiodocker.list.return_value = fake_nodes
     monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=[])
     assert len(monitored_nodes) == len(fake_nodes)
-    sorted_fake_nodes = sorted(fake_nodes, key=lambda node: arrow.get(node.created_at))
+    sorted_fake_nodes = sorted(fake_nodes, key=_creation_date)
     assert monitored_nodes == sorted_fake_nodes
-    assert monitored_nodes[0].created_at < monitored_nodes[1].created_at
+    assert _creation_date(monitored_nodes[0]) < _creation_date(monitored_nodes[1])
 
 
 async def test_worker_nodes(
@@ -413,7 +425,7 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
 
 def test_safe_sort_key_callback():
     tasks_with_faulty_timestamp = [
-        Task(ID=f"{n}", CreatedAt=value)
+        Task(id=f"{n}", created_at=value)
         for n, value in enumerate(
             [
                 # SEE test_to_datetime_conversion_known_errors
@@ -843,14 +855,241 @@ async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
     assert join_script_non_idempotent.count("docker swarm join") == 1
 
 
-def test_get_docker_login_on_start_bash_command():
-    registry_settings = RegistrySettings(**RegistrySettings.model_config["json_schema_extra"]["examples"][0])
-    returned_command = get_docker_login_on_start_bash_command(registry_settings)
-    assert (
-        f'echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | '
-        f"docker login --username {registry_settings.REGISTRY_USER} "
-        f"--password-stdin {registry_settings.resolved_registry_url}" == returned_command
+def _write_executable(path: Path, content: str) -> None:
+    path.write_text(content)
+    path.chmod(0o755)
+
+
+def _link_tool(bin_dir: Path, tool: str) -> None:
+    tool_path = shutil.which(tool)
+    assert tool_path
+    (bin_dir / tool).symlink_to(tool_path)
+
+
+def _make_boot_bin_dir(
+    tmp_path: Path, name: str, *, docker: str, curl: str | None = None, with_timeout: bool = True
+) -> Path:
+    """Directory holding the subset of tools a booting machine has available to the login snippet"""
+    bin_dir = tmp_path / name
+    bin_dir.mkdir()
+    tools = ["bash", "cat", "sleep"]
+    if with_timeout:
+        tools.append("timeout")
+    for tool in tools:
+        _link_tool(bin_dir, tool)
+    _write_executable(bin_dir / "docker", docker)
+    if curl is not None:
+        _write_executable(bin_dir / "curl", curl)
+    return bin_dir
+
+
+def _run_at_boot(script: str, bin_dir: Path, extra_env: Mapping[str, str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(  # noqa: S603
+        [str(bin_dir / "bash"), "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={"PATH": f"{bin_dir}", **extra_env},
+        check=False,
     )
+
+
+# counts the calls it receives in $CALLS_FILE and succeeds from the second one on
+_DOCKER_SUCCEEDS_ON_SECOND_LOGIN = """#!/usr/bin/env bash
+calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$CALLS_FILE"
+test "$calls" -ge 2
+"""
+
+_DOCKER_ALWAYS_FAILS_LOGIN = """#!/usr/bin/env bash
+calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$CALLS_FILE"
+if [ -n "$ARGS_FILE" ]; then printf '%s\\n' "$*" >> "$ARGS_FILE"; fi
+exit 1
+"""
+
+# never returns on its own, only `timeout` can stop it
+_DOCKER_HANGS_ON_LOGIN = """#!/usr/bin/env bash
+calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$CALLS_FILE"
+sleep 300
+"""
+
+# counts the calls it receives in $PROBE_FILE and answers like a registry handing out 401s
+_CURL_ANSWERS_401 = """#!/usr/bin/env bash
+calls=$(( $(cat "$PROBE_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$PROBE_FILE"
+echo 401
+"""
+
+# counts the calls it receives in $PROBE_FILE and fails like nothing answers on the other side
+_CURL_CANNOT_CONNECT = """#!/usr/bin/env bash
+calls=$(( $(cat "$PROBE_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$PROBE_FILE"
+exit 7
+"""
+
+
+@pytest.fixture
+def example_registry_settings() -> RegistrySettings:
+    return RegistrySettings(
+        REGISTRY_AUTH=True,
+        REGISTRY_URL="registry.example.invalid",
+        REGISTRY_USER="the-registry-user",
+        REGISTRY_PW=SecretStr("the-registry-password"),
+        REGISTRY_SSL=True,
+    )
+
+
+def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
+    example_registry_settings: RegistrySettings, tmp_path: Path
+):
+    policy = DockerLoginRetryPolicy(
+        max_attempts=3,
+        attempt_timeout_s=5,
+        retry_delay_s=0,
+        probe_max_wait_s=0,
+        probe_timeout_s=1,
+        probe_interval_s=1,
+    )
+    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    calls_file = tmp_path / "calls"
+    bin_dir = _make_boot_bin_dir(tmp_path, "retried", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN)
+
+    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
+
+    assert result.returncode == 0, result.stderr
+    assert calls_file.read_text() == "2\n"
+
+
+def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
+    example_registry_settings: RegistrySettings, tmp_path: Path
+):
+    policy = DockerLoginRetryPolicy(
+        max_attempts=3,
+        attempt_timeout_s=5,
+        retry_delay_s=0,
+        probe_max_wait_s=0,
+        probe_timeout_s=1,
+        probe_interval_s=1,
+    )
+    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    calls_file, args_file = tmp_path / "calls", tmp_path / "args"
+    bin_dir = _make_boot_bin_dir(tmp_path, "failing", docker=_DOCKER_ALWAYS_FAILS_LOGIN)
+
+    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)})
+
+    # a machine that cannot log in must fail its boot chain, else it joins the swarm without credentials
+    assert result.returncode != 0
+    assert calls_file.read_text() == "3\n"
+    expected_login = (
+        f"login --username {example_registry_settings.REGISTRY_USER}"
+        f" --password-stdin {example_registry_settings.resolved_registry_url}"
+    )
+    assert args_file.read_text().splitlines() == [expected_login] * 3
+
+
+def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
+    example_registry_settings: RegistrySettings, tmp_path: Path
+):
+    policy = DockerLoginRetryPolicy(
+        max_attempts=1,
+        attempt_timeout_s=1,
+        retry_delay_s=0,
+        probe_max_wait_s=0,
+        probe_timeout_s=1,
+        probe_interval_s=1,
+    )
+    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    calls_file = tmp_path / "calls"
+    bin_dir = _make_boot_bin_dir(tmp_path, "hanging", docker=_DOCKER_HANGS_ON_LOGIN)
+
+    started = time.monotonic()
+    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
+
+    assert result.returncode != 0
+    assert calls_file.read_text() == "1\n"
+    assert time.monotonic() - started < 10, "the login attempt was not cut short by timeout"
+
+
+@pytest.mark.parametrize(
+    "curl_script,expected_probes",
+    [(_CURL_ANSWERS_401, 1), (_CURL_CANNOT_CONNECT, 3)],
+)
+def test_get_docker_login_on_start_bash_command_probes_the_registry_before_logging_in(
+    example_registry_settings: RegistrySettings,
+    tmp_path: Path,
+    curl_script: str,
+    expected_probes: int,
+):
+    policy = DockerLoginRetryPolicy(
+        max_attempts=1,
+        attempt_timeout_s=5,
+        retry_delay_s=0,
+        probe_max_wait_s=6,
+        probe_timeout_s=1,
+        probe_interval_s=1,
+    )
+    assert policy.probe_attempts == 3
+    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    docker_calls, probe_calls = tmp_path / "docker", tmp_path / "probe"
+    bin_dir = _make_boot_bin_dir(tmp_path, "probed", docker=_DOCKER_ALWAYS_FAILS_LOGIN, curl=curl_script)
+
+    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(docker_calls), "PROBE_FILE": str(probe_calls)})
+
+    assert result.returncode != 0
+    assert probe_calls.read_text() == f"{expected_probes}\n"
+    assert docker_calls.read_text() == "1\n"
+
+
+def test_get_docker_login_on_start_bash_command_without_timeout_and_curl(
+    example_registry_settings: RegistrySettings, tmp_path: Path
+):
+    policy = DockerLoginRetryPolicy(
+        max_attempts=2,
+        attempt_timeout_s=5,
+        retry_delay_s=0,
+        probe_max_wait_s=30,
+        probe_timeout_s=1,
+        probe_interval_s=1,
+    )
+    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    calls_file = tmp_path / "calls"
+    bin_dir = _make_boot_bin_dir(tmp_path, "bare", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN, with_timeout=False)
+
+    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
+
+    assert result.returncode == 0, result.stderr
+    assert calls_file.read_text() == "2\n"
+
+
+def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_settings: RegistrySettings):
+    command = get_docker_login_on_start_bash_command(
+        example_registry_settings,
+        retry_policy=compute_docker_login_retry_policy(datetime.timedelta(minutes=10)),
+    )
+    # the boot script joins its steps on `&&`, so a step holding one would be read as several steps
+    assert "&" not in command
+
+
+@pytest.mark.parametrize(
+    "max_start_time,expected_max_attempts,expected_probe_attempts",
+    [
+        (datetime.timedelta(minutes=1), 1, 0),
+        (datetime.timedelta(minutes=3), 1, 2),
+        (datetime.timedelta(minutes=5), 2, 2),
+        (datetime.timedelta(minutes=10), 3, 6),
+        (datetime.timedelta(hours=1), 3, 6),
+    ],
+)
+def test_compute_docker_login_retry_policy(
+    max_start_time: datetime.timedelta, expected_max_attempts: int, expected_probe_attempts: int
+):
+    policy = compute_docker_login_retry_policy(max_start_time)
+
+    assert policy.max_attempts == expected_max_attempts
+    assert policy.probe_attempts == expected_probe_attempts
+    assert policy.max_duration_s < max_start_time.total_seconds(), "the login may outlive the instance start time"
 
 
 async def test_try_get_node_with_name(autoscaling_docker: AutoscalingDocker, host_node: Node):
@@ -877,7 +1116,7 @@ async def test_find_node_with_name_with_common_prefixed_nodes(
     common_prefix = "ip-10-0-1-"
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
-        create_fake_node(Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
+        create_fake_node(Description=NodeDescription(hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
     ]
     needed_host_name = f"{common_prefix}11"
     found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
@@ -894,7 +1133,7 @@ async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_no
     common_prefix = "ip-10-0-1-"
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
-        create_fake_node(Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
+        create_fake_node(Description=NodeDescription(hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
     ]
     needed_host_name = f"{common_prefix}"
     found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
@@ -971,6 +1210,7 @@ def test_get_new_node_docker_tags(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
     random_ec2_type = secrets.choice(list(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES))
 
     ec2_instance_data = fake_ec2_instance_data(type=random_ec2_type)
@@ -1031,18 +1271,18 @@ def test_get_docker_pull_images_on_start_bash_command(images: list[DockerGeneric
 
 def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
     # check not ready state return false
-    for node_status in [NodeStatus(State=s, Message=None, Addr=None) for s in NodeState if s is not NodeState.ready]:
+    for node_status in [NodeStatus(state=s, message=None, addr=None) for s in NodeState if s is not NodeState.ready]:
         fake_node = create_fake_node(Status=node_status)
         assert not is_node_ready_and_available(fake_node, availability=Availability.drain)
 
-    node_ready_status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    node_ready_status = NodeStatus(state=NodeState.ready, message=None, addr=None)
     fake_drained_node = create_fake_node(
         Status=node_ready_status,
         Spec=NodeSpec(
-            Name=None,
-            Labels=None,
-            Role=None,
-            Availability=Availability.drain,
+            name=None,
+            labels=None,
+            role=None,
+            availability=Availability.drain,
         ),
     )
     assert is_node_ready_and_available(fake_drained_node, availability=Availability.drain)
@@ -1060,7 +1300,7 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
     fake_node.spec.availability = Availability.active
     assert not is_node_osparc_ready(fake_node)
     # no labels, ready and active
-    fake_node.status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    fake_node.status = NodeStatus(state=NodeState.ready, message=None, addr=None)
     assert not is_node_osparc_ready(fake_node)
     # add some random labels
     assert fake_node.spec
@@ -1115,8 +1355,13 @@ async def test_set_node_osparc_ready(
     assert get_node_last_readiness_update(updated_node) > updated_last_readiness
 
     # check now passing additional labels
-    osparc_custom_labels = {key: f"value_for_{key}" for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}
-    non_specific_labels = {"key1": "value1", "key2": "value2"}
+    osparc_custom_labels: dict[DockerLabelKey, str] = {
+        DockerLabelKey(key): f"value_for_{key}" for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+    }
+    non_specific_labels = {
+        DockerLabelKey("key1"): "value1",
+        DockerLabelKey("key2"): "value2",
+    }
     additional_labels = non_specific_labels | osparc_custom_labels
     updated_node = await set_node_osparc_ready(
         app_settings,
@@ -1128,6 +1373,7 @@ async def test_set_node_osparc_ready(
     assert is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert updated_node.spec
+    assert updated_node.spec.labels
     for key, value in additional_labels.items():
         assert key in updated_node.spec.labels
         assert updated_node.spec.labels[key] == value
@@ -1142,6 +1388,7 @@ async def test_set_node_osparc_ready(
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     assert updated_node.spec
+    assert updated_node.spec.labels
     for key in non_specific_labels:
         assert key in updated_node.spec.labels
     for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:

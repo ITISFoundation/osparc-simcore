@@ -8,6 +8,7 @@ import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Final, cast
 
 import arrow
@@ -33,16 +34,26 @@ from models_library.services_metadata_runtime import (
     UNDEFINED_LABEL_VALUE_STR,
     SimcoreContainerLabels,
 )
-from pydantic import ByteSize, TypeAdapter, ValidationError
+from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter, ValidationError
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
+from servicelib.utils_formatting import timedelta_as_minute_second
 from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..constants import (
+    BOOT_STEP_MARKER_PREFIX,
     DOCKER_COMPOSE_CMD,
     DOCKER_COMPOSE_PULL_SCRIPT_PATH,
+    DOCKER_LOGIN_ATTEMPT_TIMEOUT_S,
+    DOCKER_LOGIN_BOOT_TIME_BUDGET_RATIO,
+    DOCKER_LOGIN_KILL_DELAY_S,
+    DOCKER_LOGIN_MAX_ATTEMPTS,
+    DOCKER_LOGIN_RETRY_DELAY_S,
+    DOCKER_REGISTRY_PROBE_INTERVAL_S,
+    DOCKER_REGISTRY_PROBE_MAX_WAIT_S,
+    DOCKER_REGISTRY_PROBE_TIMEOUT_S,
     PRE_PULL_COMPOSE_PATH,
 )
 from ..core.settings import ApplicationSettings
@@ -456,20 +467,140 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempoten
     raise RuntimeError(msg)
 
 
-def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
-    return " ".join(
+@dataclass(frozen=True, kw_only=True, slots=True)
+class DockerLoginRetryPolicy:
+    """How long a machine may keep trying to log in to the registry at boot.
+
+    A ``probe_max_wait_s`` of 0 disables the registry reachability probe.
+    """
+
+    max_attempts: PositiveInt
+    attempt_timeout_s: PositiveInt
+    retry_delay_s: PositiveInt
+    probe_max_wait_s: NonNegativeInt
+    probe_timeout_s: PositiveInt
+    probe_interval_s: PositiveInt
+
+    @property
+    def probe_attempts(self) -> int:
+        """Number of reachability probes that fit in ``probe_max_wait_s``, 0 when it is disabled"""
+        return self.probe_max_wait_s // (self.probe_timeout_s + self.probe_interval_s)
+
+    @property
+    def max_duration_s(self) -> int:
+        """Longest time the login can take, i.e. every probe and attempt running its full timeout"""
+        return (
+            self.probe_attempts * (self.probe_timeout_s + self.probe_interval_s)
+            + self.max_attempts * (self.attempt_timeout_s + DOCKER_LOGIN_KILL_DELAY_S)
+            + (self.max_attempts - 1) * self.retry_delay_s
+        )
+
+
+def get_boot_step_marker_bash_command(step_name: str) -> str:
+    """Returns a command marking the start of a boot step in the log.
+
+    cloud-init reports a failing boot script as `Failed to run module scripts_user` without saying which
+    command failed, so the last marker in cloud-init-output names the step that died.
+    """
+    return f'echo "{BOOT_STEP_MARKER_PREFIX} {step_name}"'
+
+
+def compute_docker_login_retry_policy(ec2_instances_max_start_time: datetime.timedelta) -> DockerLoginRetryPolicy:
+    """Sizes the boot-time registry login retry to fit within the instance start time.
+
+    A booting machine must log in, join the swarm and pre-pull within EC2_INSTANCES_MAX_START_TIME, else
+    _analyze_current_cluster classifies it as broken and terminates it while it boots correctly. The login
+    gets a fraction of that time and the number of attempts shrinks to fit, so a deployment with a short
+    start time gets fewer attempts rather than machines killed mid-boot.
+    """
+    budget_s = int(ec2_instances_max_start_time.total_seconds() * DOCKER_LOGIN_BOOT_TIME_BUDGET_RATIO)
+    attempt_cost_s = DOCKER_LOGIN_ATTEMPT_TIMEOUT_S + DOCKER_LOGIN_KILL_DELAY_S + DOCKER_LOGIN_RETRY_DELAY_S
+    max_attempts = max(1, min(DOCKER_LOGIN_MAX_ATTEMPTS, (budget_s + DOCKER_LOGIN_RETRY_DELAY_S) // attempt_cost_s))
+    used_by_attempts_s = max_attempts * attempt_cost_s - DOCKER_LOGIN_RETRY_DELAY_S
+    policy = DockerLoginRetryPolicy(
+        max_attempts=max_attempts,
+        attempt_timeout_s=DOCKER_LOGIN_ATTEMPT_TIMEOUT_S,
+        retry_delay_s=DOCKER_LOGIN_RETRY_DELAY_S,
+        probe_max_wait_s=min(DOCKER_REGISTRY_PROBE_MAX_WAIT_S, max(0, budget_s - used_by_attempts_s)),
+        probe_timeout_s=DOCKER_REGISTRY_PROBE_TIMEOUT_S,
+        probe_interval_s=DOCKER_REGISTRY_PROBE_INTERVAL_S,
+    )
+    if max_attempts < DOCKER_LOGIN_MAX_ATTEMPTS:
+        needed_s = int(
+            (DOCKER_LOGIN_MAX_ATTEMPTS * attempt_cost_s - DOCKER_LOGIN_RETRY_DELAY_S)
+            / DOCKER_LOGIN_BOOT_TIME_BUDGET_RATIO
+        )
+        _logger.warning(
+            "The boot-time registry login is capped at %s of the %s possible attempts because"
+            " EC2_INSTANCES_MAX_START_TIME is %s. Set it to at least %s to get the full retry.",
+            max_attempts,
+            DOCKER_LOGIN_MAX_ATTEMPTS,
+            timedelta_as_minute_second(ec2_instances_max_start_time),
+            timedelta_as_minute_second(datetime.timedelta(seconds=needed_s)),
+        )
+    return policy
+
+
+def get_docker_login_on_start_bash_command(
+    registry_settings: RegistrySettings, *, retry_policy: DockerLoginRetryPolicy
+) -> str:
+    """Returns the command logging a machine in to the registry at boot, retrying up to the given policy.
+
+    The retry runs in a subshell that exits on the first success or with an error after the last attempt.
+    Without the subshell the status the enclosing chain sees would be that of the last command in the loop
+    body, which succeeds, and the machine would join the swarm without credentials. `timeout` and `curl` are
+    checked for at boot rather than assumed: a worker image without them degrades to a single uncapped
+    attempt instead of failing every boot. The command contains no `&` because the boot script joins its
+    steps on that operator.
+    """
+    registry_url = registry_settings.resolved_registry_url
+    login_command = " ".join(
         [
             "echo",
             f'"{registry_settings.REGISTRY_PW.get_secret_value()}"',
             "|",
+            "$DOCKER_LOGIN_TIMEOUT",
             "docker",
             "login",
             "--username",
             registry_settings.REGISTRY_USER,
             "--password-stdin",
-            registry_settings.resolved_registry_url,
+            registry_url,
         ]
     )
+    commands: list[str] = [
+        f'DOCKER_LOGIN_TIMEOUT="timeout -k {DOCKER_LOGIN_KILL_DELAY_S} {retry_policy.attempt_timeout_s}"',
+        'command -v timeout >/dev/null || DOCKER_LOGIN_TIMEOUT=""',
+    ]
+    if retry_policy.probe_attempts:
+        # a registry that is up but has not been given credentials answers 401, so both codes are reachable
+        probe_url = f"http{'s' if registry_settings.REGISTRY_SSL else ''}://{registry_url}/v2/"
+        commands.extend(
+            (
+                "if command -v curl >/dev/null; then probe_attempt=0",
+                (
+                    f'while [ "$probe_attempt" -lt {retry_policy.probe_attempts} ]; do'
+                    f" probe_attempt=$((probe_attempt + 1))"
+                ),
+                (
+                    f"probe_status=$(curl -o /dev/null -m {retry_policy.probe_timeout_s} -s"
+                    f" -w '%{{http_code}}' {probe_url} || echo 000)"
+                ),
+                'case "$probe_status" in 200|401) break ;; esac',
+                f"sleep {retry_policy.probe_interval_s}",
+                "done; fi",
+            )
+        )
+    commands.extend(
+        (
+            f'attempt=0; while [ "$attempt" -lt {retry_policy.max_attempts} ]; do attempt=$((attempt + 1))',
+            f"if {login_command}; then exit 0; fi",
+            f'if [ "$attempt" -lt {retry_policy.max_attempts} ]; then sleep {retry_policy.retry_delay_s}; fi',
+            "done",
+            "exit 1",
+        )
+    )
+    return "( " + "; ".join(commands) + " )"
 
 
 def write_compose_file_command(
@@ -494,9 +625,11 @@ def get_docker_pull_images_on_start_bash_command(
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} '
-            f"--project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull "
-            '--ignore-pull-failures"',
+            (
+                f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} '
+                f"--project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull "
+                '--ignore-pull-failures"'
+            ),
             ">",
             f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
