@@ -84,7 +84,6 @@ async def test_invitation_code_does_not_complete_password_reset(
             "an INVITATION code must not reset the issuer's password"
         )
 
-        # issuer's password must be unchanged...
         login_url = client.app.router["auth_login"].url_for()
         response = await client.post(
             f"{login_url}",
@@ -93,7 +92,6 @@ async def test_invitation_code_does_not_complete_password_reset(
         await assert_status(response, status.HTTP_200_OK)
         assert response.url.path == login_url.path
 
-        # ...and the invitation code must still be redeemable (not consumed by the rejected attempt)
         products = {p.name: p for p in products_service.list_products(client.app)}
         product = products[default_product_name]
         assert await _invitations_service.check_and_consume_invitation(
