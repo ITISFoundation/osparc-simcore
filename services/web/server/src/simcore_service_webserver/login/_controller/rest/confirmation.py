@@ -11,7 +11,6 @@ from pydantic import (
 )
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
 from ....locale import translate_message
@@ -251,7 +250,7 @@ async def complete_reset_password(request: web.Request):
     )
 
     confirmation = await confirmation_service.validate_confirmation_code(
-        code=path_params.code.get_secret_value(), expected_action=ConfirmationAction.RESET_PASSWORD.name
+        code=path_params.code.get_secret_value(), expected_action="RESET_PASSWORD"
     )
 
     if confirmation:
