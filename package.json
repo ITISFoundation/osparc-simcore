@@ -6,7 +6,7 @@
   "devDependencies": {
     "@qooxdoo/eslint-config-qx": "^3.0.1",
     "@qooxdoo/eslint-plugin-qx": "^2.0.1",
-    "eslint": "^9.39.5",
+    "eslint": "^10.0.0",
     "globals": "^14.0.0",
     "yargs": "^13.3.0",
     "yargs-parser": ">=13.1.2"
