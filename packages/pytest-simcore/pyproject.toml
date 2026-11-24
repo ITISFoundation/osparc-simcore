@@ -8,6 +8,7 @@ dependencies = [
     "annotated-types",
     "faker",
     "filelock",
+    "frozendict",
     "pytest>=8.4.2",
     "tenacity",
 ]

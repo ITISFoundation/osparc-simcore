@@ -20,6 +20,7 @@ from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
 )
+from pytest_simcore.helpers.typing_env import FrozenEnvVarsDict
 from pytest_simcore.simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from simcore_postgres_database.models.products import products
@@ -39,6 +40,7 @@ from simcore_postgres_database.webserver_models import (
 from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
+from tenacity import Retrying, stop_after_delay, wait_fixed
 
 pytest_plugins = [
     "pytest_simcore.environment_configs",
@@ -98,14 +100,21 @@ def k8s_ops_workloads_selection() -> list[str]:
 
 
 @pytest.fixture(scope="session")
-def postgres_service_k8s(k8s_ops_workloads: list[str]) -> str:
-    """Postgres helm release in the kind cluster, reachable on host port 5432 (see k8s/kind-config.yaml)
+def postgres_service_k8s(k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict) -> str:
+    """Deploys postgres in the kind cluster and returns a responsive DSN."""
 
-    Credentials are the .env-devel defaults the release is deployed with.
-    """
-    assert "postgres" in k8s_ops_workloads
-    dsn = f"{POSTGRES_SYNC_DSN_SCHEME}://scu:adminadmin@127.0.0.1:5432/simcoredb"
-    assert is_postgres_responsive(dsn)
+    # tests run locally while postgres run inside kubernetes cluster
+    host = "127.0.0.1"
+    port = 5432
+
+    user = env_devel_dict_session["POSTGRES_USER"]
+    password = env_devel_dict_session["POSTGRES_PASSWORD"]
+    database = env_devel_dict_session["POSTGRES_DB"]
+    dsn = f"{POSTGRES_SYNC_DSN_SCHEME}://{user}:{password}@{host}:{port}/{database}"
+
+    for attempt in Retrying(wait=wait_fixed(0.1), stop=stop_after_delay(30), reraise=True):
+        with attempt:
+            assert is_postgres_responsive(dsn)
     return dsn
 
 

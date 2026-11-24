@@ -77,9 +77,17 @@ def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def env_devel_k8s_override_file(osparc_simcore_root_dir: Path) -> Path:
+def osparc_simcore_k8s_dir(osparc_simcore_root_dir: Path) -> Path:
+    """osparc-simcore/k8s folder"""
+    k8s_dir = osparc_simcore_root_dir / "k8s"
+    assert k8s_dir.exists()
+    return k8s_dir
+
+
+@pytest.fixture(scope="session")
+def env_devel_k8s_override_file(osparc_simcore_k8s_dir: Path) -> Path:
     """Path to osparc-simcore/k8s/.env-devel-k8s-override file"""
-    override_fpath = osparc_simcore_root_dir / "k8s" / ".env-devel-k8s-override"
+    override_fpath = osparc_simcore_k8s_dir / ".env-devel-k8s-override"
     assert override_fpath.exists()
     return override_fpath
 

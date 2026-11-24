@@ -29,14 +29,6 @@ _K8S_CLUSTER_CREATED_STASH_KEY: Final[
 ] = pytest.StashKey()
 
 
-def _find_k8s_dir(start_dir: Path) -> Path:
-    for directory in (start_dir, *start_dir.parents):
-        if (directory / "k8s" / "Makefile").exists():
-            return directory / "k8s"
-    msg = f"no k8s/Makefile found in '{start_dir}' or its parents"
-    raise FileNotFoundError(msg)
-
-
 def _run_make(k8s_dir: Path, target: str, *make_vars: str, check: bool = True) -> subprocess.CompletedProcess[bytes]:
     with log_context(logging.INFO, f"running 'make {target} {' '.join(make_vars)}' in {k8s_dir}", logger=_logger):
         return subprocess.run(  # noqa: S603
@@ -51,20 +43,15 @@ def _k8s_cluster_exists(k8s_dir: Path) -> bool:
 
 
 @pytest.fixture(scope="session")
-def k8s_dir(request: pytest.FixtureRequest) -> Path:
-    return _find_k8s_dir(request.config.rootpath)
-
-
-@pytest.fixture(scope="session")
-def k8s_cluster(k8s_dir: Path, request: pytest.FixtureRequest) -> None:
+def k8s_cluster(osparc_simcore_k8s_dir: Path, request: pytest.FixtureRequest) -> None:
     """ensures the kind cluster exists, creating it when it does not
 
     The cluster is deleted at session end (see `pytest_sessionfinish`), not in a fixture teardown,
     so that only a cluster this session created is deleted.
     """
-    if not _k8s_cluster_exists(k8s_dir):
-        _run_make(k8s_dir, "create-cluster")
-        request.session.stash[_K8S_CLUSTER_CREATED_STASH_KEY] = k8s_dir
+    if not _k8s_cluster_exists(osparc_simcore_k8s_dir):
+        _run_make(osparc_simcore_k8s_dir, "create-cluster")
+        request.session.stash[_K8S_CLUSTER_CREATED_STASH_KEY] = osparc_simcore_k8s_dir
 
 
 @pytest.fixture(scope="session")
@@ -75,7 +62,7 @@ def k8s_ops_workloads_selection() -> list[str]:
 
 @pytest.fixture(scope="session")
 def k8s_ops_workloads(
-    k8s_cluster: None, k8s_dir: Path, k8s_ops_workloads_selection: list[str], keep_docker_up: bool
+    k8s_cluster: None, osparc_simcore_k8s_dir: Path, k8s_ops_workloads_selection: list[str], keep_docker_up: bool
 ) -> Iterator[list[str]]:
     """deploys the selected ops helm releases into the kind cluster and returns their names
 
@@ -83,13 +70,13 @@ def k8s_ops_workloads(
     each release is ready.
     """
     for release in k8s_ops_workloads_selection:
-        _run_make(k8s_dir, "helmfile-ops-apply", f"RELEASE={release}")
+        _run_make(osparc_simcore_k8s_dir, "helmfile-ops-apply", f"RELEASE={release}")
 
     yield k8s_ops_workloads_selection
 
     if not keep_docker_up:
         for release in reversed(k8s_ops_workloads_selection):
-            _run_make(k8s_dir, "helmfile-ops-destroy", f"RELEASE={release}")
+            _run_make(osparc_simcore_k8s_dir, "helmfile-ops-destroy", f"RELEASE={release}")
 
 
 def pytest_sessionfinish(session: pytest.Session) -> None:

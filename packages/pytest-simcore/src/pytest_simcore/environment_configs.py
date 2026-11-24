@@ -11,9 +11,10 @@ from typing import Any
 
 import pytest
 from faker import Faker
+from frozendict import frozendict
 
 from .helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
-from .helpers.typing_env import EnvVarsDict
+from .helpers.typing_env import EnvVarsDict, FrozenEnvVarsDict
 from .simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 
 _logger = logging.getLogger(__name__)
@@ -89,11 +90,6 @@ def _env_devel_dict_session(
     simcore_cluster_orchestrator: SimcoreClusterOrchestrator,
     request: pytest.FixtureRequest,
 ) -> EnvVarsDict:
-    """Loads and interpolates .env-devel
-
-    In the k8s flavor, k8s/.env-devel-k8s-override is loaded on top, in the same order the k8s
-    workloads are deployed with (see `run_helmfile` in scripts/makefiles/k8s.mk).
-    """
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"
     envs = load_dotenv(env_devel_file, verbose=True, interpolate=True)
@@ -101,6 +97,11 @@ def _env_devel_dict_session(
         override_file: Path = request.getfixturevalue("env_devel_k8s_override_file")
         envs |= load_dotenv(override_file, verbose=True, interpolate=True)
     return envs
+
+
+@pytest.fixture(scope="session")
+def env_devel_dict_session(_env_devel_dict_session: EnvVarsDict) -> FrozenEnvVarsDict:
+    return frozendict(_env_devel_dict_session)
 
 
 @pytest.fixture
