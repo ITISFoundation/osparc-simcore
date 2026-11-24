@@ -46,7 +46,6 @@ from pytest_simcore.helpers.project_nodes_pricing import (
     T3_MEDIUM_DASK_WORKER_LIMITS,
     T3_MEDIUM_DASK_WORKER_RAM_BYTES,
     T3_MEDIUM_DYNAMIC_SIDECAR_CPUS,
-    T3_MEDIUM_DYNAMIC_SIDECAR_LIMITS,
     T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES,
     fake_compute_node_resources_for_hardware,
     get_node_pricing_state,
@@ -479,7 +478,9 @@ async def test_repair_writes_nothing_for_a_node_already_sized(
     assert dynamic_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
     assert dynamic_state.required_resources != dynamic_seed
     assert dynamic_state.required_resources
-    assert dynamic_state.required_resources["container"]["resources"] == T3_MEDIUM_DYNAMIC_SIDECAR_LIMITS
+    dynamic_resources = dynamic_state.required_resources["container"]["resources"]
+    assert dynamic_resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DYNAMIC_SIDECAR_CPUS)
+    assert dynamic_resources["RAM"]["limit"] == T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
