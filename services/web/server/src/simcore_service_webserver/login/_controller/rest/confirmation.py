@@ -135,8 +135,9 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
 
+    # NOTE: this handler dispatches on confirmation.action itself, so it is action-agnostic on purpose
     confirmation: Confirmation | None = await confirmation_service.validate_confirmation_code(
-        path_params.code.get_secret_value()
+        code=path_params.code.get_secret_value(), expected_action=None
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
@@ -248,7 +249,9 @@ async def complete_reset_password(request: web.Request):
         new_password=request_body.password.get_secret_value(), settings=settings
     )
 
-    confirmation = await confirmation_service.validate_confirmation_code(code=path_params.code.get_secret_value())
+    confirmation = await confirmation_service.validate_confirmation_code(
+        code=path_params.code.get_secret_value(), expected_action="RESET_PASSWORD"
+    )
 
     if confirmation:
         user = await _auth_service.get_user_or_none(request.app, user_id=confirmation.user_id)

@@ -12,6 +12,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ....exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
+    create_error_response,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
@@ -25,10 +26,14 @@ from ....utils_rate_limiting import MSG_TOO_MANY_REQUESTS
 from ...constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_INVALID_CREDENTIALS,
+    MSG_LOGIN_TOO_MANY_ATTEMPTS,
+    MSG_LOGIN_UNAVAILABLE,
     MSG_WEAK_PASSWORD,
     MSG_WRONG_PASSWORD_MERGED_ACCOUNTS,
 )
 from ...errors import (
+    LoginThrottledError,
+    LoginThrottleUnavailableError,
     SendingVerificationEmailError,
     SendingVerificationSmsError,
     WeakPasswordError,
@@ -45,6 +50,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
             "If you haven't received any updates, please contact support.",
             _version=2,
         ),
+    ),
+    LoginThrottleUnavailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        MSG_LOGIN_UNAVAILABLE,
     ),
     SendingVerificationSmsError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -130,9 +139,28 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
     )
 
 
+async def _handle_login_throttled(request: web.Request, exception: Exception):  # NOSONAR
+    assert isinstance(  # nosec
+        exception, LoginThrottledError
+    ), f"Expected LoginThrottledError, got {type(exception)}"
+    assert "retry_after_sec" in exception.error_context()  # nosec
+
+    response = create_error_response(
+        ErrorGet.model_construct(
+            message=translate_message(MSG_LOGIN_TOO_MANY_ATTEMPTS, request),
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        ),
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    )
+    # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
+    response.headers["Retry-After"] = f"{exception.error_context()['retry_after_sec']}"
+    return response
+
+
 handle_rest_requests_exceptions = exception_handling_decorator(
     {
         **to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP),
+        LoginThrottledError: _handle_login_throttled,
         WrongPasswordError: _handle_legacy_error_response,
     },
 )

@@ -22,7 +22,9 @@ from simcore_service_webserver.login._controller.rest.registration import (
     InvitationCheck,
     InvitationInfo,
 )
-from simcore_service_webserver.login.settings import LoginSettingsForProduct
+from simcore_service_webserver.login.settings import (
+    LoginSettingsForProduct,
+)
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -39,7 +41,7 @@ async def test_check_registration_invitation_when_not_required(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
         ),
     )
@@ -126,7 +128,7 @@ async def test_registration_to_different_product(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
         ),
     )

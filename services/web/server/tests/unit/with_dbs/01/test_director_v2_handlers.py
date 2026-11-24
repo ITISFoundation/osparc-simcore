@@ -4,6 +4,7 @@
 
 
 import base64
+import uuid as uuidlib
 from collections.abc import AsyncIterator
 from copy import deepcopy
 from decimal import Decimal
@@ -50,17 +51,21 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
-from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_projects import NewProject, create_project
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
+from simcore_service_webserver.products._service import load_products
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import PreferredWalletIdFrontendUserPreference
@@ -1010,3 +1015,58 @@ async def test_start_computation_forwards_every_runnable_project(
     assert forwarded_project_ids == set(runnable_project_ids)
     for call in mocked_start.call_args_list:
         assert call.kwargs["wallet_info"] == wallet
+
+
+# --- computations are bound to the project's product (see project:clone guard) ---
+
+
+@pytest.fixture
+async def project_in_second_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    postgres_db: sa.engine.Engine,
+    s4l_products_db: ProductName,
+) -> AsyncIterator[ProjectID]:
+    """A project owned by the logged user in the s4l product.
+
+    The app caches products at startup, so the product map is reloaded to make
+    the newly inserted product discoverable.
+    """
+    assert client.app
+    await auto_add_user_to_product_group(client.app, user_id=UserID(logged_user["id"]), product_name=s4l_products_db)
+    client.app[PRODUCTS_APPKEY] = {product.name: product for product in await load_products(client.app)}
+    project = await create_project(
+        client.app,
+        params_override={"uuid": f"{uuidlib.uuid4()}", "name": "project in second product"},
+        user_id=logged_user["id"],
+        product_name=s4l_products_db,
+    )
+    project_id = ProjectID(project["uuid"])
+    yield project_id
+    with postgres_db.connect() as conn:
+        conn.execute(projects.delete().where(projects.c.uuid == f"{project_id}"))
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_computation_ops_denied_when_claimed_product_mismatches_project_product(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    project_in_second_product: ProjectID,
+    osparc_product_name: ProductName,
+):
+    """Endpoints must refuse to act on a project of another product (money-path binding)."""
+    assert client.app
+    headers = {X_PRODUCT_NAME_HEADER: osparc_product_name}
+
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_in_second_product}")
+    rsp = await client.post(f"{url}", headers=headers)
+    await assert_status(rsp, status.HTTP_400_BAD_REQUEST)
+
+    url = client.app.router["stop_computation"].url_for(project_id=f"{project_in_second_product}")
+    rsp = await client.post(f"{url}", headers=headers)
+    await assert_status(rsp, status.HTTP_400_BAD_REQUEST)
+
+    url = client.app.router["get_computation"].url_for(project_id=f"{project_in_second_product}")
+    rsp = await client.get(f"{url}", headers=headers)
+    await assert_status(rsp, status.HTTP_400_BAD_REQUEST)

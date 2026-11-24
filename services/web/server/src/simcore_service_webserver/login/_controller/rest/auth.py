@@ -8,6 +8,7 @@ from models_library.authentication import TwoFactorAuthenticationMethod
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
+from servicelib.common_headers import X_FORWARDED_FOR
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.users import UserRole
 
@@ -24,7 +25,7 @@ from ....user_preferences import user_preferences_service
 from ....user_preferences.models import TwoFAFrontendUserPreference
 from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response, flash_response
-from ... import _auth_service, _login_service, _security_service, _twofa_service
+from ... import _auth_service, _login_service, _login_throttle_service, _security_service, _twofa_service
 from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -75,13 +76,14 @@ async def login(request: web.Request):
     login_data = await parse_request_body_as(LoginBody, request)
 
     # Authenticate user and verify access to the product
-    user = await _auth_service.get_user_or_none(request.app, email=login_data.email)
-
-    user = await _auth_service.check_authorized_user_credentials(
+    user = await _auth_service.authenticate_user(
         request.app,
-        user,
+        email=login_data.email,
         password=login_data.password.get_secret_value(),
         product=product,
+        client_ip=_login_throttle_service.parse_client_ip(
+            request.headers.get(X_FORWARDED_FOR), settings=settings.LOGIN_THROTTLE
+        ),
     )
     await _auth_service.check_authorized_user_in_product(request.app, user_email=user["email"], product=product)
 

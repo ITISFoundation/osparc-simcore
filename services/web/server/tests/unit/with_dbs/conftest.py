@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=protected-access
 
+import contextlib
 import random
 import textwrap
 import uuid
@@ -18,6 +19,7 @@ from collections.abc import (
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
+from typing import Any, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -51,6 +53,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -648,6 +651,45 @@ async def app_products_names(
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(products_prices.delete())
         await conn.execute(products.delete().where(products.c.name != FRONTEND_APP_DEFAULT))
+
+
+async def _delete_product_group(engine: AsyncEngine, product_name: str) -> None:
+    async with engine.begin() as conn:
+        await conn.execute(sa.delete(groups).where(groups.c.name == product_name, groups.c.type == GroupType.STANDARD))
+
+
+@pytest.fixture
+async def new_product(
+    create_product: Callable[..., Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[ProductName]]]:
+    stack = contextlib.AsyncExitStack()
+
+    async def _create(name: str, **overrides) -> ProductName:
+        stack.push_async_callback(_delete_product_group, sqlalchemy_async_engine, name)
+        await create_product(
+            name=name,
+            host_regex="pytest",  # never matches the test client host, so requests
+            # without an explicit x-product-name header keep resolving the default product
+            base_url="https://pytest.com",
+            display_name=name,
+            **overrides,
+        )
+        return ProductName(name)
+
+    try:
+        yield _create
+    finally:
+        await stack.aclose()
+
+
+S4L_PRODUCT_NAME: Final[ProductName] = ProductName("s4l")
+
+
+@pytest.fixture
+async def s4l_products_db(new_product: Callable[..., Awaitable[ProductName]]) -> ProductName:
+    """A second product, distinct from the default one, for product-binding tests"""
+    return await new_product(S4L_PRODUCT_NAME)
 
 
 @pytest.fixture

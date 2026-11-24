@@ -1,11 +1,13 @@
 from datetime import timedelta
+from ipaddress import IPv4Network, IPv6Network
 from typing import Annotated, Final, Literal
 
 from aiohttp import web
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.products import ProductName
-from pydantic import BaseModel, ValidationInfo, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator, model_validator
 from pydantic.fields import Field
-from pydantic.types import PositiveFloat, PositiveInt
+from pydantic.types import NonNegativeInt, PositiveFloat, PositiveInt
 from settings_library.base import BaseCustomSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
@@ -13,6 +15,59 @@ _DAYS: Final[float] = 1.0  # in days
 _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
 _YEARS: Final[float] = 365 * _DAYS
 _UNLIMITED: Final[float] = 99 * _YEARS
+
+
+class LoginThrottleSettings(BaseCustomSettings):
+    """Exponential back-off settings for repeated failed logins per email"""
+
+    LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS: Annotated[
+        NonNegativeInt,
+        Field(description="Failed logins per email before the back-off delays start"),
+    ] = 5
+
+    LOGIN_THROTTLE_BASE_DELAY: Annotated[
+        timedelta,
+        Field(
+            gt=timedelta(0),
+            description="Delay after the first failure above the free ones. It doubles with each further failure",
+        ),
+    ] = timedelta(seconds=2)
+
+    LOGIN_THROTTLE_MAX_DELAY: Annotated[
+        timedelta,
+        Field(gt=timedelta(0), description="Upper bound of the back-off delay"),
+    ] = timedelta(minutes=15)
+
+    LOGIN_THROTTLE_WINDOW: Annotated[
+        timedelta,
+        Field(gt=timedelta(0), description="Failed logins are forgotten after this time without new failures"),
+    ] = timedelta(hours=1)
+
+    LOGIN_THROTTLE_CLIENT_IP_DEPTH: Annotated[
+        PositiveInt,
+        Field(
+            description=(
+                "The client IP is the N-th X-Forwarded-For entry counted from the right (1 = last), "
+                "i.e. the number of trusted proxies in front of the webserver plus one"
+            )
+        ),
+    ] = 2
+
+    LOGIN_THROTTLE_TRUSTED_NETWORKS: list[IPv4Network | IPv6Network] = Field(
+        default_factory=list,
+        description="Clients in these networks (JSON list of CIDRs) are never throttled",
+    )
+
+    _validate_base_delay = validate_numeric_string_as_timedelta("LOGIN_THROTTLE_BASE_DELAY")
+    _validate_max_delay = validate_numeric_string_as_timedelta("LOGIN_THROTTLE_MAX_DELAY")
+    _validate_window = validate_numeric_string_as_timedelta("LOGIN_THROTTLE_WINDOW")
+
+    @model_validator(mode="after")
+    def _max_delay_not_below_base(self):
+        if self.LOGIN_THROTTLE_MAX_DELAY < self.LOGIN_THROTTLE_BASE_DELAY:
+            msg = "LOGIN_THROTTLE_MAX_DELAY must not be smaller than LOGIN_THROTTLE_BASE_DELAY"
+            raise ValueError(msg)
+        return self
 
 
 class LoginSettings(BaseCustomSettings):
@@ -54,6 +109,14 @@ class LoginSettings(BaseCustomSettings):
             description="Minimum length of password",
         ),
     ] = 12
+
+    LOGIN_THROTTLE: Annotated[
+        LoginThrottleSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="Exponential back-off settings for repeated failed logins",
+        ),
+    ]
 
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
