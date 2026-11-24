@@ -40,7 +40,6 @@ async def test_validate_confirmation_code_requires_expected_action(
 
     assert await confirmation_service.get_confirmation({"code": invitation_confirmation.code}) is not None
 
-    # with expected_action=None the lookup stays action-agnostic
     assert (
         await confirmation_service.validate_confirmation_code(invitation_confirmation.code, expected_action=None)
         is not None
