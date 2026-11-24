@@ -26,7 +26,7 @@ DOCKER_LOGIN_MAX_ATTEMPTS: Final[PositiveInt] = 3
 DOCKER_LOGIN_ATTEMPT_TIMEOUT_S: Final[PositiveInt] = 20
 # `timeout` sends SIGTERM at ATTEMPT_TIMEOUT_S and SIGKILL this many seconds later
 DOCKER_LOGIN_KILL_DELAY_S: Final[PositiveInt] = 1
-DOCKER_LOGIN_RETRY_DELAY_S: Final[PositiveInt] = 10
+DOCKER_LOGIN_RETRY_DELAY_S: Final[PositiveInt] = 1
 # Upper bound of the boot time the login may consume, as a fraction of EC2_INSTANCES_MAX_START_TIME,
 # since the swarm join and the cold-start pre-pull need the rest of it
 DOCKER_LOGIN_BOOT_TIME_BUDGET_RATIO: Final[PositiveFloat] = 0.25

@@ -1076,8 +1076,8 @@ def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_se
     "max_start_time,expected_max_attempts,expected_probe_attempts",
     [
         (datetime.timedelta(minutes=1), 1, 0),
-        (datetime.timedelta(minutes=3), 1, 2),
-        (datetime.timedelta(minutes=5), 2, 2),
+        (datetime.timedelta(minutes=3), 2, 0),
+        (datetime.timedelta(minutes=5), 3, 1),
         (datetime.timedelta(minutes=10), 3, 6),
         (datetime.timedelta(hours=1), 3, 6),
     ],
