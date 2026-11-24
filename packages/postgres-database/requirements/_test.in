@@ -20,6 +20,7 @@ pytest-docker
 pytest-instafail
 pytest-runner
 pytest-timeout
+python-dotenv
 pyyaml
 sqlalchemy[mypy,postgresql_psycopgbinary] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types-docker

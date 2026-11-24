@@ -12,6 +12,8 @@ from typing import Annotated, Final
 import pytest
 from annotated_types import doc
 
+from .simcore_cluster_orchestrator import SimcoreClusterOrchestrator
+
 # NOTE: this ensures that assertion printouts are nicely formatted and complete see https://lorepirri.com/pytest-register-assert-rewrite.html
 pytest.register_assert_rewrite("pytest_simcore.helpers")
 
@@ -31,6 +33,13 @@ def pytest_addoption(parser: pytest.Parser):
         action="store_true",
         default=False,
         help="Keep stack/registry up after fixtures closes",
+    )
+    simcore_group.addoption(
+        "--simcore-cluster-orchestrator",
+        action="store",
+        choices=[o.value for o in SimcoreClusterOrchestrator],
+        default=os.environ.get("SIMCORE_CLUSTER_ORCHESTRATOR", SimcoreClusterOrchestrator.DOCKER_SWARM),
+        help="Cluster orchestrator the tests run against [env: SIMCORE_CLUSTER_ORCHESTRATOR, default: docker_swarm]",
     )
 
 
@@ -83,6 +92,11 @@ def pytest_configure() -> None:
 def keep_docker_up(request: pytest.FixtureRequest) -> bool:
     flag: bool = bool(request.config.getoption(name="--keep-docker-up", default=False))
     return flag
+
+
+@pytest.fixture(scope="session")
+def simcore_cluster_orchestrator(request: pytest.FixtureRequest) -> SimcoreClusterOrchestrator:
+    return SimcoreClusterOrchestrator(request.config.getoption("--simcore-cluster-orchestrator"))
 
 
 @pytest.fixture(autouse=True)
