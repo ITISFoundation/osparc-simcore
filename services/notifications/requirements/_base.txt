@@ -123,7 +123,7 @@ fast-depends==3.0.11
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   faststream
-fastapi==0.162.2
+fastapi==0.162.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
