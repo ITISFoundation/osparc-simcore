@@ -67,8 +67,17 @@ class ConfirmationService:
         lifetime = self._options.get_confirmation_lifetime(confirmation.action)
         return age > lifetime
 
-    async def validate_confirmation_code(self, code: str) -> Confirmation | None:
-        """Validate confirmation code and return confirmation if valid."""
+    async def validate_confirmation_code(
+        self, code: str, *, expected_action: ActionLiteralStr | None = None
+    ) -> Confirmation | None:
+        """Validate confirmation code and return confirmation if valid.
+
+        Keyword Arguments:
+            expected_action -- if set, the confirmation must have been created for this
+                action. Codes carry a user id, so accepting a code created for another
+                action would authorize one action with a token issued for a different one.
+                (default: {None} -- action is not checked)
+        """
         assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
 
         confirmation = await self._repository.get_confirmation(filter_dict={"code": code})
@@ -77,6 +86,13 @@ class ConfirmationService:
             _logger.warning(
                 "Used expired token [%s]. Deleted from confirmations table.",
                 confirmation,
+            )
+            return None
+        if confirmation and expected_action is not None and confirmation.action != expected_action:
+            _logger.warning(
+                "Confirmation code created for action %s was presented for %s. Rejected.",
+                confirmation.action,
+                expected_action,
             )
             return None
         return confirmation

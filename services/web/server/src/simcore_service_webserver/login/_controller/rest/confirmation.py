@@ -248,7 +248,9 @@ async def complete_reset_password(request: web.Request):
         new_password=request_body.password.get_secret_value(), settings=settings
     )
 
-    confirmation = await confirmation_service.validate_confirmation_code(code=path_params.code.get_secret_value())
+    confirmation = await confirmation_service.validate_confirmation_code(
+        code=path_params.code.get_secret_value(), expected_action="RESET_PASSWORD"
+    )
 
     if confirmation:
         user = await _auth_service.get_user_or_none(request.app, user_id=confirmation.user_id)
