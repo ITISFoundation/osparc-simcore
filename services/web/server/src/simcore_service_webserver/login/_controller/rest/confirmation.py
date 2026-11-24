@@ -135,7 +135,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
 
-    # this handler dispatches on confirmation.action itself, so it is action-agnostic on purpose
+    # NOTE: this handler dispatches on confirmation.action itself, so it is action-agnostic on purpose
     confirmation: Confirmation | None = await confirmation_service.validate_confirmation_code(
         code=path_params.code.get_secret_value(), expected_action=None
     )
