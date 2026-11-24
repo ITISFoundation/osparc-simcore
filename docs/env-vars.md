@@ -1,15 +1,11 @@
 # Environment variables management
 
-As a developer you will need to extend the current env vars for a service.
+To add an environment variable to a service:
 
-The following rules must be followed:
-
-1. for each service that requires it, add it to the
-   `services/docker-compose.yml` file (such as `MY_VAR=${MY_VAR}`)
-2. add a meaningful default value for development inside `.env-devel` so that
-   developers can work, and that `osparc-simcore` is **self contained**.
-3. inside the repo where devops keep all the secrets follow the instructions
-   to add the new env var
+1. Add it to `services/docker-compose.yml` for each service that needs it
+   (e.g. `MY_VAR=${MY_VAR}`).
+2. Add a development default in `.env-devel` so the repo works self-contained.
+3. Follow the instructions in the devops secrets repo to add the variable there.
 
 ## Local overrides
 
