@@ -24,12 +24,17 @@ from . import _access_rights_service
 _logger = logging.getLogger(__name__)
 
 
-async def _get_conversation_bound_to_project(
+async def _check_conversation_bound_to_project(
     app: web.Application,
     *,
     project_uuid: ProjectID,
     conversation_id: ConversationID,
 ) -> ConversationGetDB:
+    """Fetches the conversation and validates it is bound to 'project_uuid'
+
+    Raises:
+        ConversationErrorNotFoundError: if it is not a project conversation bound to 'project_uuid'
+    """
     conversation = await conversations_service.get_conversation(
         app, conversation_id=conversation_id, project_uuid_or_none=project_uuid
     )
@@ -113,7 +118,7 @@ async def update_project_conversation(
         project_id=project_uuid,
         permission="write",
     )
-    await _get_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
+    await _check_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
     return await conversations_service.update_conversation(
         app,
         project_id=project_uuid,
@@ -137,7 +142,7 @@ async def delete_project_conversation(
         project_id=project_uuid,
         permission="write",
     )
-    conversation = await _get_conversation_bound_to_project(
+    conversation = await _check_conversation_bound_to_project(
         app, project_uuid=project_uuid, conversation_id=conversation_id
     )
     await conversations_service.delete_conversation(
@@ -165,7 +170,7 @@ async def get_project_conversation(
         project_id=project_uuid,
         permission="read",
     )
-    return await _get_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
+    return await _check_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
 
 
 #
@@ -191,7 +196,7 @@ async def create_project_conversation_message(
         project_id=project_uuid,
         permission="write",
     )
-    await _get_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
+    await _check_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
     return await conversations_service.create_message_and_notify(
         app,
         product_name=product_name,
@@ -221,7 +226,7 @@ async def list_project_conversation_messages(
         project_id=project_uuid,
         permission="read",
     )
-    await _get_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
+    await _check_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
     return await conversations_service.list_messages_for_conversation(
         app,
         conversation_id=conversation_id,
@@ -248,7 +253,7 @@ async def update_project_conversation_message(
         project_id=project_uuid,
         permission="write",
     )
-    await _get_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
+    await _check_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
     return await conversations_service.update_message(
         app,
         product_name=product_name,
@@ -275,7 +280,7 @@ async def delete_project_conversation_message(
         project_id=project_uuid,
         permission="write",
     )
-    await _get_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
+    await _check_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
     await conversations_service.delete_message(
         app,
         product_name=product_name,
@@ -302,5 +307,5 @@ async def get_project_conversation_message(
         project_id=project_uuid,
         permission="read",
     )
-    await _get_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
+    await _check_conversation_bound_to_project(app, project_uuid=project_uuid, conversation_id=conversation_id)
     return await conversations_service.get_message(app, conversation_id=conversation_id, message_id=message_id)
