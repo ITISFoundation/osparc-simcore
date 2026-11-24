@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Final
 
 from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2Tags
-from pydantic import PositiveFloat, PositiveInt, TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 
 _APPLICATION_TAG_PREFIX: Final[str] = "io.simcore.autoscaling"
 
@@ -18,18 +18,13 @@ DOCKER_PULL_COMMAND: Final[str] = f"{DOCKER_COMPOSE_CMD} -f {PRE_PULL_COMPOSE_PA
 #
 # Printed before each boot step so cloud-init-output names the step that died
 BOOT_STEP_MARKER_PREFIX: Final[str] = "simcore-boot"
-# A registry that is up but not yet handed credentials answers /v2/ with 401, so that counts as reachable
-DOCKER_REGISTRY_PROBE_TIMEOUT_S: Final[PositiveInt] = 5
-DOCKER_REGISTRY_PROBE_INTERVAL_S: Final[PositiveInt] = 5
-DOCKER_REGISTRY_PROBE_MAX_WAIT_S: Final[PositiveInt] = 60
+# A machine that cannot log in to the registry retries this many times, one second apart, and fails its
+# boot otherwise. It must not join the swarm in between: it would then be assigned services it cannot pull.
 DOCKER_LOGIN_MAX_ATTEMPTS: Final[PositiveInt] = 3
 DOCKER_LOGIN_ATTEMPT_TIMEOUT_S: Final[PositiveInt] = 20
 # `timeout` sends SIGTERM at ATTEMPT_TIMEOUT_S and SIGKILL this many seconds later
 DOCKER_LOGIN_KILL_DELAY_S: Final[PositiveInt] = 1
 DOCKER_LOGIN_RETRY_DELAY_S: Final[PositiveInt] = 1
-# Upper bound of the boot time the login may consume, as a fraction of EC2_INSTANCES_MAX_START_TIME,
-# since the swarm join and the cold-start pre-pull need the rest of it
-DOCKER_LOGIN_BOOT_TIME_BUDGET_RATIO: Final[PositiveFloat] = 0.25
 
 #
 # EC2 tags

@@ -70,15 +70,8 @@ async def ec2_startup_script(ec2_boot_specific: EC2InstanceBootSpecific, app_set
         startup_commands.append(custom_script)
 
     if app_settings.AUTOSCALING_REGISTRY:
-        retry_policy = utils_docker.compute_docker_login_retry_policy(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
-        )
         startup_commands.append(utils_docker.get_boot_step_marker_bash_command("registry-login"))
-        startup_commands.append(
-            utils_docker.get_docker_login_on_start_bash_command(
-                app_settings.AUTOSCALING_REGISTRY, retry_policy=retry_policy
-            )
-        )
+        startup_commands.append(utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY))
 
     startup_commands.append(utils_docker.get_boot_step_marker_bash_command("swarm-join"))
     startup_commands.append(

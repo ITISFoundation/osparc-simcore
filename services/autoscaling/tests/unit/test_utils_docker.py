@@ -44,20 +44,22 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
+from simcore_service_autoscaling.constants import (
+    DOCKER_LOGIN_MAX_ATTEMPTS,
+)
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
+from simcore_service_autoscaling.utils import utils_docker
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
-    DockerLoginRetryPolicy,
     Node,
     _by_created_dt,
     attach_node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
-    compute_docker_login_retry_policy,
     compute_full_list_of_pre_pulled_images,
     compute_node_used_resources,
     compute_tasks_needed_resources,
@@ -866,9 +868,7 @@ def _link_tool(bin_dir: Path, tool: str) -> None:
     (bin_dir / tool).symlink_to(tool_path)
 
 
-def _make_boot_bin_dir(
-    tmp_path: Path, name: str, *, docker: str, curl: str | None = None, with_timeout: bool = True
-) -> Path:
+def _make_boot_bin_dir(tmp_path: Path, name: str, *, docker: str, with_timeout: bool = True) -> Path:
     """Directory holding the subset of tools a booting machine has available to the login snippet"""
     bin_dir = tmp_path / name
     bin_dir.mkdir()
@@ -878,8 +878,6 @@ def _make_boot_bin_dir(
     for tool in tools:
         _link_tool(bin_dir, tool)
     _write_executable(bin_dir / "docker", docker)
-    if curl is not None:
-        _write_executable(bin_dir / "curl", curl)
     return bin_dir
 
 
@@ -901,6 +899,7 @@ echo "$calls" > "$CALLS_FILE"
 test "$calls" -ge 2
 """
 
+# counts the calls it receives in $CALLS_FILE and logs the arguments it was given in $ARGS_FILE
 _DOCKER_ALWAYS_FAILS_LOGIN = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
@@ -913,20 +912,6 @@ _DOCKER_HANGS_ON_LOGIN = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
 sleep 300
-"""
-
-# counts the calls it receives in $PROBE_FILE and answers like a registry handing out 401s
-_CURL_ANSWERS_401 = """#!/usr/bin/env bash
-calls=$(( $(cat "$PROBE_FILE" 2>/dev/null || echo 0) + 1 ))
-echo "$calls" > "$PROBE_FILE"
-echo 401
-"""
-
-# counts the calls it receives in $PROBE_FILE and fails like nothing answers on the other side
-_CURL_CANNOT_CONNECT = """#!/usr/bin/env bash
-calls=$(( $(cat "$PROBE_FILE" 2>/dev/null || echo 0) + 1 ))
-echo "$calls" > "$PROBE_FILE"
-exit 7
 """
 
 
@@ -944,16 +929,9 @@ def example_registry_settings() -> RegistrySettings:
 def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
     example_registry_settings: RegistrySettings, tmp_path: Path
 ):
-    policy = DockerLoginRetryPolicy(
-        max_attempts=3,
-        attempt_timeout_s=5,
-        retry_delay_s=0,
-        probe_max_wait_s=0,
-        probe_timeout_s=1,
-        probe_interval_s=1,
-    )
-    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    command = get_docker_login_on_start_bash_command(example_registry_settings)
     calls_file = tmp_path / "calls"
+    calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "retried", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN)
 
     result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
@@ -965,43 +943,34 @@ def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
 def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
     example_registry_settings: RegistrySettings, tmp_path: Path
 ):
-    policy = DockerLoginRetryPolicy(
-        max_attempts=3,
-        attempt_timeout_s=5,
-        retry_delay_s=0,
-        probe_max_wait_s=0,
-        probe_timeout_s=1,
-        probe_interval_s=1,
-    )
-    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    command = get_docker_login_on_start_bash_command(example_registry_settings)
     calls_file, args_file = tmp_path / "calls", tmp_path / "args"
+    calls_file.write_text("")
+    args_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "failing", docker=_DOCKER_ALWAYS_FAILS_LOGIN)
 
     result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)})
 
     # a machine that cannot log in must fail its boot chain, else it joins the swarm without credentials
     assert result.returncode != 0
-    assert calls_file.read_text() == "3\n"
+    assert calls_file.read_text() == f"{DOCKER_LOGIN_MAX_ATTEMPTS}\n"
     expected_login = (
         f"login --username {example_registry_settings.REGISTRY_USER}"
         f" --password-stdin {example_registry_settings.resolved_registry_url}"
     )
-    assert args_file.read_text().splitlines() == [expected_login] * 3
+    assert args_file.read_text().splitlines() == [expected_login] * DOCKER_LOGIN_MAX_ATTEMPTS
 
 
 def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
-    example_registry_settings: RegistrySettings, tmp_path: Path
+    example_registry_settings: RegistrySettings,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ):
-    policy = DockerLoginRetryPolicy(
-        max_attempts=1,
-        attempt_timeout_s=1,
-        retry_delay_s=0,
-        probe_max_wait_s=0,
-        probe_timeout_s=1,
-        probe_interval_s=1,
-    )
-    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_ATTEMPT_TIMEOUT_S", 1)
+    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_MAX_ATTEMPTS", 1)
+    command = get_docker_login_on_start_bash_command(example_registry_settings)
     calls_file = tmp_path / "calls"
+    calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "hanging", docker=_DOCKER_HANGS_ON_LOGIN)
 
     started = time.monotonic()
@@ -1012,49 +981,12 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     assert time.monotonic() - started < 10, "the login attempt was not cut short by timeout"
 
 
-@pytest.mark.parametrize(
-    "curl_script,expected_probes",
-    [(_CURL_ANSWERS_401, 1), (_CURL_CANNOT_CONNECT, 3)],
-)
-def test_get_docker_login_on_start_bash_command_probes_the_registry_before_logging_in(
-    example_registry_settings: RegistrySettings,
-    tmp_path: Path,
-    curl_script: str,
-    expected_probes: int,
-):
-    policy = DockerLoginRetryPolicy(
-        max_attempts=1,
-        attempt_timeout_s=5,
-        retry_delay_s=0,
-        probe_max_wait_s=6,
-        probe_timeout_s=1,
-        probe_interval_s=1,
-    )
-    assert policy.probe_attempts == 3
-    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
-    docker_calls, probe_calls = tmp_path / "docker", tmp_path / "probe"
-    bin_dir = _make_boot_bin_dir(tmp_path, "probed", docker=_DOCKER_ALWAYS_FAILS_LOGIN, curl=curl_script)
-
-    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(docker_calls), "PROBE_FILE": str(probe_calls)})
-
-    assert result.returncode != 0
-    assert probe_calls.read_text() == f"{expected_probes}\n"
-    assert docker_calls.read_text() == "1\n"
-
-
-def test_get_docker_login_on_start_bash_command_without_timeout_and_curl(
+def test_get_docker_login_on_start_bash_command_without_timeout(
     example_registry_settings: RegistrySettings, tmp_path: Path
 ):
-    policy = DockerLoginRetryPolicy(
-        max_attempts=2,
-        attempt_timeout_s=5,
-        retry_delay_s=0,
-        probe_max_wait_s=30,
-        probe_timeout_s=1,
-        probe_interval_s=1,
-    )
-    command = get_docker_login_on_start_bash_command(example_registry_settings, retry_policy=policy)
+    command = get_docker_login_on_start_bash_command(example_registry_settings)
     calls_file = tmp_path / "calls"
+    calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "bare", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN, with_timeout=False)
 
     result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
@@ -1064,32 +996,9 @@ def test_get_docker_login_on_start_bash_command_without_timeout_and_curl(
 
 
 def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_settings: RegistrySettings):
-    command = get_docker_login_on_start_bash_command(
-        example_registry_settings,
-        retry_policy=compute_docker_login_retry_policy(datetime.timedelta(minutes=10)),
-    )
+    command = get_docker_login_on_start_bash_command(example_registry_settings)
     # the boot script joins its steps on `&&`, so a step holding one would be read as several steps
     assert "&" not in command
-
-
-@pytest.mark.parametrize(
-    "max_start_time,expected_max_attempts,expected_probe_attempts",
-    [
-        (datetime.timedelta(minutes=1), 1, 0),
-        (datetime.timedelta(minutes=3), 2, 0),
-        (datetime.timedelta(minutes=5), 3, 1),
-        (datetime.timedelta(minutes=10), 3, 6),
-        (datetime.timedelta(hours=1), 3, 6),
-    ],
-)
-def test_compute_docker_login_retry_policy(
-    max_start_time: datetime.timedelta, expected_max_attempts: int, expected_probe_attempts: int
-):
-    policy = compute_docker_login_retry_policy(max_start_time)
-
-    assert policy.max_attempts == expected_max_attempts
-    assert policy.probe_attempts == expected_probe_attempts
-    assert policy.max_duration_s < max_start_time.total_seconds(), "the login may outlive the instance start time"
 
 
 async def test_try_get_node_with_name(autoscaling_docker: AutoscalingDocker, host_node: Node):
