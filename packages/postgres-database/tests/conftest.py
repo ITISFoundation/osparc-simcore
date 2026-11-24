@@ -20,6 +20,7 @@ from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
 )
+from pytest_simcore.simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
@@ -40,8 +41,10 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 pytest_plugins = [
+    "pytest_simcore.k8s_cluster",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.simcore_cluster_orchestrator",
 ]
 
 
@@ -54,7 +57,14 @@ def docker_compose_file(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
+def postgres_service(request: pytest.FixtureRequest, simcore_cluster_orchestrator: SimcoreClusterOrchestrator) -> str:
+    """DSN of a responsive postgres deployed by the selected cluster orchestrator"""
+    dsn: str = request.getfixturevalue(f"postgres_service_{simcore_cluster_orchestrator}")
+    return dsn
+
+
+@pytest.fixture(scope="session")
+def postgres_service_docker_swarm(docker_services, docker_ip, docker_compose_file) -> str:
     """Deploys postgres and service is responsive"""
     # container environment
     with Path.open(docker_compose_file) as fh:
@@ -78,6 +88,24 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
         timeout=30.0,
         pause=0.1,
     )
+    return dsn
+
+
+@pytest.fixture(scope="session")
+def k8s_ops_workloads_selection() -> list[str]:
+    """Overrides pytest-simcore fixture"""
+    return ["postgres"]
+
+
+@pytest.fixture(scope="session")
+def postgres_service_k8s(k8s_ops_workloads: list[str]) -> str:
+    """Postgres helm release in the kind cluster, reachable on host port 5432 (see k8s/kind-config.yaml)
+
+    Credentials are the .env-devel defaults the release is deployed with.
+    """
+    assert "postgres" in k8s_ops_workloads
+    dsn = f"{POSTGRES_SYNC_DSN_SCHEME}://scu:adminadmin@127.0.0.1:5432/simcoredb"
+    assert is_postgres_responsive(dsn)
     return dsn
 
 
