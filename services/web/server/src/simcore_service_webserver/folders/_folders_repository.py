@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Callable
 from datetime import datetime
-from typing import cast
+from typing import Final, cast
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -45,6 +45,10 @@ _logger = logging.getLogger(__name__)
 
 _FOLDER_DB_MODEL_COLS = get_columns_from_db_model(folders_v2, FolderDB)
 
+_BOTH_OWNERS_ERROR: Final[str] = (
+    "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+)
+
 
 async def create(
     app: web.Application,
@@ -57,9 +61,7 @@ async def create(
     user_id: UserID | None,
     workspace_id: WorkspaceID | None,
 ) -> FolderDB:
-    assert not (user_id is not None and workspace_id is not None), (
-        "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
-    )
+    assert not (user_id is not None and workspace_id is not None), _BOTH_OWNERS_ERROR
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -153,7 +155,7 @@ def _to_expression(order_by: OrderBy):
     return direction_func(folders_v2.columns[order_by.field])
 
 
-async def list_(  # pylint: disable=too-many-arguments,too-many-branches
+async def list_(  # pylint: disable=too-many-arguments,too-many-branches  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -319,9 +321,7 @@ async def get_for_user_or_workspace(
     user_id: UserID | None,  # owned
     workspace_id: WorkspaceID | None,
 ) -> FolderDB:
-    assert not (user_id is not None and workspace_id is not None), (
-        "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
-    )
+    assert not (user_id is not None and workspace_id is not None), _BOTH_OWNERS_ERROR
 
     query = _create_base_select_query(folder_id=folder_id, product_name=product_name)
 
@@ -341,7 +341,38 @@ async def get_for_user_or_workspace(
         return FolderDB.model_validate(row)
 
 
-async def update(
+async def exists_for_user_or_workspace(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    folder_id: FolderID,
+    product_name: ProductName,
+    user_id: UserID | None,  # owned
+    workspace_id: WorkspaceID | None,
+) -> bool:
+    """True when folder_id belongs to product_name and is owned by user_id or workspace_id."""
+    assert not (user_id is not None and workspace_id is not None), _BOTH_OWNERS_ERROR
+
+    ownership_condition = (
+        folders_v2.c.user_id == user_id if user_id is not None else folders_v2.c.workspace_id == workspace_id
+    )
+
+    query = sa.select(
+        sa.exists(
+            sa.select(sa.literal(1)).where(
+                folders_v2.c.product_name == product_name,
+                folders_v2.c.folder_id == folder_id,
+                ownership_condition,
+            )
+        )
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(query)
+        return bool(result.scalar_one())
+
+
+async def update(  # noqa: PLR0913
     # pylint: disable=too-many-arguments
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -350,12 +381,12 @@ async def update(
     product_name: ProductName,
     # updatable columns
     name: str | Unset = Unset.VALUE,
-    parent_folder_id: FolderID | None | Unset = Unset.VALUE,
-    trashed: datetime | None | Unset = Unset.VALUE,
+    parent_folder_id: FolderID | Unset | None = Unset.VALUE,
+    trashed: datetime | Unset | None = Unset.VALUE,
     trashed_explicitly: bool | Unset = Unset.VALUE,
-    trashed_by: UserID | None | Unset = Unset.VALUE,  # who trashed
-    workspace_id: WorkspaceID | None | Unset = Unset.VALUE,
-    user_id: UserID | None | Unset = Unset.VALUE,  # ownership
+    trashed_by: UserID | Unset | None = Unset.VALUE,  # who trashed
+    workspace_id: WorkspaceID | Unset | None = Unset.VALUE,
+    user_id: UserID | Unset | None = Unset.VALUE,  # ownership
 ) -> FolderDB:
     """
     Batch/single patch of folder/s
