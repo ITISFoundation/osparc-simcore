@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Final
+from typing import Annotated, Final
 
+from annotated_types import doc
 from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2Tags
 from pydantic import PositiveInt, TypeAdapter
 
@@ -16,12 +17,14 @@ DOCKER_PULL_COMMAND: Final[str] = f"{DOCKER_COMPOSE_CMD} -f {PRE_PULL_COMPOSE_PA
 #
 # EC2 boot scripts
 #
-# The machine must not join the swarm before logging in, or it gets services it cannot pull
-DOCKER_LOGIN_MAX_ATTEMPTS: Final[PositiveInt] = 3
-DOCKER_LOGIN_ATTEMPT_TIMEOUT_S: Final[PositiveInt] = 20
-# `timeout` sends SIGTERM at ATTEMPT_TIMEOUT_S and SIGKILL this many seconds later
-DOCKER_LOGIN_KILL_DELAY_S: Final[PositiveInt] = 1
-DOCKER_LOGIN_RETRY_DELAY_S: Final[PositiveInt] = 1
+DOCKER_LOGIN_MAX_ATTEMPTS: Final[Annotated[PositiveInt, doc("attempts a booting machine makes to log in")]] = 3
+DOCKER_LOGIN_ATTEMPT_TIMEOUT_S: Final[
+    Annotated[PositiveInt, doc("seconds a single login may run before `timeout` sends SIGTERM")]
+] = 20
+DOCKER_LOGIN_KILL_DELAY_S: Final[
+    Annotated[PositiveInt, doc("seconds `timeout` waits after SIGTERM before it sends SIGKILL")]
+] = 1
+DOCKER_LOGIN_RETRY_DELAY_S: Final[Annotated[PositiveInt, doc("seconds between two login attempts")]] = 1
 
 #
 # EC2 tags

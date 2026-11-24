@@ -109,8 +109,8 @@ def test_ec2_warm_buffer_startup_script_logs_in_before_warming_up(app_environmen
     steps = ec2_warm_buffer_startup_script(boot_specific, app_settings).split(" && ")
 
     # the machine is not in the swarm yet here, so a failing login costs nothing but a replaced machine
-    assert steps[0].startswith("( ")
-    assert " docker login " in steps[0]
+    assert steps[0].startswith("( "), f"expected the login to retry in a subshell, got {steps[0]}"
+    assert " docker login " in steps[0], f"expected the machine to log in before warming up, got {steps[0]}"
 
 
 def test_ec2_warm_buffer_startup_script_without_pre_pulling_skips_the_login(app_environment: EnvVarsDict):

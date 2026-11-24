@@ -935,7 +935,7 @@ def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
     result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
 
     assert result.returncode == 0, result.stderr
-    assert calls_file.read_text() == "2\n"
+    assert calls_file.read_text() == "2\n", "the login was not retried until it succeeded"
 
 
 def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
@@ -950,13 +950,18 @@ def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
     result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)})
 
     # a machine that cannot log in must fail its boot chain, else it joins the swarm without credentials
-    assert result.returncode != 0
-    assert calls_file.read_text() == f"{DOCKER_LOGIN_MAX_ATTEMPTS}\n"
+    assert result.returncode != 0, "a machine that cannot log in must not report a booted machine"
+    assert calls_file.read_text() == f"{DOCKER_LOGIN_MAX_ATTEMPTS}\n", (
+        f"expected {DOCKER_LOGIN_MAX_ATTEMPTS} login attempts"
+    )
     expected_login = (
         f"login --username {example_registry_settings.REGISTRY_USER}"
         f" --password-stdin {example_registry_settings.resolved_registry_url}"
     )
-    assert args_file.read_text().splitlines() == [expected_login] * DOCKER_LOGIN_MAX_ATTEMPTS
+    assert args_file.read_text().splitlines() == [expected_login] * DOCKER_LOGIN_MAX_ATTEMPTS, (
+        f"expected {DOCKER_LOGIN_MAX_ATTEMPTS} identical logins against"
+        f" {example_registry_settings.resolved_registry_url}"
+    )
 
 
 def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
@@ -974,15 +979,15 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     started = time.monotonic()
     result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
 
-    assert result.returncode != 0
-    assert calls_file.read_text() == "1\n"
+    assert result.returncode != 0, "a login cut short by timeout must still fail the boot chain"
+    assert calls_file.read_text() == "1\n", "a hung login must not be retried beyond its timeout"
     assert time.monotonic() - started < 10, "the login attempt was not cut short by timeout"
 
 
 def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_settings: RegistrySettings):
     command = get_docker_login_on_start_bash_command(example_registry_settings)
     # the boot script joins its steps on `&&`, so a step holding one would be read as several steps
-    assert "&" not in command
+    assert "&" not in command, f"the boot script joins its steps on `&&`, got {command}"
 
 
 async def test_try_get_node_with_name(autoscaling_docker: AutoscalingDocker, host_node: Node):

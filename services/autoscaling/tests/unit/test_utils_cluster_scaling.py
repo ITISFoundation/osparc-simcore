@@ -172,9 +172,11 @@ async def test_ec2_startup_script_just_ami(
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
     steps = _boot_steps(startup_script)
-    assert len(steps) == 2
-    assert " docker login " in steps[0]
-    assert steps[-1].startswith("docker swarm join --availability=drain --token ")
+    assert len(steps) == 2, f"expected a login and a swarm join, got {steps}"
+    assert " docker login " in steps[0], f"expected the machine to log in before joining, got {steps[0]}"
+    assert steps[-1].startswith("docker swarm join --availability=drain --token "), (
+        f"expected the last step to join the swarm, got {steps[-1]}"
+    )
 
 
 @pytest.fixture
@@ -240,10 +242,10 @@ async def test_ec2_startup_script_with_pre_pulling(
     steps = _boot_steps(startup_script)
     login = next(step for step in steps if " docker login " in step)
     join = next(step for step in steps if step.startswith("docker swarm join "))
-    assert login.startswith("( ")
+    assert login.startswith("( "), f"expected the login to retry in a subshell, got {login}"
     pull = next(index for index, step in enumerate(steps) if step == "./docker-pull-script.sh")
     # the machine logs in before it can be accepted into the cluster, and pulls only after joining
-    assert steps.index(login) < steps.index(join) < pull
+    assert steps.index(login) < steps.index(join) < pull, f"expected login, join, pull, got {steps}"
 
 
 async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
@@ -290,7 +292,7 @@ test "$1" != login
 
     assert process.returncode != 0, stderr
     recorded = executed.read_text()
-    assert "login" in recorded
+    assert "login" in recorded, "the boot script never tried to log in"
     assert "swarm join" not in recorded, "the machine joined the swarm without credentials"
 
 
@@ -307,9 +309,13 @@ async def test_ec2_startup_script_with_custom_scripts(
 
         steps = _boot_steps(startup_script)
         num_custom_scripts = len(ec2_instances_boot_ami_scripts)
-        assert steps[:num_custom_scripts] == ec2_instances_boot_ami_scripts
-        assert " docker login " in steps[num_custom_scripts]
-        assert steps[-1].startswith("docker swarm join ")
+        assert steps[:num_custom_scripts] == ec2_instances_boot_ami_scripts, (
+            f"expected the custom boot scripts first, got {steps}"
+        )
+        assert " docker login " in steps[num_custom_scripts], (
+            f"expected the machine to log in after the custom scripts, got {steps}"
+        )
+        assert steps[-1].startswith("docker swarm join "), f"expected the last step to join the swarm, got {steps[-1]}"
 
 
 async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
@@ -324,9 +330,9 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
     steps = _boot_steps(startup_script)
-    assert len(steps) == 1
-    assert steps[0].startswith("docker swarm join ")
-    assert "docker login" not in startup_script
+    assert len(steps) == 1, f"expected only a swarm join without a registry, got {steps}"
+    assert steps[0].startswith("docker swarm join "), f"expected the machine to join the swarm, got {steps[0]}"
+    assert "docker login" not in startup_script, f"expected no login without a registry, got {startup_script}"
 
 
 def test_sort_empty_drained_nodes(
