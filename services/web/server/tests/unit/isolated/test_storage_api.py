@@ -25,13 +25,8 @@ from simcore_service_webserver.storage.api import (
 
 
 @pytest.fixture
-def app() -> web.Application:
-    return web.Application()
-
-
-@pytest.fixture
 def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
+    return UserID(faker.pyint(min_value=1))
 
 
 @pytest.fixture
