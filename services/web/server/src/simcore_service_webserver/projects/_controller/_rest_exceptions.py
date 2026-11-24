@@ -53,6 +53,7 @@ from ..exceptions import (
     ProjectWalletPendingTransactionError,
     WrongTagIdsInQueryError,
 )
+from ..rest_exceptions import _PROJECT_PRODUCT_MISMATCH_ERRORS
 
 _logger = logging.getLogger(__name__)
 
@@ -299,6 +300,7 @@ _ERRORS = [
     _OTHER_ERRORS,
     _PRICING_ERRORS,
     _PROJECT_ERRORS,
+    _PROJECT_PRODUCT_MISMATCH_ERRORS,
     _WALLET_ERRORS,
     _WORKSPACE_ERRORS,
 ]
@@ -319,7 +321,6 @@ def _assert_duplicate():
 assert _assert_duplicate()  # nosec
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {k: v for dikt in _ERRORS for k, v in dikt.items()}
-
 
 _handlers: ExceptionHandlersMap = {
     **catalog_exceptions_handlers_map,

@@ -38,15 +38,15 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.1
+coverage==7.17.2
     # via pytest-cov
 docker==7.2.0
     # via -r requirements/_test.in
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 frozenlist==1.8.0
     # via

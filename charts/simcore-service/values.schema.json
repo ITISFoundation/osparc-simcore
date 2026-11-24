@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "image"],
+  "definitions": {
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "probe": {
+      "type": ["object", "null"]
+    }
+  },
+  "properties": {
+    "global": { "type": "object" },
+    "kind": { "enum": ["Deployment", "DaemonSet"] },
+    "replicaCount": { "type": "integer", "minimum": 0 },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "tag"],
+      "properties": {
+        "repository": { "type": "string" },
+        "tag": { "type": "string" },
+        "pullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "command": { "type": "array", "items": { "type": "string" } },
+    "args": { "type": "array", "items": { "type": "string" } },
+    "containerPort": { "$ref": "#/definitions/port" },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "type": { "enum": ["ClusterIP", "NodePort", "LoadBalancer"] },
+        "port": { "$ref": "#/definitions/port" },
+        "nodePort": {
+          "anyOf": [{ "$ref": "#/definitions/port" }, { "type": "null" }]
+        },
+        "extraServicePorts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "port"],
+            "properties": {
+              "name": { "type": "string" },
+              "port": { "$ref": "#/definitions/port" },
+              "targetPort": {
+                "anyOf": [{ "$ref": "#/definitions/port" }, { "type": "string" }]
+              },
+              "protocol": { "enum": ["TCP", "UDP", "SCTP"] },
+              "nodePort": { "$ref": "#/definitions/port" }
+            }
+          }
+        }
+      }
+    },
+    "podSecurityContext": { "type": "object" },
+    "containerSecurityContext": { "type": "object" },
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "startup": { "$ref": "#/definitions/probe" },
+        "readiness": { "$ref": "#/definitions/probe" },
+        "liveness": { "$ref": "#/definitions/probe" }
+      }
+    },
+    "env": { "type": "object" },
+    "secretEnv": { "type": "object" },
+    "extraVolumes": { "type": "array", "items": { "type": "object" } },
+    "extraVolumeMounts": { "type": "array", "items": { "type": "object" } },
+    "ingresses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["paths"],
+        "properties": {
+          "nameSuffix": { "type": "string" },
+          "annotations": { "type": "object" },
+          "ingressClassName": { "type": "string" },
+          "serviceName": { "type": "string" },
+          "paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "pathType"],
+              "properties": {
+                "path": { "type": "string" },
+                "pathType": { "enum": ["Exact", "Prefix", "ImplementationSpecific"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "extraObjects": { "type": "array", "items": { "type": "object" } },
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "ingress": { "type": "array" },
+        "egress": { "type": "array" }
+      }
+    },
+    "resources": { "type": "object" },
+    "nodeSelector": { "type": "object" },
+    "tolerations": { "type": "array" },
+    "topologySpreadConstraints": { "type": "array" }
+  }
+}

@@ -1,0 +1,48 @@
+{{- $healthcheck := dict "path" "/api/version" "port" "http" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: buggregator
+spec:
+  type: NodePort
+  ports:
+    - name: smtp
+      port: 1025
+      targetPort: smtp
+      nodePort: 31025
+    - name: http
+      port: 8000
+      targetPort: http
+      nodePort: 31825
+  selector:
+    app: buggregator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buggregator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buggregator
+  template:
+    metadata:
+      labels:
+        app: buggregator
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: buggregator
+          image: ghcr.io/buggregator/server:2.11.2
+          ports:
+            - name: smtp
+              containerPort: 1025
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet: {{ $healthcheck | toJson }}
+          livenessProbe:
+            httpGet: {{ $healthcheck | toJson }}
+            periodSeconds: 10
+            failureThreshold: 6

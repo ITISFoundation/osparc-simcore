@@ -1,0 +1,24 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/catalog
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  CATALOG_BACKGROUND_TASK_REST_TIME: {{ requiredEnv "CATALOG_BACKGROUND_TASK_REST_TIME" | quote }}
+  CATALOG_DEV_FEATURES_ENABLED: {{ requiredEnv "CATALOG_DEV_FEATURES_ENABLED" | quote }}
+  CATALOG_LOGLEVEL: {{ requiredEnv "CATALOG_LOGLEVEL" | quote }}
+  CATALOG_PROFILING: {{ requiredEnv "CATALOG_PROFILING" | quote }}
+  CATALOG_SERVICES_DEFAULT_RESOURCES: {{ requiredEnv "CATALOG_SERVICES_DEFAULT_RESOURCES" | quote }}
+  CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: {{ requiredEnv "CATALOG_SERVICES_DEFAULT_SPECIFICATIONS" | quote }}
+  CATALOG_TRACING: {{ requiredEnv "CATALOG_TRACING" | quote }}
+  DIRECTOR_DEFAULT_MAX_MEMORY: {{ requiredEnv "DIRECTOR_DEFAULT_MAX_MEMORY" | quote }}
+  DIRECTOR_DEFAULT_MAX_NANO_CPUS: {{ requiredEnv "DIRECTOR_DEFAULT_MAX_NANO_CPUS" | quote }}
+  DIRECTOR_HOST: {{ env "DIRECTOR_HOST" | default "director" | quote }}
+  DIRECTOR_PORT: {{ env "DIRECTOR_PORT" | default "8080" | quote }}

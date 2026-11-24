@@ -27,6 +27,8 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+ast-serialize==0.13.1
+    # via mypy
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
 attrs==26.1.0
@@ -52,17 +54,17 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.1
+coverage==7.17.2
     # via pytest-cov
 docker==7.2.0
     # via -r requirements/_test.in
 execnet==2.1.2
     # via pytest-xdist
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -71,10 +73,6 @@ frozenlist==1.8.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==3.2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 idna==3.19
     # via
     #   -c requirements/_base.txt
@@ -87,7 +85,7 @@ jmespath==1.1.0
     #   aiobotocore
     #   boto3
     #   botocore
-librt==0.8.1
+librt==0.16.0
     # via mypy
 lupa==2.8
     # via fakeredis
@@ -98,7 +96,7 @@ multidict==6.9.1
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.19.1
+mypy==2.4.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -117,6 +115,10 @@ propcache==0.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+psycopg==3.3.9
+    # via sqlalchemy
+psycopg-binary==3.3.9
+    # via psycopg
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
@@ -169,15 +171,17 @@ sniffio==1.3.1
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via fakeredis
-sqlalchemy==2.0.51
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 types-aiobotocore-s3==3.8.0
     # via -r requirements/_test.in
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
+types-greenlet==3.5.0.20260518
+    # via sqlalchemy
 types-psutil==7.2.2.20260906
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20261103

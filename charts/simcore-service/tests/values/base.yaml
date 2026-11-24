@@ -1,0 +1,3 @@
+image:
+  repository: itisfoundation/my-svc
+  tag: "1.0.0"

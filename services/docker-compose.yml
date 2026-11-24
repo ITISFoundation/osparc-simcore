@@ -109,7 +109,7 @@ services:
   ###########################
 
   postgres:
-    image: "postgres:14.23@sha256:2f439458ab6a57a925825ae14f9d06910e4fe4a41c8d4a0ae06397e65b707e1b"
+    image: "postgres:14.25@sha256:c0e9c0e9bac7e4c1834b698217a03ee5c708de30d313c84a506972de0e24b059"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -176,7 +176,7 @@ services:
       ]
 
   redis:
-    image: "valkey/valkey:7.2.15@sha256:828b1cbb1c258e02b9cd9588063fa997e097444e610d3f3c00d43e21400e2b8d"
+    image: "valkey/valkey:7.2.16@sha256:edf27a750238c2a8be56d6c365d21930926cfee23385efe88cc6df9df2c911a1"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command: [

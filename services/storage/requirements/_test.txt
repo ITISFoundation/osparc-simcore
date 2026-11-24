@@ -27,6 +27,8 @@ anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
+ast-serialize==0.13.1
+    # via mypy
 asyncpg==0.32.0
     # via
     #   -c requirements/_base.txt
@@ -83,7 +85,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.5.0
+click==8.5.1
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -103,7 +105,7 @@ click-repl==0.4.1
     # via
     #   -c requirements/_base.txt
     #   celery
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -122,11 +124,11 @@ docker==7.2.0
     #   pytest-docker-tools
 execnet==2.1.2
     # via pytest-xdist
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -143,10 +145,6 @@ frozenlist==1.8.0
     #   aiosignal
 graphql-core==3.3.1
     # via moto
-greenlet==3.2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -215,7 +213,7 @@ kombu==5.7.0
     #   pytest-celery
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-librt==0.8.1
+librt==0.16.0
     # via mypy
 lupa==2.8
     # via fakeredis
@@ -234,7 +232,7 @@ multidict==6.9.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.19.1
+mypy==2.4.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -250,7 +248,7 @@ packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
-pandas==3.1.0
+pandas==3.1.1
     # via -r requirements/_test.in
 pathable==0.4.4
     # via jsonschema-path
@@ -275,6 +273,10 @@ psutil==7.2.2
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
+psycopg==3.3.9
+    # via sqlalchemy
+psycopg-binary==3.3.9
+    # via psycopg
 py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
@@ -389,21 +391,23 @@ six==1.17.0
     #   simcore-service-storage-sdk
 sortedcontainers==2.4.0
     # via fakeredis
-sqlalchemy==2.0.51
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 sympy==1.14.0
     # via cfn-lint
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
 termcolor==3.3.0
     # via pytest-sugar
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
+types-greenlet==3.5.0.20260518
+    # via sqlalchemy
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt

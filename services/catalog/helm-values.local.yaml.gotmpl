@@ -1,0 +1,44 @@
+image:
+  repository: local/catalog
+  tag: development
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  nodePort: 30005
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32005
+
+env:
+  CATALOG_REMOTE_DEBUGGING_PORT: 3000
+  CATALOG_LOGLEVEL: DEBUG
+  # compose: ${PWD}/services/dynamic-sidecar, the repo is mounted at /osparc-simcore in the kind node
+  DYNAMIC_SIDECAR_MOUNT_PATH_DEV: /osparc-simcore/services/dynamic-sidecar
+
+extraVolumes:
+  - name: catalog-src
+    hostPath:
+      path: /osparc-simcore/services/catalog
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: catalog-src
+    mountPath: /devel/services/catalog
+  - name: packages-src
+    mountPath: /devel/packages

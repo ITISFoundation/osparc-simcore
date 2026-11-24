@@ -10,14 +10,10 @@ certifi==2026.10.19
     #   requests
 charset-normalizer==3.5.1
     # via requests
-click==8.5.0
+click==8.5.1
     # via -r requirements/_migration.in
 docker==7.2.0
     # via -r requirements/_migration.in
-greenlet==3.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 idna==3.19
     # via
     #   -c requirements/_base.txt
@@ -31,14 +27,19 @@ markupsafe==3.0.3
     # via
     #   -c requirements/_base.txt
     #   mako
+psycopg==3.3.9
+    # via sqlalchemy
+psycopg-binary==3.3.9
+    # via psycopg
 requests==2.34.2
     # via docker
-sqlalchemy==2.0.51
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -r requirements/_migration.in
     #   alembic
-tenacity==9.1.4
+tenacity==9.2.1
     # via -r requirements/_migration.in
 typing-extensions==4.16.0
     # via

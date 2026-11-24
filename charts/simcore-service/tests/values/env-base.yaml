@@ -1,0 +1,4 @@
+env:
+  A_KEPT: base
+  B_OVERRIDDEN: base
+  C_REMOVED: base

@@ -4,13 +4,13 @@ annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.9
     # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
@@ -34,7 +34,7 @@ pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pydantic-settings==2.14.2
+pydantic-settings==2.16.2
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest
@@ -74,6 +74,7 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   pydantic
     #   pydantic-core
+    #   pydantic-settings
     #   typing-inspection
 typing-inspection==0.4.5
     # via

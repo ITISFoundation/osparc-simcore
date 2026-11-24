@@ -22,6 +22,7 @@ from settings_library.base import (
     _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING,
     BaseCustomSettings,
     DefaultFromEnvFactoryError,
+    EnvSettingsWithAutoDefaultSource,
 )
 from settings_library.tracing import TracingSettings
 
@@ -386,6 +387,7 @@ def test_env_settings_source_init_signature_is_pinned():
         "env_ignore_empty",
         "env_parse_none_str",
         "env_parse_enums",
+        "_init_state",
     }
     actual_params = set(inspect.signature(EnvSettingsSource.__init__).parameters)
     assert actual_params == expected_params, (
@@ -393,3 +395,16 @@ def test_env_settings_source_init_signature_is_pinned():
         f"added={actual_params - expected_params}, removed={expected_params - actual_params}. "
         "Update EnvSettingsWithAutoDefaultSource.__init__ in settings_library.base accordingly."
     )
+
+
+def test_env_settings_with_auto_default_shares_init_state():
+    # pydantic gives every built-in source of one settings resolution the same InitState,
+    # so incomplete fields get reported once. The source replacing EnvSettingsSource has to
+    # keep that instance instead of getting a fresh one.
+    class _Settings(BaseCustomSettings):
+        VALUE: int = 1
+
+    env_settings = EnvSettingsSource(_Settings)
+    source = EnvSettingsWithAutoDefaultSource(_Settings, env_settings=env_settings)
+
+    assert source._init_state is env_settings._init_state  # noqa: SLF001

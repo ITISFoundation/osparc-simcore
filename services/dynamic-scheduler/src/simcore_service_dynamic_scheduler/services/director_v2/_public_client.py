@@ -152,7 +152,8 @@ async def _director_v2_lifespan(app: FastAPI) -> AsyncIterator[State]:
         async with public_client.lifespan():
             yield {}
     finally:
-        if public_client is not None and getattr(app.state, DirectorV2Client.app_state_name, None) is public_client:
+        client_in_state: DirectorV2Client | None = getattr(app.state, DirectorV2Client.app_state_name, None)
+        if public_client is not None and client_in_state is public_client:
             public_client.pop_from_app_state(app)
 
 

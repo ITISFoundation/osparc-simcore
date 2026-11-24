@@ -18,6 +18,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ..wallets import _api as wallets_service
+from ._access_rights_service import check_project_product_match
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectInDebtCanNotChangeWalletError,
@@ -37,6 +38,8 @@ async def get_project_wallet(app, project_id: ProjectID) -> WalletGet | None:
 async def check_project_financial_status_and_wallet_access(
     app, *, project_id: ProjectID, user_id: UserID, product_name: ProductName
 ):
+    await check_project_product_match(app, project_id=project_id, product_name=product_name)
+
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     current_project_wallet = await db.get_project_wallet(project_uuid=project_id)
@@ -74,6 +77,8 @@ async def connect_wallet_to_project(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> WalletGet:
+    await check_project_product_match(app, project_id=project_id, product_name=product_name)
+
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     # ensure the wallet can be used by the user
@@ -151,6 +156,7 @@ async def pay_debt_with_different_wallet(
     Outcome:
     The project's debt is paid, Wallet A is credited, and Wallet B is debited.
     """
+    await check_project_product_match(app, project_id=project_id, product_name=product_name)
 
     assert current_wallet_id != new_wallet_id  # nosec
 
@@ -181,7 +187,9 @@ async def pay_debt_with_different_wallet(
         user_id=user_id,
         user_email=user["email"],
         osparc_credits=debt_amount,  # <-- Negative number
-        payment_transaction_id=f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}. Project id {project_id}.",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}. Project id {project_id}."
+        ),
         created_at=_created_at,
     )
 
@@ -192,7 +200,9 @@ async def pay_debt_with_different_wallet(
         user_id=user_id,
         user_email=user["email"],
         osparc_credits=-debt_amount,  # <-- Positive number
-        payment_transaction_id=f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}. Project id {project_id}.",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}. Project id {project_id}."
+        ),
         created_at=_created_at,
     )
 

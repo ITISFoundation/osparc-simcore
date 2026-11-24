@@ -7,6 +7,7 @@ from uuid import UUID
 
 import typer
 from models import DBConfig
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
 from sqlalchemy import and_, create_engine, select
@@ -24,7 +25,7 @@ def db_connection(db_config: DBConfig) -> Iterator[Connection]:
     user = quote_plus(db_config.user)
     password = quote_plus(db_config.password.get_secret_value())
     engine = create_engine(
-        f"postgresql+psycopg2://{user}:{password}@{db_config.address}/{db_config.database}",
+        f"{POSTGRES_SYNC_DSN_SCHEME}://{user}:{password}@{db_config.address}/{db_config.database}",
         echo=True,
     )
     with engine.connect() as con:

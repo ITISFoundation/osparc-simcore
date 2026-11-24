@@ -1,0 +1,27 @@
+{{- range $ingress := .Values.ingresses }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "simcore-service.name" $ }}{{ with $ingress.nameSuffix }}-{{ . }}{{ end }}
+  labels:
+    {{- include "simcore-service.labels" $ | nindent 4 }}
+  {{- with $ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ $ingress.ingressClassName | default "traefik" }}
+  rules:
+    - http:
+        paths:
+          {{- range $ingress.paths }}
+          - path: {{ .path | quote }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $ingress.serviceName | default (include "simcore-service.name" $) }}
+                port:
+                  name: http
+          {{- end }}
+{{- end }}

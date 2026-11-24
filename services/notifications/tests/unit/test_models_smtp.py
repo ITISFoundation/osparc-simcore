@@ -3,12 +3,16 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from typing import Any
+from collections.abc import Callable
+from typing import Annotated, Any, Final
 
 import pytest
+from annotated_types import doc
 from pydantic import ValidationError
 from simcore_service_notifications.core.settings import SMTPSettings
 from simcore_service_notifications.models.smtp import EmailProtocol
+
+_SENTINEL: Final[Annotated[str, doc("unique enough not to appear by accident in an error report")]] = "s3cr3t-SENTINEL"
 
 
 @pytest.mark.parametrize(
@@ -123,3 +127,33 @@ def test_smtp_configuration_fails(cfg: dict[str, Any], error_type: str):
 
     assert err_info.value.error_count() == 1
     assert err_info.value.errors()[0]["type"] == error_type
+
+
+_RENDERERS: Final[dict[str, Callable[[ValidationError], str]]] = {
+    "str": str,
+    "errors": lambda e: repr(e.errors()),
+    "json": lambda e: e.json(),
+}
+
+
+@pytest.mark.parametrize("render", _RENDERERS.values(), ids=_RENDERERS)
+@pytest.mark.parametrize(
+    "cfg",
+    [
+        pytest.param(
+            {"host": "test", "port": 113, "password": _SENTINEL},
+            id="password-without-username",
+        ),
+        pytest.param(
+            {"host": "test", "port": 113, "password": _SENTINEL, "protocol": EmailProtocol.TLS.value},
+            id="password-without-username-tls",
+        ),
+    ],
+)
+def test_invalid_smtp_configuration_does_not_expose_password(
+    cfg: dict[str, Any], render: Callable[[ValidationError], str]
+):
+    with pytest.raises(ValidationError) as err_info:
+        SMTPSettings.model_validate(cfg)
+
+    assert _SENTINEL not in render(err_info.value)

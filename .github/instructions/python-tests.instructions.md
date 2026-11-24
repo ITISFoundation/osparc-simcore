@@ -92,8 +92,13 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 ## Running tests
 
-- Follow the [`run-python-tests`](../skills/run-python-tests/SKILL.md) procedure
-  and start with the narrowest relevant target. Broaden validation when the
-  change crosses package, service, database, serialization, or API boundaries.
-- Use `--keep-docker-up` only for local iteration, never for clean-state or
-  CI-equivalent validation.
+- Follow the [`run-python-tests`](../skills/run-python-tests/SKILL.md)
+  procedure: run the project's suite, then narrow to the failing file or test.
+  Validate beyond the project you changed when the change crosses package,
+  service, database, serialization, or API boundaries.
+- Run a whole suite in parallel with `--numprocesses=auto` where the project
+  declares `pytest-xdist`.
+- The service Makefiles pass `--keep-docker-up` in every mode, so runs do not
+  tear the Swarm stack down and containers from an earlier run are not a clean
+  state. Run `make down` and then `make leave` from the repository root to start
+  from no stack.
