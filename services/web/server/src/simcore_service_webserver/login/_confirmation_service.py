@@ -68,15 +68,15 @@ class ConfirmationService:
         return age > lifetime
 
     async def validate_confirmation_code(
-        self, code: str, *, expected_action: ActionLiteralStr | None = None
+        self, code: str, *, expected_action: ActionLiteralStr | None
     ) -> Confirmation | None:
         """Validate confirmation code and return confirmation if valid.
 
         Keyword Arguments:
-            expected_action -- if set, the confirmation must have been created for this
-                action. Codes carry a user id, so accepting a code created for another
-                action would authorize one action with a token issued for a different one.
-                (default: {None} -- action is not checked)
+            expected_action -- the action the confirmation must have been created for.
+                Codes carry a user id, so accepting a code created for another action
+                would authorize one action with a token issued for a different one.
+                Pass None to skip the action check.
         """
         assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
 

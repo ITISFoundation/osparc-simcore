@@ -65,11 +65,11 @@ async def client(
 
 async def test_invitation_code_does_not_complete_password_reset(
     client: TestClient,
+    default_product_name: ProductName,
 ):
-    """SEC-WS-18 regression: a confirmation code created for another action must never
-    complete a password reset. Invitation codes are delivered to the invited guest while
-    their row is bound to the issuer's user_id, so accepting them here lets the invitee
-    take over the issuer's (typically admin/product-owner) account.
+    """A confirmation code is only valid for the action it was created for: an
+    INVITATION code is delivered to the invitee while its row is bound to the
+    issuer's user_id, so it must not complete a password reset for the issuer.
     """
     assert client.app
 
@@ -78,14 +78,14 @@ async def test_invitation_code_does_not_complete_password_reset(
             client.app, user_id=UserID(issuer["id"]), user_email=issuer["email"]
         )
         complete_reset_password_url = client.app.router["complete_reset_password"].url_for(code=invitation["code"])
-        stolen_password = generate_password(12)
+        new_password = generate_password()
 
         response = await client.post(
             f"{complete_reset_password_url}",
-            json={"password": stolen_password, "confirm": stolen_password},
+            json={"password": new_password, "confirm": new_password},
         )
         assert response.status == status.HTTP_401_UNAUTHORIZED, (
-            "an INVITATION-code must not reset the issuer's password"
+            "an INVITATION code must not reset the issuer's password"
         )
 
         # issuer's password must be unchanged...
@@ -97,8 +97,9 @@ async def test_invitation_code_does_not_complete_password_reset(
         await assert_status(response, status.HTTP_200_OK)
         assert response.url.path == login_url.path
 
-        # ...and the invitation code must still be redeemable (not consumed by the attack)
-        product = products_service.list_products(client.app)[0]
+        # ...and the invitation code must still be redeemable (not consumed by the rejected attempt)
+        products = {p.name: p for p in products_service.list_products(client.app)}
+        product = products[default_product_name]
         assert await _invitations_service.check_and_consume_invitation(
             invitation_code=invitation["code"],
             guest_email="guest@example.com",

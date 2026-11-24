@@ -43,8 +43,11 @@ async def test_validate_confirmation_code_requires_expected_action(
     # the rejected code must survive: only its own action may consume it
     assert await confirmation_service.get_confirmation({"code": invitation_confirmation.code}) is not None
 
-    # without expected_action the lookup stays action-agnostic (existing callers)
-    assert await confirmation_service.validate_confirmation_code(invitation_confirmation.code) is not None
+    # with expected_action=None the lookup stays action-agnostic
+    assert (
+        await confirmation_service.validate_confirmation_code(invitation_confirmation.code, expected_action=None)
+        is not None
+    )
 
 
 async def test_confirmation_token_workflow(
@@ -65,7 +68,7 @@ async def test_confirmation_token_workflow(
 
     # Step 3: Validate the confirmation code
     code = confirmation.code
-    validated_confirmation = await confirmation_service.validate_confirmation_code(code)
+    validated_confirmation = await confirmation_service.validate_confirmation_code(code, expected_action=action)
 
     assert validated_confirmation is not None
     assert validated_confirmation.code == code
@@ -138,6 +141,6 @@ async def test_expired_confirmation_token(
     assert confirmation_3 != confirmation_1
 
     # now all have expired
-    assert await confirmation_service.validate_confirmation_code(confirmation_1.code) is None
-    assert await confirmation_service.validate_confirmation_code(confirmation_2.code) is None
-    assert await confirmation_service.validate_confirmation_code(confirmation_3.code) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_1.code, expected_action=action) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_2.code, expected_action=action) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_3.code, expected_action=action) is None

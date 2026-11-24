@@ -11,6 +11,7 @@ from pydantic import (
 )
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
 from ....locale import translate_message
@@ -135,8 +136,9 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
 
+    # this handler dispatches on confirmation.action itself, so it is action-agnostic on purpose
     confirmation: Confirmation | None = await confirmation_service.validate_confirmation_code(
-        path_params.code.get_secret_value()
+        code=path_params.code.get_secret_value(), expected_action=None
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
@@ -249,7 +251,7 @@ async def complete_reset_password(request: web.Request):
     )
 
     confirmation = await confirmation_service.validate_confirmation_code(
-        code=path_params.code.get_secret_value(), expected_action="RESET_PASSWORD"
+        code=path_params.code.get_secret_value(), expected_action=ConfirmationAction.RESET_PASSWORD.name
     )
 
     if confirmation:
