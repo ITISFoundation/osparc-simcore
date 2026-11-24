@@ -91,6 +91,13 @@ def make_pricing_unit(*, pricing_unit_id: int, default: bool, aws_ec2_instance: 
     )
 
 
+def make_pricing_unit_without_machine(*, pricing_unit_id: int, default: bool = False) -> RutPricingUnitGet:
+    """A pricing unit that defines no EC2 machine, as a per-seat or free unit does"""
+    base = RutPricingUnitGet.model_validate(RutPricingUnitGet.model_json_schema()["examples"][0])
+    no_machine = HardwareInfo(aws_ec2_instances=[])
+    return base.model_copy(update={"pricing_unit_id": pricing_unit_id, "default": default, "specific_info": no_machine})
+
+
 def ec2_type_name_in_pricing_unit_payload(pricing_unit: RutPricingUnitGet) -> str:
     return pricing_unit.specific_info.aws_ec2_instances[0]
 

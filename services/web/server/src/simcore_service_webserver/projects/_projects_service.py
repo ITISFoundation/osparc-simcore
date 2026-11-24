@@ -186,6 +186,7 @@ from .exceptions import (
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
     ParentNodeNotFoundError,
+    PricingLinkUnknownInProductError,
     ProjectCopyingTrashedProjectError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
@@ -927,14 +928,19 @@ async def _aws_ec2_instances_of_pricing_link(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-) -> list[str] | None:
-    """The machine types of a pricing link, or None when the resource-usage-tracker does not
-    know that plan/unit in this product.
+) -> list[str]:
+    """The machine types of a pricing link, empty when the unit defines no machine
+
+    Raises:
+        PricingLinkUnknownInProductError: the resource-usage-tracker has no such plan/unit in this product
+        web.HTTPServiceUnavailable: the resource-usage-tracker could not be reached
     """
     try:
         pricing_unit_get = await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
-    except web.HTTPNotFound:
-        return None
+    except web.HTTPNotFound as exc:
+        raise PricingLinkUnknownInProductError(
+            pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id, product_name=product_name
+        ) from exc
     return pricing_unit_get.specific_info.aws_ec2_instances
 
 
@@ -955,21 +961,21 @@ async def _link_pricing_unit_and_size_node(
     one the resource-usage-tracker does not know in this product (a link copied from
     another product's template while it was unreachable), so that such a link does not
     stay unusable forever.
+
+    A linked unit that defines no machine (e.g. a per-seat unit) leaves the node's
+    resources as they are: there is no machine to size them for.
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
     try:
         link = await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id)
-        aws_ec2_instances: list[str] | None = (
-            await _aws_ec2_instances_of_pricing_link(
-                app, product_name=product_name, pricing_plan_id=link[0], pricing_unit_id=link[1]
-            )
-            if link is not None
-            else None
-        )
-
-        if aws_ec2_instances is None:
-            if link is not None:
+        aws_ec2_instances: list[str] | None = None
+        if link is not None:
+            try:
+                aws_ec2_instances = await _aws_ec2_instances_of_pricing_link(
+                    app, product_name=product_name, pricing_plan_id=link[0], pricing_unit_id=link[1]
+                )
+            except PricingLinkUnknownInProductError:
                 _logger.warning(
                     "Pricing plan %s/unit %s of node %s of project %s is unknown in product %s: "
                     "linking the default unit",
@@ -979,6 +985,9 @@ async def _link_pricing_unit_and_size_node(
                     project_id,
                     product_name,
                 )
+
+        if aws_ec2_instances is None:
+            # the node has no link, or the one it has is unusable in this product
             # NOTE: `cached_stampede` erases the return type of the lookups, hence the annotations at the call sites
             default_info: PricingAndHardwareInfoTuple = await _get_default_pricing_and_hardware_info(
                 app,
@@ -1159,7 +1168,7 @@ async def copy_pricing_links(
     """Copies the source project's pricing links onto the copied nodes.
 
     A link the resource-usage-tracker does not know in the destination product (e.g. a template
-    of another product) is dropped. A link it cannot be asked about is copied unvalidated.
+    of another product) is dropped. A link it cannot be asked about is copied rather than lost.
     Nothing is written on a product that does not pay for its nodes.
 
     Raises:
@@ -1173,26 +1182,26 @@ async def copy_pricing_links(
     db = ProjectDBAPI.get_from_app_context(app)
 
     # one resource-usage-tracker call per distinct plan/unit, not per node: several nodes typically share
-    # a unit, and an unreachable one would otherwise cost one timeout per node
-    validated: dict[PricingPlanAndUnitIdsTuple, bool | None] = {}
+    # a unit, and an unreachable one would otherwise cost one timeout per node. The lookups' own cache
+    # does not help here: it does not hold a failure, and the answer here is the copy's decision
+    keep_link: dict[PricingPlanAndUnitIdsTuple, bool] = {}
 
     for mapped_source_node_id, destination_node_id in old_to_new_node.items():
         source_node_id = NodeID(mapped_source_node_id)
         link = await db.get_project_node_pricing_unit_id(project_uuid=source_project_id, node_uuid=source_node_id)
         if link is None:
             continue
-        if link not in validated:
-            validated[link] = await _validate_pricing_link_for_copy(
+        if link not in keep_link:
+            keep_link[link] = await _is_link_copyable(
                 app,
                 source_project_id=source_project_id,
                 source_node_id=source_node_id,
                 link=link,
                 product_name=product_name,
             )
-        if validated[link] is False:
+        if not keep_link[link]:
             # unknown in this product: the caller links the destination's default unit instead
             continue
-        # True: validated; None: could not be validated, copied rather than lost
         await db.connect_pricing_unit_to_project_node(
             destination_project_id,
             NodeID(destination_node_id),
@@ -1201,20 +1210,26 @@ async def copy_pricing_links(
         )
 
 
-async def _validate_pricing_link_for_copy(
+async def _is_link_copyable(
     app: web.Application,
     *,
     source_project_id: ProjectID,
     source_node_id: NodeID,
     link: PricingPlanAndUnitIdsTuple,
     product_name: ProductName,
-) -> bool | None:
-    """True when the resource-usage-tracker knows ``link`` in this product, False when it
-    does not and None when it could not be asked."""
+) -> bool:
+    """True when the copied node shall keep ``link``
+
+    False when the resource-usage-tracker does not know it in this product. True when it
+    could not be asked: dropping a link because of an outage would cost the copy its
+    pricing state, while a wrong one is repaired by the next billed start.
+    """
     pricing_plan_id, pricing_unit_id = link
     try:
-        await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
-    except web.HTTPNotFound:
+        await _aws_ec2_instances_of_pricing_link(
+            app, product_name=product_name, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
+        )
+    except PricingLinkUnknownInProductError:
         _logger.warning(
             "Pricing plan %s/unit %s of node %s of project %s does not exist in product %s: not copying the link",
             pricing_plan_id,
@@ -1224,7 +1239,7 @@ async def _validate_pricing_link_for_copy(
             product_name,
         )
         return False
-    except Exception:  # pylint: disable=broad-exception-caught
+    except web.HTTPServiceUnavailable:
         _logger.warning(
             "Cannot validate pricing plan %s/unit %s of node %s of project %s in product %s: copying it unvalidated",
             pricing_plan_id,
@@ -1233,7 +1248,6 @@ async def _validate_pricing_link_for_copy(
             source_project_id,
             product_name,
         )
-        return None
     return True
 
 

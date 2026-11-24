@@ -6,6 +6,7 @@ from typing import Any, Final
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from servicelib.redis import ProjectLockError
 
@@ -298,6 +299,20 @@ class DefaultPricingUnitNotFoundError(BaseProjectError):
         super().__init__(**ctxs)
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid
+
+
+class PricingLinkUnknownInProductError(BaseProjectError):
+    msg_template = (
+        "Pricing plan '{pricing_plan_id}'/unit '{pricing_unit_id}' does not exist in product '{product_name}'"
+    )
+
+    def __init__(
+        self, *, pricing_plan_id: PricingPlanId, pricing_unit_id: PricingUnitId, product_name: ProductName, **ctxs
+    ):
+        super().__init__(**ctxs)
+        self.pricing_plan_id = pricing_plan_id
+        self.pricing_unit_id = pricing_unit_id
+        self.product_name = product_name
 
 
 class ClustersKeeperNotAvailableError(BaseProjectError):

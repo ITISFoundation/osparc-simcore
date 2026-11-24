@@ -50,6 +50,7 @@ from pytest_simcore.helpers.project_nodes_pricing import (
     fake_compute_node_resources_for_hardware,
     get_node_pricing_state,
     make_pricing_unit,
+    make_pricing_unit_without_machine,
     regex_for_rut_pricing_unit,
     set_node_pricing_link,
     set_node_required_resources,
@@ -318,6 +319,11 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
 _UNKNOWN_PRICING_PLAN_ID: Final[Annotated[int, doc("a plan the product does not know")]] = 66
 _UNKNOWN_PRICING_UNIT_ID: Final[Annotated[int, doc("a unit of the known plan that does not exist")]] = 77
 
+_KNOWN_PLAN_ID: Final[Annotated[int, doc("a plan this product knows")]] = 21
+_UNIT_WITHOUT_MACHINE_ID: Final[
+    Annotated[int, doc("a unit of a known plan that defines no EC2 machine, e.g. a per-seat unit")]
+] = 22
+
 
 def _comp_node_id(user_project: ProjectDict) -> NodeID:
     return NodeID(next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"]))
@@ -411,6 +417,110 @@ async def test_repair_replaces_a_link_that_is_unknown_in_the_product(
     resources = node_state.required_resources["container"]["resources"]
     assert resources["CPU"]["limit"] == pytest.approx(T3_MEDIUM_DASK_WORKER_CPUS)
     assert resources["RAM"]["limit"] == T3_MEDIUM_DASK_WORKER_RAM_BYTES
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_repair_keeps_the_link_of_a_unit_that_defines_no_machine(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    aioresponses_mocker: AioResponsesMock,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+    with_billed_product: None,
+):
+    """A node linked to a unit the tracker knows but that defines no EC2 machine (a per-seat
+    unit) keeps that link and its resources: there is no machine to size them for, and the
+    link is not unusable, so it must not be replaced by the default one. An empty machine
+    list is an answer, not a failure.
+    """
+    assert client.app
+    project_id = user_project["uuid"]
+    node_id = _comp_node_id(user_project)
+
+    seed_resources = single_container_required_resources(user_project["workbench"][f"{node_id}"]["key"], cpu=0.1)
+    await set_node_pricing_link(
+        sqlalchemy_async_engine,
+        project_id,
+        node_id,
+        pricing_plan_id=_KNOWN_PLAN_ID,
+        pricing_unit_id=_UNIT_WITHOUT_MACHINE_ID,
+    )
+    await set_node_required_resources(sqlalchemy_async_engine, project_id, node_id, seed_resources)
+    aioresponses_mocker.get(
+        regex_for_rut_pricing_unit(
+            f"{get_rut_plugin_settings(client.app).api_base_url}", _KNOWN_PLAN_ID, _UNIT_WITHOUT_MACHINE_ID
+        ),
+        payload=jsonable_encoder(make_pricing_unit_without_machine(pricing_unit_id=_UNIT_WITHOUT_MACHINE_ID)),
+        repeat=True,
+    )
+
+    await _repair(client, logged_user, project_id, osparc_product_name)
+
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    node_state = state[node_id]
+    assert node_state.pricing_plan_id == _KNOWN_PLAN_ID
+    assert node_state.pricing_unit_id == _UNIT_WITHOUT_MACHINE_ID
+    assert node_state.required_resources == jsonable_encoder(seed_resources)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_repair_links_the_default_unit_on_every_node_sharing_an_unknown_link(
+    client: TestClient,
+    create_project: Callable[[str, dict[str, Any]], Awaitable[ProjectDict]],
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    project_db_cleaner: None,
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    aioresponses_mocker: AioResponsesMock,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+    mocker: MockerFixture,
+    with_billed_product: None,
+):
+    """Two nodes carrying the same link the product does not know are both re-linked to the
+    default unit. The tracker is asked once per node here: a lookup that failed is not
+    cached (see `test_repair_asks_rut_once_per_distinct_pricing_unit` for a successful one),
+    so the repair fixes both links in one start.
+    """
+    assert client.app
+    project = await create_project("shared-unknown-link-project", _TWO_COMP_NODES_WORKBENCH)
+    project_id = project["uuid"]
+    for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
+        await set_node_pricing_link(
+            sqlalchemy_async_engine,
+            project_id,
+            node_id,
+            pricing_plan_id=_UNKNOWN_PRICING_PLAN_ID,
+            pricing_unit_id=_UNKNOWN_PRICING_UNIT_ID,
+        )
+    aioresponses_mocker.get(
+        regex_for_rut_pricing_unit(
+            f"{get_rut_plugin_settings(client.app).api_base_url}",
+            _UNKNOWN_PRICING_PLAN_ID,
+            _UNKNOWN_PRICING_UNIT_ID,
+        ),
+        status=status.HTTP_404_NOT_FOUND,
+        repeat=True,
+    )
+    link_lookup = mocker.spy(_projects_service.rut_api, "get_pricing_plan_unit")
+
+    await _repair(client, logged_user, project_id, osparc_product_name)
+
+    assert link_lookup.call_count == 2
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
+        node_state = state[NodeID(node_id)]
+        assert node_state.pricing_plan_id == DEFAULT_PRICING_PLAN_ID
+        assert node_state.pricing_unit_id == DEFAULT_PRICING_UNIT_ID
+        assert node_state.required_resources
+        assert node_state.required_resources["container"]["resources"] == T3_MEDIUM_DASK_WORKER_LIMITS
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
