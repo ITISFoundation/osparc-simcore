@@ -294,7 +294,9 @@ async def check_and_consume_invitation(
 
     # database-type invitations
     confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
-    if confirmation := await confirmation_service.validate_confirmation_code(invitation_code):
+    if confirmation := await confirmation_service.validate_confirmation_code(
+        invitation_code, expected_action=ConfirmationAction.INVITATION.name
+    ):
         try:
             confirmation_token_dict = {
                 "code": confirmation.code,
