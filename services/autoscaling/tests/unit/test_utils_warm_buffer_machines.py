@@ -8,7 +8,6 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,
-    BOOT_STEP_MARKER_PREFIX,
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     WARM_BUFFER_MACHINE_TAG_KEY,
 )
@@ -110,10 +109,8 @@ def test_ec2_warm_buffer_startup_script_logs_in_before_warming_up(app_environmen
     steps = ec2_warm_buffer_startup_script(boot_specific, app_settings).split(" && ")
 
     # the machine is not in the swarm yet here, so a failing login costs nothing but a replaced machine
-    assert steps[0] == f'echo "{BOOT_STEP_MARKER_PREFIX} registry-login"'
-    assert steps[1].startswith("( ")
-    assert " docker login " in steps[1]
-    assert steps[2] == f'echo "{BOOT_STEP_MARKER_PREFIX} pre-pull-compose-file"'
+    assert steps[0].startswith("( ")
+    assert " docker login " in steps[0]
 
 
 def test_ec2_warm_buffer_startup_script_without_pre_pulling_skips_the_login(app_environment: EnvVarsDict):

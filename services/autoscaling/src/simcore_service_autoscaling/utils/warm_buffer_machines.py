@@ -96,19 +96,14 @@ def ec2_warm_buffer_startup_script(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> str:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    startup_commands: list[str] = []
-    for index, custom_script in enumerate(ec2_boot_specific.custom_boot_scripts, start=1):
-        startup_commands.append(utils_docker.get_boot_step_marker_bash_command(f"custom-script-{index}"))
-        startup_commands.append(custom_script)
+    startup_commands: list[str] = ec2_boot_specific.custom_boot_scripts.copy()
 
     desired_pre_pull_images = utils_docker.compute_full_list_of_pre_pulled_images(ec2_boot_specific, app_settings)
     if desired_pre_pull_images:
         assert app_settings.AUTOSCALING_REGISTRY  # nosec
         startup_commands.extend(
             (
-                utils_docker.get_boot_step_marker_bash_command("registry-login"),
                 utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY),
-                utils_docker.get_boot_step_marker_bash_command("pre-pull-compose-file"),
                 utils_docker.write_compose_file_command(desired_pre_pull_images),
             )
         )

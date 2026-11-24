@@ -16,10 +16,7 @@ DOCKER_PULL_COMMAND: Final[str] = f"{DOCKER_COMPOSE_CMD} -f {PRE_PULL_COMPOSE_PA
 #
 # EC2 boot scripts
 #
-# Printed before each boot step so cloud-init-output names the step that died
-BOOT_STEP_MARKER_PREFIX: Final[str] = "simcore-boot"
-# A machine that cannot log in to the registry retries this many times, one second apart, and fails its
-# boot otherwise. It must not join the swarm in between: it would then be assigned services it cannot pull.
+# The machine must not join the swarm before logging in, or it gets services it cannot pull
 DOCKER_LOGIN_MAX_ATTEMPTS: Final[PositiveInt] = 3
 DOCKER_LOGIN_ATTEMPT_TIMEOUT_S: Final[PositiveInt] = 20
 # `timeout` sends SIGTERM at ATTEMPT_TIMEOUT_S and SIGKILL this many seconds later

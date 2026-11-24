@@ -41,7 +41,6 @@ from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..constants import (
-    BOOT_STEP_MARKER_PREFIX,
     DOCKER_COMPOSE_CMD,
     DOCKER_COMPOSE_PULL_SCRIPT_PATH,
     DOCKER_LOGIN_ATTEMPT_TIMEOUT_S,
@@ -461,23 +460,12 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempoten
     raise RuntimeError(msg)
 
 
-def get_boot_step_marker_bash_command(step_name: str) -> str:
-    """Returns a command marking the start of a boot step in the log.
-
-    cloud-init reports a failing boot script as `Failed to run module scripts_user` without saying which
-    command failed, so the last marker in cloud-init-output names the step that died.
-    """
-    return f'echo "{BOOT_STEP_MARKER_PREFIX} {step_name}"'
-
-
 def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
     """Returns the command logging a machine in to the registry at boot, retrying it up to DOCKER_LOGIN_MAX_ATTEMPTS.
 
     The retry runs in a subshell that exits on the first success or with an error after the last attempt.
-    Without the subshell the status the enclosing chain sees would be that of the last command in the loop
-    body, which succeeds, and the machine would join the swarm without credentials. `timeout` is looked up at
-    boot rather than assumed: a worker image without it gets uncapped attempts instead of a failing boot. The
-    command contains no `&` because the boot script joins its steps on that operator.
+    `timeout` is looked up at boot rather than assumed: a worker image without it gets uncapped attempts
+    instead of a failing boot. The command contains no `&` because the boot script joins its steps on it.
     """
     login_command = " ".join(
         [
