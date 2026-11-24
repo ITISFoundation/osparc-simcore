@@ -7,8 +7,10 @@
 from collections.abc import Callable
 
 import pytest
+from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from models_library.products import ProductName
+from models_library.users import UserID
 from pytest_mock import MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, parse_test_marks
@@ -18,6 +20,8 @@ from servicelib.rest_responses import unwrap_envelope
 from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
+from simcore_service_webserver.login import _invitations_service
+from simcore_service_webserver.login._application_keys import CONFIRMATION_SERVICE_APPKEY
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
@@ -28,6 +32,7 @@ from simcore_service_webserver.login.constants import (
     MSG_WEAK_PASSWORD,
 )
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_settings
+from simcore_service_webserver.products import products_service
 from simcore_service_webserver.users import users_service
 from yarl import URL
 
@@ -58,6 +63,68 @@ async def client(
 ) -> TestClient:
     assert app_products_names
     return await aiohttp_client(web_server)
+
+
+async def test_invitation_code_does_not_complete_password_reset(
+    client: TestClient,
+    default_product_name: ProductName,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as issuer:
+        invitation = await _invitations_service.create_invitation_token(
+            client.app, user_id=UserID(issuer["id"]), user_email=issuer["email"]
+        )
+        complete_reset_password_url = client.app.router["complete_reset_password"].url_for(code=invitation["code"])
+        new_password = generate_password()
+
+        response = await client.post(
+            f"{complete_reset_password_url}",
+            json={"password": new_password, "confirm": new_password},
+        )
+        assert response.status == status.HTTP_401_UNAUTHORIZED, (
+            "an INVITATION code must not reset the issuer's password"
+        )
+
+        login_url = client.app.router["auth_login"].url_for()
+        response = await client.post(
+            f"{login_url}",
+            json={"email": issuer["email"], "password": issuer["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_200_OK)
+        assert response.url.path == login_url.path
+
+        products = {p.name: p for p in products_service.list_products(client.app)}
+        product = products[default_product_name]
+        invitation_data = await _invitations_service.check_and_consume_invitation(
+            invitation_code=invitation["code"],
+            guest_email="guest@example.com",
+            product=product,
+            app=client.app,
+        )
+        assert invitation_data.issuer == issuer["email"]
+
+
+async def test_reset_password_code_is_not_an_invitation_code(
+    client: TestClient,
+    default_product_name: ProductName,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as user:
+        confirmation_service = client.app[CONFIRMATION_SERVICE_APPKEY]
+        confirmation = await confirmation_service.get_or_create_confirmation_without_data(
+            user_id=UserID(user["id"]), action="RESET_PASSWORD"
+        )
+        products = {p.name: p for p in products_service.list_products(client.app)}
+
+        with pytest.raises(web.HTTPForbidden):
+            await _invitations_service.check_and_consume_invitation(
+                invitation_code=confirmation.code,
+                guest_email="guest@example.com",
+                product=products[default_product_name],
+                app=client.app,
+            )
 
 
 async def test_two_steps_action_confirmation_workflow(
@@ -302,10 +369,12 @@ async def test_unregistered_product(
 
     async with NewUser(app=client.app) as user:
         # allow in
-        await auto_add_user_to_product_group(client.app, user_id=user["id"], product_name=default_product_name)
-        assert await users_service.is_user_in_product(client.app, user_id=user["id"], product_name=default_product_name)
+        await auto_add_user_to_product_group(client.app, user_id=UserID(user["id"]), product_name=default_product_name)
+        assert await users_service.is_user_in_product(
+            client.app, user_id=UserID(user["id"]), product_name=default_product_name
+        )
         assert not await users_service.is_user_in_product(
-            client.app, user_id=user["id"], product_name=other_product_name
+            client.app, user_id=UserID(user["id"]), product_name=other_product_name
         )
 
         # Simulate user registered in a different product

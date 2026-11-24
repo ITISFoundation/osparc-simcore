@@ -8,17 +8,25 @@ import json
 import logging
 import os
 import random
+import re
 from pathlib import Path
+from typing import Any
 
 import pytest
+from aiohttp import web
 from faker import Faker
+from models_library.products import ProductName
+from pydantic import HttpUrl
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT
+from simcore_postgres_database.models.products import products as products_table
 from simcore_service_webserver.application_settings_utils import AppConfigDict
+from simcore_service_webserver.products.models import Product
 
 
 @pytest.fixture
@@ -111,7 +119,7 @@ def mock_env_devel_environment(
 @pytest.fixture
 def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     """envvars produced @Makefile (export)"""
-    # TODO: add Makefile recipe 'make dump-envs' to produce the file we load here
+    # TODO: add Makefile recipe 'make dump-envs' to produce the file we load here  # noqa: FIX002
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -140,7 +148,7 @@ def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 @pytest.fixture
 def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     #
-    # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
+    # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv  # noqa: E501
     #
     return setenvs_from_envfile(
         monkeypatch,
@@ -188,7 +196,7 @@ def mock_webserver_service_environment(
     logging.getLogger().info("Composing %s service environment ... ", service_name)
 
     # @docker compose config (overrides)
-    # TODO: get from docker compose config
+    # TODO: get from docker compose config  # noqa: FIX002
     # r'- ([A-Z2_]+)=\$\{\1:-([\w-]+)\}'
 
     # - .env-devel + docker-compose service environs
@@ -266,11 +274,32 @@ def mocked_login_required(mocker: MockerFixture):
 @pytest.fixture
 def mocked_db_setup_in_setup_security(mocker: MockerFixture) -> MockType:
     """Mocking avoids setting up a full db"""
-    import simcore_service_webserver.security.plugin
+    import simcore_service_webserver.security.plugin  # noqa: PLC0415
 
     return mocker.patch.object(
         simcore_service_webserver.security.plugin,
         "setup_db",
         autospec=True,
         return_value=True,
+    )
+
+
+@pytest.fixture
+def app() -> web.Application:
+    return web.Application()
+
+
+@pytest.fixture
+def product(faker: Faker, product_name: ProductName) -> Product:
+    column_defaults: dict[str, Any] = {
+        c.name: f"{c.server_default.arg}"  # type: ignore[attr-defined]
+        for c in products_table.columns
+        if c.server_default
+    }
+    column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
+    return Product(
+        name=product_name,
+        host_regex=re.compile(faker.word()),
+        base_url=HttpUrl(faker.url()),
+        **column_defaults,
     )

@@ -18,3 +18,11 @@ class WrongPasswordError(LoginError):
 
 class WeakPasswordError(LoginError):
     msg_template = "Password shorter than the minimum length of {LOGIN_PASSWORD_MIN_LENGTH} characters"
+
+
+class LoginThrottledError(LoginError):
+    msg_template = "Login throttled, retry after {retry_after_sec} sec"
+
+
+class LoginThrottleUnavailableError(LoginError):
+    msg_template = "Login throttle unavailable"
