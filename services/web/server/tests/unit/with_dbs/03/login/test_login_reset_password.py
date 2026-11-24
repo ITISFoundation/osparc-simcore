@@ -7,6 +7,7 @@
 from collections.abc import Callable
 
 import pytest
+from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -20,6 +21,7 @@ from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.login import _invitations_service
+from simcore_service_webserver.login._application_keys import CONFIRMATION_SERVICE_APPKEY
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
@@ -94,12 +96,35 @@ async def test_invitation_code_does_not_complete_password_reset(
 
         products = {p.name: p for p in products_service.list_products(client.app)}
         product = products[default_product_name]
-        assert await _invitations_service.check_and_consume_invitation(
+        invitation_data = await _invitations_service.check_and_consume_invitation(
             invitation_code=invitation["code"],
             guest_email="guest@example.com",
             product=product,
             app=client.app,
         )
+        assert invitation_data.issuer == issuer["email"]
+
+
+async def test_reset_password_code_is_not_an_invitation_code(
+    client: TestClient,
+    default_product_name: ProductName,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as user:
+        confirmation_service = client.app[CONFIRMATION_SERVICE_APPKEY]
+        confirmation = await confirmation_service.get_or_create_confirmation_without_data(
+            user_id=UserID(user["id"]), action="RESET_PASSWORD"
+        )
+        products = {p.name: p for p in products_service.list_products(client.app)}
+
+        with pytest.raises(web.HTTPForbidden):
+            await _invitations_service.check_and_consume_invitation(
+                invitation_code=confirmation.code,
+                guest_email="guest@example.com",
+                product=products[default_product_name],
+                app=client.app,
+            )
 
 
 async def test_two_steps_action_confirmation_workflow(
