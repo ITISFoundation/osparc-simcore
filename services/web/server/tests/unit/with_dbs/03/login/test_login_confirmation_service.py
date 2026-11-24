@@ -21,8 +21,6 @@ async def test_validate_confirmation_code_requires_expected_action(
 ):
     user_id = registered_user["id"]
 
-    # an invitation code is issued to the *guest* but bound to the *issuer* user_id,
-    # so it must never validate when presented for a different action (e.g. reset-password)
     invitation_confirmation = await confirmation_service.create_confirmation(
         user_id=UserID(user_id), action="INVITATION", data="{}"
     )
@@ -40,7 +38,6 @@ async def test_validate_confirmation_code_requires_expected_action(
         is None
     ), "a code created for INVITATION must not authorize RESET_PASSWORD"
 
-    # the rejected code must survive: only its own action may consume it
     assert await confirmation_service.get_confirmation({"code": invitation_confirmation.code}) is not None
 
     # with expected_action=None the lookup stays action-agnostic

@@ -67,10 +67,6 @@ async def test_invitation_code_does_not_complete_password_reset(
     client: TestClient,
     default_product_name: ProductName,
 ):
-    """A confirmation code is only valid for the action it was created for: an
-    INVITATION code is delivered to the invitee while its row is bound to the
-    issuer's user_id, so it must not complete a password reset for the issuer.
-    """
     assert client.app
 
     async with NewUser(app=client.app) as issuer:
