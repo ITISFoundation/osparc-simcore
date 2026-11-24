@@ -228,6 +228,11 @@ def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("REGISTRY_AUTH")
 
 
+@pytest.fixture
+def anonymous_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REGISTRY_AUTH", "False")
+
+
 async def test_ec2_startup_script_with_pre_pulling(
     minimal_configuration: None,
     ec2_instances_boot_ami_pre_pull: EnvVarsDict,
@@ -333,6 +338,28 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     assert len(steps) == 1, f"expected only a swarm join without a registry, got {steps}"
     assert steps[0].startswith("docker swarm join "), f"expected the machine to join the swarm, got {steps[0]}"
     assert "docker login" not in startup_script, f"expected no login without a registry, got {startup_script}"
+
+
+async def test_ec2_startup_script_with_pre_pulling_but_anonymous_registry(
+    minimal_configuration: None,
+    ec2_instances_boot_ami_pre_pull: EnvVarsDict,
+    with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
+    anonymous_registry: None,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_REGISTRY
+    assert not app_settings.AUTOSCALING_REGISTRY.REGISTRY_AUTH
+    instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
+    assert instance_boot_specific.pre_pull_images
+    startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
+
+    steps = _boot_steps(startup_script)
+    # images pull without credentials here, so a login failure must not keep the machine out of the swarm
+    assert "docker login" not in startup_script, f"expected no login without registry authentication, got {steps}"
+    join = next(step for step in steps if step.startswith("docker swarm join "))
+    pull = next(index for index, step in enumerate(steps) if step == "./docker-pull-script.sh")
+    assert steps.index(join) < pull, f"expected the machine to join before pulling, got {steps}"
 
 
 def test_sort_empty_drained_nodes(

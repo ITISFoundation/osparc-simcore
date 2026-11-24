@@ -113,6 +113,21 @@ def test_ec2_warm_buffer_startup_script_logs_in_before_warming_up(app_environmen
     assert " docker login " in steps[0], f"expected the machine to log in before warming up, got {steps[0]}"
 
 
+def test_ec2_warm_buffer_startup_script_without_an_authentication_no_login(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("REGISTRY_AUTH", "False")
+    app_settings = ApplicationSettings.create_from_envs()
+    assert app_settings.AUTOSCALING_REGISTRY
+    boot_specific = EC2InstanceBootSpecific(ami_id="ami-0123456789abcdef0", pre_pull_images=["nginx:latest"])
+
+    steps = ec2_warm_buffer_startup_script(boot_specific, app_settings).split(" && ")
+
+    # images pull without credentials here, so the machine still gets its compose file
+    assert "docker login" not in " && ".join(steps), f"expected no login without registry authentication, got {steps}"
+    assert steps[0].startswith('echo "'), f"expected the compose file to be written, got {steps[0]}"
+
+
 def test_ec2_warm_buffer_startup_script_without_pre_pulling_skips_the_login(app_environment: EnvVarsDict):
     app_settings = ApplicationSettings.create_from_envs()
     boot_specific = EC2InstanceBootSpecific(ami_id="ami-0123456789abcdef0")

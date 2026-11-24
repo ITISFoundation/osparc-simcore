@@ -63,8 +63,8 @@ async def ec2_startup_script(ec2_boot_specific: EC2InstanceBootSpecific, app_set
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     startup_commands: list[str] = ec2_boot_specific.custom_boot_scripts.copy()
 
-    if app_settings.AUTOSCALING_REGISTRY:
-        startup_commands.append(utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY))
+    if (registry := app_settings.AUTOSCALING_REGISTRY) and registry.REGISTRY_AUTH:
+        startup_commands.append(utils_docker.get_docker_login_on_start_bash_command(registry))
 
     startup_commands.append(
         await utils_docker.get_docker_swarm_join_bash_command(
