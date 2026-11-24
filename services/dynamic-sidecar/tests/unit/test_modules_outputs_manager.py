@@ -46,6 +46,7 @@ from simcore_service_dynamic_sidecar.modules.outputs._manager import (
 # UTILS
 
 _SHORT_QUIET_S: PositiveFloat = 0.5
+_SHORT_SWEEP_S: PositiveFloat = 0.2
 
 
 @dataclass
@@ -57,6 +58,7 @@ class _MockError:
 @dataclass
 class ToggleErrorRaising:
     mock: AsyncMock
+    successful_port_keys: list[str] = field(default_factory=list)
     _raise_errors: bool = True
 
     def stop_raising_errors(self) -> None:
@@ -93,6 +95,15 @@ def short_quiet(mocker: MockerFixture) -> None:
     mocker.patch.object(fingerprinter_module, "_QUIET_SECONDS", _SHORT_QUIET_S)
 
 
+@pytest.fixture
+def short_sweep(mocker: MockerFixture) -> None:
+    """short sweep period: request before outputs_manager so it applies to the first sweep"""
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs._manager._SWEEP_INTERVAL_S",
+        _SHORT_SWEEP_S,
+    )
+
+
 @pytest.fixture(params=[0.01])
 def upload_duration(request: pytest.FixtureRequest) -> PositiveFloat:
     return request.param
@@ -127,6 +138,7 @@ def mock_upload_outputs_raises_error(
         if error_toggle._raise_errors:  # noqa: SLF001
             raise mock_error.error_class(mock_error.message)
 
+        error_toggle.successful_port_keys.extend(kwargs["port_keys"])
         await asyncio.sleep(upload_duration)
 
     mock = mocker.patch(
@@ -207,6 +219,7 @@ async def outputs_manager(
         io_log_redirect_cb=None,
         task_monitor_interval_s=0.01,
         progress_cb=None,
+        background_uploads_enabled=True,
     )
     await outputs_manager.start()
     yield outputs_manager
@@ -305,6 +318,7 @@ async def single_port_manager(
         io_log_redirect_cb=None,
         task_monitor_interval_s=0.01,
         progress_cb=None,
+        background_uploads_enabled=True,
     )
     await outputs_manager.start()
     yield outputs_manager, outputs_dir / "output_1"
@@ -425,24 +439,27 @@ async def test_unchanged_content_is_not_uploaded_again(
 
 
 async def test_failed_upload_is_retried_by_the_safety_sweep(
+    short_sweep: None,
     mock_upload_outputs_raises_error: ToggleErrorRaising,
     outputs_manager: OutputsManager,
-    mocker: MockerFixture,
     port_keys: list[str],
+    outputs_path: Path,
 ):
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs._manager._SWEEP_INTERVAL_S",
-        0.2,
-    )
     port_key = port_keys[0]
+    for key in port_keys:
+        port_dir = outputs_path / key
+        port_dir.mkdir()
+        (port_dir / "f.dat").write_bytes(b"content awaiting a successful upload")
     await outputs_manager.port_key_content_changed(port_key)
     with pytest.raises(UploadPortsFailedError):
         await outputs_manager.wait_for_all_uploads_to_finish()
 
     mock_upload_outputs_raises_error.stop_raising_errors()
-    # no new event and no save: only the periodic safety sweep notices the unuploaded content
+    # the failed attempt above recorded nothing: only a later success can fill the list
+    assert mock_upload_outputs_raises_error.successful_port_keys == []
+    # no new event and no save: the periodic safety sweep notices the unuploaded content
     await asyncio.sleep(1)
-    assert port_key in _uploaded_port_keys(mock_upload_outputs_raises_error.mock)
+    assert port_key in mock_upload_outputs_raises_error.successful_port_keys
 
 
 async def test_content_changed_during_upload_is_reuploaded_without_new_event(
@@ -478,6 +495,90 @@ async def test_content_change_event_during_upload_cancels_and_reschedules(
 
     await outputs_manager.wait_for_all_uploads_to_finish()
     assert pausable_upload.calls.count(["output_1"]) == 2
+
+
+# TESTS: what a finished upload certifies
+
+
+async def test_reverted_content_after_a_replaced_put_is_uploaded_anyway(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    v1 = b"v1 certified by the first upload"
+    v2 = b"v2 shipped by the replacement put"
+    _write_port_version(port_dir, v1)
+
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    pausable_upload.release.set()
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 1
+
+    pausable_upload.started.clear()
+    pausable_upload.release.clear()
+    _write_port_version(port_dir, v2)
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+
+    _write_port_version(port_dir, v1)  # the content returns to the certified state while the PUT ships v2
+    pausable_upload.release.set()
+
+    # the PUT stored bytes no scan verified: the v1 certification is void
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    pausable_upload.release.set()
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 3
+
+
+# TESTS: background scheduling and its output-IO gate
+
+
+async def test_safety_sweep_finds_a_port_that_never_delivered_an_event(
+    short_sweep: None,
+    mock_upload_outputs: AsyncMock,
+    outputs_manager: OutputsManager,
+    outputs_path: Path,
+    port_keys: list[str],
+):
+    for port_key in port_keys:
+        (outputs_path / port_key).mkdir()
+    (outputs_path / port_keys[0] / "f.dat").write_bytes(b"content nobody announced")
+
+    # no event and no save ever touched this port: only the sweep can discover it
+    await asyncio.sleep(1)
+    assert port_keys[0] in _uploaded_port_keys(mock_upload_outputs)
+
+
+async def test_disabled_output_io_stops_sweeps_and_quiet_scheduling(
+    short_sweep: None,
+    mock_upload_outputs: AsyncMock,
+    outputs_manager: OutputsManager,
+    outputs_path: Path,
+    port_keys: list[str],
+):
+    outputs_manager.set_background_uploads_enabled(is_enabled=False)
+    for port_key in port_keys:
+        (outputs_path / port_key).mkdir()
+    (outputs_path / port_keys[0] / "f.dat").write_bytes(b"written while output IO is disabled")
+
+    await asyncio.sleep(1)
+    assert _uploaded_port_keys(mock_upload_outputs) == []
+
+    outputs_manager.set_background_uploads_enabled(is_enabled=True)
+    await asyncio.sleep(1)
+    assert port_keys[0] in _uploaded_port_keys(mock_upload_outputs)
+
+
+async def test_save_uploads_while_output_io_is_disabled(
+    mock_upload_outputs: AsyncMock,
+    outputs_manager: OutputsManager,
+    port_keys: list[str],
+):
+    outputs_manager.set_background_uploads_enabled(is_enabled=False)
+    await outputs_manager.port_key_content_changed(port_keys[0])
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert port_keys[0] in _uploaded_port_keys(mock_upload_outputs)
 
 
 # TESTS: port key tracker
@@ -696,9 +797,13 @@ async def test_upload_that_certified_nothing_is_uploaded_again(
     short_quiet: None,
     outputs_manager: OutputsManager,
     port_keys: list[str],
+    outputs_path: Path,
     mocker: MockerFixture,
 ) -> None:
     port_key = port_keys[0]
+    port_dir = outputs_path / port_key
+    port_dir.mkdir(parents=True, exist_ok=True)
+    (port_dir / "f.dat").write_bytes(b"content the first upload could not identify")
     fingerprint = outputs_manager._get_fingerprint(port_key)  # noqa: SLF001
     assert fingerprint is not None
     real_take_upload_candidate = fingerprint.take_upload_candidate

@@ -1,10 +1,4 @@
-"""Quiet-trigger content tracking for the outputs upload policy.
-
-One `PortFingerprint` object per output port owns the whole lifecycle of that port:
-its file ledger, its fingerprint, its quiet-period timer, and the fingerprint of its
-last successful upload. An upload is requested `_QUIET_SECONDS` after the last
-filesystem event, once repeated scans agree the content stopped moving.
-"""
+"""Quiet-trigger content tracking for the outputs upload policy."""
 
 import asyncio
 import logging
@@ -40,9 +34,9 @@ type OnStableChangeCB = Callable[[str], Awaitable[None]]
 
 
 class CheckOutcome(Enum):
-    STABLE_MATCHING = auto()  # content static and equal to the last recorded upload
-    STABLE_NEW = auto()  # content static and different from the last recorded upload
-    UNSTABLE = auto()  # content still moving within the episode
+    STABLE_MATCHING = auto()  # equal to the last uploaded fingerprint
+    STABLE_NEW = auto()  # different from the last uploaded fingerprint
+    UNSTABLE = auto()  # the episode ended with the content still moving
 
 
 @dataclass(slots=True)
@@ -74,7 +68,7 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
     try:
         digest, stat_after = _hash_file(Path(path_str))
     except OSError as err:
-        # a random digest marks each scan as changed: an unhashable file keeps saves uploading
+        # a changing digest keeps the port unstable, so saves still upload it
         _logger.warning("port file %s cannot be hashed (%s), treating it as changed", path_str, err)
         record.digest = uuid4().bytes
         return
@@ -84,8 +78,9 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
 
 
 def _broken_link_kind(entry: os.DirEntry[str]) -> str:
-    """Identifies an unstatable entry; the readlink can fail too (e.g. ENAMETOOLONG deep links)."""
+    """Returns the kind string of an entry that cannot be stat'ed."""
     with suppress(OSError):
+        # readlink can fail as well: ENAMETOOLONG on a deep tree
         return f"x{Path(entry.path).readlink()}"
     return f"n{entry.name}"
 
@@ -117,8 +112,8 @@ def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
     for rel_path in sorted(entries):
         record = entries[rel_path]
         if record.digest is None:
-            entry_text = f"p\x00{rel_path}"  # pending hash: never equals a settled entry record
-        elif record.seen_size < 0:  # non-file entry, digest carries the kind
+            entry_text = f"p\x00{rel_path}"  # a pending hash never equals a settled record
+        elif record.seen_size < 0:  # a non-file record carries its kind in digest
             entry_text = f"{os.fsdecode(record.digest)}\x00{rel_path}"
         else:
             entry_text = f"f\x00{rel_path}\x00{record.digest_size}\x00{record.digest.hex()}"
@@ -152,8 +147,6 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         self._scan_lock = asyncio.Lock()
         self._episode_seq = 0
         self._episode_task: asyncio.Task[None] | None = None
-
-    # -- event entry point ------------------------------------------------------
 
     def note_event(self) -> None:
         """Records filesystem activity: the check episode starts `_QUIET_SECONDS` after the last one."""
@@ -198,11 +191,9 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
             await self._on_stable_change(self._port_key)
 
     def shutdown(self) -> None:
-        self._episode_seq += 1  # late continuations of a running episode see the stale sequence
+        self._episode_seq += 1  # a running episode sees a stale sequence and stops
         if self._episode_task is not None and not self._episode_task.done():
             self._episode_task.cancel()
-
-    # -- the check episode --------------------------------------------------------
 
     async def _run_episode(self, seq: int) -> CheckOutcome | None:
         """Scans until two finished scans agree; None when an event abandoned the episode."""
@@ -236,14 +227,12 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
             return None
         return outcome
 
-    # -- the scan -----------------------------------------------------------------
-
     async def _scan(self) -> _ScanResult:
         async with self._scan_lock:
             loop = asyncio.get_running_loop()
             entries, hash_jobs = await asyncio.to_thread(self._collect_entries)
             if hash_jobs:
-                # heavy step last: digests of changed files, capped by the hash pool size
+                # hashing runs after the stat pass and covers only the files that changed
                 await asyncio.gather(
                     *(loop.run_in_executor(self._hash_executor, _fill_digest, job) for job in hash_jobs)
                 )
@@ -253,8 +242,6 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
             self._fingerprint = fingerprint
             self._pending_hashes = sum(1 for record in entries.values() if record.digest is None)
             return _ScanResult(fingerprint=fingerprint, pending_hashes=self._pending_hashes)
-
-    # -- upload bookkeeping ---------------------------------------------------------
 
     def take_upload_candidate(self) -> str | None:
         """Captures the confirmed fingerprint an upload would send; None while content is in motion."""
@@ -267,7 +254,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         self._upload_candidate = fingerprint
 
     def note_upload_uncertified(self) -> None:
-        """Drops what an unidentified PUT would have certified: its content can never be skipped."""
+        """Clears the certification of an unidentified PUT: its content stays eligible."""
         self._upload_candidate = None
         self._uploaded_fingerprint = None
 
@@ -285,10 +272,8 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
             self._uploaded_fingerprint = self._fingerprint
         return unchanged
 
-    # -- the walk --------------------------------------------------------------------
-
     def _collect_entries(self) -> tuple[dict[str, _FileRecord], list[tuple[str, _FileRecord]]]:
-        """Walk + stat pass: the cheap checks run first so a change is flagged before any hashing."""
+        """Lists and stats the tree, then queues only the files that changed for hashing."""
         entries: dict[str, _FileRecord] = {}
         hash_jobs: list[tuple[str, _FileRecord]] = []
         pending_directories: list[tuple[str, str]] = [(str(self._directory), "")]
@@ -309,7 +294,12 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         try:
             scandir_iterator = os.scandir(directory)
         except FileNotFoundError:
-            return  # the directory vanished mid-scan: the next scan sees what is there now
+            if prefix:
+                return  # the directory vanished mid-scan: the next scan sees what is there now
+            # a missing port root hides all content: an empty listing here must never certify or upload
+            _logger.warning("port directory %s is missing, content unverified", directory)
+            entries[f"{prefix}."] = _unlistable_record()
+            return
         except OSError as err:
             # an unlistable directory hides content: the port stays pending until it can be read again
             _logger.warning("port directory %s cannot be listed (%s), content unverified", directory, err)

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import time
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from collections.abc import AsyncIterator
@@ -143,6 +144,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         upload_upon_api_request: bool = True,
         task_cancellation_timeout_s: PositiveFloat = 5,
         task_monitor_interval_s: PositiveFloat = 1.0,
+        background_uploads_enabled: bool = False,
     ):
         self.outputs_context = outputs_context
         self.port_notifier = port_notifier
@@ -162,6 +164,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_scheduler_worker: Task | None = None
         self._task_sweep: Task | None = None
         self._next_sweep_mono: float = 0.0
+        self._sweep_forced: bool = False
+        # output IO starts disabled (container creation pending), like the watchdog handler
+        self._background_uploads_enabled: bool = background_uploads_enabled
 
         # keep track if a port was uploaded and there was an error, remove said error if last upload was ok
         self._last_upload_error_tracker: dict[str, str | None] = {}
@@ -188,8 +193,17 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             return
         fingerprint.note_event()
 
+    def set_background_uploads_enabled(self, *, is_enabled: bool) -> None:
+        """Background scheduling follows the output-IO state; explicit saves stay ungated"""
+        if is_enabled and not self._background_uploads_enabled:
+            self._sweep_forced = True  # content may have changed while disabled: re-check everything
+        self._background_uploads_enabled = is_enabled
+
     async def _on_stable_change(self, port_key: str) -> None:
         """a quiet-proven fingerprint differing from the last upload: schedule the upload"""
+        if not self._background_uploads_enabled:
+            _logger.info("port %s: output IO disabled, the sweep on re-enable will retry this check", port_key)
+            return
         if not await self._port_key_tracker.add_pending_unless_uploading(port_key):
             _logger.info(
                 "port %s: new content while an upload is in flight, the post-upload check picks it up", port_key
@@ -265,7 +279,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         try:
             for port_key in port_keys:
                 if port_key in failed_port_keys:
-                    continue  # the safety sweep retries unuploaded content once the port quiets down
+                    continue  # the sweep retries it after the content goes quiet
                 fingerprint = self._get_fingerprint(port_key)
                 if fingerprint is None:
                     continue
@@ -276,7 +290,12 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
             # re-arm first: a waiter must not see a cleared tracker with an episode pending
             for port_key in rearm_port_keys:
-                (fingerprint := self._get_fingerprint(port_key)).note_event()  # type: ignore[union-attr]
+                fingerprint = self._get_fingerprint(port_key)
+                if fingerprint is None:
+                    continue
+                # the PUT stored bytes no scan verified: the previous certification is void
+                fingerprint.note_upload_uncertified()
+                fingerprint.note_event()
         finally:
             # the uploading set must never outlive this task: it blocks every later upload
             await self._port_key_tracker.remove_all_uploading()
@@ -290,11 +309,28 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await _cancel_task(self._task_uploading_followup, self.task_cancellation_timeout_s)
             self._task_uploading_followup = None
 
+    def _port_directory_has_content(self, port_key: str) -> bool:
+        try:
+            with os.scandir(self.outputs_context.outputs_path / port_key) as entries:
+                return next(entries, None) is not None
+        except FileNotFoundError:
+            return False
+        except OSError:
+            # unreadable counts as content: the scan reports it instead of skipping the port
+            return True
+
     async def _run_safety_sweep(self) -> None:
         uploading_port_keys = await self._port_key_tracker.get_uploading()
         try:
-            for port_key, fingerprint in list(self._fingerprints.items()):
+            for port_key in self.outputs_context.file_type_port_keys:
+                if not self._background_uploads_enabled:
+                    break  # output IO was disabled mid-sweep: re-enabling forces a new sweep
                 if port_key in uploading_port_keys:
+                    continue
+                if port_key not in self._fingerprints and not self._port_directory_has_content(port_key):
+                    continue  # an untracked empty port has nothing to discover
+                # a lost first notification must not leave the port invisible to every later sweep
+                if (fingerprint := self._get_fingerprint(port_key)) is None:
                     continue
                 with log_catch(_logger, reraise=False):
                     await fingerprint.sweep()
@@ -302,14 +338,15 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             self._next_sweep_mono = time.monotonic() + _SWEEP_INTERVAL_S
 
     def _start_safety_sweep(self) -> None:
-        """Runs the sweep beside the tick: a slow mount must not delay upload scheduling"""
         if self._task_sweep is not None and not self._task_sweep.done():
-            return
+            return  # a forced request keeps its flag set: it runs as soon as the in-flight sweep ends
+        # the sweep runs beside the tick: a slow mount must not delay upload scheduling
+        self._sweep_forced = False
         self._task_sweep = create_task(self._run_safety_sweep(), name="outputs_safety_sweep")
         self._task_sweep.add_done_callback(_log_unawaited_task_exception)
 
     async def _scheduler_worker(self) -> None:
-        if time.monotonic() >= self._next_sweep_mono:
+        if self._background_uploads_enabled and (self._sweep_forced or time.monotonic() >= self._next_sweep_mono):
             self._start_safety_sweep()
 
         if await self._port_key_tracker.are_pending_ports_uploading():
@@ -325,7 +362,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
     def set_all_ports_for_upload(self) -> None:
         _logger.warning("watchdog restarted: outputs events were lost, running a safety sweep on the next tick")
-        self._next_sweep_mono = 0.0
+        self._sweep_forced = True
 
     async def start(self) -> None:
         self._task_scheduler_worker = create_periodic_task(
@@ -367,7 +404,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         # let an in-flight upload record first: its verification decides the remaining save work
         await self._wait_in_flight_upload_round()
 
-        # save means upload now: check each port without quiet and upload all not proven uploaded
+        # a save uploads now: check every port without waiting for quiet
         for file_port_key in self.outputs_context.file_type_port_keys:
             fingerprint = self._get_fingerprint(file_port_key)
             assert fingerprint is not None  # nosec

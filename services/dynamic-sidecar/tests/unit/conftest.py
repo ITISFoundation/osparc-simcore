@@ -45,7 +45,7 @@ _COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
 
 @pytest.fixture
 def no_quiet_delay(mocker: MockerFixture) -> None:
-    """lifts the outputs quiet period so tests do not wait for production delays"""
+    """shortens the outputs quiet period so tests skip the production delay"""
     mocker.patch.object(_fingerprinter, "_QUIET_SECONDS", 0.0)
 
 

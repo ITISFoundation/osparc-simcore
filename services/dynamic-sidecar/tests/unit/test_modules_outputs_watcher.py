@@ -505,10 +505,9 @@ async def test_notification_queue_stays_bounded_under_event_storm(
     await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, noisy_port_key)
     await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, quiet_port_key)
 
-    # stall the consumer so nothing drains the queue while the storm runs
-    # (the event worker thread calls on_port_key_change synchronously)
+    # stall the consumer: the worker thread calls on_port_key_change synchronously
     block_enqueue = ThreadingEvent()
-    mock_event_filter_upload_trigger.side_effect = block_enqueue.wait
+    mock_event_filter_upload_trigger.side_effect = lambda _port_key: block_enqueue.wait()
 
     def _flood_with_files() -> None:
         for i in range(_EVENT_STORM_FILES):

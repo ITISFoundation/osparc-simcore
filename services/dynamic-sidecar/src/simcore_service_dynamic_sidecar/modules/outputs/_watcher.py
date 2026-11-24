@@ -36,9 +36,11 @@ class OutputsWatcher:
             self.outputs_manager.on_port_key_change(event)
 
     async def enable_event_propagation(self) -> None:
+        self.outputs_manager.set_background_uploads_enabled(is_enabled=True)
         await self.outputs_context.toggle_event_propagation(is_enabled=True)
 
     async def disable_event_propagation(self) -> None:
+        self.outputs_manager.set_background_uploads_enabled(is_enabled=False)
         await self.outputs_context.toggle_event_propagation(is_enabled=False)
 
     async def start(self) -> None:

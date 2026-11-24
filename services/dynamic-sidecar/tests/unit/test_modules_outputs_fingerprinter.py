@@ -103,7 +103,7 @@ def _place_name(port_dir: Path, name: str, *, as_directory: bool) -> None:
         target.write_bytes(b"")
 
 
-# --- quiet trigger -------------------------------------------------------------
+# TESTS: quiet trigger
 
 
 async def test_event_then_quiet_period_requests_upload(
@@ -133,7 +133,7 @@ async def test_quiet_period_restarts_on_late_events(
     fingerprinter.note_event()
     for _ in range(4):
         await asyncio.sleep(0.08)
-        fingerprinter.note_event()  # keep touching: never quiet for 0.4 s
+        fingerprinter.note_event()  # repeat the event: the port never stays quiet for 0.4 s
 
     assert on_stable_change.call_count == 0
     await _wait_for(on_stable_change)
@@ -173,7 +173,7 @@ async def test_failed_episode_waits_for_the_next_event(
     )
     (port_dir / "a.dat").write_bytes(b"hello")
 
-    # the content never looks identical across two scans: every scan reports a new fingerprint
+    # every scan reports a new fingerprint, so no two scans agree
     real_scan = fingerprinter._scan  # noqa: SLF001
     counter = iter(range(1000))
 
@@ -193,7 +193,7 @@ async def test_failed_episode_waits_for_the_next_event(
     await _wait_for(on_stable_change)
 
 
-# --- check outcomes -------------------------------------------------------------
+# TESTS: check outcomes
 
 
 async def test_new_file_hashes_before_stable(fingerprinter: PortFingerprint, port_dir: Path):
@@ -230,7 +230,7 @@ async def test_stable_but_unrecorded_content_has_a_candidate(fingerprinter: Port
     assert fingerprinter.take_upload_candidate() is not None
 
 
-# --- save path & verification ----------------------------------------------------
+# TESTS: save path and verification
 
 
 async def test_check_now_cancels_an_armed_episode(
@@ -269,13 +269,13 @@ async def test_upload_completed_records_the_fingerprint(fingerprinter: PortFinge
     assert await fingerprinter.check_now() is CheckOutcome.STABLE_MATCHING
 
 
-# --- safety sweep -----------------------------------------------------------------
+# TESTS: safety sweep
 
 
 async def test_sweep_triggers_on_drift_without_events(
     fingerprinter: PortFingerprint, on_stable_change: AsyncMock, port_dir: Path
 ):
-    # content changed with no event delivered: simulates a lost inotify event
+    # the content changed and no inotify event arrived
     (port_dir / "a.dat").write_bytes(b"hello")
 
     await fingerprinter.sweep()
@@ -292,7 +292,7 @@ async def test_sweep_skips_armed_ports(fingerprinter: PortFingerprint, port_dir:
     assert scan_spy.call_count == 0
 
 
-# --- robustness -------------------------------------------------------------------
+# TESTS: robustness
 
 
 async def test_unstatable_entry_with_failing_readlink_survives_check(
@@ -340,7 +340,7 @@ async def test_unreadable_port_directory_cannot_be_certified(
 
 
 async def test_deep_directory_chain_is_scanned_without_recursion(fingerprinter: PortFingerprint, port_dir: Path):
-    # one frame per level dies below PATH_MAX; user code has produced chains this deep
+    # one frame per level fails below PATH_MAX
     _build_deep_chain(port_dir, depth=1200)
 
     assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
@@ -372,7 +372,7 @@ async def test_names_that_are_not_valid_utf8_are_distinguished(fingerprinter: Po
 
 
 async def test_empty_file_and_directory_at_the_same_name_differ(fingerprinter: PortFingerprint, port_dir: Path):
-    # non-file records are told apart by their sentinel, not by a size empty files also have
+    # the sentinel classifies a record: its size does not
     _place_name(port_dir, "x", as_directory=True)
     assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
     first = fingerprinter._fingerprint  # noqa: SLF001
@@ -384,7 +384,7 @@ async def test_empty_file_and_directory_at_the_same_name_differ(fingerprinter: P
 
 
 async def test_uncertified_upload_is_never_matched_against(fingerprinter: PortFingerprint, port_dir: Path):
-    # a PUT that archived unidentified content must not let a later settle skip the port
+    # a PUT of unidentified content must not certify the port
     (port_dir / "a.dat").write_bytes(b"hello")
     assert await fingerprinter.check_now() is CheckOutcome.STABLE_NEW
     await _record_upload(fingerprinter)
