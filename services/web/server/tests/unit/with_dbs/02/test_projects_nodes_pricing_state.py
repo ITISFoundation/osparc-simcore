@@ -482,7 +482,7 @@ async def test_repair_links_the_default_unit_on_every_node_sharing_an_unknown_li
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
     mocker: MockerFixture,
-    with_billed_product: None,
+    create_billed_product: Callable[[], None],
 ):
     """Two nodes carrying the same link the product does not know are both re-linked to the
     default unit. The tracker is asked once per node here: a lookup that failed is not
@@ -490,8 +490,10 @@ async def test_repair_links_the_default_unit_on_every_node_sharing_an_unknown_li
     so the repair fixes both links in one start.
     """
     assert client.app
+    # created while the product does not bill, so the nodes have the links set below
     project = await create_project("shared-unknown-link-project", _TWO_COMP_NODES_WORKBENCH)
     project_id = project["uuid"]
+    create_billed_product()
     for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
         await set_node_pricing_link(
             sqlalchemy_async_engine,
