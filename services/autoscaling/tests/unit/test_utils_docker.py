@@ -868,13 +868,11 @@ def _link_tool(bin_dir: Path, tool: str) -> None:
     (bin_dir / tool).symlink_to(tool_path)
 
 
-def _make_boot_bin_dir(tmp_path: Path, name: str, *, docker: str, with_timeout: bool = True) -> Path:
+def _make_boot_bin_dir(tmp_path: Path, name: str, *, docker: str) -> Path:
     """Directory holding the subset of tools a booting machine has available to the login snippet"""
     bin_dir = tmp_path / name
     bin_dir.mkdir()
-    tools = ["bash", "cat", "sleep"]
-    if with_timeout:
-        tools.append("timeout")
+    tools = ["bash", "cat", "sleep", "timeout"]
     for tool in tools:
         _link_tool(bin_dir, tool)
     _write_executable(bin_dir / "docker", docker)
@@ -979,20 +977,6 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     assert result.returncode != 0
     assert calls_file.read_text() == "1\n"
     assert time.monotonic() - started < 10, "the login attempt was not cut short by timeout"
-
-
-def test_get_docker_login_on_start_bash_command_without_timeout(
-    example_registry_settings: RegistrySettings, tmp_path: Path
-):
-    command = get_docker_login_on_start_bash_command(example_registry_settings)
-    calls_file = tmp_path / "calls"
-    calls_file.write_text("")
-    bin_dir = _make_boot_bin_dir(tmp_path, "bare", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN, with_timeout=False)
-
-    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
-
-    assert result.returncode == 0, result.stderr
-    assert calls_file.read_text() == "2\n"
 
 
 def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_settings: RegistrySettings):

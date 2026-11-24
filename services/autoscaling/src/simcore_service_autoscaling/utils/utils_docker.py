@@ -463,16 +463,15 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempoten
 def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
     """Returns the command logging a machine in to the registry at boot, retrying it up to DOCKER_LOGIN_MAX_ATTEMPTS.
 
-    The retry runs in a subshell that exits on the first success or with an error after the last attempt.
-    `timeout` is looked up at boot rather than assumed: a worker image without it gets uncapped attempts
-    instead of a failing boot. The command contains no `&` because the boot script joins its steps on it.
+    The retry runs in a subshell that exits on the first success or with an error after the last attempt. The
+    command contains no `&` because the boot script joins its steps on it.
     """
     login_command = " ".join(
         [
             "echo",
             f'"{registry_settings.REGISTRY_PW.get_secret_value()}"',
             "|",
-            "$DOCKER_LOGIN_TIMEOUT",
+            f"timeout -k {DOCKER_LOGIN_KILL_DELAY_S} {DOCKER_LOGIN_ATTEMPT_TIMEOUT_S}",
             "docker",
             "login",
             "--username",
@@ -482,8 +481,6 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
         ]
     )
     commands = [
-        f'DOCKER_LOGIN_TIMEOUT="timeout -k {DOCKER_LOGIN_KILL_DELAY_S} {DOCKER_LOGIN_ATTEMPT_TIMEOUT_S}"',
-        'command -v timeout >/dev/null || DOCKER_LOGIN_TIMEOUT=""',
         f'attempt=0; while [ "$attempt" -lt {DOCKER_LOGIN_MAX_ATTEMPTS} ]; do attempt=$((attempt + 1))',
         f"if {login_command}; then exit 0; fi",
         f'if [ "$attempt" -lt {DOCKER_LOGIN_MAX_ATTEMPTS} ]; then sleep {DOCKER_LOGIN_RETRY_DELAY_S}; fi',
