@@ -468,7 +468,6 @@ async def test_repair_keeps_the_link_of_a_unit_that_defines_no_machine(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.usefixtures(
-    "project_db_cleaner",
     "mock_dynamic_scheduler",
     "mocked_dynamic_services_interface",
     "mock_catalog_api",
@@ -482,6 +481,9 @@ async def test_repair_links_the_default_unit_on_every_node_sharing_an_unknown_li
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     sqlalchemy_async_engine: AsyncEngine,
+    # asked for here and not in usefixtures: it must delete the projects before logged_user
+    # deletes their owner
+    project_db_cleaner: None,
     aioresponses_mocker: AioResponsesMock,
     mocker: MockerFixture,
     create_billed_product: Callable[[], None],
