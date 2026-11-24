@@ -64,7 +64,7 @@ async def _notify_conversation_message_created(
         )
     else:
         _conversation = await _conversation_service.get_conversation(
-            app, conversation_id=conversation_message.conversation_id
+            app, conversation_id=conversation_message.conversation_id, project_uuid_or_none=None
         )
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
@@ -256,6 +256,7 @@ async def create_support_message(
     await _conversation_repository.update(
         app,
         conversation_id=conversation.conversation_id,
+        project_uuid_or_none=None,
         updates=ConversationPatchDB(
             is_read_by_user=_is_read_by_user,
             is_read_by_support=_is_read_by_support,
@@ -460,7 +461,9 @@ async def update_message(
             conversation_message=updated_message,
         )
     else:
-        _conversation = await _conversation_service.get_conversation(app, conversation_id=conversation_id)
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id, project_uuid_or_none=None
+        )
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
@@ -504,7 +507,9 @@ async def delete_message(
             message_id=message_id,
         )
     else:
-        _conversation = await _conversation_service.get_conversation(app, conversation_id=conversation_id)
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id, project_uuid_or_none=None
+        )
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )

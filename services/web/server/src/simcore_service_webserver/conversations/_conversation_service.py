@@ -100,7 +100,7 @@ async def get_conversation(
     app: web.Application,
     *,
     conversation_id: ConversationID,
-    project_uuid_or_none: ProjectID | None = None,
+    project_uuid_or_none: ProjectID | None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get(
         app,
@@ -215,7 +215,7 @@ async def _get_validated_support_conversation(
     NOTE: only SUPPORT-type conversations are ever validated here. Project-bound
     conversations are managed separately under ``/projects/{project_id}/conversations``.
     """
-    conversation = await get_conversation(app, conversation_id=conversation_id)
+    conversation = await get_conversation(app, conversation_id=conversation_id, project_uuid_or_none=None)
     # NOTE: Intentionally validate product ownership before type to avoid cross-product information leaks (IDOR).
     if conversation.product_name != product_name:
         raise ConversationErrorNotFoundError(conversation_id=conversation_id)

@@ -246,7 +246,7 @@ async def get(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
-    project_uuid_or_none: ProjectID | None = None,
+    project_uuid_or_none: ProjectID | None,
 ) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
@@ -270,7 +270,7 @@ async def update(
     *,
     conversation_id: ConversationID,
     updates: ConversationPatchDB,
-    project_uuid_or_none: ProjectID | None = None,
+    project_uuid_or_none: ProjectID | None,
 ) -> ConversationGetDB:
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
@@ -297,7 +297,7 @@ async def delete(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
-    project_uuid_or_none: ProjectID | None = None,
+    project_uuid_or_none: ProjectID | None,
 ) -> None:
     delete_query = conversations.delete().where(conversations.c.conversation_id == f"{conversation_id}")
     if project_uuid_or_none is not None:
