@@ -75,7 +75,7 @@ services:
   buggregator:
     # Fake SMTP server (plus error/dump collector) with web UI — https://buggregator.dev
     # Captured events are kept in memory only, i.e. a restart drops them.
-    image: ghcr.io/buggregator/server:2.13.0
+    image: ghcr.io/buggregator/server:2.14.0
     init: true
     ports:
       - "1025:1025" # SMTP
