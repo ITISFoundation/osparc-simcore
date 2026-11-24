@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
+from models_library.users import UserID
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.login import _confirmation_web
 from simcore_service_webserver.login._confirmation_service import ConfirmationService
@@ -14,12 +15,43 @@ pytest_simcore_core_services_selection = [
 ]
 
 
+async def test_validate_confirmation_code_requires_expected_action(
+    confirmation_service: ConfirmationService,
+    registered_user: UserInfoDict,
+):
+    user_id = registered_user["id"]
+
+    invitation_confirmation = await confirmation_service.create_confirmation(
+        user_id=UserID(user_id), action="INVITATION", data="{}"
+    )
+
+    validated = await confirmation_service.validate_confirmation_code(
+        invitation_confirmation.code, expected_action="INVITATION"
+    )
+    assert validated is not None
+    assert validated.action == "INVITATION"
+
+    assert (
+        await confirmation_service.validate_confirmation_code(
+            invitation_confirmation.code, expected_action="RESET_PASSWORD"
+        )
+        is None
+    ), "a code created for INVITATION must not authorize RESET_PASSWORD"
+
+    assert await confirmation_service.get_confirmation({"code": invitation_confirmation.code}) is not None
+
+    assert (
+        await confirmation_service.validate_confirmation_code(invitation_confirmation.code, expected_action=None)
+        is not None
+    )
+
+
 async def test_confirmation_token_workflow(
     confirmation_service: ConfirmationService,
     registered_user: UserInfoDict,
 ):
     # Step 1: Create a new confirmation token
-    user_id = registered_user["id"]
+    user_id = UserID(registered_user["id"])
     action = "RESET_PASSWORD"
     confirmation = await confirmation_service.get_or_create_confirmation_without_data(user_id=user_id, action=action)
 
@@ -32,7 +64,7 @@ async def test_confirmation_token_workflow(
 
     # Step 3: Validate the confirmation code
     code = confirmation.code
-    validated_confirmation = await confirmation_service.validate_confirmation_code(code)
+    validated_confirmation = await confirmation_service.validate_confirmation_code(code, expected_action=action)
 
     assert validated_confirmation is not None
     assert validated_confirmation.code == code
@@ -77,7 +109,7 @@ async def test_expired_confirmation_token(
     confirmation_service: ConfirmationService,
     registered_user: UserInfoDict,
 ):
-    user_id = registered_user["id"]
+    user_id = UserID(registered_user["id"])
     action = "CHANGE_EMAIL"
 
     # Create a brand new confirmation token
@@ -105,6 +137,6 @@ async def test_expired_confirmation_token(
     assert confirmation_3 != confirmation_1
 
     # now all have expired
-    assert await confirmation_service.validate_confirmation_code(confirmation_1.code) is None
-    assert await confirmation_service.validate_confirmation_code(confirmation_2.code) is None
-    assert await confirmation_service.validate_confirmation_code(confirmation_3.code) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_1.code, expected_action=action) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_2.code, expected_action=action) is None
+    assert await confirmation_service.validate_confirmation_code(confirmation_3.code, expected_action=action) is None
