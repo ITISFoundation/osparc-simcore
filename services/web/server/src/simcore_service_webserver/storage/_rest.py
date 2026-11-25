@@ -82,8 +82,10 @@ def _get_storage_vtag(app: web.Application) -> str:
 
 
 def _encode_storage_path_segment(segment: str) -> str:
-    if (column_index := segment.find(":")) > 0:
-        return quote(segment[:column_index]) + segment[column_index:]
+    # the FastAPI ':action' suffix needs slashes and colons raw; '?', '#' and spaces
+    # decoded by yarl must not reach the forwarded request target (query injection)
+    if segment.find(":") > 0:
+        return quote(segment, safe="/:")
     return quote(segment)
 
 
