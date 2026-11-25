@@ -353,9 +353,21 @@
     {
       "description": "Python dependencies: wait two weeks before adopting a release (same cool-down as GitHub Actions and uv)",
       "matchManagers": [
-        "pip-compile"
+        "pip-compile",
+        "pep621"
       ],
       "minimumReleaseAge": "14 days"
+    },
+    {
+      "description": "autoscaled-monitor is a dask client: it must talk to the cluster with the very same dask version the dask-sidecar runs, which services/dask-sidecar/requirements/_dask-distributed.txt pins. Renovate moving the pyproject pin on its own would leave the CLI ahead of the cluster, so the pin follows the sidecar instead: run 'make sync-dask-version' in scripts/maintenance/autoscaled-monitor (it reads the sidecar's pin and updates pyproject.toml + uv.lock), in the same pull request that updates the sidecar. tests/environment-setup/test_used_dask.py enforces the two pins match",
+      "matchFileNames": [
+        "scripts/maintenance/autoscaled-monitor/**"
+      ],
+      "matchPackageNames": [
+        "dask",
+        "dask[distributed]"
+      ],
+      "enabled": false
     },
     {
       "description": "These requirements.txt are pip-compile outputs; let pip-compile own them (avoid double updates)",

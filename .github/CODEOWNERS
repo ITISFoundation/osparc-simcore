@@ -24,6 +24,7 @@ Makefile                                           @pcrespov @sanderegg
 /packages/service-library/src/servicelib/rabbitmq/     @pcrespov @giancarloromeo
 /packages/settings-library/                            @pcrespov @sanderegg
 /requirements/                                         @pcrespov @sanderegg
+/scripts/maintenance/autoscaled-monitor/               @sanderegg
 /services/agent/                                       @GitHK
 /services/api-server/                                  @pcrespov @wvangeit
 /services/api-server/tests/unit/pact_broker/           @matusdrobuliak66

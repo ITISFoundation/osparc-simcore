@@ -51,8 +51,9 @@ pull request.
   at a time. The Dependency Dashboard holds the rest. It is also where you tick
   Docker image majors and the monthly `lockFileMaintenance` runs; majors of
   Python packages, GitHub Actions and `uv` arrive as regular pull requests.
-- **Cool-downs.** 14 days for every dependency: pip-compile lockfiles, GitHub
-  Actions, and `uv`. Security fixes skip them.
+- **Cool-downs.** 14 days for every dependency: pip-compile lockfiles,
+  `pyproject.toml` dependencies, GitHub Actions, and `uv`. Security fixes skip
+  them.
 - **One PR per dependency.** A pip-compile package gets a single PR that moves
   its pin in every `requirements/` directory at once (the resync post-upgrade
   task propagates it). No PRs grouped per directory or per area. The
@@ -64,6 +65,16 @@ pull request.
   `pytest-*` plugins (`renovate/pytest-plugins`). Security pull
   requests are never grouped: Renovate's `vulnerabilityAlerts` default resets
   the group name, so a vulnerable package gets its own immediate PR.
+- **A pin that must match another file is left to that file.** Renovate updates
+  one dependency per file and cannot keep two files in step, so it is disabled
+  where a pin only makes sense equal to another one: `dask` in
+  `scripts/maintenance/autoscaled-monitor`, which is a client of the dask
+  scheduler and must run the version
+  [services/dask-sidecar/requirements/_dask-distributed.txt](../services/dask-sidecar/requirements/_dask-distributed.txt)
+  pins. `make sync-dask-version` there copies the version over, and
+  [tests/environment-setup/test_used_dask.py](../tests/environment-setup/test_used_dask.py)
+  fails when the two drift apart, so the pull request that updates dask for the
+  sidecar carries the CLI along in the same commit.
 
 ## From pull request to merge
 
