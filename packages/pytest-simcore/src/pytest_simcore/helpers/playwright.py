@@ -349,8 +349,9 @@ class _ReconnectableEventWaiter:
             msg = f"Timeout {self.timeout}ms exceeded while waiting for {self.event!r}."
             raise PlaywrightTimeoutError(msg)
 
-        self._ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
-        self._event_info = self._ctx.__enter__()
+        ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
+        self._ctx = ctx
+        self._event_info = ctx.__enter__()
 
 
 @dataclass
