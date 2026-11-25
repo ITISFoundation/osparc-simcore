@@ -9,7 +9,6 @@ from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from celery_library.async_jobs import submit_job
-from common_library.user_messages import user_message
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
@@ -82,8 +81,19 @@ def _get_storage_vtag(app: web.Application) -> str:
     return storage_prefix
 
 
+def _has_dot_segment(path_parts: tuple[str, ...]) -> bool:
+    """True if any component forwarded to storage is '.' or '..'.
+
+    A part of ``URL.parts`` is percent-decoded and can hold several components: clients
+    encode the separators inside a file identifier (``api%2F0%2Fproject%2Fnode``), so each
+    part is split before it is checked.
+    """
+    return any(component in {".", ".."} for part in path_parts for component in part.split("/"))
+
+
 def _encode_storage_path_segment(segment: str) -> str:
-    if segment.find(":") > 0:
+    """Quotes a path part, keeping '/' and the ':' of FastAPI's ':action' suffix readable."""
+    if ":" in segment[1:]:
         return quote(segment, safe="/:")
     return quote(segment)
 
@@ -102,8 +112,8 @@ def _to_storage_url(request: web.Request, product_name: ProductName | None = Non
     basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
     path_segments = request.url.parts[basepath_index:]
-    if any(component in {".", ".."} for segment in path_segments for component in segment.split("/")):
-        raise web.HTTPBadRequest(text=user_message("The storage path must not contain '.' or '..' segments"))
+    if _has_dot_segment(path_segments):
+        raise web.HTTPBadRequest
 
     fastapi_encoded_suffix = "/".join(_encode_storage_path_segment(segment) for segment in path_segments)
 

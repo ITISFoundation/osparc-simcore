@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=protected-access
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Final, NamedTuple
 
 import pytest
@@ -37,9 +37,11 @@ def app(monkeypatch: pytest.MonkeyPatch) -> web.Application:
 
 
 def _make_request(path: str, app: web.Application, user_id: int = 42) -> web.Request:
-    # mirror aiohttp's HTTP parser, which builds the request URL with
-    # URL(path, encoded=True); make_mocked_request's URL(path) would percent-decode
-    # and remove dot-segments at parse time, hiding traversal shapes from the handler
+    """Builds a request whose URL keeps the raw path, as aiohttp's HTTP parser does.
+
+    ``make_mocked_request`` builds ``URL(path)``, which percent-decodes and collapses
+    dot-segments at parse time, so traversal shapes would never reach the code under test.
+    """
     request = make_mocked_request("GET", "/", app=app).clone(rel_url=URL(f"http://127.0.0.1{path}", encoded=True))
     request[RQT_USERID_KEY] = user_id
     return request
@@ -78,8 +80,10 @@ def test_action_verb_suffix_is_kept_raw(app: web.Application):
     [
         "/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus",
         "/v0/storage/locations/0/files/%2e%2e%2f%2e%2e%2fstatus",
+        "/v0/storage/locations/0/files/%2E%2E/status",
         "/v0/storage/locations/0/files/.%2fstatus",
         "/v0/storage/locations/0/files/%2e%2e/status",
+        "/v0/storage/locations/0/files/.",
         "/v0/storage/locations/0/files/..",
     ],
 )
@@ -96,6 +100,27 @@ def test_dot_segments_are_rejected(path: str, app: web.Application):
 def test_dot_like_names_are_allowed(segment: str, app: web.Application):
     request = _make_request(f"/v0/storage/locations/0/files/{segment}", app)
     assert _to_storage_url(request).path == f"/v0/locations/0/files/{segment}"
+
+
+@pytest.mark.parametrize(
+    "path, expected_raw_path",
+    [
+        # a leading colon is not an ':action' separator, so it gets quoted
+        ("/v0/storage/locations/0/files/:abort", "/v0/locations/0/files/%3Aabort"),
+        # control bytes must not reach the request line of the forwarded call
+        (
+            "/v0/storage/locations/0/files/x:a%0d%0aX-Evil:1:complete",
+            "/v0/locations/0/files/x:a%0D%0AX-Evil:1:complete",
+        ),
+        # already-encoded dots stay encoded: storage decodes once and sees a file name
+        ("/v0/storage/locations/0/files/x%252e%252e/status", "/v0/locations/0/files/x%252e%252e/status"),
+    ],
+)
+def test_special_characters_are_encoded_in_the_forwarded_path(path: str, expected_raw_path: str, app: web.Application):
+    request = _make_request(path, app)
+    url = _to_storage_url(request)
+    assert url.raw_path == expected_raw_path
+    assert dict(url.query) == {"user_id": "42"}
 
 
 @pytest.mark.parametrize(
@@ -139,7 +164,9 @@ def test_encoded_delimiters_after_colon_stay_in_the_path(path: str, expected_raw
 
 
 @pytest.fixture
-def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPatch):
+def create_storage_proxy(
+    aiohttp_client: Callable[..., Awaitable[TestClient]], monkeypatch: pytest.MonkeyPatch
+) -> Callable[[], Awaitable[_StorageProxy]]:
     async def _create() -> _StorageProxy:
         spied: list[_SpiedRequest] = []
 
@@ -170,12 +197,14 @@ def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPat
     return _create
 
 
-async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Callable):
+async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Callable[[], Awaitable[_StorageProxy]]):
     proxy = await create_storage_proxy()
 
     resp = await proxy.client.get("/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus")
     assert resp.status == status.HTTP_400_BAD_REQUEST
-    assert "must not contain" in await resp.text()
+    # the response carries aiohttp's default status text and explains nothing
+    assert resp.reason == "Bad Request"
+    assert "storage path" not in await resp.text()
     assert not proxy.spied
 
     resp = await proxy.client.get("/v0/storage/locations")
@@ -183,7 +212,9 @@ async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Cal
     assert proxy.spied == [_SpiedRequest("GET", "/v0/locations", {"user_id": "42"})]
 
 
-async def test_encoded_action_delimiters_reach_storage_in_the_path(create_storage_proxy: Callable):
+async def test_encoded_action_delimiters_reach_storage_in_the_path(
+    create_storage_proxy: Callable[[], Awaitable[_StorageProxy]],
+):
     proxy = await create_storage_proxy()
 
     resp = await proxy.client.post("/v0/storage/locations/0/files/api/0/uuid/foo:abort%3Fuser_id%3D7%26x%3D:complete")
