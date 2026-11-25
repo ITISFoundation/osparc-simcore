@@ -1216,6 +1216,11 @@ def backend_computation_snapshots(response_body: Any) -> dict[str, dict[str, Any
     The web-server answers with a list with one entry per runnable variant of the project (see
     `get_computation` in the web-server's director_v2 controller), so a stalled variant is not
     necessarily the first one.
+
+    NOTE: the web-server builds the payload with `model_construct` and dumps it with
+    `exclude_unset=True`, so a field director-v2 never sets is simply missing. Since `iteration`,
+    `started`, `stopped` and `submitted` are required, a partial entry fails validation: the
+    snapshot of a project is all-or-nothing.
     """
     snapshots: dict[str, dict[str, Any]] = {}
     for entry in response_body["data"]:

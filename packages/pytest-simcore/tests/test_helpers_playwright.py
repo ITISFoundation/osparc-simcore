@@ -1427,8 +1427,11 @@ def test_backend_computation_snapshot_reads_the_node_states_of_a_computation():
     [
         pytest.param({"data": {}}, id="single-object-body"),
         pytest.param({"data": []}, id="empty-list-body"),
+        pytest.param({"data": [{"state": "PUBLISHED"}]}, id="partial-entry-from-exclude-unset"),
     ],
 )
-def test_backend_computation_snapshot_rejects_a_body_without_a_computation(body: dict[str, Any]):
+def test_backend_computation_snapshot_rejects_a_body_without_a_full_computation(body: dict[str, Any]):
+    # NOTE: the web-server dumps with exclude_unset, so an entry can lack required fields: the
+    # snapshot of a project is all-or-nothing and the caller reports it as an error
     with pytest.raises((ValidationError, LookupError)):
         backend_computation_snapshots(body)
