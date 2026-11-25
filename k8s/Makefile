@@ -75,7 +75,7 @@ helm-unittest: HELM_UNITTEST_BIN := untt # installed via mise
 helm-unittest: ## Runs helm-unittest tests of the simcore-service chart
 	@$(HELM_UNITTEST_BIN) --color --strict $(REPO_BASE_DIR)/charts/simcore-service
 
-kubeconform: guard-TEMPLATES_DIR guard-KUBERNETES_VERSION _require-tool-kubeconform
+kubeconform: guard-TEMPLATES_DIR guard-KUBERNETES_VERSION
 kubeconform: ## Validates Kubernetes manifests with kubeconform
 	@kubeconform \
 		-schema-location default \
