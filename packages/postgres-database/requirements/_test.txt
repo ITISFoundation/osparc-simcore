@@ -21,7 +21,7 @@ coverage==7.17.2
     #   pytest-cov
 faker==40.44.0
     # via -r requirements/_test.in
-filelock==4.2.9
+filelock==4.2.10
     # via -r requirements/_test.in
 frozendict==2.5.1
     # via -r requirements/_test.in
