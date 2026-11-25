@@ -7,12 +7,10 @@ Currently includes two parts:
 
 """
 
-import asyncio
 import hashlib
 import hmac
 import logging
 import secrets
-import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -30,6 +28,14 @@ from models_library.users import UserID
 from pydantic import BaseModel, Field, SecretStr
 from servicelib.logging_utils import log_decorator
 from servicelib.utils_secrets import are_secrets_equal, generate_passcode
+from tenacity import (
+    AsyncRetrying,
+    TryAgain,
+    before_sleep_log,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..notifications import notifications_service
 from ..notifications.models import EmailContact, SmsContact
@@ -268,8 +274,8 @@ async def resend_cooldown(
 
 
 #
-# TWILIO
-#   - sms service
+# SMS
+#   - code delivery via the notifications service
 #
 
 
@@ -306,31 +312,45 @@ async def _await_sms_delivery(
     may still deliver, and freeing the cooldown early would only invite
     duplicate codes.
     """
-    deadline = time.monotonic() + _SMS_DELIVERY_MAX_WAIT_S
-    while True:
-        try:
-            status = await notifications_service.get_message_status(
-                app,
-                user_id=user_id,
-                product_name=product_name,
-                task_or_group_uuid=task_or_group_uuid,
-            )
-        except Exception:  # pylint: disable=broad-except
-            _logger.warning("SMS delivery status of %s could not be looked up, reporting success", task_or_group_uuid)
-            return
-        delivered = _is_delivered(status)
-        if delivered is True:
-            return
-        if delivered is False:
-            raise SMSError(_SMS_DELIVERY_FAILED_MSG)
-        if time.monotonic() >= deadline:
-            _logger.warning(
-                "SMS delivery task %s still running after %.0f s, reporting success",
-                task_or_group_uuid,
-                _SMS_DELIVERY_MAX_WAIT_S,
-            )
-            return
-        await asyncio.sleep(_SMS_DELIVERY_POLL_INTERVAL_S)
+    delivered: bool | None = None
+    try:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(_SMS_DELIVERY_MAX_WAIT_S),
+            wait=wait_fixed(_SMS_DELIVERY_POLL_INTERVAL_S),
+            retry=retry_if_exception_type(TryAgain),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+            reraise=True,
+        ):
+            with attempt:
+                try:
+                    status = await notifications_service.get_message_status(
+                        app,
+                        user_id=user_id,
+                        product_name=product_name,
+                        task_or_group_uuid=task_or_group_uuid,
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    _logger.warning(
+                        "SMS delivery status of %s could not be looked up, reporting success",
+                        task_or_group_uuid,
+                    )
+                    return
+                delivered = _is_delivered(status)
+                if delivered is None:
+                    msg = f"SMS delivery of {task_or_group_uuid} still running"
+                    raise TryAgain(msg)  # noqa: TRY301
+                if delivered:
+                    return
+    except TryAgain:
+        _logger.warning(
+            "SMS delivery task %s still running after %.0f s, reporting success",
+            task_or_group_uuid,
+            _SMS_DELIVERY_MAX_WAIT_S,
+        )
+        return
+
+    if delivered is False:
+        raise SMSError(_SMS_DELIVERY_FAILED_MSG)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -439,4 +459,3 @@ async def send_email_code(
             user_email=user_email,
             email_error=exc,
         ) from exc
-
