@@ -1,0 +1,1 @@
+{% trans first_name=(user.first_name or user.user_name)[:15], code=code %}Dear {{ first_name }}, your verification code is {{ code }}{% endtrans %}

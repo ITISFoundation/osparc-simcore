@@ -1011,9 +1011,6 @@ services:
       LOGIN_2FA_CODE_EXPIRATION_SEC: ${LOGIN_2FA_CODE_EXPIRATION_SEC}
       LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC: ${LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC}
       LOGIN_THROTTLE: ${LOGIN_THROTTLE}
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
-      TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: ${TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT}
 
       WEBSERVER_PAYMENTS: ${WEBSERVER_PAYMENTS}
       PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: ${PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT}
@@ -1520,17 +1517,21 @@ services:
         - *tracing_open_telemetry_environments
       NOTIFICATIONS_BOOT_SERVER_MODE: AS_REST_API_SERVER
       NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
+      # sms messages are rejected at publish time if the product's Twilio settings
+      # cannot be resolved here, i.e. before the task reaches the sms worker
+      NOTIFICATIONS_TWILIO_SETTINGS: ${TWILIO_SETTINGS}
       NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE}
+      NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
       CELERY_EPHEMERAL_RESULT_EXPIRES: ${NOTIFICATIONS_CELERY_EPHEMERAL_RESULT_EXPIRES}
     networks: &notifications_networks
       - default
 
-  notifications-worker:
+  notifications-email-worker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "notifications-email-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<:
         - *common_logging_environments
@@ -1543,13 +1544,38 @@ services:
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
-      NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      NOTIFICATIONS_WORKER_NAME: "notifications-email-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       HEALTHCHECK_MODE: heartbeat
       # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
       NOTIFICATIONS_EMAIL_RATE_LIMIT: ${NOTIFICATIONS_EMAIL_RATE_LIMIT}
       CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
       CELERY_POOL: prefork
-      CELERY_QUEUES: notifications
+      NOTIFICATIONS_CELERY_QUEUES: notifications-email
+    networks: *notifications_networks
+
+  notifications-sms-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "notifications-sms-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<:
+        - *common_logging_environments
+        - *postgres_settings
+        - *rabbit_settings
+        - *redis_settings
+        - *tracing_open_telemetry_environments
+
+      NOTIFICATIONS_BOOT_SERVER_MODE: AS_CELERY_WORKER
+      NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
+      NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
+      NOTIFICATIONS_TWILIO_SETTINGS: ${TWILIO_SETTINGS}
+      NOTIFICATIONS_WORKER_NAME: "notifications-sms-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      HEALTHCHECK_MODE: heartbeat
+      # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
+      NOTIFICATIONS_SMS_RATE_LIMIT: ${NOTIFICATIONS_SMS_RATE_LIMIT}
+      CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
+      CELERY_POOL: prefork
+      NOTIFICATIONS_CELERY_QUEUES: notifications-sms
     networks: *notifications_networks
 
   payments:

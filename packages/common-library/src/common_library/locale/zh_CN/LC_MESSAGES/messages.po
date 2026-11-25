@@ -1657,10 +1657,10 @@ msgstr "用户没有注册电话号码"
 # user via SMS, typically after a user has requested a two-factor
 # authentication.
 #. @TRANSLATOR SMS message of at most 70 characters
-#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:137
-#, python-brace-format
-msgid "Dear {first_name}, your verification code is {code}"
-msgstr "尊敬的{first_name}，您的验证码是{code}"
+#: services/notifications/src/simcore_service_notifications/templates/sms/new_2fa_code/body.j2:1
+#, python-format
+msgid "Dear %(first_name)s, your verification code is %(code)s"
+msgstr "尊敬的%(first_name)s，您的验证码是%(code)s"
 
 # CTX-INTERPRETATION: This string is a user notification message indicating
 # that a verification code has been sent to the user's phone number via SMS.

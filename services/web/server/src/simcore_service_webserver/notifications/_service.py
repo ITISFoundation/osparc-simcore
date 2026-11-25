@@ -3,13 +3,14 @@ from typing import Annotated, Any, Final
 from aiohttp import web
 from annotated_types import doc
 from common_library.gettext_support import SupportedLocale
-from models_library.celery import GroupUUID, TaskName, TaskUUID
+from models_library.celery import GroupStatus, GroupUUID, TaskName, TaskStatus, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
     Channel,
 )
 from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
+    NotificationsRecipientChannelMismatchError,
     NotificationsUnsupportedChannelError,
 )
 from models_library.notifications.rpc import Addressing as RpcAddressing
@@ -18,6 +19,9 @@ from models_library.notifications.rpc import TemplateRef as RpcTemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
+    get_message_status as remote_get_message_status,
+)
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template as remote_preview_template,
 )
@@ -41,6 +45,8 @@ from ._models import (
     EmailContact,
     EmailContent,
     EmailMessage,
+    SmsAddressing,
+    SmsContact,
     Template,
     TemplatePreview,
     TemplateRef,
@@ -78,6 +84,28 @@ async def _collect_active_recipients(app: web.Application, group_ids: list[Group
     return list(recipients_dict.values())
 
 
+def _as_email_contacts(items: list[Contact] | None) -> list[EmailContact]:
+    contacts: list[EmailContact] = []
+    for item in items or []:
+        if not isinstance(item, EmailContact):
+            raise NotificationsRecipientChannelMismatchError(
+                contact_type=type(item).__name__, channel=Channel.email.value
+            )
+        contacts.append(item)
+    return contacts
+
+
+def _as_sms_contacts(items: list[Contact] | None) -> list[SmsContact]:
+    contacts: list[SmsContact] = []
+    for item in items or []:
+        if not isinstance(item, SmsContact):
+            raise NotificationsRecipientChannelMismatchError(
+                contact_type=type(item).__name__, channel=Channel.sms.value
+            )
+        contacts.append(item)
+    return contacts
+
+
 async def _create_email_addressing(
     app: web.Application,
     *,
@@ -90,23 +118,40 @@ async def _create_email_addressing(
 
     Raises:
         NotificationsNoActiveRecipientsError: If no active recipients found.
+        NotificationsRecipientChannelMismatchError: If a contact is not an email contact.
     """
     to_contacts: list[EmailContact] = []
 
     if group_ids:
         to_contacts = await _collect_active_recipients(app, group_ids=group_ids)
 
-    if external_contacts:
-        to_contacts.extend(external_contacts)
+    to_contacts.extend(_as_email_contacts(external_contacts))
 
     if not to_contacts:
         raise NotificationsNoActiveRecipientsError
 
     return EmailAddressing(
         to=to_contacts,
-        reply_to=reply_to,
-        bcc=bcc,
+        reply_to=_as_email_contacts([reply_to])[0] if reply_to is not None else None,
+        bcc=_as_email_contacts(bcc) or None,
     )
+
+
+def _create_sms_addressing(
+    external_contacts: list[Contact] | None,
+) -> SmsAddressing:
+    """Build sms addressing (to) for all recipients.
+
+    Raises:
+        NotificationsNoActiveRecipientsError: If no active recipients found.
+        NotificationsRecipientChannelMismatchError: If a contact is not an sms contact.
+    """
+    to_contacts = _as_sms_contacts(external_contacts)
+
+    if not to_contacts:
+        raise NotificationsNoActiveRecipientsError
+
+    return SmsAddressing(to=to_contacts)
 
 
 async def _create_email_message(
@@ -237,6 +282,7 @@ async def send_message_from_template(
         locale=locale,
     )
 
+    addressing: EmailAddressing | SmsAddressing
     match channel:
         case Channel.email:
             addressing = await _create_email_addressing(
@@ -245,6 +291,8 @@ async def send_message_from_template(
                 external_contacts=external_contacts,
                 reply_to=reply_to,
             )
+        case Channel.sms:
+            addressing = _create_sms_addressing(external_contacts)
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
@@ -264,3 +312,30 @@ async def send_message_from_template(
     )
 
     return response.task_or_group_uuid, response.task_name
+
+
+async def get_message_status(
+    app: web.Application,
+    *,
+    user_id: UserID | None,
+    product_name: ProductName,
+    task_or_group_uuid: TaskUUID | GroupUUID,
+) -> TaskStatus | GroupStatus:
+    """Retrieves the execution status of a message published by this web-server
+
+    The owner metadata is rebuilt exactly as at publish time, since the
+    notifications service keys task lookups by it.
+
+    Raises:
+        NotificationsTaskNotFoundError: If the notifications service has no record
+            of this task/group for this owner.
+    """
+    response = await remote_get_message_status(
+        get_rabbitmq_rpc_client(app),
+        owner_metadata=WebServerOwnerMetadata(
+            user_id=user_id,
+            product_name=product_name,
+        ),
+        task_or_group_uuid=task_or_group_uuid,
+    )
+    return response.status

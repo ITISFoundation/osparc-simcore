@@ -5,6 +5,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.masking import mask_phone_number
 from common_library.user_messages import user_message
 from models_library.notifications import Channel
 from servicelib.aiohttp import status
@@ -288,16 +289,6 @@ async def register_phone(request: web.Request):
         raise web.HTTPUnauthorized(text=MSG_PHONE_REGISTER_2FA_REQUIRED)
 
     assert settings.LOGIN_2FA_REQUIRED  # nosec
-    assert settings.LOGIN_TWILIO  # nosec
-    if not product.twilio_messaging_sid:
-        _logger.error(
-            "Messaging SID is not configured for product '%s'. Update product's twilio_messaging_sid in database.",
-            product.name,
-        )
-        raise web.HTTPServiceUnavailable(
-            text="Currently we cannot register phone numbers",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
 
     # register_phone sends the SMS through the same per-account cooldown as
     # the code resend, since both deliver an SMS to this account; a failed
@@ -321,10 +312,11 @@ async def register_phone(request: web.Request):
                 request.app,
                 phone_number=registration.phone,
                 code=code,
-                twilio_auth=settings.LOGIN_TWILIO,
-                twilio_messaging_sid=product.twilio_messaging_sid,
-                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
                 first_name=user["first_name"] or user["name"],
+                user_name=user["name"],
+                product_name=product.name,
+                host=request.host,
+                ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 locale=get_locale_or_none(request),
             )
 
@@ -335,9 +327,7 @@ async def register_phone(request: web.Request):
                     "parameters": {
                         "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                     },
-                    "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=_twofa_service.mask_phone_number(registration.phone)
-                    ),
+                    "message": MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(registration.phone)),
                     "level": "INFO",
                     "logger": "user",
                 },
@@ -359,7 +349,7 @@ async def register_phone(request: web.Request):
                     error=err,
                     error_code=error_code,
                     error_context={"request": request, "registration": registration},
-                    tip="Check Twilio status and product's twilio_messaging_sid",
+                    tip="Check the notifications service and its per-product Twilio settings",
                 )
             )
 

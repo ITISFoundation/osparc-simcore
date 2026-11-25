@@ -67,8 +67,6 @@ env:
   STUDIES_DEFAULT_SERVICE_THUMBNAIL: {{ requiredEnv "STUDIES_DEFAULT_SERVICE_THUMBNAIL" | quote }}
   SWARM_STACK_NAME: {{ requiredEnv "SWARM_STACK_NAME" | quote }}
   TRASH_RETENTION_DAYS: {{ requiredEnv "TRASH_RETENTION_DAYS" | quote }}
-  TWILIO_ACCOUNT_SID: {{ requiredEnv "TWILIO_ACCOUNT_SID" | quote }}
-  TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: {{ requiredEnv "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT" | quote }}
   WEBSERVER_ACTIVITY: {{ requiredEnv "WEBSERVER_ACTIVITY" | quote }}
   WEBSERVER_ANNOUNCEMENTS: {{ requiredEnv "WEBSERVER_ANNOUNCEMENTS" | quote }}
   WEBSERVER_CATALOG: {{ requiredEnv "WEBSERVER_CATALOG" | quote }}
@@ -111,7 +109,6 @@ env:
 secretEnv:
   SCICRUNCH_API_KEY: {{ requiredEnv "SCICRUNCH_API_KEY" | quote }}
   SESSION_SECRET_KEY: {{ requiredEnv "WEBSERVER_SESSION_SECRET_KEY" | quote }}
-  TWILIO_AUTH_TOKEN: {{ requiredEnv "TWILIO_AUTH_TOKEN" | quote }}
 
 # the image's HEALTHCHECK probes /v0/health
 probes:

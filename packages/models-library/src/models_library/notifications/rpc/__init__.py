@@ -3,20 +3,27 @@ from typing import Final
 from pydantic import TypeAdapter
 
 from ...rabbitmq_basic_types import RPCNamespace
+from .._notifications import PhoneNumberStr
 from ._email import (
-    Addressing,
     EmailAddressing,
     EmailAttachment,
     EmailContact,
     EmailContent,
     EmailMessage,
-    Message,
     SenderIdentity,
 )
 from ._message import (
+    GetMessageStatusRequest,
+    GetMessageStatusResponse,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
     SendMessageResponse,
+)
+from ._sms import (
+    SmsAddressing,
+    SmsContact,
+    SmsContent,
+    SmsMessage,
 )
 from ._template import (
     PreviewTemplateRequest,
@@ -24,6 +31,7 @@ from ._template import (
     SearchTemplatesResponse,
     TemplateRef,
 )
+from ._types import Addressing, Message
 
 NOTIFICATIONS_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(RPCNamespace).validate_python("notifications")
 
@@ -34,7 +42,10 @@ __all__: tuple[str, ...] = (
     "EmailContact",
     "EmailContent",
     "EmailMessage",
+    "GetMessageStatusRequest",
+    "GetMessageStatusResponse",
     "Message",
+    "PhoneNumberStr",
     "PreviewTemplateRequest",
     "PreviewTemplateResponse",
     "SearchTemplatesResponse",
@@ -42,5 +53,9 @@ __all__: tuple[str, ...] = (
     "SendMessageRequest",
     "SendMessageResponse",
     "SenderIdentity",
+    "SmsAddressing",
+    "SmsContact",
+    "SmsContent",
+    "SmsMessage",
     "TemplateRef",
 )

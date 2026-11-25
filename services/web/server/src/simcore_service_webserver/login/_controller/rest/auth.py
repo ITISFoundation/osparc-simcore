@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.logging.logging_base import get_log_record_extra
+from common_library.masking import mask_phone_number
 from common_library.user_messages import user_message
 from models_library.authentication import TwoFactorAuthenticationMethod
 from pydantic import TypeAdapter
@@ -150,17 +151,16 @@ async def login(request: web.Request):
         # create sms 2FA
         assert user["phone"]  # nosec
         assert settings.LOGIN_2FA_REQUIRED  # nosec
-        assert settings.LOGIN_TWILIO  # nosec
-        assert product.twilio_messaging_sid  # nosec
 
         await _twofa_service.send_sms_code(
             request.app,
             phone_number=user["phone"],
             code=code,
-            twilio_auth=settings.LOGIN_TWILIO,
-            twilio_messaging_sid=product.twilio_messaging_sid,
-            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=user["first_name"] or user["name"],
+            user_name=user["name"],
+            product_name=product.name,
+            host=request.host,
+            ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             user_id=user["id"],
             locale=get_locale_or_none(request),
         )
@@ -171,7 +171,7 @@ async def login(request: web.Request):
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
                     "message": translate_message(MSG_2FA_CODE_SENT, request).format(
-                        phone_number=_twofa_service.mask_phone_number(user["phone"])
+                        phone_number=mask_phone_number(user["phone"])
                     ),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },

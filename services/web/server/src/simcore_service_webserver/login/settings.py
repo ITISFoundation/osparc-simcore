@@ -9,7 +9,6 @@ from pydantic import BaseModel, ValidationInfo, field_validator, model_validator
 from pydantic.fields import Field
 from pydantic.types import NonNegativeInt, PositiveFloat, PositiveInt
 from settings_library.base import BaseCustomSettings
-from settings_library.twilio import TwilioSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
 _DAYS: Final[float] = 1.0  # in days
@@ -85,14 +84,6 @@ class LoginSettings(BaseCustomSettings):
 
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
 
-    LOGIN_TWILIO: Annotated[
-        TwilioSettings | None,
-        Field(
-            json_schema_extra={"auto_default_from_env": True},
-            description="Twilio service settings. Used to send SMS for 2FA",
-        ),
-    ]
-
     LOGIN_2FA_CODE_EXPIRATION_SEC: Annotated[
         PositiveInt,
         Field(description="Expiration time for code [sec]"),
@@ -126,14 +117,6 @@ class LoginSettings(BaseCustomSettings):
             description="Exponential back-off settings for repeated failed logins",
         ),
     ]
-
-    @field_validator("LOGIN_2FA_REQUIRED")
-    @classmethod
-    def _login_2fa_needs_sms_service(cls, v, info: ValidationInfo):
-        if v and info.data.get("LOGIN_TWILIO") is None:
-            msg = "Cannot enable 2FA w/o twilio settings which is used to send SMS"
-            raise ValueError(msg)
-        return v
 
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod

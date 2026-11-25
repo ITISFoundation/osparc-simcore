@@ -15869,7 +15869,8 @@
       "Channel": {
         "type": "string",
         "enum": [
-          "email"
+          "email",
+          "sms"
         ],
         "title": "Channel",
         "description": "Defines the supported notification channels.\nThis is used to route messages to the appropriate handlers and templates."

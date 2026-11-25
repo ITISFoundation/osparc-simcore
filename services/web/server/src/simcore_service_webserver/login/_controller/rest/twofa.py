@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.masking import mask_phone_number
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
@@ -86,8 +87,6 @@ async def resend_2fa_code(request: web.Request):
 
         # guaranteed by LoginSettingsForProduct
         assert settings.LOGIN_2FA_REQUIRED  # nosec
-        assert settings.LOGIN_TWILIO  # nosec
-        assert product.twilio_messaging_sid  # nosec
 
         # creates and stores code
         code = await _twofa_service.create_2fa_code(
@@ -101,10 +100,11 @@ async def resend_2fa_code(request: web.Request):
                 request.app,
                 phone_number=user_phone_number,
                 code=code,
-                twilio_auth=settings.LOGIN_TWILIO,
-                twilio_messaging_sid=product.twilio_messaging_sid,
-                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
                 first_name=user["first_name"] or user["name"],
+                user_name=user["name"],
+                product_name=product.name,
+                host=request.host,
+                ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 user_id=user["id"],
                 locale=get_locale_or_none(request),
             )
@@ -113,9 +113,7 @@ async def resend_2fa_code(request: web.Request):
                 {
                     "name": CODE_2FA_SMS_CODE_REQUIRED,
                     "parameters": {
-                        "message": MSG_2FA_CODE_SENT.format(
-                            phone_number=_twofa_service.mask_phone_number(user_phone_number)
-                        ),
+                        "message": MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(user_phone_number)),
                         "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                     },
                 },

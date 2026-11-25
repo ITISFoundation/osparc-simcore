@@ -4,10 +4,10 @@ from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
-from ...celery import GroupUUID, OwnerMetadata, TaskUUID
+from ...celery import GroupStatus, GroupUUID, OwnerMetadata, TaskStatus, TaskUUID
 from ...products import ProductName
-from ._email import Addressing, Message
 from ._template import TemplateRef
+from ._types import Addressing, Message
 
 
 class SendMessageRequest(BaseModel):
@@ -15,7 +15,7 @@ class SendMessageRequest(BaseModel):
     message: Annotated[
         Message,
         Field(
-            description="Channel-specific message payload (e.g. EmailMessage for email).",
+            description="Channel-specific message payload (e.g. EmailMessage for email, SmsMessage for sms).",
         ),
     ]
     owner_metadata: OwnerMetadata | None = None
@@ -123,5 +123,26 @@ class SendMessageFromTemplateRequest(BaseModel):
 class SendMessageResponse(BaseModel):
     task_or_group_uuid: TaskUUID | GroupUUID
     task_name: str
+
+    model_config = ConfigDict(frozen=True)
+
+
+class GetMessageStatusRequest(BaseModel):
+    owner_metadata: Annotated[
+        OwnerMetadata,
+        Field(description="Must match the owner metadata the message was published with."),
+    ]
+    task_or_group_uuid: TaskUUID | GroupUUID
+
+    model_config = ConfigDict(frozen=True)
+
+
+class GetMessageStatusResponse(BaseModel):
+    status: Annotated[
+        TaskStatus | GroupStatus,
+        Field(
+            description="Execution status of the task (single recipient) or group (fan-out) behind a published message."
+        ),
+    ]
 
     model_config = ConfigDict(frozen=True)

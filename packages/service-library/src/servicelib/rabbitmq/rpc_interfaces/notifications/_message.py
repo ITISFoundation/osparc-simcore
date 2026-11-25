@@ -2,10 +2,12 @@ import logging
 from typing import Any
 
 from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
-from models_library.celery import OwnerMetadata
+from models_library.celery import GroupUUID, OwnerMetadata, TaskUUID
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
     Addressing,
+    GetMessageStatusRequest,
+    GetMessageStatusResponse,
     Message,
     SendMessageFromTemplateRequest,
     SendMessageRequest,
@@ -41,6 +43,28 @@ async def send_message(
         ),
     )
     assert isinstance(result, SendMessageResponse)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_message_status(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    owner_metadata: OwnerMetadata,
+    task_or_group_uuid: TaskUUID | GroupUUID,
+) -> GetMessageStatusResponse:
+    result = await rabbitmq_rpc_client.request(
+        NOTIFICATIONS_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_message_status"),
+        request=GetMessageStatusRequest(
+            # RPC arguments are pickled verbatim, so the sender's subclass cannot
+            # reach the notifications service; the shared model must go on the wire
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()),
+            task_or_group_uuid=task_or_group_uuid,
+        ),
+    )
+    assert isinstance(result, GetMessageStatusResponse)  # nosec
     return result
 
 

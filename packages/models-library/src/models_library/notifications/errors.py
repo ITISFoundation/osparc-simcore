@@ -17,6 +17,10 @@ class NotificationsProductSMTPSettingsNotFoundError(BaseNotificationsError):
     msg_template = "SMTP settings are missing for product '{product_name}'."
 
 
+class NotificationsProductTwilioSettingsNotFoundError(BaseNotificationsError):
+    msg_template = "Twilio settings are missing for product '{product_name}'."
+
+
 class NotificationsTemplateContextValidationError(BaseNotificationsError):
     msg_template = "Validation of context failed for template '{template_name}'."
 
@@ -34,3 +38,11 @@ class NotificationsTooManyRecipientsError(BaseNotificationsError):
         "The number of recipients ({num_recipients}) exceeds the allowed maximum of {max_recipients}. "
         "Please reduce the number of recipients and try again."
     )
+
+
+class NotificationsRecipientChannelMismatchError(BaseNotificationsError):
+    msg_template = "Contact type '{contact_type}' does not match notification channel '{channel}'."
+
+
+class NotificationsTaskNotFoundError(BaseNotificationsError):
+    msg_template = "Task or group '{task_or_group_uuid}' not found."

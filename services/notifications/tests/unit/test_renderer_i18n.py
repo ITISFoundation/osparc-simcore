@@ -126,3 +126,47 @@ def test_share_project_renders_chinese_from_real_catalog(
     assert "example.com 上有人与您共享了一个项目" in content.subject
     assert "亲爱的 Ada，" in content.body_text  # noqa: RUF001 fullwidth comma is correct Chinese typography
     assert "oSPARC 团队" in content.body_text
+
+
+# ---------------------------------------------------------------------------
+# sms/new_2fa_code — the msgid moved here from the web-server gettext call
+# when 2FA SMS delivery migrated to this service; catalogs must carry it
+# ---------------------------------------------------------------------------
+
+
+def _sms_2fa_template() -> Template:
+    ref = TemplateRef(
+        channel=Channel.sms,
+        template_name=TypeAdapter(TemplateName).validate_python("new_2fa_code"),
+    )
+    return Template(
+        ref=ref,
+        context_model=type("Ctx", (), {}),  # not used by the renderer
+        parts=for_channel(Channel.sms).get_field_names(),
+    )
+
+
+def test_sms_new_2fa_code_renders_english_passthrough(renderer: JinjaRenderer) -> None:
+    preview = renderer.preview_template(
+        _sms_2fa_template(),
+        {"user": {"first_name": "Ada", "user_name": "ada99"}, "code": "12345"},
+        locale="en",
+    )
+    assert preview.message_content.body == "Dear Ada, your verification code is 12345"
+
+
+@pytest.mark.parametrize("locale", ["es_ES", "ko_KR", "zh_CN"])
+def test_sms_new_2fa_code_renders_translated_from_real_catalog(
+    renderer: JinjaRenderer,
+    locale: str,
+) -> None:
+    preview = renderer.preview_template(
+        _sms_2fa_template(),
+        {"user": {"first_name": "Ada", "user_name": "ada99"}, "code": "12345"},
+        locale=locale,
+    )
+    body = preview.message_content.body
+    assert "12345" in body
+    # %-placeholders substituted and the English msgid not passed through
+    assert "%(" not in body
+    assert "your verification code" not in body

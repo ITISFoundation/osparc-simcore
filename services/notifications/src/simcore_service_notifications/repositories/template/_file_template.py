@@ -1,5 +1,6 @@
 import fnmatch
 from dataclasses import dataclass
+from typing import Any, Final, cast
 
 from jinja2 import Environment
 from jinja2 import Template as JinjaTemplate
@@ -12,6 +13,9 @@ from ...models.content import for_channel
 from ...models.template import Template, TemplateRef, get_template_context_model
 from ._template import TemplateRepository
 
+# mypy 2.1 cannot pass a PEP 695 TypeAliasType through TypeAdapter's TypeForm
+# parameter; cast keeps the runtime alias as the single source of the constraints
+_TEMPLATE_NAME_ADAPTER: Final[TypeAdapter[TemplateName]] = TypeAdapter(cast(Any, TemplateName))
 _TEMPLATE_EXTENSION = ".j2"
 _EXPECTED_PATH_PARTS = 3  # channel/template_name/part
 
@@ -143,7 +147,7 @@ class FileTemplateRepository(TemplateRepository):
             if key not in templates_dict:
                 template_ref = TemplateRef(
                     channel=Channel(channel_str),
-                    template_name=TypeAdapter(TemplateName).validate_python(template_name_str),
+                    template_name=_TEMPLATE_NAME_ADAPTER.validate_python(template_name_str),
                 )
                 templates_dict[key] = _build_template(template_ref)
 

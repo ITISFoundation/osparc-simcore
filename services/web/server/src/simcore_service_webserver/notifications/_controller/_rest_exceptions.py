@@ -2,6 +2,8 @@ from common_library.user_messages import user_message
 from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsProductSMTPSettingsNotFoundError,
+    NotificationsProductTwilioSettingsNotFoundError,
+    NotificationsRecipientChannelMismatchError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -28,6 +30,20 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
             "Email settings for product '{product_name}' are not configured.",
+            _version=1,
+        ),
+    ),
+    NotificationsProductTwilioSettingsNotFoundError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        user_message(
+            "SMS settings for product '{product_name}' are not configured.",
+            _version=1,
+        ),
+    ),
+    NotificationsRecipientChannelMismatchError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "Contact type '{contact_type}' does not match notification channel '{channel}'.",
             _version=1,
         ),
     ),

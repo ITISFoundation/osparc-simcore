@@ -72,10 +72,15 @@ notifications:
     - _shared/helm-values.devel.yaml.gotmpl
     - notifications/helm-values.local.yaml.gotmpl
 
-notifications_worker:
+notifications_email_worker:
   extra_values_files:
     - _shared/helm-values.devel.yaml.gotmpl
-    - notifications/helm-values.local.notifications-worker.yaml.gotmpl
+    - notifications/helm-values.local.notifications-email-worker.yaml.gotmpl
+
+notifications_sms_worker:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - notifications/helm-values.local.notifications-sms-worker.yaml.gotmpl
 
 payments:
   extra_values_files:

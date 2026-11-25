@@ -20,32 +20,16 @@ def test_login_with_invitation(monkeypatch: pytest.MonkeyPatch):
     assert settings
 
 
-@pytest.fixture
-def twilio_config(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
-    TWILO_CONFIG = {
-        "TWILIO_ACCOUNT_SID": "fake-account",
-        "TWILIO_AUTH_TOKEN": "fake-token",
-        "TWILIO_MESSAGING_SID": "x" * 34,
-    }
-    # NOTE: enforces DELETE-ENV since apparently some session-based fixtures are settings these envs
-    for key in TWILO_CONFIG:
-        monkeypatch.delenv(key, raising=False)
-    return TWILO_CONFIG
-
-
-def test_login_settings_with_2fa(monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]):
+def test_login_settings_with_2fa(monkeypatch: pytest.MonkeyPatch):
     setenvs_from_dict(
         monkeypatch,
-        {
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",
-            **twilio_config,
-        },
+        {"LOGIN_REGISTRATION_INVITATION_REQUIRED": "1"},
     )
     assert LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
 
 
-def test_login_settings_fails_with_2fa_but_wo_twilio(monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]):
-    # cannot enable 2fa w/o twilio settings
+def test_login_settings_fails_with_2fa_but_wo_confirmed_email(monkeypatch: pytest.MonkeyPatch):
+    # cannot enable 2fa w/o confirmed emails (invitation-only registration)
     setenvs_from_dict(
         monkeypatch,
         {

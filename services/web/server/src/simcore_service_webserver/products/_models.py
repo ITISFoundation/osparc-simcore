@@ -1,6 +1,5 @@
 import logging
 import re
-import string
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Annotated, Any
@@ -216,10 +215,6 @@ class Product(BaseModel):
     @staticmethod
     def _preserve_snake_case(v: Any) -> Any:
         return v
-
-    @property
-    def twilio_alpha_numeric_sender_id(self) -> str:
-        return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

@@ -49,5 +49,4 @@ python-socketio # web-sockets
 redis
 swagger-ui-py
 tenacity
-twilio
 uvloop

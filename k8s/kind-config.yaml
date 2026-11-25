@@ -56,7 +56,8 @@ nodes:
       - { containerPort: 32017, hostPort: 3017 }   # invitations debug
       - { containerPort: 30015, hostPort: 8015 }   # notifications http
       - { containerPort: 32023, hostPort: 3023 }   # notifications debug
-      - { containerPort: 32026, hostPort: 3026 }   # notifications-worker debug
+      - { containerPort: 32026, hostPort: 3026 }   # notifications-email-worker debug
+      - { containerPort: 32027, hostPort: 3027 }   # notifications-sms-worker debug
       - { containerPort: 30011, hostPort: 8011 }   # payments http
       - { containerPort: 32018, hostPort: 3018 }   # payments debug
       - { containerPort: 30009, hostPort: 8009 }   # resource-usage-tracker http

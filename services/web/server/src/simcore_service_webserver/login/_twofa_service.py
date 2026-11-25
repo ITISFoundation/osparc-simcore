@@ -3,11 +3,10 @@
 Currently includes two parts:
 
 - generation and storage of secret codes for 2FA validation (using redis)
-- sending SMS of generated codes for validation (using twilio service)
+- sending SMS/email of generated codes for validation (via the notifications service)
 
 """
 
-import asyncio
 import hashlib
 import hmac
 import logging
@@ -18,23 +17,28 @@ from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Annotated, Final
 
-import twilio.rest  # type: ignore[import-untyped]
 from aiohttp import web
 from annotated_types import doc
-from common_library.gettext_support import SupportedLocale, get_translator
-from common_library.user_messages import user_message
+from common_library.gettext_support import SupportedLocale
+from common_library.masking import mask_phone_number
+from models_library.celery import GroupStatus, GroupUUID, TaskState, TaskStatus, TaskUUID
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import BaseModel, Field, SecretStr
 from servicelib.logging_utils import log_decorator
 from servicelib.utils_secrets import are_secrets_equal, generate_passcode
-from settings_library.twilio import TwilioSettings
-from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
+from tenacity import (
+    AsyncRetrying,
+    TryAgain,
+    before_sleep_log,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
-from ..locale import resolve_effective_locale
 from ..notifications import notifications_service
-from ..notifications.models import EmailContact
+from ..notifications.models import EmailContact, SmsContact
 from ..redis import get_redis_validation_code_client
 from ..session.settings import get_plugin_settings as get_session_settings
 from ._twofa_lua import CONSUME_MATCHED_CODE_SCRIPT, CONSUME_TRIAL_SCRIPT, RELEASE_COOLDOWN_SCRIPT
@@ -270,13 +274,83 @@ async def resend_cooldown(
 
 
 #
-# TWILIO
-#   - sms service
+# SMS
+#   - code delivery via the notifications service
 #
 
 
 class SMSError(RuntimeError):
     pass
+
+
+_SMS_DELIVERY_FAILED_MSG: Final = "SMS code delivery failed"
+_SMS_DELIVERY_POLL_INTERVAL_S: Final = 2.0
+_SMS_DELIVERY_MAX_WAIT_S: Final = 10.0
+
+
+def _is_delivered(status: TaskStatus | GroupStatus) -> bool | None:
+    """Delivery verdict of a published message: True delivered, False failed, None still running"""
+    if isinstance(status, GroupStatus):
+        return status.is_successful if status.is_done else None
+    return status.task_state == TaskState.SUCCESS if status.is_done else None
+
+
+async def _await_sms_delivery(
+    app: web.Application,
+    *,
+    user_id: UserID | None,
+    product_name: ProductName,
+    task_or_group_uuid: TaskUUID | GroupUUID,
+) -> None:
+    """Waits for a published SMS to reach a terminal delivery state
+
+    Publishing only acknowledges enqueueing, so a worker-side rejection (e.g. a
+    Twilio 4xx) would otherwise go unnoticed and login would report a code that
+    never arrives. Raises SMSError on delivery failure so the caller can give
+    the resend cooldown back. A delivery still in flight at the deadline,
+    or whose status cannot be looked up, returns without raising: the task
+    may still deliver, and freeing the cooldown early would only invite
+    duplicate codes.
+    """
+    delivered: bool | None = None
+    try:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(_SMS_DELIVERY_MAX_WAIT_S),
+            wait=wait_fixed(_SMS_DELIVERY_POLL_INTERVAL_S),
+            retry=retry_if_exception_type(TryAgain),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+            reraise=True,
+        ):
+            with attempt:
+                try:
+                    status = await notifications_service.get_message_status(
+                        app,
+                        user_id=user_id,
+                        product_name=product_name,
+                        task_or_group_uuid=task_or_group_uuid,
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    _logger.warning(
+                        "SMS delivery status of %s could not be looked up, reporting success",
+                        task_or_group_uuid,
+                    )
+                    return
+                delivered = _is_delivered(status)
+                if delivered is None:
+                    msg = f"SMS delivery of {task_or_group_uuid} still running"
+                    raise TryAgain(msg)  # noqa: TRY301
+                if delivered:
+                    return
+    except TryAgain:
+        _logger.warning(
+            "SMS delivery task %s still running after %.0f s, reporting success",
+            task_or_group_uuid,
+            _SMS_DELIVERY_MAX_WAIT_S,
+        )
+        return
+
+    if delivered is False:
+        raise SMSError(_SMS_DELIVERY_FAILED_MSG)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -285,61 +359,48 @@ async def send_sms_code(
     *,
     phone_number: str,
     code: str,
-    twilio_auth: TwilioSettings,
-    twilio_messaging_sid: str,
-    twilio_alpha_numeric_sender: str,
     first_name: str,
+    user_name: str,
+    product_name: ProductName,
+    host: str,
+    ttl: int,
     user_id: UserID | None = None,
     locale: SupportedLocale | None = None,
 ):
     try:
-        resolved_locale = await resolve_effective_locale(
+        task_or_group_uuid, _task_name = await notifications_service.send_message_from_template(
             app,
             user_id=user_id,
+            product_name=product_name,
+            channel=Channel.sms,
+            group_ids=None,
+            external_contacts=[
+                SmsContact(
+                    phone_number=phone_number,
+                )
+            ],
+            template_name="new_2fa_code",
+            context={
+                "user": {
+                    "first_name": first_name,
+                    "user_name": user_name,
+                },
+                "host": host,
+                "code": code,
+                "ttl": ttl,
+            },
             locale=locale,
         )
-        translator = get_translator(resolved_locale)
-        create_kwargs = {
-            "messaging_service_sid": twilio_messaging_sid,
-            "to": phone_number,
-            "body": translator.gettext(
-                user_message(
-                    "Dear {first_name}, your verification code is {code}",
-                    _hint="SMS message of at most 70 characters",
-                    _version=1,
-                )
-            ).format(first_name=first_name[:15], code=code),
-        }
-        if twilio_auth.is_alphanumeric_supported(phone_number):
-            create_kwargs["from_"] = twilio_alpha_numeric_sender
-
-        def _sender():
-            _logger.info(
-                "Sending sms code to %s",
-                mask_phone_number(phone_number),
-            )
-            #
-            # SEE https://www.twilio.com/docs/sms/quickstart/python
-            #
-            # NOTE: this is mocked
-            client = twilio.rest.Client(
-                twilio_auth.TWILIO_ACCOUNT_SID,
-                twilio_auth.TWILIO_AUTH_TOKEN.get_secret_value(),
-            )
-            message = client.messages.create(**create_kwargs)
-
-            _logger.debug(
-                "Got twilio client %s",
-                f"{message=}",
-            )
-
-        await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
-
-    except TwilioException as exc:
+        await _await_sms_delivery(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            task_or_group_uuid=task_or_group_uuid,
+        )
+    except Exception as exc:
         raise SendingVerificationSmsError(
             details=f"Could not send SMS to {mask_phone_number(phone_number)}",
             user_id=user_id,
-            twilio_error=exc,
         ) from exc
 
 
@@ -398,18 +459,3 @@ async def send_email_code(
             user_email=user_email,
             email_error=exc,
         ) from exc
-
-
-#
-# HELPERS
-#
-
-_FROM, _TO = 3, -1
-_MIN_NUM_DIGITS = 5
-
-
-def mask_phone_number(phone: str) -> str:
-    assert len(phone) > _MIN_NUM_DIGITS  # nosec
-    # SEE https://github.com/pydantic/pydantic/issues/1551
-    # SEE https://en.wikipedia.org/wiki/E.164
-    return phone[:_FROM] + len(phone[_FROM:_TO]) * "X" + phone[_TO:]
