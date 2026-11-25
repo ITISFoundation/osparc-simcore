@@ -185,6 +185,16 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Grafana base URL used to build log explore links in the failure diagnostics, or GRAFANA_URL env var",
     )
+    group.addoption(
+        "--grafana-logs-datasource-uid",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "UID of the Grafana datasource holding the service logs used by those explore links, or "
+            "GRAFANA_LOGS_DATASOURCE_UID env var; datasource UIDs differ between deployments"
+        ),
+    )
 
 
 # Dictionary to store start times of tests
@@ -280,7 +290,11 @@ def pytest_runtest_makereport(item: pytest.Item, call):
             if grafana_base_url := _resolve_grafana_base_url(item):
                 diagnostics["grafana_explore_url"] = grafana_explore_url(
                     grafana_base_url,
-                    datasource_uid=DEFAULT_GRAFANA_LOGS_DATASOURCE_UID,
+                    datasource_uid=(
+                        item.config.getoption("--grafana-logs-datasource-uid", default=None)
+                        or os.environ.get("GRAFANA_LOGS_DATASOURCE_UID")
+                        or DEFAULT_GRAFANA_LOGS_DATASOURCE_UID
+                    ),
                     query=FAILURE_DIAGNOSIS_LOGS_QUERY,
                     start_time=start_time,
                     end_time=end_time,

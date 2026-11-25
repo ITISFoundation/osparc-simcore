@@ -109,6 +109,9 @@ and a LogsQL query over the services involved in pipeline stalls
 Pass `--grafana-url` (or set `GRAFANA_URL`) to add a Grafana explore
 deep-link over that window. Without it the report still carries the query
 and the epoch-ms window, which can be pasted into Grafana manually.
+Datasource UIDs differ between deployments, so the link uses the one given
+by `--grafana-logs-datasource-uid` (or `GRAFANA_LOGS_DATASOURCE_UID`), which
+defaults to `victoria-logs`.
 
 When the failure happens after a computation was started,
 `start_and_stop_pipeline` first asks the backend about every computation it
