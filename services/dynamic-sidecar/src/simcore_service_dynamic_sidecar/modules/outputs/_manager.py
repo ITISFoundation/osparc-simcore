@@ -20,6 +20,7 @@ from common_library.logging.logging_errors import (
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import ProgressType
+from models_library.services_types import ServicePortKey
 from pydantic import PositiveFloat
 from servicelib import progress_bar
 from servicelib.background_task import create_periodic_task
@@ -30,7 +31,7 @@ from ...core.rabbitmq import post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
 from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
-from ._content_monitor import DEFAULT_HASH_WORKERS, PortContentMonitor, StabilityOutcome
+from ._content_monitor import DEFAULT_HASH_WORKERS, Fingerprint, PortContentMonitor, StabilityOutcome
 from ._context import OutputsContext
 from ._upload_trust import PortUploadTrust
 
@@ -135,8 +136,6 @@ class _PortKeyTracker:
 
 
 class _PortWatch(NamedTuple):
-    """Per-port pair: content monitor and upload certification"""
-
     monitor: PortContentMonitor
     trust: PortUploadTrust
 
@@ -206,7 +205,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             self._sweep_forced = True  # content may have changed while disabled: re-check everything
         self._background_uploads_enabled = is_enabled
 
-    async def _on_stable_content(self, port_key: str, fingerprint: str) -> None:
+    async def _on_stable_content(self, port_key: ServicePortKey, fingerprint: Fingerprint) -> None:
         """a quiet-proven fingerprint: schedule the upload unless that content is already certified"""
         if not self._background_uploads_enabled:
             _logger.info("port %s: output IO disabled, the sweep on re-enable will retry this check", port_key)

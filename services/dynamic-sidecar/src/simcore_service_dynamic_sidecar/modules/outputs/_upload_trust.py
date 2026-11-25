@@ -2,7 +2,9 @@
 
 import logging
 
-from ._content_monitor import PortContentMonitor
+from models_library.services_types import ServicePortKey
+
+from ._content_monitor import Fingerprint, PortContentMonitor
 
 _logger = logging.getLogger(__name__)
 
@@ -10,17 +12,17 @@ _logger = logging.getLogger(__name__)
 class PortUploadTrust:
     """Tracks, for one port, the fingerprint a successful upload certified as stored."""
 
-    def __init__(self, *, port_key: str, monitor: PortContentMonitor) -> None:
+    def __init__(self, *, port_key: ServicePortKey, monitor: PortContentMonitor) -> None:
         self._port_key = port_key
         self._monitor = monitor
-        self._upload_candidate: str | None = None
-        self._uploaded_fingerprint: str | None = None
+        self._upload_candidate: Fingerprint | None = None
+        self._uploaded_fingerprint: Fingerprint | None = None
 
-    def is_certified(self, fingerprint: str | None) -> bool:
+    def is_certified(self, fingerprint: Fingerprint | None) -> bool:
         """True when a completed upload certified exactly this content"""
         return fingerprint is not None and self._uploaded_fingerprint == fingerprint
 
-    def note_upload_started(self, fingerprint: str) -> None:
+    def note_upload_started(self, fingerprint: Fingerprint) -> None:
         """Records the fingerprint the upload is sending, verified after the PUT."""
         self._upload_candidate = fingerprint
 

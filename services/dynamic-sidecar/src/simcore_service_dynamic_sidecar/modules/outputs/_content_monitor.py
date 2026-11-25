@@ -15,6 +15,7 @@ from uuid import uuid4
 
 import xxhash
 from annotated_types import doc
+from models_library.services_types import ServicePortKey
 from pydantic import ByteSize, PositiveFloat, PositiveInt, TypeAdapter
 
 _logger = logging.getLogger(__name__)
@@ -35,8 +36,10 @@ _NO_METADATA_SENTINEL: Final[
 
 DEFAULT_HASH_WORKERS: Final[Annotated[int, doc("files hashed concurrently by the shared pool")]] = 4
 
+type Fingerprint = str
+
 type OnStableContentCB = Annotated[
-    Callable[[str, str], Awaitable[None]], doc("called with (port_key, fingerprint) once content settles")
+    Callable[[ServicePortKey, Fingerprint], Awaitable[None]], doc("called once content settles")
 ]
 
 
@@ -47,7 +50,7 @@ class StabilityOutcome(Enum):
 
 class ContentCheckResult(NamedTuple):
     outcome: StabilityOutcome
-    fingerprint: Annotated[str | None, doc("the proven fingerprint when STABLE, None otherwise")]
+    fingerprint: Annotated[Fingerprint | None, doc("the proven fingerprint when STABLE, None otherwise")]
 
 
 @dataclass(slots=True)
@@ -166,7 +169,7 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
-        port_key: str,
+        port_key: ServicePortKey,
         directory: Path,
         hash_executor: ThreadPoolExecutor,
         on_stable_content: OnStableContentCB,
@@ -212,13 +215,13 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
         if result.outcome is StabilityOutcome.STABLE and (fingerprint := result.fingerprint) is not None:
             await self._on_stable_content(self._port_key, fingerprint)
 
-    def stable_fingerprint(self) -> str | None:
+    def stable_fingerprint(self) -> Fingerprint | None:
         """The last scan's fingerprint while no hash is pending; runs no scan itself"""
         if self._pending_hashes > 0 or self._fingerprint is None:
             return None
         return self._fingerprint
 
-    async def rescan(self) -> str | None:
+    async def rescan(self) -> Fingerprint | None:
         """Cancels any armed check and scans once; the fingerprint when the scan leaves no hash pending"""
         self._check_generation += 1
         if self._check_task is not None and not self._check_task.done():
