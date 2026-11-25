@@ -6,6 +6,7 @@ from typing import Final
 from celery import (  # type: ignore[import-untyped]
     Task,
 )
+from common_library.masking import mask_phone_number
 from models_library.celery import TaskKey
 from models_library.notifications.celery import SmsMessage
 from models_library.products import ProductName
@@ -24,10 +25,6 @@ from ...exceptions.errors import (
 
 _logger = logging.getLogger(__name__)
 
-_FROM: Final[int] = 3
-_TO: Final[int] = -1
-_MIN_NUM_DIGITS: Final[int] = 5
-
 # 4xx the provider may recover from, so they stay retryable
 _TRANSIENT_4XX: Final[frozenset[int]] = frozenset({408, 429})
 _HTTP_CLIENT_ERROR_MIN: Final[int] = 400
@@ -43,12 +40,6 @@ def _is_permanent_rejection(exc: TwilioRestException) -> bool:
     )
 
 
-def _mask_phone_number(phone: str) -> str:
-    assert len(phone) > _MIN_NUM_DIGITS  # nosec
-    # SEE https://en.wikipedia.org/wiki/E.164
-    return phone[:_FROM] + len(phone[_FROM:_TO]) * "X" + phone[_TO:]
-
-
 async def send_sms_message_task(
     task: Task,
     task_key: TaskKey,
@@ -58,7 +49,7 @@ async def send_sms_message_task(
     assert task  # nosec
     assert task_key  # nosec
 
-    masked_phone_number = _mask_phone_number(message.to.phone_number)
+    masked_phone_number = mask_phone_number(message.to.phone_number)
 
     with log_context(_logger, logging.INFO, "Send sms to %s", masked_phone_number):
         app_settings = ApplicationSettings.create_from_envs()

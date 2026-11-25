@@ -22,6 +22,7 @@ from typing import Annotated, Final
 from aiohttp import web
 from annotated_types import doc
 from common_library.gettext_support import SupportedLocale
+from common_library.masking import mask_phone_number
 from models_library.celery import GroupStatus, GroupUUID, TaskState, TaskStatus, TaskUUID
 from models_library.notifications import Channel
 from models_library.products import ProductName
@@ -439,17 +440,3 @@ async def send_email_code(
             email_error=exc,
         ) from exc
 
-
-#
-# HELPERS
-#
-
-_FROM, _TO = 3, -1
-_MIN_NUM_DIGITS = 5
-
-
-def mask_phone_number(phone: str) -> str:
-    assert len(phone) > _MIN_NUM_DIGITS  # nosec
-    # SEE https://github.com/pydantic/pydantic/issues/1551
-    # SEE https://en.wikipedia.org/wiki/E.164
-    return phone[:_FROM] + len(phone[_FROM:_TO]) * "X" + phone[_TO:]

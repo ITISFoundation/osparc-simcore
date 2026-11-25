@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.logging.logging_base import get_log_record_extra
+from common_library.masking import mask_phone_number
 from common_library.user_messages import user_message
 from models_library.authentication import TwoFactorAuthenticationMethod
 from pydantic import TypeAdapter
@@ -170,7 +171,7 @@ async def login(request: web.Request):
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
                     "message": translate_message(MSG_2FA_CODE_SENT, request).format(
-                        phone_number=_twofa_service.mask_phone_number(user["phone"])
+                        phone_number=mask_phone_number(user["phone"])
                     ),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },

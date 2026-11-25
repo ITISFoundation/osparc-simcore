@@ -5,6 +5,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.masking import mask_phone_number
 from common_library.user_messages import user_message
 from models_library.notifications import Channel
 from servicelib.aiohttp import status
@@ -326,9 +327,7 @@ async def register_phone(request: web.Request):
                     "parameters": {
                         "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                     },
-                    "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=_twofa_service.mask_phone_number(registration.phone)
-                    ),
+                    "message": MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(registration.phone)),
                     "level": "INFO",
                     "logger": "user",
                 },
