@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import re
 import urllib.parse
 from collections import defaultdict
 from collections.abc import Callable
@@ -22,6 +23,8 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 from pytest_simcore.helpers import playwright as playwright_helpers
 from pytest_simcore.helpers.playwright import (
+    FAILURE_DIAGNOSIS_LOG_SERVICES,
+    FAILURE_DIAGNOSIS_LOGS_QUERY,
     REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE,
     SOCKETIO_MESSAGE_PREFIX,
     RobustWebSocket,
@@ -1485,6 +1488,17 @@ def test_capture_backend_computation_turns_a_failure_into_an_error_entry(
 
     assert set(captured) == {"error"}
     assert expected_error in captured["error"]
+
+
+def test_the_logs_query_selects_the_services_the_failure_hints_name():
+    # NOTE: an explore link whose filter drops wb-db-event-listener cannot show the logs of the
+    # service the outputs wait blames, so the query has to keep up with the hints
+    stream_pattern = FAILURE_DIAGNOSIS_LOGS_QUERY.removeprefix('{service_name=~"').removesuffix('"}')
+    stream_name = re.compile(stream_pattern)
+
+    for service in FAILURE_DIAGNOSIS_LOG_SERVICES:
+        assert stream_name.fullmatch(f"master-simcore_master_{service}"), service
+    assert not stream_name.fullmatch("master-simcore_master_dyn-proxy_1234")
 
 
 def test_grafana_explore_url_carries_the_datasource_query_and_window():

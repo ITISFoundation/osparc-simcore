@@ -103,8 +103,9 @@ Studies protected by HTTP basic auth can be reached with
 When a test fails, `tests/conftest.py` logs a JSON diagnostics report with
 the test location, the deployment, the duration, the time window of the run
 and a LogsQL query over the services involved in pipeline stalls
-(`api-server`, `autoscaling`, `dask-sidecar`, `dask-scheduler`, `director-v2`,
-`webserver`).
+(`api-server`, `autoscaling`, `dask-scheduler`, `dask-sidecar`,
+`director-v2`, `wb-db-event-listener` and `webserver`, which are the names
+they have in `services/docker-compose.yml`).
 
 Pass `--grafana-url` (or set `GRAFANA_URL`) to add a Grafana explore
 deep-link over that window. Without it the report still carries the query

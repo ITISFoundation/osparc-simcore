@@ -1246,8 +1246,22 @@ DEFAULT_GRAFANA_LOGS_DATASOURCE_UID: Final[
     Annotated[str, doc("VictoriaLogs datasource of the deployments this suite runs against today")]
 ] = "victoria-logs"
 
+# NOTE: log streams are named `<stack>_<compose service name>` (see the grafana-query skill), and the
+# stack prefix is unknown at test time, hence the leading `.*_`. The names are those of
+# services/docker-compose.yml: the web-server runs as `webserver`, its db-listener as
+# `wb-db-event-listener`.
+FAILURE_DIAGNOSIS_LOG_SERVICES: Final[tuple[str, ...]] = (
+    "api-server",
+    "autoscaling",
+    "dask-scheduler",
+    "dask-sidecar",
+    "director-v2",
+    "wb-db-event-listener",
+    "webserver",
+)
+
 FAILURE_DIAGNOSIS_LOGS_QUERY: Final[Annotated[str, doc("LogsQL over the services implicated in a pipeline stall")]] = (
-    r'{service_name=~".*_(api-server|autoscaling|dask-sidecar|dask-scheduler|director-v2|webserver)"}'
+    '{service_name=~".*_(' + "|".join(FAILURE_DIAGNOSIS_LOG_SERVICES) + ')"}'
 )
 
 
