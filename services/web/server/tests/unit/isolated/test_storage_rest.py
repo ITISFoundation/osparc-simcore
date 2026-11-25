@@ -98,6 +98,19 @@ def test_dot_like_names_are_allowed(segment: str, app: web.Application):
             "/v0/storage/locations/0/files/x:a%20b:abort",
             "/v0/locations/0/files/x:a%20b:abort",
         ),
+        # action in the middle of the path, with segments trailing it
+        (
+            "/v0/storage/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc123",
+            "/v0/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc123",
+        ),
+        (
+            "/v0/storage/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc%3Fuser_id%3D7",
+            "/v0/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc%3Fuser_id%3D7",
+        ),
+        (
+            "/v0/storage/locations/0/files/foo:abort%3Fuser_id%3D7%26x%3D:complete/futures/abc123",
+            "/v0/locations/0/files/foo:abort%3Fuser_id%3D7%26x%3D:complete/futures/abc123",
+        ),
     ],
 )
 def test_encoded_delimiters_after_colon_stay_in_the_path(path: str, expected_raw_path: str, app: web.Application):
@@ -107,36 +120,75 @@ def test_encoded_delimiters_after_colon_stay_in_the_path(path: str, expected_raw
     assert dict(url.query) == {"user_id": "42"}
 
 
-async def test_encoded_traversal_is_rejected_over_http(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPatch):
-    # real HTTP round trip through the aiohttp server parser, so the raw
-    # percent-encoded target reaches the dot-segment check unmodified
-    forwarded_requests: list[str] = []
+@pytest.fixture
+def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPatch):
+    # builds a proxy app forwarding through _forward_request_to_storage to a
+    # spy storage server over real HTTP; the spy records what the proxy sent
+    async def _create() -> tuple[TestClient, list[tuple[str, str, dict[str, str]]]]:
+        seen: list[tuple[str, str, dict[str, str]]] = []
 
-    async def _storage_spy(request: web.Request) -> web.Response:
-        forwarded_requests.append(f"{request.method} {request.path_qs}")
-        return web.json_response({"data": "ok", "links": None, "meta": None})
+        async def _storage_spy(request: web.Request) -> web.Response:
+            # path and query are what storage's framework routes on
+            seen.append((request.method, request.path, dict(request.query)))
+            return web.json_response({"data": "ok", "links": None, "meta": None})
 
-    spy_app = web.Application()
-    spy_app.router.add_route("*", "/{tail:.*}", _storage_spy)
-    spy_client: TestClient = await aiohttp_client(spy_app)
+        spy_app = web.Application()
+        spy_app.router.add_route("*", "/{tail:.*}", _storage_spy)
+        spy_client: TestClient = await aiohttp_client(spy_app)
 
-    monkeypatch.setattr(_rest, "_get_base_storage_url", lambda _app: URL(f"{spy_client.make_url('/v0')}", encoded=True))
-    monkeypatch.setattr(_rest, "get_client_session", lambda _app: spy_client.session)
+        monkeypatch.setattr(
+            _rest, "_get_base_storage_url", lambda _app: URL(f"{spy_client.make_url('/v0')}", encoded=True)
+        )
+        monkeypatch.setattr(_rest, "get_client_session", lambda _app: spy_client.session)
 
-    async def _proxy(request: web.Request) -> web.Response:
-        request[RQT_USERID_KEY] = 42
-        payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
-        return web.json_response(payload, status=resp_status)
+        async def _proxy(request: web.Request) -> web.Response:
+            request[RQT_USERID_KEY] = 42
+            payload, resp_status = await _forward_request_to_storage(request, request.method, body=None)
+            return web.json_response(payload, status=resp_status)
 
-    app_ = web.Application()
-    app_.router.add_route("*", "/{tail:.*}", _proxy)
-    client: TestClient = await aiohttp_client(app_)
+        app_ = web.Application()
+        app_.router.add_route("*", "/{tail:.*}", _proxy)
+        client: TestClient = await aiohttp_client(app_)
+        return client, seen
+
+    return _create
+
+
+async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Callable):
+    # the raw percent-encoded target must survive the server parser and reach
+    # the dot-segment check unmodified
+    client, seen = await create_storage_proxy()
 
     resp = await client.get("/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus")
     assert resp.status == status.HTTP_400_BAD_REQUEST
     assert "must not contain" in await resp.text()
-    assert not forwarded_requests
+    assert not seen
 
     resp = await client.get("/v0/storage/locations")
     assert resp.status == status.HTTP_200_OK
-    assert forwarded_requests == ["GET /v0/locations?user_id=42"]
+    assert seen == [("GET", "/v0/locations", {"user_id": "42"})]
+
+
+async def test_encoded_action_delimiters_reach_storage_in_the_path(create_storage_proxy: Callable):
+    # the webserver-to-storage boundary: what the storage service parses must
+    # be the path text plus the authenticated user_id only
+    client, seen = await create_storage_proxy()
+
+    # the encoded delimiters must not reach the wire as path/query separators:
+    # storage must parse one query with the authenticated user_id only, the
+    # injected text staying path text
+    resp = await client.post("/v0/storage/locations/0/files/api/0/uuid/foo:abort%3Fuser_id%3D7%26x%3D:complete")
+    assert resp.status == status.HTTP_200_OK
+    assert seen[-1] == (
+        "POST",
+        "/v0/locations/0/files/api/0/uuid/foo:abort?user_id=7&x=:complete",
+        {"user_id": "42"},
+    )
+
+    resp = await client.post("/v0/storage/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc%3Fuser_id%3D7")
+    assert resp.status == status.HTTP_200_OK
+    assert seen[-1] == (
+        "POST",
+        "/v0/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc?user_id=7",
+        {"user_id": "42"},
+    )
