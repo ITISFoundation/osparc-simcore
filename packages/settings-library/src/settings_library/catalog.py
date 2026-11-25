@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import PortInt, VersionTag
+from settings_library.basic_types import HostNamePortStr, PortInt, VersionTag
 from settings_library.utils_service import (
     DEFAULT_FASTAPI_PORT,
     MixinServiceSettings,
@@ -10,7 +10,7 @@ from settings_library.utils_service import (
 
 
 class CatalogSettings(BaseCustomSettings, MixinServiceSettings):
-    CATALOG_HOST: str = "catalog"
+    CATALOG_HOST: HostNamePortStr = "catalog"
     CATALOG_PORT: PortInt = DEFAULT_FASTAPI_PORT
     CATALOG_VTAG: VersionTag = "v0"
 
