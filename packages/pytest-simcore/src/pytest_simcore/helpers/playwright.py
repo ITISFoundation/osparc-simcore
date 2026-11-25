@@ -728,6 +728,20 @@ class SocketIOProjectStateUpdatedWaiter:
             for event_project_uuid, event_state in self._seen_states
         )
 
+    def last_state_seen(self) -> RunningState | None:
+        """The most recent state pushed for `project_uuid`, which can be further along than the
+        state the wait started from: only the state that matches the expectation ends the wait"""
+        if self.project_uuid is None:
+            return None
+        return next(
+            (
+                state
+                for event_project_uuid, state in reversed(self._seen_states)
+                if event_project_uuid == self.project_uuid
+            ),
+            None,
+        )
+
 
 @dataclass
 class SocketIOWaitNodeForOutputs:
@@ -1146,14 +1160,26 @@ _NO_CLUSTER_HINT: Final[
 )
 
 
-def _pipeline_stall_raised_message(state: RunningState, expected_states: tuple[RunningState, ...]) -> str:
+def _pipeline_wait_raised_message(
+    state: RunningState,
+    expected_states: tuple[RunningState, ...],
+    *,
+    timed_out: bool,
+) -> str:
+    """The `log_context` failure message for a pipeline wait.
+
+    The hints describe a wait that ran out of time, so they are left out of any other error (a
+    websocket that never connected or could not be reattached says nothing about the backend.
+    """
     message = f"pipeline failed or timed out with {state}. Expected one of {expected_states=}"
+    if not timed_out:
+        return message
     if state in _STATES_NEVER_SENT_TO_SCHEDULER:
-        message = f"{message}. {_NEVER_SENT_TO_SCHEDULER_HINT}"
-    elif state in _STATES_WAITING_FOR_A_WORKER:
-        message = f"{message}. {_NO_WORKER_HINT}"
-    elif state in _STATES_WAITING_FOR_A_CLUSTER:
-        message = f"{message}. {_NO_CLUSTER_HINT}"
+        return f"{message}. {_NEVER_SENT_TO_SCHEDULER_HINT}"
+    if state in _STATES_WAITING_FOR_A_WORKER:
+        return f"{message}. {_NO_WORKER_HINT}"
+    if state in _STATES_WAITING_FOR_A_CLUSTER:
+        return f"{message}. {_NO_CLUSTER_HINT}"
     return message
 
 
@@ -1219,20 +1245,32 @@ def wait_for_pipeline_state(
     timeout_ms: int,
 ) -> RunningState:
     if current_state in if_in_states:
+        waiter = SocketIOProjectStateUpdatedWaiter(
+            expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES,
+            project_uuid=project_uuid,
+        )
+        # NOTE: the hints describe a wait that ran out of time. Any other error here (a socket that
+        # never connected or could not be reattached) says nothing about the backend
+        wait_timed_out = False
         with log_context(
             logging.INFO,
             msg=ContextMessages(
                 starting=f"wait for one of {expected_states=} (timeout {timedelta(milliseconds=timeout_ms)})",
                 done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
-                raised=lambda: _pipeline_stall_raised_message(current_state, expected_states),
+                raised=lambda: _pipeline_wait_raised_message(
+                    waiter.last_state_seen() or current_state,
+                    expected_states,
+                    timed_out=wait_timed_out,
+                ),
             ),
         ):
-            waiter = SocketIOProjectStateUpdatedWaiter(
-                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES,
-                project_uuid=project_uuid,
-            )
-            with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
-                current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
+            try:
+                with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
+                    current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
+            except PlaywrightTimeoutError:
+                wait_timed_out = True
+                raise
+
             if current_state in _FAIL_FAST_COMPUTATIONAL_STATES and current_state not in expected_states:
                 pytest.fail(f"❌ Pipeline failed fast with state {current_state}. Expected one of {expected_states} ❌")
     return current_state

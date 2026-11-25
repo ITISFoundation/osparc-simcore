@@ -587,6 +587,28 @@ def _websocket_failing_with(error: BaseException) -> RobustWebSocket:
     return cast(RobustWebSocket, websocket)
 
 
+class _SawStatesThenTimedOutEventContextManager(_TimedOutEventContextManager):
+    """A wait that received pushes for the project without any of them matching, then timed out"""
+
+    def __init__(self, predicate: Callable[[str], bool], messages: list[str]) -> None:
+        super().__init__()
+        self._predicate = predicate
+        self._messages = messages
+
+    def __enter__(self) -> Self:
+        for message in self._messages:
+            self._predicate(message)
+        return self
+
+
+def _websocket_that_times_out_after(*messages: str) -> RobustWebSocket:
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.side_effect = lambda _event, predicate, **_kwargs: _SawStatesThenTimedOutEventContextManager(
+        predicate, list(messages)
+    )
+    return cast(RobustWebSocket, websocket)
+
+
 def _satisfied_websocket() -> RobustWebSocket:
     # NOTE: an already-settled wait, so exiting the outputs wait without a caller error is
     # not treated as a cancellation
@@ -643,6 +665,51 @@ def test_pipeline_state_timeout_message_names_the_stalled_layer(
         assert fragment in caplog.text
     for marker in _STALL_HINT_MARKERS:
         assert (marker in caplog.text) is (marker in expected_fragments)
+
+
+def test_a_wait_that_progressed_before_timing_out_reports_the_last_state_seen(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: only the state that matches the expectation ends the wait, so a pipeline can be
+    # reported as stuck in the state it left behind unless the last push is looked up
+    websocket = _websocket_that_times_out_after(
+        _project_state_updated_message("project-a", RunningState.PUBLISHED),
+        _project_state_updated_message("project-a", RunningState.STARTED),
+    )
+
+    with pytest.raises(PlaywrightTimeoutError), caplog.at_level(logging.INFO):
+        wait_for_pipeline_state(
+            RunningState.PUBLISHED,
+            websocket=websocket,
+            project_uuid="project-a",
+            if_in_states=(RunningState.PUBLISHED,),
+            expected_states=(RunningState.SUCCESS,),
+            timeout_ms=100,
+        )
+
+    assert f"timed out with {RunningState.STARTED}" in caplog.text
+    for marker in _STALL_HINT_MARKERS:
+        assert marker not in caplog.text
+
+
+def test_a_websocket_error_that_is_not_a_timeout_names_no_backend_layer(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: a socket that never connected says nothing about the backend, so the state it was
+    # waiting in must not be turned into a backend diagnosis
+    with pytest.raises(PlaywrightError), caplog.at_level(logging.INFO):
+        wait_for_pipeline_state(
+            RunningState.PUBLISHED,
+            websocket=_websocket_failing_with(PlaywrightError("Target page, context or browser has been closed")),
+            project_uuid="project-a",
+            if_in_states=(RunningState.PUBLISHED,),
+            expected_states=(RunningState.STARTED, RunningState.SUCCESS),
+            timeout_ms=100,
+        )
+
+    assert "pipeline failed or timed out" in caplog.text
+    for marker in _STALL_HINT_MARKERS:
+        assert marker not in caplog.text
 
 
 def test_outputs_wait_with_failed_caller_block_does_not_blame_the_db_listener(
