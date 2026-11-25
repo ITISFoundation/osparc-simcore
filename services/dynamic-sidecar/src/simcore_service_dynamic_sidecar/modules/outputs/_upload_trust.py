@@ -1,4 +1,4 @@
-"""Upload certification of output port content: which fingerprint a completed PUT proved stored."""
+"""Upload certification state for output port content."""
 
 import logging
 

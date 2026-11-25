@@ -264,8 +264,7 @@ async def test_check_now_cancels_an_armed_check(monitor: PortContentMonitor, por
 async def test_cancelling_an_armed_check_stops_it_without_report(
     monitor: PortContentMonitor, on_stable_content: AsyncMock, port_dir: Path, mocker: MockerFixture
 ):
-    # a cancellation from outside the monitor (e.g. app shutdown) must not fall through
-    # into a scan: the cancelled check may not report stable content
+    # cancellation from outside must stop the check before any scan or report
     mocker.patch.object(monitor_module, "_QUIET_SECONDS", 10.0)
     (port_dir / "a.dat").write_bytes(b"hello")
 
@@ -285,8 +284,7 @@ async def test_cancelling_an_armed_check_stops_it_without_report(
 async def test_check_now_propagates_cancellation_of_its_caller(
     monitor: PortContentMonitor, port_dir: Path, mocker: MockerFixture
 ):
-    # check_now cancels the armed check; a cancellation aimed at check_now itself while it
-    # awaits that check must propagate, not be consumed by the check cleanup
+    # a cancellation aimed at check_now must propagate, not end in the armed-check cleanup
     mocker.patch.object(monitor_module, "_QUIET_SECONDS", 10.0)
     (port_dir / "a.dat").write_bytes(b"hello")
 
@@ -406,7 +404,7 @@ async def test_unreadable_port_directory_cannot_be_certified(
 
 
 async def test_deep_directory_chain_is_scanned_without_recursion(monitor: PortContentMonitor, port_dir: Path):
-    # one frame per level fails below PATH_MAX
+    # recursive scans exhaust the recursion limit on deep trees
     _build_deep_chain(port_dir, depth=1200)
 
     assert (await monitor.check_now()).outcome is StabilityOutcome.STABLE

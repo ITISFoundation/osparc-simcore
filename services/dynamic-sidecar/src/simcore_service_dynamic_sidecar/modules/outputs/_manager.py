@@ -135,7 +135,7 @@ class _PortKeyTracker:
 
 
 class _PortWatch(NamedTuple):
-    """Per-port pair: the filesystem monitor and the upload certification built on top of it"""
+    """Per-port pair: content monitor and upload certification"""
 
     monitor: PortContentMonitor
     trust: PortUploadTrust
@@ -333,7 +333,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         try:
             for port_key in self.outputs_context.file_type_port_keys:
                 if not self._background_uploads_enabled:
-                    break  # output IO was disabled mid-sweep: re-enabling forces a new sweep
+                    break  # output IO disabled mid-sweep: re-enabling forces a new sweep
                 if port_key in uploading_port_keys:
                     continue
                 if port_key not in self._port_watches and not self._port_directory_has_content(port_key):
@@ -349,7 +349,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
     def _start_safety_sweep(self) -> None:
         if self._task_sweep is not None and not self._task_sweep.done():
             return  # a forced request keeps its flag set: it runs as soon as the in-flight sweep ends
-        # the sweep runs beside the tick: a slow mount must not delay upload scheduling
+        # the sweep task runs beside the scheduler tick: a slow mount cannot delay uploads
         self._sweep_forced = False
         self._task_sweep = create_task(self._run_safety_sweep(), name="outputs_safety_sweep")
         self._task_sweep.add_done_callback(_log_unawaited_task_exception)

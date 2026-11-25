@@ -42,7 +42,7 @@ type OnStableContentCB = Annotated[
 
 class StabilityOutcome(Enum):
     STABLE = auto()  # two finished scans agreed and no hash is pending
-    UNSTABLE = auto()  # the content was still changing when the check ended
+    UNSTABLE = auto()  # no two finished scans agreed before the check ended
 
 
 class ContentCheckResult(NamedTuple):
@@ -89,13 +89,13 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
     try:
         hashed = _hash_file(Path(path_str))
     except FileNotFoundError:
-        # files vanishing while the container writes is expected churn
+        # the container deletes files while writing: expected
         _logger.debug("port file %s vanished while hashing, treating it as changed", path_str)
         record.digest = uuid4().bytes
         return
     except OSError as err:
-        # a changing digest keeps the port unstable, so saves still upload it
-        _logger.warning("port file %s cannot be hashed (%s), treating it as changed", path_str, err)
+        # a fresh random digest keeps the port unstable across scans
+        _logger.debug("port file %s cannot be hashed (%s), treating it as changed", path_str, err)
         record.digest = uuid4().bytes
         return
     record.digest = hashed.digest
@@ -105,8 +105,7 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
 
 
 def _broken_link_kind(entry: os.DirEntry[str]) -> str:
-    """Kind string identifying an entry that cannot be stat'ed: its link target when readable,
-    otherwise its name"""
+    """Returns the entry's link target when readable, otherwise its name"""
     with suppress(OSError):
         # readlink can fail as well: ENAMETOOLONG on a deep tree
         return f"x{Path(entry.path).readlink()}"
@@ -114,7 +113,7 @@ def _broken_link_kind(entry: os.DirEntry[str]) -> str:
 
 
 def _nonfile_record(kind: str) -> _FileRecord:
-    """Ledger entry for a non-regular file: identified by kind, never hashed, always stable."""
+    """Entry for a non-regular file: identified by kind, never hashed, always stable."""
     return _FileRecord(
         digest=os.fsencode(f"s{kind}"),
         digest_size=None,
@@ -127,7 +126,7 @@ def _nonfile_record(kind: str) -> _FileRecord:
 
 
 def _unlistable_record() -> _FileRecord:
-    """Ledger entry for a directory that cannot be listed: pending forever, so nothing certifies it."""
+    """Entry for a directory that cannot be listed: stays pending, so scans never agree."""
     return _FileRecord(
         digest=None,
         digest_size=None,
@@ -155,16 +154,14 @@ def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
 
 
 async def _await_cancelled_task(task: asyncio.Task[None]) -> None:
-    """Awaits a task the caller has just cancelled: consumes the task's own cancellation and
-    propagates a cancellation aimed at the awaiting code instead"""
+    """Awaits a task the caller cancelled, consuming only that task's own cancellation"""
     await asyncio.wait((task,))  # the task's exception/cancellation does not cross this await
     if not task.cancelled():
-        task.result()  # re-raises the task's own failure, as awaiting it directly did
+        task.result()  # re-raises the task's own failure
 
 
 class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
-    """Tracks one port directory: filesystem events arm a timer; quiet expiry runs a stability check.
-    Reports settled content through `on_stable_content`; knows nothing about uploads."""
+    """Tracks content stability of one port directory; reports settled content via `on_stable_content`."""
 
     def __init__(
         self,
@@ -196,11 +193,11 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
         )
 
     def has_pending_work(self) -> bool:
-        """True while an armed timer or a running check could still report stable content."""
+        """True while an armed timer or a running check could still report stable content"""
         return self._check_task is not None and not self._check_task.done()
 
     async def check_now(self) -> ContentCheckResult:
-        """Runs a stability check immediately (save path); cancels any armed check."""
+        """Runs a stability check immediately and cancels any armed check"""
         self._check_generation += 1
         if self._check_task is not None and not self._check_task.done():
             self._check_task.cancel()
@@ -208,7 +205,7 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
         return await self._run_stability_check(self._check_generation)
 
     async def sweep(self) -> None:
-        """Background safety check for lost events; skips ports whose own timer owns the decision."""
+        """Background check for missed filesystem events; skips ports whose own check is armed"""
         if self.has_pending_work():
             return
         result = await self._run_stability_check(self._check_generation)
@@ -216,8 +213,7 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
             await self._on_stable_content(self._port_key, fingerprint)
 
     def stable_fingerprint(self) -> str | None:
-        """The current fingerprint while the last scan left no hash pending; None while content is
-        in motion. Reads the last scan only, it does not run one."""
+        """The last scan's fingerprint while no hash is pending; runs no scan itself"""
         if self._pending_hashes > 0 or self._fingerprint is None:
             return None
         return self._fingerprint
@@ -240,7 +236,7 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
             self._check_task.cancel()
 
     async def _arm_stability_check(self, generation: int) -> None:
-        # cancellation ends the check: no scan and no report run after a cancel
+        # cancellation ends the check before any scan runs
         await asyncio.sleep(_QUIET_SECONDS)
         if generation != self._check_generation:
             return  # a newer event took over
@@ -253,8 +249,7 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
             await self._on_stable_content(self._port_key, fingerprint)
 
     async def _run_stability_check(self, generation: int) -> ContentCheckResult:
-        """Scans until two finished scans agree; UNSTABLE when they do not, an event takes over,
-        or a scan fails"""
+        """Scans until two finished scans agree; UNSTABLE otherwise"""
         try:
             return await self._scan_until_agreement(generation)
         except Exception:  # pylint: disable=broad-except
@@ -317,7 +312,7 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
         except FileNotFoundError:
             if prefix:
                 return  # the directory vanished mid-scan: the next scan sees what is there now
-            # a missing port root hides all content: an empty listing here must never certify or upload
+            # a missing port root hides all content: the record keeps the port unstable
             _logger.warning("port directory %s is missing, content unverified", directory)
             entries[f"{prefix}."] = _unlistable_record()
             return

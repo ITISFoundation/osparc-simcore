@@ -6,8 +6,7 @@ from pydantic import ByteSize, TypeAdapter
 
 
 def get_directory_total_size(path: Path) -> ByteSize:
-    """return the total size of regular files under `path`; symlinks are skipped, so a link to an
-    ancestor cannot loop the walk and a broken link adds nothing"""
+    """return the total size of regular files under `path`; the walk does not follow symlinks"""
     total = 0
     dir_paths: list[Path | str] = [path]
     # cost grows with the number of entries, not with file sizes
