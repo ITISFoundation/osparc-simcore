@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-# autoscaled-monitor is a dask client: it talks to the cluster with the very same dask
-# version the dask-sidecar runs (see the NOTE in its pyproject.toml)
+# autoscaled-monitor talks to the dask cluster, so it pins the dask version the
+# dask-sidecar image installs (see the NOTE in its pyproject.toml)
 AUTOSCALED_MONITOR_DIR = Path("scripts/maintenance/autoscaled-monitor")
 DASK_SIDECAR_REQUIREMENTS = Path("services/dask-sidecar/requirements/_dask-distributed.txt")
 
@@ -59,8 +59,8 @@ def test_autoscaled_monitor_pins_the_dask_sidecar_version(osparc_simcore_root_di
     assert dask == expected_dask_version, (
         f"Expected dask {expected_dask_version} in {AUTOSCALED_MONITOR_DIR}/pyproject.toml, got {dask}."
         f" Run 'make sync-dask-version' in {AUTOSCALED_MONITOR_DIR}."
-        " On a Renovate pull request it is .github/renovate/sync_autoscaled_monitor_dask.py that"
-        " should have done it, so look for its section in renovate-resync-report.md."
+        " On a Renovate pull request, .github/renovate/sync_autoscaled_monitor_dask.py should have"
+        " done it; its reason, if it failed, is in renovate-resync-report.md."
     )
 
 
@@ -68,6 +68,5 @@ def test_autoscaled_monitor_locks_the_dask_sidecar_version(osparc_simcore_root_d
     dask = _uv_lock_dask_version(osparc_simcore_root_dir)
     assert dask == expected_dask_version, (
         f"Expected dask {expected_dask_version} in {AUTOSCALED_MONITOR_DIR}/uv.lock, got {dask}."
-        f" Run 'make sync-dask-version' in {AUTOSCALED_MONITOR_DIR}."
-        " On a Renovate pull request, run it again once its post-upgrade task did."
+        f" Run 'make sync-dask-version' in {AUTOSCALED_MONITOR_DIR}, it rewrites pyproject.toml too."
     )

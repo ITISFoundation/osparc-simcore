@@ -66,19 +66,17 @@ pull request.
   `pytest-*` plugins (`renovate/pytest-plugins`). Security pull
   requests are never grouped: Renovate's `vulnerabilityAlerts` default resets
   the group name, so a vulnerable package gets its own immediate PR.
-- **A pin that must match another file is synced by a post-upgrade
-  task.** Renovate updates one dependency per file and cannot keep two
-  files in step, so it is disabled where a pin only makes sense equal to
-  another one: `dask` in `scripts/maintenance/autoscaled-monitor`, a
-  client of the dask scheduler that has to run the version the
-  dask-sidecar lockfile pins
-  (`services/dask-sidecar/requirements/_dask-distributed.txt`). Its own
-  pull request never moves that pin. The second post-upgrade task does,
-  in the branch that bumps dask:
-  [the dask sync task](../.github/renovate/sync_autoscaled_monitor_dask.py).
-  It rewrites the CLI's `pyproject.toml` and `uv.lock` to whatever the
-  sidecar's lockfile ends up holding, so both move in one pull request.
-  `make sync-dask-version` in that directory does the same by hand, and
+- **A pin that must equal another file's is synced by a post-upgrade
+  task.** Renovate updates one dependency per file, so `dask` is disabled
+  in `scripts/maintenance/autoscaled-monitor`, a client of the dask
+  scheduler that has to run the version the dask-sidecar lockfile pins
+  (`services/dask-sidecar/requirements/_dask-distributed.txt`). The
+  second post-upgrade task of the pip-compile rule,
+  [the dask sync task](../.github/renovate/sync_autoscaled_monitor_dask.py),
+  runs in the branch that bumps dask and rewrites the CLI's
+  `pyproject.toml` and `uv.lock` to whatever the sidecar's lockfile ends
+  up holding, so both move in one pull request. `make sync-dask-version`
+  in that directory does the same by hand.
   [test_used_dask.py](../tests/environment-setup/test_used_dask.py)
   fails when the two drift apart, which is also how a sync that could not
   resolve surfaces: the task reports it in

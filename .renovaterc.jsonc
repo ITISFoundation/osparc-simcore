@@ -364,7 +364,7 @@
       "minimumReleaseAge": "14 days"
     },
     {
-      "description": "autoscaled-monitor is a dask client: it must talk to the cluster with the very same dask version the dask-sidecar runs, which services/dask-sidecar/requirements/_dask-distributed.txt pins. Renovate moving the pyproject pin on its own would leave the CLI ahead of the cluster, so the pin follows the sidecar instead: the second post-upgrade task of the rule above runs 'uv add --no-sync dask[distributed]==<sidecar version>' in the same branch that bumps dask (the CLI's own 'make sync-dask-version' does the same by hand). tests/environment-setup/test_used_dask.py enforces the two pins match",
+      "description": "autoscaled-monitor is a dask client: it must run the dask version the dask-sidecar image installs, which services/dask-sidecar/requirements/_dask-distributed.txt pins. So the CLI's dask pin follows the sidecar and not PyPI: the second post-upgrade task of the rule above runs 'uv add --no-sync dask[distributed]==<sidecar version>' in the branch that bumps dask (the CLI's own 'make sync-dask-version' does the same by hand). tests/environment-setup/test_used_dask.py fails when the two pins disagree",
       "matchFileNames": [
         "scripts/maintenance/autoscaled-monitor/**"
       ],

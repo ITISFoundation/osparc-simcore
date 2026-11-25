@@ -7,23 +7,19 @@
 """Renovate post-upgrade task (postUpgradeTasks in .renovaterc.jsonc), run right after
 resync_lockfiles.py and before Renovate commits.
 
-autoscaled-monitor (scripts/maintenance/autoscaled-monitor) is a dask client, so it has
-to talk to the cluster with the very same dask version the dask-sidecar runs. That
-version is a lockfile pin: dask is unpinned in every requirements/*.in, and
-services/dask-sidecar/requirements/_dask-distributed.txt is what the cluster image
-installs. The CLI pins it in its own pyproject.toml and uv.lock, which uv and
-pip-compile resolve independently and Renovate updates with different managers (the
-CLI is pep621, the lockfiles are pip-compile), so a dask bump moves one file and leaves
-the other behind. Renovate cannot keep the two in step; this task does it in the same
-branch, by running the same `uv add` the CLI's `make sync-dask-version` runs.
+dask is unpinned in every requirements/*.in, so the version the cluster runs lives in
+services/dask-sidecar/requirements/_dask-distributed.txt. autoscaled-monitor is a dask
+client and pins that same version in its pyproject.toml and uv.lock, which the pep621
+manager reads while the lockfile belongs to pip-compile: one run moves one of the two.
+This task pins the CLI to the sidecar's version with the same `uv add` the CLI's
+`make sync-dask-version` runs.
 
-Only a branch that updates dask itself triggers the sync (the pins file below), so an
-unrelated Renovate branch never carries a CLI version change. A CLI pin that drifts for
-any other reason is caught by tests/environment-setup/test_used_dask.py, not fixed here.
+Only a branch whose pins file names dask triggers it, so an unrelated branch never
+carries a CLI version change. A CLI pin that drifts any other way is caught by
+tests/environment-setup/test_used_dask.py, not fixed here.
 
-A failed sync is reported in renovate-resync-report.md and exits 0: a non-zero exit
-would make the whole branch fail and the dask update would not open a pull request at
-all, while the CI test turns it into a red check that needs a person instead.
+A failed sync reports in renovate-resync-report.md and exits 0: a non-zero exit makes
+Renovate drop the branch, so the dask update would not open a pull request at all.
 
 Usage: sync_autoscaled_monitor_dask.py [PINS_FILE]
   PINS_FILE: one "<package>==<version>" per line, defaults to
@@ -52,14 +48,14 @@ if TYPE_CHECKING:
 SIDECAR_LOCKFILE: Final[
     Annotated[
         str,
-        doc("The lockfile the dask-sidecar image installs, i.e. the dask version the cluster runs"),
+        doc("The lockfile the dask-sidecar image installs, i.e. what the cluster runs"),
     ]
 ] = "services/dask-sidecar/requirements/_dask-distributed.txt"
 
 CLI_DIR: Final[
     Annotated[
         str,
-        doc("The dask client that must run the very same version, pinned in its pyproject.toml and uv.lock"),
+        doc("The dask client, pinned in its pyproject.toml and uv.lock"),
     ]
 ] = "scripts/maintenance/autoscaled-monitor"
 
@@ -96,7 +92,7 @@ def _base_name(name: str) -> str:
 
 
 def parse_pins(text: str) -> dict[str, str]:
-    """The versions this branch updates, by normalized package name; the highest wins"""
+    """Pins in the file, by normalized package name; a repeated name keeps its first pin"""
     pins: dict[str, str] = {}
     for line in text.splitlines():
         if match := PIN.match(line.strip()):
@@ -128,8 +124,8 @@ def cli_dask_pinned_version() -> str | None:
 def sync_cli_to(version: str) -> subprocess.CompletedProcess[str]:
     """Pins the CLI's dask to `version` and rewrites uv.lock, like `make sync-dask-version`.
 
-    `--no-sync` keeps uv from creating a virtual environment and installing 68 packages
-    that no one runs here; the lockfile is all Renovate has to commit."""
+    `--no-sync` keeps uv from creating a virtual environment; the lockfile is all
+    Renovate has to commit."""
     command = ["uv", "add", "--no-sync", f"dask[distributed]=={version}"]
     try:
         return subprocess.run(  # noqa: S603

@@ -385,15 +385,15 @@ def test_the_post_upgrade_tasks_run_their_scripts_bare_and_are_allowed(
     # than as a configuration error, so the two files are checked against each other here
     renovaterc = (osparc_simcore_root_dir / ".renovaterc.jsonc").read_text()
     post_upgrade = renovaterc[renovaterc.index('"postUpgradeTasks"') :]
-    (commands,) = re.findall(r"\"commands\": \[(.*?)\]", post_upgrade, flags=re.DOTALL)
-    assert "./.github/renovate/resync_lockfiles.py" in commands
-    assert "./.github/renovate/sync_autoscaled_monitor_dask.py" in commands, (
-        "the dask sync must run after the resync: it reads the dask pin the resync settles"
-        f" in the sidecar lockfile, commands were {commands}"
-    )
-    for command in re.findall(r'"(\./[^"]+)"', commands):
-        assert command.endswith(".py"), f"expected a bare script, got {command}"
-        assert not command.startswith("uv run"), (
+    (commands,) = re.findall(r'"commands": \[(.*?)\]', post_upgrade, flags=re.DOTALL)
+    entries = re.findall(r'"([^"]+)"', commands)
+    assert set(entries) == {
+        "./.github/renovate/resync_lockfiles.py",
+        "./.github/renovate/sync_autoscaled_monitor_dask.py",
+    }
+    for command in entries:
+        assert command.endswith(".py"), f"expected a bare script path, got {command}"
+        assert command.startswith("./"), (
             "name the script bare: its PEP 723 header picks the interpreter and installs"
             f" its dependencies, so {command} must not be wrapped in a `uv run` invocation"
         )
@@ -402,7 +402,7 @@ def test_the_post_upgrade_tasks_run_their_scripts_bare_and_are_allowed(
     patterns = _RE_ALLOWED_COMMANDS.search(admin)
     assert patterns is not None, "no allowedCommands array in the admin configuration"
     allowed = json.loads(f"[{patterns.group(1)}]")
-    for command in re.findall(r'"(\./[^"]+)"', commands):
+    for command in entries:
         assert any(re.search(pattern, command) for pattern in allowed), f"{command} is not in allowedCommands"
 
 

@@ -14,9 +14,9 @@ SIDECAR_LOCKFILE = "services/dask-sidecar/requirements/_dask-distributed.txt"
 CLI_DIRECTORY = "scripts/maintenance/autoscaled-monitor"
 CLI_PYPROJECT = f"{CLI_DIRECTORY}/pyproject.toml"
 
-# Stands in for `uv add --no-sync dask[distributed]==<version>`: uv rewrites that one
-# dependency of the project it runs in and re-resolves, which is all the sync reads back.
-# FAKE_UV_EXIT makes it fail like a resolve that cannot satisfy the pin.
+# Stands in for `uv add --no-sync dask[distributed]==<version>`: it rewrites the one dask
+# dependency of the project uv runs in. FAKE_UV_EXIT makes it fail like a resolve that
+# cannot satisfy the pin.
 _FAKE_UV: Final[str] = r"""#!/bin/bash
 echo "$PWD $*" >>"$FAKE_UV_CALLS"
 if [[ -n "$FAKE_UV_EXIT" ]]; then
@@ -99,8 +99,8 @@ def _run_sync(script: Path, repo: Path, pins: str, env: dict[str, str]) -> subpr
 
 
 def test_sync_lockfiles_script_runs_before_this_one(osparc_simcore_root_dir: Path):
-    # the sync reads the sidecar's dask pin, and only the resync propagates the new
-    # version of a package to every lockfile that pins it
+    # only the resync propagates a new version to every lockfile that pins it, so the
+    # sidecar's dask pin is settled only once that one has run
     renovaterc = (osparc_simcore_root_dir / ".renovaterc.jsonc").read_text()
     post_upgrade = renovaterc[renovaterc.index('"postUpgradeTasks"') :]
     commands = re.findall(r'"(\./\.github/renovate/[^"]+\.py)"', post_upgrade[: post_upgrade.index("fileFilters")])
@@ -163,8 +163,8 @@ def test_it_runs_no_uv_when_the_cli_already_follows_the_cluster(
 def test_it_writes_the_dask_version_of_the_sidecar_lockfile_and_not_the_one_of_the_branch(
     sync_script: Path, tmp_path: Path, fake_uv_env: dict[str, str]
 ):
-    # the resync can only propagate a version every layer accepts, so what the cluster
-    # runs is what its lockfile ended up holding, which may be lower than the update
+    # what the cluster runs is what the sidecar lockfile ended up holding, which the
+    # resync may have left below the version Renovate asked for
     repo = _git_repo(tmp_path / "repo", sidecar_dask="2026.10.0", cli_dask="2026.8.0")
 
     result = _run_sync(sync_script, repo, "dask==2026.11.0\n", fake_uv_env)
@@ -176,8 +176,6 @@ def test_it_writes_the_dask_version_of_the_sidecar_lockfile_and_not_the_one_of_t
 def test_a_failed_sync_goes_to_the_pull_request_instead_of_failing_the_branch(
     sync_script: Path, tmp_path: Path, fake_uv_env: dict[str, str]
 ):
-    # a non-zero exit here would make Renovate drop the whole branch, while the CI test
-    # turns the missed sync into a red check that needs a person
     repo = _git_repo(tmp_path / "repo", sidecar_dask="2026.11.0", cli_dask="2026.8.0")
     env = {**fake_uv_env, "FAKE_UV_EXIT": "1"}
 
