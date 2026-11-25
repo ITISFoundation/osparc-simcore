@@ -346,7 +346,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     break  # output IO disabled mid-sweep: re-enabling forces a new sweep
                 if port_key in uploading_port_keys:
                     continue
-                if port_key not in self._port_watches and not self._port_directory_has_content(port_key):
+                if port_key not in self._port_watches and not await asyncio.to_thread(
+                    self._port_directory_has_content, port_key
+                ):
                     continue  # an untracked empty port has nothing to discover
                 # a lost first notification must not leave the port invisible to every later sweep
                 if (watch := self._get_port_watch(port_key)) is None:

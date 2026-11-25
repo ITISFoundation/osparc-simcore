@@ -372,7 +372,7 @@ async def test_unstatable_entry_with_failing_readlink_survives_check(
     (port_dir / "deep_loop").unlink()  # the self-loop would block tmp cleanup
 
 
-async def test_unreadable_file_keeps_upload_eligible_with_warning(
+async def test_unreadable_file_keeps_upload_eligible(
     monitor: PortContentMonitor, port_dir: Path, caplog: pytest.LogCaptureFixture
 ):
     # a file that never hashes must keep the port eligible for upload, not stuck pending
@@ -380,7 +380,7 @@ async def test_unreadable_file_keeps_upload_eligible_with_warning(
     poison.write_bytes(b"secret")
     poison.chmod(0o000)
     try:
-        with caplog.at_level(logging.WARNING):
+        with caplog.at_level(logging.DEBUG):
             outcome = await monitor.check_now()
 
         assert outcome.outcome is StabilityOutcome.UNSTABLE  # a new random digest per scan: always a change

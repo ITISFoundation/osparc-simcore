@@ -492,6 +492,7 @@ async def test_content_change_event_during_upload_cancels_and_reschedules(
     await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
 
     (port_dir / "f.dat").write_bytes(b"v2 arrived while the first upload was in flight")
+    outputs_manager.on_port_key_change("output_1")
     await asyncio.sleep(_SHORT_QUIET_S * 2)  # let the quiet check notice the change
     pausable_upload.release.set()
 

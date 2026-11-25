@@ -505,22 +505,31 @@ async def test_notification_queue_stays_bounded_under_event_storm(
     await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, noisy_port_key)
     await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, quiet_port_key)
 
-    # stall the consumer: the worker thread calls on_port_key_change synchronously
-    block_enqueue = ThreadingEvent()
-    mock_event_filter_upload_trigger.side_effect = lambda _port_key: block_enqueue.wait()
+    # stall the consumer at the threaded queue read: waiting inside the manager
+    # callback would block the event loop instead of the consumer
+    queue = outputs_watcher.outputs_context.port_key_events_queue
+    block_dequeue = ThreadingEvent()
+    real_get = queue.get
+
+    def _stalled_get():
+        block_dequeue.wait()
+        return real_get()
+
+    mocker.patch.object(queue, "get", new=_stalled_get)
 
     def _flood_with_files() -> None:
         for i in range(_EVENT_STORM_FILES):
             (outputs_path / noisy_port_key / f"file_{i}").touch()
 
-    await asyncio.to_thread(_flood_with_files)
-    (outputs_path / quiet_port_key / "output.dat").write_bytes(b"result")
+    try:
+        await asyncio.to_thread(_flood_with_files)
+        (outputs_path / quiet_port_key / "output.dat").write_bytes(b"result")
 
-    # let the watcher process drain the kernel queue into its buffer
-    await asyncio.sleep(1)
-    backlog = outputs_watcher.outputs_context.port_key_events_queue.qsize()
-
-    block_enqueue.set()
+        # let the watcher process drain the kernel queue into its buffer
+        await asyncio.sleep(1)
+        backlog = queue.qsize()
+    finally:
+        block_dequeue.set()
 
     # no notification may be lost while the queue is backed up
     async for attempt in AsyncRetrying(**{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(30)}):
