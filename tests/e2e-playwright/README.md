@@ -125,10 +125,18 @@ attached to the junit report as the `backend_computations` property, so
 so the portal suite reports the calibrated wait message but no
 `backend_computations` entry.
 
-The pipeline waits name the failing layer: a timeout with the computation
-still `PUBLISHED`/`PENDING` says the backend never scheduled it, one with
-`WAITING_FOR_CLUSTER`/`WAITING_FOR_RESOURCES` points at the cluster, and the
-`wb-db-event-listener` hint only appears when the block it wraps completed.
+The pipeline waits name the failing layer, using the last state the backend
+pushed:
+
+- `PUBLISHED`: the backend accepted the pipeline and handed nothing to the
+  Dask scheduler
+- `PENDING`, `WAITING_FOR_RESOURCES`: the scheduler holds the task and no
+  worker picked it up
+- `WAITING_FOR_CLUSTER`: no Dask scheduler is available
+
+Hints describe a wait that timed out. The `wb-db-event-listener` hint only
+appears when the block it wraps completed and the outputs push never
+arrived.
 
 ## e2e CI
 
