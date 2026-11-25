@@ -18,7 +18,7 @@ from playwright.sync_api import Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket as PlaywrightWebSocket
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
+from pytest_simcore.helpers.playwright_websocket import (
     SOCKETIO_MESSAGE_PREFIX,
     RobustWebSocket,
     decode_socketio_42_message,

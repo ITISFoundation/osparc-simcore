@@ -23,15 +23,13 @@ from pytest_simcore.helpers.logging_tools import (
     log_context,
     test_logger,
 )
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-    PipelineStageTimeouts,
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
+from pytest_simcore.helpers.playwright_page import check_node_files_panel
+from pytest_simcore.helpers.playwright_pipeline import PipelineStageTimeouts, wait_for_computation_done
+from pytest_simcore.helpers.playwright_websocket import (
     RobustWebSocket,
     SocketIOEvent,
-    check_node_files_panel,
     retrieve_project_state_from_decoded_message,
-    wait_for_computation_done,
     wait_for_nodes_outputs_updated,
 )
 

@@ -4,9 +4,9 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
+from models_library.projects_state import RunningState
 from playwright.sync_api import Page
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import RunningState
 
 
 @pytest.fixture

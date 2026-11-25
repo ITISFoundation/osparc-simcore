@@ -21,26 +21,30 @@ from playwright.sync_api import ElementHandle, Frame, Locator, Page, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter, ValidationError
-from pytest_simcore.helpers import playwright as playwright_helpers
-from pytest_simcore.helpers.playwright import (
+from pytest_simcore.helpers import playwright_service, playwright_websocket
+from pytest_simcore.helpers.playwright_diagnostics import (
     FAILURE_DIAGNOSIS_LOG_SERVICES,
     FAILURE_DIAGNOSIS_LOGS_QUERY,
-    REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE,
-    SOCKETIO_MESSAGE_PREFIX,
-    RobustWebSocket,
-    SocketIONodeProgressCompleteWaiter,
-    SocketIOProjectClosedWaiter,
-    SocketIOProjectStateUpdatedWaiter,
-    _ensure_service_iframe_attached,
-    _ReconnectableEventWaiter,
     backend_computation_snapshots,
     capture_backend_computation,
     classify_backend_stall,
     grafana_explore_url,
     normalize_grafana_base_url,
+)
+from pytest_simcore.helpers.playwright_pipeline import wait_for_pipeline_state
+from pytest_simcore.helpers.playwright_service import (
+    REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE,
+    SocketIONodeProgressCompleteWaiter,
+    _ensure_service_iframe_attached,
+)
+from pytest_simcore.helpers.playwright_websocket import (
+    SOCKETIO_MESSAGE_PREFIX,
+    RobustWebSocket,
+    SocketIOProjectClosedWaiter,
+    SocketIOProjectStateUpdatedWaiter,
+    _ReconnectableEventWaiter,
     start_websocket_tracking,
     wait_for_nodes_outputs_updated,
-    wait_for_pipeline_state,
 )
 
 _NODE_ID: Final[str] = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
@@ -226,9 +230,9 @@ def _page_with_service_iframe(
 @pytest.fixture()
 def _no_service_iframe_waits(monkeypatch: pytest.MonkeyPatch) -> None:
     """Drop the waiting windows of `_ensure_service_iframe_attached`."""
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(0))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_ATTACH_TIMEOUT", timedelta(0))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_ATTACH_TIMEOUT", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
 
 
 def _navigated_url(iframe_locator: mock.Mock) -> str:
@@ -325,8 +329,8 @@ def test_transient_errors_during_polling_still_run_the_recovery(
     """
     page, iframe_locator = _page_with_service_iframe(iframe_content=None)
     mock_page = cast("mock.Mock", page)
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
     stale_element = mock.create_autospec(ElementHandle, instance=True)
     stale_element.content_frame.return_value = _frame("about:blank")
     mock_page.query_selector.side_effect = _read_fails_then_returns(
@@ -344,8 +348,8 @@ def test_transient_errors_during_polling_still_see_a_late_navigation(
     """The frame attaching after a failed read must still end the wait without a navigation."""
     page, iframe_locator = _page_with_service_iframe(iframe_content=_frame(_SERVICE_FRAME_URL))
     mock_page = cast("mock.Mock", page)
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
     mock_page.query_selector.side_effect = _read_fails_then_returns(
         PlaywrightError("Execution context was destroyed"),
         cast("ElementHandle", mock_page.query_selector.return_value),
@@ -1037,7 +1041,7 @@ def test_reconnecting_socket_handshaking_during_the_creation_wait_is_adopted(
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
 
     # timeout larger than one slice, so a wait for the full timeout would be detectable
-    reconnect_timeout = 10 * playwright_helpers._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
+    reconnect_timeout = 10 * playwright_websocket._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
     websocket = RobustWebSocket(
         page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=reconnect_timeout
     )
@@ -1046,7 +1050,7 @@ def test_reconnecting_socket_handshaking_during_the_creation_wait_is_adopted(
     assert websocket._num_reconnections == 1  # noqa: SLF001
     assert page.expect_websocket_calls == 1
     assert (
-        page.expect_websocket_timeouts[0] == playwright_helpers._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
+        page.expect_websocket_timeouts[0] == playwright_websocket._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
     )
 
 
@@ -1260,7 +1264,7 @@ def test_repeated_moves_count_against_the_reattachment_limit():
         robust_websocket=cast(RobustWebSocket, robust), event="framereceived", predicate=None, timeout=None
     )
 
-    for _attempt in range(playwright_helpers._MAX_REATTACH_ATTEMPTS):  # noqa: SLF001
+    for _attempt in range(playwright_websocket._MAX_REATTACH_ATTEMPTS):  # noqa: SLF001
         robust.ws = SimpleNamespace(expect_event=lambda *_a, **_k: _FakeEventContextManager())
         waiter.reattach_on_reconnection()
         assert waiter._failed_reattachment is None  # noqa: SLF001

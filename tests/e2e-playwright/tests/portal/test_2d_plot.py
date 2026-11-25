@@ -8,7 +8,8 @@ from typing import Any
 
 from playwright.sync_api import FrameLocator, Locator, Page
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import get_node_id_from_service_key, wait_for_service_running
+from pytest_simcore.helpers.playwright_page import get_node_id_from_service_key
+from pytest_simcore.helpers.playwright_service import wait_for_service_running
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
 # NOTE: raw-graphs is a legacy dynamic service (port of the legacy 2D_Plot.js, which calls

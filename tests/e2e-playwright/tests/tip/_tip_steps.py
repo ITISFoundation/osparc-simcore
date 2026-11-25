@@ -7,10 +7,7 @@ from typing import Final
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, expect
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-)
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
 from tenacity import RetryError, Retrying, retry, retry_if_result, stop_after_delay, wait_fixed
 
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE

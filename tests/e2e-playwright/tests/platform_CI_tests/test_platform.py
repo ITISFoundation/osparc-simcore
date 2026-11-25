@@ -12,7 +12,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from playwright.sync_api._generated import BrowserContext, Playwright
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import SECOND
+from pytest_simcore.helpers.playwright_constants import SECOND
 
 
 @pytest.fixture(scope="session")

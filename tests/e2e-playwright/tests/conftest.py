@@ -22,6 +22,7 @@ import arrow
 import pytest
 from annotated_types import doc
 from faker import Faker
+from models_library.projects_state import RunningState
 from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
 from playwright.sync_api import Error as PlaywrightError
@@ -29,20 +30,20 @@ from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
+from pytest_simcore.helpers.playwright_diagnostics import (
     DEFAULT_GRAFANA_LOGS_DATASOURCE_UID,
     FAILURE_DIAGNOSIS_LOGS_QUERY,
-    MINUTE,
-    SECOND,
-    AutoRegisteredUser,
-    RobustWebSocket,
-    RunningState,
-    SocketIOEvent,
-    SocketIOProjectStateUpdatedWaiter,
     capture_backend_computation,
-    decode_socketio_42_message,
     grafana_explore_url,
     normalize_grafana_base_url,
+)
+from pytest_simcore.helpers.playwright_websocket import (
+    AutoRegisteredUser,
+    RobustWebSocket,
+    SocketIOEvent,
+    SocketIOProjectStateUpdatedWaiter,
+    decode_socketio_42_message,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 from pytest_simcore.playwright_tracking import context, page

@@ -6,7 +6,8 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright import check_node_files_panel, run_pipeline_and_wait_done
+from pytest_simcore.helpers.playwright_page import check_node_files_panel
+from pytest_simcore.helpers.playwright_pipeline import run_pipeline_and_wait_done
 
 
 def test_cc_rabbit(

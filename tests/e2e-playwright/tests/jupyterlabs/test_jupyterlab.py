@@ -18,16 +18,14 @@ from models_library.services_enums import ServiceType
 from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl, ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-    RobustWebSocket,
-    _get_service_url,
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
+from pytest_simcore.helpers.playwright_page import (
     _select_node,
     wait_for_node_output_link,
     wait_for_node_output_link_cleared,
-    wait_for_service_running,
 )
+from pytest_simcore.helpers.playwright_service import _get_service_url, wait_for_service_running
+from pytest_simcore.helpers.playwright_websocket import RobustWebSocket
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 10 * MINUTE  # NOTE: smash is 13Gib, math 2Gib
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/api/contents/workspace")

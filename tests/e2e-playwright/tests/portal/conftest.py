@@ -21,7 +21,8 @@ import pytest
 from playwright.sync_api import Page
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, RobustWebSocket
+from pytest_simcore.helpers.playwright_constants import MINUTE
+from pytest_simcore.helpers.playwright_websocket import RobustWebSocket
 
 _OPENING_TUTORIAL_MAX_WAIT_TIME: Final[int] = 3 * MINUTE
 
