@@ -347,6 +347,20 @@ async def test_sweep_skips_armed_ports(monitor: PortContentMonitor, port_dir: Pa
 # TESTS: robustness
 
 
+async def test_same_size_replacement_with_restored_mtime_is_detected(monitor: PortContentMonitor, port_dir: Path):
+    # tools like tar and rsync replace a file and restore its mtime; ctime still proves the rewrite
+    file_path = port_dir / "a.dat"
+    file_path.write_bytes(b"content-v1-aaaa")
+    first = await _stable_fingerprint(monitor)
+
+    before = file_path.stat()
+    file_path.write_bytes(b"content-v2-bbbb")  # same length as v1
+    os.utime(file_path, ns=(before.st_atime_ns, before.st_mtime_ns))
+
+    assert (await monitor.check_now()).outcome is StabilityOutcome.STABLE
+    assert monitor._fingerprint != first  # noqa: SLF001
+
+
 async def test_unstatable_entry_with_failing_readlink_survives_check(
     monitor: PortContentMonitor, port_dir: Path, mocker: MockerFixture
 ):

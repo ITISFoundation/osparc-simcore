@@ -29,7 +29,9 @@ _HASH_CHUNK_SIZE: Final[
     Annotated[ByteSize, doc("read size per hashing step; a power of two above the OS page size")]
 ] = TypeAdapter(ByteSize).validate_python("4MiB")
 
-_NO_METADATA_SENTINEL: Final[Annotated[int, doc("size and mtime value for records that describe no regular file")]] = -1
+_NO_METADATA_SENTINEL: Final[
+    Annotated[int, doc("size, mtime and ctime value for records that describe no regular file")]
+] = -1
 
 DEFAULT_HASH_WORKERS: Final[Annotated[int, doc("files hashed concurrently by the shared pool")]] = 4
 
@@ -59,8 +61,12 @@ class _FileRecord:
     digest: Annotated[bytes | None, doc("None until the file is quiet and hashed")]
     digest_size: Annotated[int | None, doc("size the digest was computed from")]
     digest_mtime_ns: Annotated[int | None, doc("mtime the digest was computed from")]
+    digest_ctime_ns: Annotated[int | None, doc("ctime the digest was computed from")]
     seen_size: Annotated[int, doc("size observed by the most recent scan")]
     seen_mtime_ns: Annotated[int, doc("mtime observed by the most recent scan")]
+    seen_ctime_ns: Annotated[
+        int, doc("ctime observed by the most recent scan; a rewrite bumps it even with a restored mtime")
+    ]
 
 
 class _HashedFile(NamedTuple):
@@ -95,6 +101,7 @@ def _fill_digest(job: tuple[str, _FileRecord]) -> None:
     record.digest = hashed.digest
     record.digest_size = hashed.stat_result.st_size
     record.digest_mtime_ns = hashed.stat_result.st_mtime_ns
+    record.digest_ctime_ns = hashed.stat_result.st_ctime_ns
 
 
 def _broken_link_kind(entry: os.DirEntry[str]) -> str:
@@ -112,8 +119,10 @@ def _nonfile_record(kind: str) -> _FileRecord:
         digest=os.fsencode(f"s{kind}"),
         digest_size=None,
         digest_mtime_ns=None,
+        digest_ctime_ns=None,
         seen_size=_NO_METADATA_SENTINEL,
         seen_mtime_ns=_NO_METADATA_SENTINEL,
+        seen_ctime_ns=_NO_METADATA_SENTINEL,
     )
 
 
@@ -123,8 +132,10 @@ def _unlistable_record() -> _FileRecord:
         digest=None,
         digest_size=None,
         digest_mtime_ns=None,
+        digest_ctime_ns=None,
         seen_size=_NO_METADATA_SENTINEL,
         seen_mtime_ns=_NO_METADATA_SENTINEL,
+        seen_ctime_ns=_NO_METADATA_SENTINEL,
     )
 
 
@@ -346,19 +357,25 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
             and old.digest is not None
             and old.digest_size == stat_result.st_size
             and old.digest_mtime_ns == stat_result.st_mtime_ns
+            and old.digest_ctime_ns == stat_result.st_ctime_ns
         ):
-            entries[rel_path] = old  # size and mtime unchanged: the stored digest stands
+            entries[rel_path] = old  # size, mtime and ctime unchanged: the stored digest stands
             return
-        # mid-write content is incomplete: hashing waits for a size and mtime repeat
+        # mid-write content is incomplete: hashing waits for a size, mtime and ctime repeat
         quiet_since_last_scan = (
-            old is not None and old.seen_size == stat_result.st_size and old.seen_mtime_ns == stat_result.st_mtime_ns
+            old is not None
+            and old.seen_size == stat_result.st_size
+            and old.seen_mtime_ns == stat_result.st_mtime_ns
+            and old.seen_ctime_ns == stat_result.st_ctime_ns
         )
         record = _FileRecord(
             digest=None,
             digest_size=None,
             digest_mtime_ns=None,
+            digest_ctime_ns=None,
             seen_size=stat_result.st_size,
             seen_mtime_ns=stat_result.st_mtime_ns,
+            seen_ctime_ns=stat_result.st_ctime_ns,
         )
         entries[rel_path] = record
         if quiet_since_last_scan:
