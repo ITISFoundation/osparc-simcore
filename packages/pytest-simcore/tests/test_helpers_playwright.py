@@ -37,6 +37,7 @@ from pytest_simcore.helpers.playwright import (
     capture_backend_computation,
     classify_backend_stall,
     grafana_explore_url,
+    normalize_grafana_base_url,
     start_websocket_tracking,
     wait_for_nodes_outputs_updated,
     wait_for_pipeline_state,
@@ -1488,6 +1489,29 @@ def test_capture_backend_computation_turns_a_failure_into_an_error_entry(
 
     assert set(captured) == {"error"}
     assert expected_error in captured["error"]
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param(None, None, id="unset"),
+        pytest.param("", None, id="empty"),
+        pytest.param(
+            "https://grafana.test/?orgId=1",
+            "https://grafana.test",
+            id="query-dropped",
+        ),
+        pytest.param(
+            "https://grafana.test/grafana/",
+            "https://grafana.test/grafana",
+            id="path-kept-trailing-slash-dropped",
+        ),
+        pytest.param("https://[grafana.example/", None, id="malformed-url"),
+        pytest.param("grafana.test", None, id="no-scheme"),
+    ],
+)
+def test_normalize_grafana_base_url(value: str | None, expected: str | None):
+    assert normalize_grafana_base_url(value) == expected
 
 
 def test_the_logs_query_selects_the_services_the_failure_hints_name():

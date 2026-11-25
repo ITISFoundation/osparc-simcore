@@ -42,6 +42,7 @@ from pytest_simcore.helpers.playwright import (
     capture_backend_computation,
     decode_socketio_42_message,
     grafana_explore_url,
+    normalize_grafana_base_url,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 from pytest_simcore.playwright_tracking import context, page
@@ -219,14 +220,17 @@ def pytest_runtest_setup(item):
     _test_start_times[item.name] = arrow.now().datetime
 
 
-def _resolve_grafana_base_url(item: pytest.Item) -> str | None:
-    base = item.config.getoption("--grafana-url", default=None) or os.environ.get("GRAFANA_URL")
-    if not base:
+def _grafana_diagnosis_config(item: pytest.Item) -> tuple[str, str] | None:
+    """Base URL and logs datasource UID for the explore links, or None when no usable URL was
+    configured: a malformed URL must not turn the reported failure into a pytest internal error."""
+    configured = item.config.getoption("--grafana-url", default=None) or os.environ.get("GRAFANA_URL")
+    base_url = normalize_grafana_base_url(configured)
+    if base_url is None:
+        if configured:
+            logging.warning("ignoring the configured Grafana URL: not an absolute http(s) URL")
         return None
-    # NOTE: a URL copied from an address bar often carries ?orgId=..., which would end up in the
-    # middle of the explore link; only the origin and any path prefix are needed here
-    parsed = urllib.parse.urlsplit(str(base))
-    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", ""))
+    option = item.config.getoption("--grafana-logs-datasource-uid", default=None)
+    return base_url, option or os.environ.get("GRAFANA_LOGS_DATASOURCE_UID") or DEFAULT_GRAFANA_LOGS_DATASOURCE_UID
 
 
 def _emit_backend_diagnostics(item: pytest.Item, report: pytest.TestReport) -> None:
@@ -287,14 +291,11 @@ def pytest_runtest_makereport(item: pytest.Item, call):
                 "from": int(start_time.timestamp() * 1000),
                 "to": int(end_time.timestamp() * 1000),
             }
-            if grafana_base_url := _resolve_grafana_base_url(item):
+            if grafana := _grafana_diagnosis_config(item):
+                grafana_base_url, datasource_uid = grafana
                 diagnostics["grafana_explore_url"] = grafana_explore_url(
                     grafana_base_url,
-                    datasource_uid=(
-                        item.config.getoption("--grafana-logs-datasource-uid", default=None)
-                        or os.environ.get("GRAFANA_LOGS_DATASOURCE_UID")
-                        or DEFAULT_GRAFANA_LOGS_DATASOURCE_UID
-                    ),
+                    datasource_uid=datasource_uid,
                     query=FAILURE_DIAGNOSIS_LOGS_QUERY,
                     start_time=start_time,
                     end_time=end_time,

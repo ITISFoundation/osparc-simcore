@@ -1289,6 +1289,23 @@ def capture_backend_computation(
         return {"error": repr(err)[:500]}
 
 
+def normalize_grafana_base_url(value: Any) -> str | None:
+    """Origin and path prefix of a Grafana URL, with any query or fragment dropped. None when
+    `value` is empty or is not a parseable absolute URL.
+    """
+    if not value:
+        return None
+    try:
+        # NOTE: a URL copied from an address bar often carries ?orgId=..., which would end up in the
+        # middle of the explore link; only the origin and any path prefix are needed here
+        parsed = urllib.parse.urlsplit(str(value))
+        if not parsed.scheme or not parsed.netloc:
+            return None
+        return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", ""))
+    except ValueError:
+        return None
+
+
 def grafana_explore_url(
     grafana_base_url: str,
     *,
