@@ -9,6 +9,7 @@ from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from celery_library.async_jobs import submit_job
+from common_library.user_messages import user_message
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
@@ -104,7 +105,7 @@ def _to_storage_url(request: web.Request, product_name: ProductName | None = Non
     # strip basepath from webserver API path (i.e. webserver api version)
     path_segments = request.url.parts[basepath_index:]
     if any(component in {".", ".."} for segment in path_segments for component in segment.split("/")):
-        raise web.HTTPBadRequest(reason="path contains '.' or '..' segments")
+        raise web.HTTPBadRequest(text=user_message("The storage path must not contain '.' or '..' segments"))
 
     fastapi_encoded_suffix = "/".join(_encode_storage_path_segment(segment) for segment in path_segments)
 
