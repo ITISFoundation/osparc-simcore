@@ -44,11 +44,6 @@ def _k8s_cluster_exists(k8s_dir: Path) -> bool:
 
 @pytest.fixture(scope="session")
 def k8s_cluster(osparc_simcore_k8s_dir: Path, request: pytest.FixtureRequest) -> None:
-    """ensures the kind cluster exists, creating it when it does not
-
-    The cluster is deleted at session end (see `pytest_sessionfinish`), not in a fixture teardown,
-    so that only a cluster this session created is deleted.
-    """
     if not _k8s_cluster_exists(osparc_simcore_k8s_dir):
         _run_make(osparc_simcore_k8s_dir, "create-cluster")
         request.session.stash[_K8S_CLUSTER_CREATED_STASH_KEY] = osparc_simcore_k8s_dir
@@ -56,7 +51,7 @@ def k8s_cluster(osparc_simcore_k8s_dir: Path, request: pytest.FixtureRequest) ->
 
 @pytest.fixture(scope="session")
 def k8s_ops_workloads_selection() -> list[str]:
-    """Names of the ops helm releases `k8s_ops_workloads` deploys. Override it in the test suite"""
+    """Selection of ops services that `k8s_ops_workloads` deploys. Override it in the test suite"""
     return []
 
 
@@ -64,11 +59,6 @@ def k8s_ops_workloads_selection() -> list[str]:
 def k8s_ops_workloads(
     k8s_cluster: None, osparc_simcore_k8s_dir: Path, k8s_ops_workloads_selection: list[str], keep_docker_up: bool
 ) -> Iterator[list[str]]:
-    """deploys the selected ops helm releases into the kind cluster and returns their names
-
-    Releases are selected with helmfile's `--selector` (`RELEASE=<name>`); helmfile waits until
-    each release is ready.
-    """
     for release in k8s_ops_workloads_selection:
         _run_make(osparc_simcore_k8s_dir, "helmfile-ops-apply", f"RELEASE={release}")
 

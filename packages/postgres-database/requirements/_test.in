@@ -13,7 +13,6 @@ arrow
 coverage
 faker
 filelock
-frozendict
 pytest
 pytest-asyncio
 pytest-cov

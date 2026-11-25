@@ -23,8 +23,6 @@ faker==40.44.0
     # via -r requirements/_test.in
 filelock==4.2.10
     # via -r requirements/_test.in
-frozendict==2.5.1
-    # via -r requirements/_test.in
 idna==3.19
     # via
     #   -c requirements/_base.txt

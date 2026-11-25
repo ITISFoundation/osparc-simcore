@@ -7,11 +7,11 @@ import logging
 import re
 from copy import deepcopy
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 import pytest
 from faker import Faker
-from frozendict import frozendict
 
 from .helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from .helpers.typing_env import EnvVarsDict, FrozenEnvVarsDict
@@ -101,7 +101,7 @@ def _env_devel_dict_session(
 
 @pytest.fixture(scope="session")
 def env_devel_dict_session(_env_devel_dict_session: EnvVarsDict) -> FrozenEnvVarsDict:
-    return frozendict(_env_devel_dict_session)
+    return MappingProxyType(_env_devel_dict_session)
 
 
 @pytest.fixture
