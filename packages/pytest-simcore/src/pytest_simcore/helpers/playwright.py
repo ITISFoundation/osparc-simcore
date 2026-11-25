@@ -823,31 +823,36 @@ def wait_for_nodes_outputs_updated(
     happened.
     """
     waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
-    # NOTE: the db-listener TIP describes a wait that ran out of time once the caller's
-    # block was over, which is what `caller_block_failed` tells the message apart
-    caller_block_failed = False
-    with (
-        log_context(
-            logging.INFO,
-            msg=ContextMessages(
-                starting=f"⏳ waiting for outputs push for nodes {list(node_id_to_expected_number_of_outputs)}",
-                done="✅ received outputs push for all expected nodes",
-                raised=lambda: (
-                    f"❌ missing outputs push for: {waiter.missing_outputs_report()}. "
-                    + (
-                        "(the pipeline wait inside failed first, see its error above)"
-                        if caller_block_failed
-                        else "TIP: check that the webserver's db-listener service is running properly!"
-                    )
-                ),
+    # NOTE: the db-listener TIP describes a wait that ran out of time after the caller's block
+    # finished. If that block raised, the pipeline never produced outputs and no push was ever
+    # expected; if the websocket failed, the push was never listened for
+    caller_block_completed = False
+    outputs_wait_timed_out = False
+    with log_context(
+        logging.INFO,
+        msg=ContextMessages(
+            starting=f"⏳ waiting for outputs push for nodes {list(node_id_to_expected_number_of_outputs)}",
+            done="✅ received outputs push for all expected nodes",
+            raised=lambda: (
+                f"❌ missing outputs push for: {waiter.missing_outputs_report()}. "
+                + (
+                    "TIP: check that the webserver's db-listener service is running properly!"
+                    if caller_block_completed and outputs_wait_timed_out
+                    else "("
+                    "the outputs wait never timed out: the caller's block or the websocket failed first, "
+                    "see its error above)"
+                )
             ),
         ),
-        websocket.expect_event("framereceived", waiter, timeout=timeout),
     ):
         try:
-            yield
-        except BaseException:
-            caller_block_failed = True
+            with websocket.expect_event("framereceived", waiter, timeout=timeout):
+                yield
+                # NOTE: the wait only resolves when this context exits and reads the pending event,
+                # so the block is already over by the time a timeout surfaces
+                caller_block_completed = True
+        except PlaywrightTimeoutError:
+            outputs_wait_timed_out = True
             raise
 
 

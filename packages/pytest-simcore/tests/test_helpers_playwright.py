@@ -580,6 +580,13 @@ def _timed_out_websocket() -> RobustWebSocket:
     return cast(RobustWebSocket, websocket)
 
 
+def _websocket_failing_with(error: BaseException) -> RobustWebSocket:
+    """A wait that cannot even be registered, e.g. because the browser was closed underneath it"""
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.side_effect = error
+    return cast(RobustWebSocket, websocket)
+
+
 def _satisfied_websocket() -> RobustWebSocket:
     # NOTE: an already-settled wait, so exiting the outputs wait without a caller error is
     # not treated as a cancellation
@@ -659,7 +666,7 @@ def test_outputs_wait_with_failed_caller_block_does_not_blame_the_db_listener(
         _pipeline_wait_failed()
 
     assert "missing outputs push" in caplog.text
-    assert "failed first" in caplog.text
+    assert "the outputs wait never timed out" in caplog.text
     assert "db-listener" not in caplog.text
 
 
@@ -681,7 +688,27 @@ def test_outputs_wait_timeout_after_ok_caller_block_still_suggests_the_db_listen
 
     assert "missing outputs push" in caplog.text
     assert "db-listener" in caplog.text
-    assert "failed first" not in caplog.text
+    assert "the outputs wait never timed out" not in caplog.text
+
+
+def test_outputs_wait_that_never_ran_does_not_blame_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: if the websocket failed, nothing was ever listened to, which is again not a
+    # db-listener symptom
+    with (
+        pytest.raises(PlaywrightError),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _websocket_failing_with(PlaywrightError("Target page, context or browser has been closed")),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        pass
+
+    assert "missing outputs push" in caplog.text
+    assert "db-listener" not in caplog.text
 
 
 _S4L_WS_URL: Final[str] = f"https://{_NODE_ID}.services.example.org/socket.io/?EIO=4&transport=websocket"
