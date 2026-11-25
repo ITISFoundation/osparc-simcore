@@ -585,7 +585,7 @@ truststore==0.10.5
     #   httpx2
 twilio==7.17.0
     # via -r requirements/_base.in
-typer==0.29.0
+typer==0.29.1
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
