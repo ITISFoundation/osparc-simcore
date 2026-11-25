@@ -84,7 +84,7 @@ def test_users_billing_details_migration_seeds_from_pre_registration(
         # Ensure the users_billing_details table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT COUNT(*) FROM users_billing_details"))
-        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        assert "psycopg.errors.UndefinedTable" in f"{exc_info.value}"
         conn.rollback()
 
         def _insert_user(name: str) -> int:
@@ -194,5 +194,5 @@ def test_users_billing_details_migration_seeds_from_pre_registration(
         # Verify users_billing_details table no longer exists
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT COUNT(*) FROM users_billing_details"))
-        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        assert "psycopg.errors.UndefinedTable" in f"{exc_info.value}"
         conn.rollback()

@@ -20,7 +20,8 @@ from pytest_simcore.helpers.postgres_tools import (
     reset_database_from_template,
     wait_engine_ready,
 )
-from sqlalchemy import exc as sa_exc
+from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
+from sqlalchemy.exc import ProgrammingError
 
 postgres_config = {
     "user": "test",
@@ -50,18 +51,17 @@ def postgres_container(osparc_simcore_root_dir: Path) -> Iterator[PostgresTestCo
         bindings = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"]
         port = str(bindings[0]["HostPort"])
 
-        dsn = f"postgresql+psycopg2://{postgres_config['user']}:{postgres_config['password']}@{postgres_config['host']}:{port}/{postgres_config['database']}"
+        dsn = f"{POSTGRES_SYNC_DSN_SCHEME}://{postgres_config['user']}:{postgres_config['password']}@{postgres_config['host']}:{port}/{postgres_config['database']}"
         engine = sa.create_engine(dsn)
         wait_engine_ready(engine, timeout=60)
         engine.dispose()
-        config: PostgresTestConfig = {
-            "user": postgres_config["user"],
-            "password": postgres_config["password"],
-            "database": postgres_config["database"],
-            "host": postgres_config["host"],
-            "port": port,
-        }
-        yield config
+        yield PostgresTestConfig(
+            user=postgres_config["user"],
+            password=postgres_config["password"],
+            database=postgres_config["database"],
+            host=postgres_config["host"],
+            port=port,
+        )
     finally:
         container.remove(force=True)
         client.close()
@@ -70,7 +70,7 @@ def postgres_container(osparc_simcore_root_dir: Path) -> Iterator[PostgresTestCo
 def _engine_to(config: PostgresTestConfig, database: str) -> sa.engine.Engine:
     dsn = str(
         PostgresDsn.build(
-            scheme="postgresql+psycopg2",
+            scheme=POSTGRES_SYNC_DSN_SCHEME,
             username=config["user"],
             password=config["password"],
             host=config["host"],
@@ -99,12 +99,24 @@ def test_uses_same_postgres_image(osparc_simcore_root_dir: Path, compose_path: s
     assert fixture["services"]["postgres"]["image"] == stack["services"]["postgres"]["image"]
 
 
-def test_is_database_missing_error_only_matches_postgres_undefined_database():
-    class _DatabaseMissingError(Exception):
-        pgcode = "3D000"
+class _Psycopg3MissingDatabaseError(Exception):
+    sqlstate = "3D000"
 
-    missing = sa_exc.ProgrammingError("statement", {}, _DatabaseMissingError())
-    other = sa_exc.ProgrammingError("statement", {}, RuntimeError("other error"))
+
+class _Psycopg2MissingDatabaseError(Exception):
+    pgcode = "3D000"
+
+
+@pytest.mark.parametrize(
+    "missing_database_error",
+    [_Psycopg3MissingDatabaseError, _Psycopg2MissingDatabaseError],
+    ids=["psycopg3", "psycopg2"],
+)
+def test_is_database_missing_error_only_matches_postgres_undefined_database(
+    missing_database_error: type[Exception],
+):
+    missing = ProgrammingError("statement", {}, missing_database_error())
+    other = ProgrammingError("statement", {}, RuntimeError("other error"))
 
     assert _is_database_missing_error(missing)
     assert not _is_database_missing_error(other)

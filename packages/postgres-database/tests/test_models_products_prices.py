@@ -6,6 +6,7 @@
 
 from collections.abc import AsyncIterator
 
+import asyncpg.exceptions  # type: ignore[import-untyped]
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc
@@ -158,7 +159,15 @@ async def test_delete_price_constraints(connection: AsyncConnection, fake_produc
         with pytest.raises(sqlalchemy.exc.IntegrityError, match="delete") as exc_info:
             await connection.execute(products.delete())
 
-        assert "fk_products_prices_product_name" in exc_info.value.args[0]
+        # NOTE: asyncpg.exceptions are converted to sqlalchemy.exc, with the asyncpg error
+        # kept as the cause. Since 2.1 it is wrapped in a per-violation dialect exception first.
+        cause_chain: list[BaseException] = []
+        cause: BaseException | None = exc_info.value.__cause__
+        while cause is not None:
+            cause_chain.append(cause)
+            cause = cause.__cause__
+
+        assert any(isinstance(err, asyncpg.exceptions.ForeignKeyViolationError) for err in cause_chain), cause_chain
 
     # GOOD DELETE: this is the correct way to delete
     async with connection.begin():

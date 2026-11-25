@@ -130,7 +130,7 @@ dependencies = [
     { name = "pydantic", extra = ["email"] },
     { name = "python-dotenv" },
     { name = "rich" },
-    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "sqlalchemy", extra = ["postgresql-asyncpg"] },
     { name = "typer" },
     { name = "types-boto3" },
 ]
@@ -153,7 +153,7 @@ requires-dist = [
     { name = "pydantic", extras = ["email"] },
     { name = "python-dotenv" },
     { name = "rich" },
-    { name = "sqlalchemy", extras = ["asyncio"] },
+    { name = "sqlalchemy", extras = ["postgresql-asyncpg"] },
     { name = "typer" },
     { name = "types-boto3" },
 ]
@@ -945,7 +945,8 @@ wheels = [
 ]
 
 [package.optional-dependencies]
-asyncio = [
+postgresql-asyncpg = [
+    { name = "asyncpg" },
     { name = "greenlet" },
 ]
 
