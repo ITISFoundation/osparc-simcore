@@ -46,6 +46,7 @@ test("Create/Edit Tags opens Settings when the default tags button is clicked", 
   const account = {
     ...definitions["osparc.desktop.account.MyAccount"].members,
     tr: text => text,
+    getChildControl: () => ({ addListener() {} }),
     addTab(title) { return { title, getChildControl: () => ({}) }; },
     _openPage(page) { this.selectedPage = page; },
   };

@@ -37,6 +37,7 @@ async def apply_user_default_tags(
             product_name=product_name,
             frontend_preference_identifier=preference.preference_identifier,
             value=valid_default_tag_ids,
+            expected_preference=preference,
         )
 
     project["tags"] = list(dict.fromkeys([*project.get("tags", []), *valid_default_tag_ids]))

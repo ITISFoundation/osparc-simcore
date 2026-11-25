@@ -45,9 +45,12 @@ function renderTags(count) {
   });
   const file = path.join(__dirname, "../source/class/osparc/desktop/preferences/pages/GeneralPage.js");
   vm.runInContext(fs.readFileSync(file, "utf8"), context);
-  const page = { ...definition.members, tr: value => value, _add: section => sections.push(section) };
+  const page = { ...definition.members, tr: value => value, isDisposed: () => false };
   const tags = Array.from({ length: count }, (_value, id) => ({ getTagId: () => id, getName: () => `Tag ${id}` }));
-  page.__addDefaultStudyTagsSettingContent(tags);
+  const section = page.__createDefaultStudyTagsSettingContent(tags);
+  if (section) {
+    sections.push(section);
+  }
   return { sections, updates };
 }
 

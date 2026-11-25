@@ -139,6 +139,11 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
       if (generalPage.getChildrenCount() > 0 || osparc.data.Permissions.getInstance().canDo("user.tag")) {
         this.__settingsPage = this.addTab(title, iconSrc, generalPage);
+        this.getChildControl("tabs-view").addListener("changeSelection", e => {
+          if (e.getData()[0] === this.__settingsPage) {
+            generalPage.refreshDefaultStudyTagsSetting();
+          }
+        });
       }
     },
 

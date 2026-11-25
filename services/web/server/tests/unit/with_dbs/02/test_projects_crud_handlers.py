@@ -5,6 +5,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
@@ -15,6 +16,7 @@ from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from deepdiff import DeepDiff
@@ -55,6 +57,8 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_permalink_service import (
     ProjectPermalink,
 )
+from simcore_service_webserver.tags import tags_service
+from simcore_service_webserver.tags.schemas import TagGet
 from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
@@ -532,6 +536,81 @@ async def test_new_project_merges_accessible_default_tags_and_discards_stale_def
         expected_tags=[source_tag_id, accessible_default_tag_id],
     )
     assert copied_project["tags"] == [source_tag_id, accessible_default_tag_id]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_new_project_preserves_concurrent_default_tag_preference_update(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    storage_subsystem_mock: MockedStorageSubsystem,
+    project_db_cleaner: None,
+    osparc_product_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    assert client.app
+
+    tag_ids: list[int] = []
+    for name in ("original default", "new default"):
+        response = await client.post(
+            client.app.router["create_tag"].url_for(),
+            json={"name": name, "color": "#336699"},
+        )
+        tag, _ = await assert_status(response, status.HTTP_201_CREATED)
+        tag_ids.append(tag["id"])
+
+    original_tag_id = tag_ids[0]
+    new_tag_id = tag_ids[1]
+    stale_tag_id = 2_147_483_647
+    preference_url = client.app.router["set_frontend_preference"].url_for(preference_id="defaultStudyTagIds")
+    response = await client.patch(preference_url, json={"value": [original_tag_id, stale_tag_id]})
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
+
+    list_tags_entered = asyncio.Event()
+    release_list_tags = asyncio.Event()
+    original_list_tags = tags_service.list_tags
+
+    async def delayed_list_tags(app: web.Application, user_id: UserID) -> list[TagGet]:
+        list_tags_entered.set()
+        await release_list_tags.wait()
+        return await original_list_tags(app, user_id)
+
+    async def create_project() -> ProjectDict:
+        return await request_create_project(
+            client,
+            status.HTTP_202_ACCEPTED,
+            status.HTTP_201_CREATED,
+            logged_user,
+            primary_group,
+            expected_tags=[original_tag_id],
+        )
+
+    monkeypatch.setattr(tags_service, "list_tags", delayed_list_tags)
+    creation_task = asyncio.create_task(create_project())
+    try:
+        await asyncio.wait_for(list_tags_entered.wait(), timeout=30)
+        response = await asyncio.wait_for(
+            client.patch(preference_url, json={"value": [original_tag_id, new_tag_id]}),
+            timeout=30,
+        )
+        await assert_status(response, status.HTTP_204_NO_CONTENT)
+    finally:
+        release_list_tags.set()
+        await asyncio.wait_for(asyncio.gather(creation_task, return_exceptions=True), timeout=75)
+
+    project = creation_task.result()
+    assert project["tags"] == [original_tag_id]
+    saved_preference = await user_preferences_service.get_frontend_user_preference(
+        client.app,
+        UserID(logged_user["id"]),
+        ProductName(osparc_product_name),
+        DefaultStudyTagIdsFrontendUserPreference,
+    )
+    assert saved_preference is not None
+    assert saved_preference.value == [original_tag_id, new_tag_id]
 
 
 @pytest.mark.parametrize(

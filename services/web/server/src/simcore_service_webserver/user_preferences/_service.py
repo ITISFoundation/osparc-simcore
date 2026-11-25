@@ -177,7 +177,9 @@ async def set_frontend_user_preference(
     product_name: ProductName,
     frontend_preference_identifier: PreferenceIdentifier,
     value: Any,
+    expected_preference: FrontendUserPreference | None = None,
 ) -> None:
+    """Save a preference, optionally only if its stored value still matches the snapshot."""
     try:
         preference_name: PreferenceName = get_preference_name(frontend_preference_identifier)
     except KeyError as e:
@@ -214,8 +216,19 @@ async def set_frontend_user_preference(
         ) from e
 
     repo = UserPreferencesRepository.create_from_app(app)
-    await repo.set_user_preference(
-        user_id=user_id,
-        product_name=product_name,
-        preference=preference,
-    )
+    if expected_preference is None:
+        await repo.set_user_preference(
+            user_id=user_id,
+            product_name=product_name,
+            preference=preference,
+        )
+    else:
+        if expected_preference.preference_identifier != frontend_preference_identifier:
+            msg = "Expected preference does not match the preference being updated"
+            raise ValueError(msg)
+        await repo.set_user_preference_if_unchanged(
+            user_id=user_id,
+            product_name=product_name,
+            preference=preference,
+            expected_preference=expected_preference,
+        )
