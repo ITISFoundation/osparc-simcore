@@ -236,7 +236,7 @@ releases:
       - {{ . }}
       {{- end }}
 
-  - name: notifications-worker
+  - name: notifications-email-worker
     inherit:
       - template: simcore-service
     values:
@@ -246,8 +246,23 @@ releases:
       - _shared/helm-values.redis.yaml.gotmpl
       - _shared/helm-values.tracing.yaml.gotmpl
       - notifications/helm-values.yaml.gotmpl
-      - notifications/helm-values.notifications-worker.yaml.gotmpl
-      {{- range (.Values | get "notifications_worker.extra_values_files" list) }}
+      - notifications/helm-values.notifications-email-worker.yaml.gotmpl
+      {{- range (.Values | get "notifications_email_worker.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
+
+  - name: notifications-sms-worker
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - notifications/helm-values.yaml.gotmpl
+      - notifications/helm-values.notifications-sms-worker.yaml.gotmpl
+      {{- range (.Values | get "notifications_sms_worker.extra_values_files" list) }}
       - {{ . }}
       {{- end }}
 
