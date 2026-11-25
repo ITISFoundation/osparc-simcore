@@ -313,7 +313,7 @@ six==1.17.0
     #   -c requirements/_base.txt
     #   python-dateutil
     #   rfc3339-validator
-sqlalchemy==2.1.8
+sqlalchemy==2.1.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
