@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import urllib.parse
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -30,7 +31,9 @@ from pytest_simcore.helpers.playwright import (
     _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
     backend_computation_snapshots,
+    capture_backend_computation,
     classify_backend_stall,
+    grafana_explore_url,
     start_websocket_tracking,
     wait_for_nodes_outputs_updated,
     wait_for_pipeline_state,
@@ -1435,3 +1438,68 @@ def test_backend_computation_snapshot_rejects_a_body_without_a_full_computation(
     # snapshot of a project is all-or-nothing and the caller reports it as an error
     with pytest.raises((ValidationError, LookupError)):
         backend_computation_snapshots(body)
+
+
+def _api_request_answering(*, ok: bool, payload: Any = None, text: str = "not found") -> mock.Mock:
+    response = mock.Mock()
+    response.ok = ok
+    response.status = 200 if ok else 404
+    response.json.return_value = payload
+    response.text.return_value = text
+    api_request_context = mock.Mock()
+    api_request_context.get.return_value = response
+    return api_request_context
+
+
+def test_capture_backend_computation_snapshots_every_variant_of_the_project():
+    stalled = _computation(state=RunningState.PUBLISHED)
+    api_request_context = _api_request_answering(ok=True, payload=_computation_body(stalled))
+
+    captured = capture_backend_computation(api_request_context, AnyUrl("https://foo.test"), f"{stalled.id}")
+
+    assert captured[f"{stalled.id}"]["state"] == RunningState.PUBLISHED.value
+
+
+@pytest.mark.parametrize(
+    "api_request_context,expected_error",
+    [
+        pytest.param(
+            _api_request_answering(ok=False, text="404 Not Found"),
+            "HTTP 404",
+            id="http-error",
+        ),
+        pytest.param(
+            _api_request_answering(ok=True, payload={"data": [{"state": "PUBLISHED"}]}),
+            "validation errors for ComputationGet",
+            id="partial-payload",
+        ),
+    ],
+)
+def test_capture_backend_computation_turns_a_failure_into_an_error_entry(
+    api_request_context: mock.Mock, expected_error: str
+):
+    # NOTE: the caller stops the computations right after this, so a raise here would hide the
+    # test's own error and skip the stop requests
+    captured = capture_backend_computation(api_request_context, AnyUrl("https://foo.test"), _NODE_ID)
+
+    assert set(captured) == {"error"}
+    assert expected_error in captured["error"]
+
+
+def test_grafana_explore_url_carries_the_datasource_query_and_window():
+    start = datetime(2026, 11, 19, 10, 0, tzinfo=UTC)
+    end = datetime(2026, 11, 19, 10, 30, tzinfo=UTC)
+
+    url = grafana_explore_url(
+        "https://grafana.test",
+        datasource_uid="victoria-logs",
+        query='{service_name=~".*_webserver"}',
+        start_time=start,
+        end_time=end,
+    )
+
+    assert url.startswith("https://grafana.test/explore?left=")
+    pane = json.loads(urllib.parse.unquote(url.removeprefix("https://grafana.test/explore?left=")))
+    assert pane["datasource"] == "victoria-logs"
+    assert pane["queries"][0]["expr"] == '{service_name=~".*_webserver"}'
+    assert pane["range"] == {"from": 1795082400000, "to": 1795084200000}

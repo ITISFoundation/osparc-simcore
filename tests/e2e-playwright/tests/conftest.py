@@ -30,6 +30,8 @@ from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
+    DEFAULT_GRAFANA_LOGS_DATASOURCE_UID,
+    FAILURE_DIAGNOSIS_LOGS_QUERY,
     MINUTE,
     SECOND,
     AutoRegisteredUser,
@@ -37,8 +39,9 @@ from pytest_simcore.helpers.playwright import (
     RunningState,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
-    backend_computation_snapshots,
+    capture_backend_computation,
     decode_socketio_42_message,
+    grafana_explore_url,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 from pytest_simcore.playwright_tracking import context, page
@@ -208,21 +211,6 @@ def pytest_runtest_setup(item):
     _test_start_times[item.name] = arrow.now().datetime
 
 
-_GRAFANA_LOGS_DATASOURCE_UID: Final[Annotated[str, doc("VictoriaLogs datasource, same UID in every deployment")]] = (
-    "victoria-logs"
-)
-
-_FAILURE_DIAGNOSIS_LOGS_QUERY: Final[
-    Annotated[
-        str,
-        doc(
-            "LogsQL over the services implicated in pipeline stalls; the stack prefix is unknown "
-            "at test time, hence the leading .*"
-        ),
-    ]
-] = r'{service_name=~".*_(api-server|autoscaling|dask-sidecar|dask-scheduler|director-v2|webserver)"}'
-
-
 def _resolve_grafana_base_url(item: pytest.Item) -> str | None:
     base = item.config.getoption("--grafana-url", default=None) or os.environ.get("GRAFANA_URL")
     if not base:
@@ -231,33 +219,6 @@ def _resolve_grafana_base_url(item: pytest.Item) -> str | None:
     # middle of the explore link; only the origin and any path prefix are needed here
     parsed = urllib.parse.urlsplit(str(base))
     return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", ""))
-
-
-def _construct_grafana_explore_url(
-    grafana_base_url: str, query: str, start_time: datetime.datetime, end_time: datetime.datetime
-) -> str:
-    pane = {
-        "datasource": _GRAFANA_LOGS_DATASOURCE_UID,
-        "queries": [{"refId": "A", "expr": query, "queryType": "range"}],
-        "range": {"from": int(start_time.timestamp() * 1000), "to": int(end_time.timestamp() * 1000)},
-    }
-    left = urllib.parse.quote(json.dumps(pane, separators=(",", ":")))
-    return f"{grafana_base_url}/explore?left={left}"
-
-
-def _capture_backend_computation(
-    api_request_context: APIRequestContext, product_url: AnyUrl, pipeline_id: str
-) -> dict[str, Any]:
-    """What the backend reports about a computation. Any failure becomes an error entry, because it
-    must neither mask the test's own error nor skip stopping the computation."""
-    try:
-        response = api_request_context.get(f"{product_url}v0/computations/{pipeline_id}")
-        if not response.ok:
-            msg = f"HTTP {response.status}: {response.text()[:200]}"
-            raise RuntimeError(msg)  # noqa: TRY301
-        return backend_computation_snapshots(response.json())
-    except Exception as err:  # pylint: disable=broad-exception-caught
-        return {"error": repr(err)[:500]}
 
 
 def _emit_backend_diagnostics(item: pytest.Item, report: pytest.TestReport) -> None:
@@ -317,14 +278,18 @@ def pytest_runtest_makereport(item: pytest.Item, call):
 
         if start_time:
             diagnostics["duration"] = str(end_time - start_time)
-            diagnostics["logs_query"] = _FAILURE_DIAGNOSIS_LOGS_QUERY
+            diagnostics["logs_query"] = FAILURE_DIAGNOSIS_LOGS_QUERY
             diagnostics["logs_window_ms"] = {
                 "from": int(start_time.timestamp() * 1000),
                 "to": int(end_time.timestamp() * 1000),
             }
             if grafana_base_url := _resolve_grafana_base_url(item):
-                diagnostics["grafana_explore_url"] = _construct_grafana_explore_url(
-                    grafana_base_url, _FAILURE_DIAGNOSIS_LOGS_QUERY, start_time, end_time
+                diagnostics["grafana_explore_url"] = grafana_explore_url(
+                    grafana_base_url,
+                    datasource_uid=DEFAULT_GRAFANA_LOGS_DATASOURCE_UID,
+                    query=FAILURE_DIAGNOSIS_LOGS_QUERY,
+                    start_time=start_time,
+                    end_time=end_time,
                 )
 
         with log_context(
@@ -987,7 +952,7 @@ def start_and_stop_pipeline(
     # stopping it; pytest_runtest_makereport logs it at the teardown phase
     if request.node.stash.get(_CALL_FAILURE_STASH_KEY, None) is not None:
         request.node.stash[_BACKEND_COMPUTATIONS_STASH_KEY] = {
-            pipeline_id: _capture_backend_computation(api_request_context, product_url, pipeline_id)
+            pipeline_id: capture_backend_computation(api_request_context, product_url, pipeline_id)
             for pipeline_id in started_pipeline_ids
         }
 

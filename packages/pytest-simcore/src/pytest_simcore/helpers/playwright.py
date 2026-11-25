@@ -12,6 +12,7 @@ import re
 import threading
 import time
 import typing
+import urllib.parse
 import weakref
 from collections import defaultdict
 from collections.abc import Generator
@@ -1239,6 +1240,50 @@ def backend_computation_snapshots(response_body: Any) -> dict[str, dict[str, Any
         msg = "the backend reported no computation for this project"
         raise LookupError(msg)
     return snapshots
+
+
+DEFAULT_GRAFANA_LOGS_DATASOURCE_UID: Final[
+    Annotated[str, doc("VictoriaLogs datasource of the deployments this suite runs against today")]
+] = "victoria-logs"
+
+FAILURE_DIAGNOSIS_LOGS_QUERY: Final[Annotated[str, doc("LogsQL over the services implicated in a pipeline stall")]] = (
+    r'{service_name=~".*_(api-server|autoscaling|dask-sidecar|dask-scheduler|director-v2|webserver)"}'
+)
+
+
+def capture_backend_computation(
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+    project_id: str,
+) -> dict[str, Any]:
+    """What the backend reports about `project_id`. Any failure becomes an error entry, because it
+    must neither mask the test's own error nor skip stopping the computation."""
+    try:
+        response = api_request_context.get(f"{product_url}v0/computations/{project_id}")
+        if not response.ok:
+            msg = f"HTTP {response.status}: {response.text()[:200]}"
+            raise RuntimeError(msg)  # noqa: TRY301
+        return backend_computation_snapshots(response.json())
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        return {"error": repr(err)[:500]}
+
+
+def grafana_explore_url(
+    grafana_base_url: str,
+    *,
+    datasource_uid: str,
+    query: str,
+    start_time: datetime,
+    end_time: datetime,
+) -> str:
+    """Grafana explore link showing `query` on `datasource_uid` between `start_time` and `end_time`"""
+    pane = {
+        "datasource": datasource_uid,
+        "queries": [{"refId": "A", "expr": query, "queryType": "range"}],
+        "range": {"from": int(start_time.timestamp() * 1000), "to": int(end_time.timestamp() * 1000)},
+    }
+    left = urllib.parse.quote(json.dumps(pane, separators=(",", ":")))
+    return f"{grafana_base_url}/explore?left={left}"
 
 
 def wait_for_pipeline_state(
