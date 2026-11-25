@@ -150,7 +150,10 @@ async def test_remove_volume_busy_after_lazy_unmount(
     assert fake_volume.delete.await_args_list[1].kwargs == {"force": True}
     assert "still busy after lazy unmount" in caplog.text
     assert "umount -l /docker/volumes/dyv_x/_data" in caplog.text
-    assert not [r for r in caplog.records if r.levelname == "ERROR"]
+    # a volume still busy after the lazy unmount needs host intervention: exactly one loud, structured error
+    errors = [r for r in caplog.records if r.levelname == "ERROR"]
+    assert len(errors) == 1
+    assert "still busy after lazy unmount" in errors[0].getMessage()
 
 
 async def test_remove_volume_busy_then_success(
@@ -197,7 +200,7 @@ async def test_remove_volume_busy_with_live_binder_refuses_lazy_unmount(
 
     lazy_unmount.assert_not_awaited()
     fake_volume.delete.assert_awaited_once()
-    assert "refusing lazy unmount" in caplog.text
+    assert "held by a running container before lazy unmount" in caplog.text
 
 
 async def test_remove_volume_binder_appears_after_lazy_unmount_refuses_force_delete(
@@ -222,7 +225,7 @@ async def test_remove_volume_binder_appears_after_lazy_unmount_refuses_force_del
     lazy_unmount.assert_awaited_once()
     assert probe.await_count == 2
     fake_volume.delete.assert_awaited_once()  # no force retry once a live binder appeared
-    assert "refusing delete" in caplog.text
+    assert "held by a running container after lazy unmount" in caplog.text
 
 
 async def test_remove_volume_unrelated_error_on_force_retry_is_reported(
