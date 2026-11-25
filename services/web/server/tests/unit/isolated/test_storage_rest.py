@@ -140,8 +140,6 @@ def test_encoded_delimiters_after_colon_stay_in_the_path(path: str, expected_raw
 
 @pytest.fixture
 def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPatch):
-    # builds a proxy app forwarding through _forward_request_to_storage to a
-    # spy storage server over real HTTP; the spy records what the proxy sent
     async def _create() -> _StorageProxy:
         spied: list[_SpiedRequest] = []
 
@@ -173,8 +171,6 @@ def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPat
 
 
 async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Callable):
-    # the raw percent-encoded target must survive the server parser and reach
-    # the dot-segment check unmodified
     proxy = await create_storage_proxy()
 
     resp = await proxy.client.get("/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus")
@@ -188,13 +184,8 @@ async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Cal
 
 
 async def test_encoded_action_delimiters_reach_storage_in_the_path(create_storage_proxy: Callable):
-    # the webserver-to-storage boundary: what the storage service parses must
-    # be the path text plus the authenticated user_id only
     proxy = await create_storage_proxy()
 
-    # the encoded delimiters must not reach the wire as path/query separators:
-    # storage must parse one query with the authenticated user_id only, the
-    # injected text staying path text
     resp = await proxy.client.post("/v0/storage/locations/0/files/api/0/uuid/foo:abort%3Fuser_id%3D7%26x%3D:complete")
     assert resp.status == status.HTTP_200_OK
     assert proxy.spied[-1] == _SpiedRequest(
