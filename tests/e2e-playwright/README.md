@@ -116,10 +116,14 @@ defaults to `victoria-logs`.
 
 When the failure happens after a computation was started,
 `start_and_stop_pipeline` first asks the backend about every computation it
-started (state, per-node states, and hints about which layer is stuck) and
-only then stops them. That snapshot is logged at the teardown phase and
+started and only then stops them. The answer is reported per computation id,
+since `GET /v0/computations/{project_id}` returns one entry per runnable
+variant of the project. Each entry carries the state, the per-node states and
+the hints about which layer is stuck. It is logged at the teardown phase and
 attached to the junit report as the `backend_computations` property, so
-`--junitxml` carries it too.
+`--junitxml` carries it too. That fixture is only used by `tests/sleepers`,
+so the portal suite reports the calibrated wait message but no
+`backend_computations` entry.
 
 The pipeline waits name the failing layer: a timeout with the computation
 still `PUBLISHED`/`PENDING` says the backend never scheduled it, one with
