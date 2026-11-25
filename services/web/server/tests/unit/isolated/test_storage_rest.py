@@ -22,7 +22,10 @@ def app(monkeypatch: pytest.MonkeyPatch) -> web.Application:
 
 
 def _make_request(path: str, app: web.Application, user_id: int = 42) -> web.Request:
-    request = make_mocked_request("GET", path, app=app)
+    # mirror aiohttp's HTTP parser, which builds the request URL with
+    # URL(path, encoded=True); make_mocked_request's URL(path) would percent-decode
+    # and remove dot-segments at parse time, hiding traversal shapes from the handler
+    request = make_mocked_request("GET", "/", app=app).clone(rel_url=URL(f"http://127.0.0.1{path}", encoded=True))
     request[RQT_USERID_KEY] = user_id
     return request
 
@@ -54,22 +57,20 @@ def test_action_verb_suffix_is_kept_raw(app: web.Application):
         "/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus",
         "/v0/storage/locations/0/files/%2e%2e%2f%2e%2e%2fstatus",
         "/v0/storage/locations/0/files/.%2fstatus",
+        "/v0/storage/locations/0/files/%2e%2e/status",
+        "/v0/storage/locations/0/files/..",
     ],
 )
-def test_encoded_dot_segments_are_rejected(path: str, app: web.Application):
+def test_dot_segments_are_rejected(path: str, app: web.Application):
     request = _make_request(path, app)
     with pytest.raises(web.HTTPBadRequest):
         _to_storage_url(request)
 
 
 @pytest.mark.parametrize(
-    "path, expected_storage_path",
-    [
-        ("/v0/storage/locations/0/files/%2e%2e/status", "/v0/locations/0/status"),
-        ("/v0/storage/locations/0/files/..", "/v0/locations/0/"),
-    ],
+    "segment",
+    ["...", ".hidden", "a...b"],
 )
-def test_whole_segment_dots_stay_inside_base(path: str, expected_storage_path: str, app: web.Application):
-    request = _make_request(path, app)
-    url = _to_storage_url(request)
-    assert url.path == expected_storage_path
+def test_dot_like_names_are_allowed(segment: str, app: web.Application):
+    request = _make_request(f"/v0/storage/locations/0/files/{segment}", app)
+    assert _to_storage_url(request).path == f"/v0/locations/0/files/{segment}"
