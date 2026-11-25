@@ -55,9 +55,9 @@ from ...settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
-from ._password_login_continuation import password_login_continuation
 from ._rest_exceptions import create_resend_cooldown_error, handle_rest_requests_exceptions
 from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
+from .auth import password_login_continuation
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
