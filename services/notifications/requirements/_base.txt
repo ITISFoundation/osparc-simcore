@@ -127,7 +127,7 @@ fast-depends==3.0.11
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   faststream
-fastapi==0.162.2
+fastapi==0.162.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
@@ -435,6 +435,7 @@ pydantic==2.14.3
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
+    #   typer
 pydantic-core==2.50.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
@@ -557,7 +558,7 @@ truststore==0.10.5
     #   httpx2
 twilio==9.13.0
     # via -r requirements/_base.in
-typer==0.28.0
+typer==0.29.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
