@@ -27,16 +27,25 @@ def _make_request(path: str, app: web.Application, user_id: int = 42) -> web.Req
     return request
 
 
-def test_regular_file_url_is_translated(app: web.Application) -> None:
+def test_regular_file_url_is_translated(app: web.Application):
     request = _make_request("/v0/storage/locations/0/files/api/0/6bc1e6ad/proj/file.txt?file_size=42", app)
     assert _to_storage_url(request) == URL(
         f"{_STORAGE_BASE}/locations/0/files/api/0/6bc1e6ad/proj/file.txt?file_size=42&user_id=42"
     )
 
 
-def test_action_verb_suffix_is_kept_raw(app: web.Application) -> None:
-    request = _make_request("/v0/storage/locations/0/files/api/0/6bc1e6ad/proj/file.txt:complete", app)
-    assert _to_storage_url(request).raw_path.startswith("/v0/locations/0/files/api/0/6bc1e6ad/proj/file.txt:complete")
+def test_product_name_is_appended_as_query_param(app: web.Application):
+    request = _make_request("/v0/storage/locations/0/paths", app)
+    url = _to_storage_url(request, product_name="osparc")
+    assert url.query["product_name"] == "osparc"
+    assert url.query["user_id"] == "42"
+
+
+def test_action_verb_suffix_is_kept_raw(app: web.Application):
+    request = _make_request("/v0/storage/locations/0/files/api/0/6bc1e6ad/proj/file.txt:complete?file_size=42", app)
+    url = _to_storage_url(request)
+    assert url.raw_path == "/v0/locations/0/files/api/0/6bc1e6ad/proj/file.txt:complete"
+    assert url.query["file_size"] == "42"
 
 
 @pytest.mark.parametrize(
@@ -47,7 +56,7 @@ def test_action_verb_suffix_is_kept_raw(app: web.Application) -> None:
         "/v0/storage/locations/0/files/.%2fstatus",
     ],
 )
-def test_encoded_dot_segments_are_rejected(path: str, app: web.Application) -> None:
+def test_encoded_dot_segments_are_rejected(path: str, app: web.Application):
     request = _make_request(path, app)
     with pytest.raises(web.HTTPBadRequest):
         _to_storage_url(request)
@@ -60,7 +69,7 @@ def test_encoded_dot_segments_are_rejected(path: str, app: web.Application) -> N
         ("/v0/storage/locations/0/files/..", "/v0/locations/0/"),
     ],
 )
-def test_whole_segment_dots_stay_inside_base(path: str, expected_storage_path: str, app: web.Application) -> None:
+def test_whole_segment_dots_stay_inside_base(path: str, expected_storage_path: str, app: web.Application):
     request = _make_request(path, app)
     url = _to_storage_url(request)
     assert url.path == expected_storage_path
