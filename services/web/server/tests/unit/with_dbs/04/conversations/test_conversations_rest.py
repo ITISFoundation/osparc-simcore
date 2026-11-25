@@ -7,17 +7,22 @@
 
 
 from collections.abc import Callable, Iterable
+from copy import deepcopy
 from http import HTTPStatus
+from pathlib import Path
 from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.conversations import ConversationRestGet
+from models_library.conversations import ConversationType
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict, switch_client_session_to
+from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import NewUser
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.conversations import conversations
 from simcore_postgres_database.utils_repos import transaction_context
@@ -25,6 +30,7 @@ from simcore_service_webserver.conversations import _conversation_service
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects.models import ProjectDict
+from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -733,3 +739,187 @@ async def test_conversations_clear_name_via_patch(
     resp = await client.get(f"{get_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["name"] is None
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_project_conversation_operations_do_not_reach_another_projects_conversation(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+):
+    """Project-scoped conversation routes must operate only on conversations that
+    belong to the project in the path (cross-project ids are not found)."""
+    assert client.app
+
+    def _url(route_name: str, **params: str) -> URL:
+        return client.app.router[route_name].url_for(**params)
+
+    victim_project_id = f"{user_project['uuid']}"
+    resp = await client.post(
+        f"{_url('create_project_conversation', project_id=victim_project_id)}",
+        json={"name": "Victim conversation", "type": "PROJECT_STATIC"},
+    )
+    conversation, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    victim_conversation_id = conversation["conversationId"]
+
+    victim_params = {"project_id": victim_project_id, "conversation_id": victim_conversation_id}
+    resp = await client.post(
+        f"{_url('create_project_conversation_message', **victim_params)}",
+        json={"content": "victim message", "type": "MESSAGE"},
+    )
+    message, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    victim_message_id = message["messageId"]
+
+    # another user addresses the victim's conversation through their own project
+    async with (
+        NewUser(app=client.app) as attacker_user,
+        NewProject(
+            deepcopy(fake_project),
+            client.app,
+            user_id=attacker_user["id"],
+            product_name="osparc",
+            tests_data_dir=tests_data_dir,
+        ) as attacker_project,
+    ):
+        attacker_project_id = f"{attacker_project['uuid']}"
+
+        async with switch_client_session_to(client, attacker_user):
+            conversation_params = {
+                "project_id": attacker_project_id,
+                "conversation_id": victim_conversation_id,
+            }
+            message_params = conversation_params | {"message_id": victim_message_id}
+
+            resp = await client.get(f"{_url('get_project_conversation', **conversation_params)}")
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            resp = await client.put(
+                f"{_url('update_project_conversation', **conversation_params)}",
+                json={"name": "hijacked"},
+            )
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            resp = await client.post(
+                f"{_url('create_project_conversation_message', **conversation_params)}",
+                json={"content": "injected", "type": "MESSAGE"},
+            )
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            resp = await client.delete(f"{_url('delete_project_conversation', **conversation_params)}")
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            resp = await client.get(f"{_url('get_project_conversation_message', **message_params)}")
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            resp = await client.put(
+                f"{_url('update_project_conversation_message', **message_params)}",
+                json={"content": "edited"},
+            )
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            resp = await client.delete(f"{_url('delete_project_conversation_message', **message_params)}")
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            resp = await client.get(f"{_url('list_project_conversation_messages', **conversation_params)}")
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+            # positive control: that user can still create in their own project
+            resp = await client.post(
+                f"{_url('create_project_conversation', project_id=attacker_project_id)}",
+                json={"name": "Own conversation", "type": "PROJECT_STATIC"},
+            )
+            await assert_status(resp, status.HTTP_201_CREATED)
+
+        # NewProject deletes every project on exit, so the victim's data is read here
+        async with switch_client_session_to(client, logged_user):
+            resp = await client.get(f"{_url('get_project_conversation', **victim_params)}")
+            data, _ = await assert_status(resp, status.HTTP_200_OK)
+            assert data["name"] == "Victim conversation"
+
+            resp = await client.get(f"{_url('list_project_conversation_messages', **victim_params)}")
+            items, _ = await assert_status(resp, status.HTTP_200_OK)
+            assert [m["content"] for m in items] == ["victim message"]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_support_conversation_not_reachable_via_project_routes(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    """A SUPPORT conversation (project_uuid NULL) must not be addressable through
+    the project-scoped routes, even by its owner."""
+    assert client.app
+
+    # owner creates a support conversation via the support endpoint
+    resp = await client.post(
+        f"{client.app.router['list_conversations'].url_for()}",
+        json={"name": "Support request", "type": "SUPPORT"},
+    )
+    conversation, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    support_conversation_id = conversation["conversationId"]
+
+    project_params = {
+        "project_id": f"{user_project['uuid']}",
+        "conversation_id": support_conversation_id,
+    }
+
+    resp = await client.get(f"{client.app.router['get_project_conversation'].url_for(**project_params)}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    resp = await client.post(
+        f"{client.app.router['create_project_conversation_message'].url_for(**project_params)}",
+        json={"content": "hello", "type": "MESSAGE"},
+    )
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    # support endpoint still works for it
+    resp = await client.get(
+        f"{client.app.router['get_conversation'].url_for(conversation_id=support_conversation_id)}?type=SUPPORT"
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["name"] == "Support request"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_project_route_rejects_conversation_of_non_project_type(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    assert client.app
+    project_id = f"{user_project['uuid']}"
+
+    resp = await client.post(
+        f"{client.app.router['create_project_conversation'].url_for(project_id=project_id)}",
+        json={"name": "Retyped conversation", "type": "PROJECT_STATIC"},
+    )
+    conversation, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    conversation_id = conversation["conversationId"]
+
+    # the project create route rejects non-project types, so retype it in the DB
+    async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+        await conn.execute(
+            conversations.update()
+            .where(conversations.c.conversation_id == UUID(conversation_id))
+            .values(type=ConversationType.SUPPORT)
+        )
+
+    params = {"project_id": project_id, "conversation_id": conversation_id}
+
+    resp = await client.get(f"{client.app.router['get_project_conversation'].url_for(**params)}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    resp = await client.put(
+        f"{client.app.router['update_project_conversation'].url_for(**params)}",
+        json={"name": "renamed"},
+    )
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    resp = await client.post(
+        f"{client.app.router['create_project_conversation_message'].url_for(**params)}",
+        json={"content": "hello", "type": "MESSAGE"},
+    )
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)

@@ -10,7 +10,7 @@ coverage==7.17.2
     #   pytest-cov
 faker==40.44.0
     # via -r requirements/_test.in
-filelock==4.2.9
+filelock==4.2.10
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint

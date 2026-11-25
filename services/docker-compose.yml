@@ -307,7 +307,7 @@ services:
       retries: 3
 
   traefik:
-    image: "traefik:v3.6.7@sha256:a9890c898f379c1905ee5b28342f6b408dc863f08db2dab20e46c267d1ff463a"
+    image: "traefik:v3.8.0@sha256:00c9734983e74ae35a1fc18eaee9e9da13f3dde95c4e45b3b8c3b60e0dbd2d17"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
@@ -858,6 +858,8 @@ services:
 
       DIRECTOR_V2_LOGLEVEL: ${DIRECTOR_V2_LOGLEVEL}
       MONITORING_ENABLED: ${MONITORING_ENABLED}
+
+      POSTGRES_MAX_POOLSIZE: ${DIRECTOR_V2_POSTGRES_MAX_POOLSIZE}
 
       R_CLONE_PROVIDER: ${R_CLONE_PROVIDER}
       R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: ${R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS}
