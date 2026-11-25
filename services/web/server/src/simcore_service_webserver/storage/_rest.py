@@ -82,8 +82,21 @@ def _get_storage_vtag(app: web.Application) -> str:
     return storage_prefix
 
 
+def _encode_storage_path_segment(segment: str) -> str:
+    # keep a FastAPI ':action' verb raw, like the original whole-suffix logic
+    if (column_index := segment.find(":")) > 0:
+        return urllib.parse.quote(segment[:column_index]) + segment[column_index:]
+    return urllib.parse.quote(segment)
+
+
 def _to_storage_url(request: web.Request, product_name: ProductName | None = None) -> URL:
-    """Converts web-api url to storage-api url"""
+    """Converts web-api url to storage-api url
+
+    Raises:
+        web.HTTPBadRequest: on path segments '.'/'..', which yarl decodes from
+        '%2e'/'%2e%2e' shapes and which joinpath would resolve against the
+        storage base (SEC-WS-49)
+    """
     userid = request[RQT_USERID_KEY]
 
     # storage service API endpoint
@@ -91,13 +104,15 @@ def _to_storage_url(request: web.Request, product_name: ProductName | None = Non
 
     basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
-    # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
-    suffix = "/".join(request.url.parts[basepath_index:])
-    # we need to quote anything before the column, but not the column
-    if (column_index := suffix.find(":")) > 0:
-        fastapi_encoded_suffix = urllib.parse.quote(suffix[:column_index], safe="/") + suffix[column_index:]
-    else:
-        fastapi_encoded_suffix = urllib.parse.quote(suffix, safe="/")
+    # NOTE: URL.parts percent-decodes within segments ('%2e'->'.', '%2f'->'/'),
+    # so a traversal like 'files/%2e%2e%2fstatus' arrives as the segment
+    # '../../status' and must be checked per slash-separated component before
+    # quote(safe="/") + joinpath let it escape the storage base (SEC-WS-49)
+    path_segments = request.url.parts[basepath_index:]
+    if any(component in {".", ".."} for segment in path_segments for component in segment.split("/")):
+        raise web.HTTPBadRequest(reason="path contains '.' or '..' segments")
+
+    fastapi_encoded_suffix = "/".join(_encode_storage_path_segment(segment) for segment in path_segments)
 
     url = (
         url.joinpath(fastapi_encoded_suffix, encoded=True)
