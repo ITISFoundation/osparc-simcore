@@ -147,7 +147,7 @@ class MessageService:
             return task_uuid, task_name
 
         max_recipients = _get_max_recipients(message.channel, self.settings)
-        if max_recipients and num_recipients > max_recipients:
+        if max_recipients is not None and num_recipients > max_recipients:
             raise NotificationsTooManyRecipientsError(
                 num_recipients=num_recipients,
                 max_recipients=max_recipients,
