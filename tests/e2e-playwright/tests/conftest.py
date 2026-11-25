@@ -37,7 +37,7 @@ from pytest_simcore.helpers.playwright import (
     RunningState,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
-    backend_computation_snapshot,
+    backend_computation_snapshots,
     decode_socketio_42_message,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
@@ -255,7 +255,7 @@ def _capture_backend_computation(
         if not response.ok:
             msg = f"HTTP {response.status}: {response.text()[:200]}"
             raise RuntimeError(msg)  # noqa: TRY301
-        return backend_computation_snapshot(response.json())
+        return backend_computation_snapshots(response.json())
     except Exception as err:  # pylint: disable=broad-exception-caught
         return {"error": repr(err)[:500]}
 

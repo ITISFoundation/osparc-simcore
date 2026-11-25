@@ -29,7 +29,7 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectStateUpdatedWaiter,
     _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
-    backend_computation_snapshot,
+    backend_computation_snapshots,
     classify_backend_stall,
     start_websocket_tracking,
     wait_for_nodes_outputs_updated,
@@ -1381,20 +1381,43 @@ def test_classify_backend_stall_hints_match_what_the_backend_reports(
 _COMPUTATION_EXAMPLE: Final[dict[str, Any]] = ComputationGet.model_json_schema()["examples"][0]
 
 
-def test_backend_computation_snapshot_reads_the_list_the_web_server_returns():
-    # NOTE: GET /v0/computations/{project_id} answers with one ComputationGet per runnable
-    # variant of the project, not with a single object
-    computation = ComputationGet.model_validate(_COMPUTATION_EXAMPLE)
-    body = {"data": [computation.model_dump(mode="json")], "error": None}
+def _computation_body(*computations: ComputationGet) -> dict[str, Any]:
+    return {"data": [c.model_dump(mode="json") for c in computations], "error": None}
 
-    snapshot = backend_computation_snapshot(body)
+
+def _computation(**overrides: Any) -> ComputationGet:
+    return ComputationGet.model_validate(_COMPUTATION_EXAMPLE | overrides)
+
+
+def test_backend_computation_snapshots_reports_every_variant_the_web_server_returns():
+    # NOTE: GET /v0/computations/{project_id} answers with one ComputationGet per runnable variant
+    # of the project (ref_ids), and the stalled one is not necessarily the first
+    healthy = _computation(id=_NODE_ID, state=RunningState.SUCCESS)
+    stalled = _computation(id=_OTHER_NODE_ID, state=RunningState.WAITING_FOR_CLUSTER)
+
+    snapshots = backend_computation_snapshots(_computation_body(healthy, stalled))
+
+    assert list(snapshots) == [_NODE_ID, _OTHER_NODE_ID]
+    assert snapshots[_NODE_ID]["state"] == RunningState.SUCCESS.value
+    assert snapshots[_NODE_ID]["stall_hints"] == []
+    assert snapshots[_OTHER_NODE_ID]["state"] == RunningState.WAITING_FOR_CLUSTER.value
+    assert [
+        marker for hint in snapshots[_OTHER_NODE_ID]["stall_hints"] for marker in _STALL_HINT_MARKERS if marker in hint
+    ] == [_NO_CLUSTER_MARKER]
+
+
+def test_backend_computation_snapshot_reads_the_node_states_of_a_computation():
+    computation = _computation()
+    node_states = computation.pipeline_details.node_states
+
+    snapshot = backend_computation_snapshots(_computation_body(computation))[f"{computation.id}"]
 
     assert snapshot["state"] == computation.state.value
+    assert snapshot["result"] == computation.result
     assert snapshot["node_statuses"] == {
-        f"{node_id}": node_state.current_status.value
-        for node_id, node_state in computation.pipeline_details.node_states.items()
+        f"{node_id}": node_state.current_status.value for node_id, node_state in node_states.items()
     }
-    # NOTE: the model's example is PUBLISHED with every node NOT_STARTED, i.e. a scheduling stall
+    # NOTE: the model's example is PUBLISHED with every node NOT_STARTED, i.e. never scheduled
     reported = [marker for hint in snapshot["stall_hints"] for marker in _STALL_HINT_MARKERS if marker in hint]
     assert reported == [_NEVER_SENT_TO_SCHEDULER_MARKER]
 
@@ -1408,4 +1431,4 @@ def test_backend_computation_snapshot_reads_the_list_the_web_server_returns():
 )
 def test_backend_computation_snapshot_rejects_a_body_without_a_computation(body: dict[str, Any]):
     with pytest.raises((ValidationError, LookupError)):
-        backend_computation_snapshot(body)
+        backend_computation_snapshots(body)

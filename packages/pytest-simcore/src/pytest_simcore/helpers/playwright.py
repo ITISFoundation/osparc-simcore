@@ -1209,29 +1209,31 @@ def classify_backend_stall(
     return hints
 
 
-def backend_computation_snapshot(response_body: Any) -> dict[str, Any]:
+def backend_computation_snapshots(response_body: Any) -> dict[str, dict[str, Any]]:
     """What the backend reports about a computation, from the body of a
-    `GET /v0/computations/{project_id}` request.
+    `GET /v0/computations/{project_id}` request, keyed by computation id.
 
-    The web-server answers with a list, one entry per runnable variant of the project, so the
-    snapshot describes the first of them.
+    The web-server answers with a list with one entry per runnable variant of the project (see
+    `get_computation` in the web-server's director_v2 controller), so a stalled variant is not
+    necessarily the first one.
     """
-    computations = [ComputationGet.model_validate(entry) for entry in response_body["data"]]
-    if not computations:
+    snapshots: dict[str, dict[str, Any]] = {}
+    for entry in response_body["data"]:
+        computation = ComputationGet.model_validate(entry)
+        node_statuses: dict[str, RunningState] = {
+            f"{node_id}": node_state.current_status
+            for node_id, node_state in computation.pipeline_details.node_states.items()
+        }
+        snapshots[f"{computation.id}"] = {
+            "state": computation.state.value,
+            "result": computation.result,
+            "node_statuses": {node_id: status.value for node_id, status in node_statuses.items()},
+            "stall_hints": classify_backend_stall(computation.state, node_statuses),
+        }
+    if not snapshots:
         msg = "the backend reported no computation for this project"
         raise LookupError(msg)
-
-    computation = computations[0]
-    node_states = computation.pipeline_details.node_states
-    node_statuses: dict[str, RunningState] = {
-        f"{node_id}": node_state.current_status for node_id, node_state in node_states.items()
-    }
-    return {
-        "state": computation.state.value,
-        "result": computation.result,
-        "node_statuses": {node_id: status.value for node_id, status in node_statuses.items()},
-        "stall_hints": classify_backend_stall(computation.state, node_statuses),
-    }
+    return snapshots
 
 
 def wait_for_pipeline_state(
