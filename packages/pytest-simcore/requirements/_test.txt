@@ -141,7 +141,7 @@ psycopg==3.3.9
     # via sqlalchemy
 psycopg-binary==3.3.9
     # via psycopg
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -149,7 +149,7 @@ pydantic==2.14.3
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
