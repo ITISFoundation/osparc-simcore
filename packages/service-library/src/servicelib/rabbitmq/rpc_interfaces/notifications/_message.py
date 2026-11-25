@@ -58,7 +58,9 @@ async def get_message_status(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_message_status"),
         request=GetMessageStatusRequest(
-            owner_metadata=owner_metadata,
+            # RPC arguments are pickled verbatim, so the sender's subclass cannot
+            # reach the notifications service; the shared model must go on the wire
+            owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()),
             task_or_group_uuid=task_or_group_uuid,
         ),
     )
