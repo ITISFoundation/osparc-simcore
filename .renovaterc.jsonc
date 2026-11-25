@@ -103,6 +103,17 @@
       "**/packages/service-integration/tests/data/**"
     ]
   },
+  "helmfile": {
+    "managerFilePatterns": [
+      "/(^|/)helmfile[^/]*\\.ya?ml(?:\\.gotmpl)?$/",
+      "/(^|/)helmfile\\.d/.+\\.ya?ml(?:\\.gotmpl)?$/"
+    ]
+  },
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^charts/ops-local/[^/]+/templates/[^/]+\\.yaml$/"
+    ]
+  },
   "customManagers": [
     {
       "description": "uv version used by the Makefile, CI and the base images. Read as the PyPI package 'uv' (like the constraints above), so normal and security updates (OSV knows PyPI, not the Docker image) change all of them together",
@@ -171,7 +182,7 @@
       "depNameTemplate": "python",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
-    }
+    },
   ],
   "lockFileMaintenance": {
     "enabled": true,
@@ -380,6 +391,20 @@
       "description": "GitHub Actions: wait two weeks before adopting a release, the cool-down previously enforced by Dependabot's cooldown block (its `github-actions` ecosystem). Security updates skip minimumReleaseAge and land right away",
       "matchManagers": [
         "github-actions"
+      ],
+      "minimumReleaseAge": "14 days"
+    },
+    {
+      "description": "Helm charts of the local stack (the helmfile releases and their transitive chart pins): same cool-down as the other ecosystems. Majors arrive as regular pull requests, like the traefik chart already did",
+      "matchDatasources": [
+        "helm"
+      ],
+      "minimumReleaseAge": "14 days"
+    },
+    {
+      "description": "Tools installed with mise: same cool-down as the other ecosystems",
+      "matchManagers": [
+        "mise"
       ],
       "minimumReleaseAge": "14 days"
     },

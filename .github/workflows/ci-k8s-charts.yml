@@ -30,17 +30,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup helm
-        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
-        with: # keep versions in sync with scripts/makefiles/k8s.mk
-          version: v3.22.1
-
-      - name: Setup helm-unittest
-        env:
-          HELM_UNITTEST_VERSION: v1.2.1 # keep in sync with scripts/makefiles/k8s.mk
-        run: |
-          helm plugin install --version "${HELM_UNITTEST_VERSION}" \
-            https://github.com/helm-unittest/helm-unittest
+      - name: Setup the k8s toolchain
+        uses: $/.github/actions/setup-k8s-toolchain
 
       - name: helm-unittest
         run: make -C k8s helm-unittest
@@ -57,13 +48,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup helmfile
-        uses: helmfile/helmfile-action@614b4cd063ada10b87f668f6ffd35485bce0cac5 # v2.4.8
-        with: # keep versions in sync with scripts/makefiles/k8s.mk
-          helmfile-version: v1.1.6
-          helm-version: v3.22.1
-          helmfile-auto-init: "false" # avoid https://github.com/helmfile/helmfile-action/issues/816
-          helmfile-args: --version
+      - name: Setup the k8s toolchain
+        uses: $/.github/actions/setup-k8s-toolchain
 
       - name: helmfile-lint
         run: make -C k8s helmfile-lint
@@ -101,14 +87,8 @@ jobs:
           name: k8s-manifests-${{ github.sha }}
           path: ${{ env.TEMPLATES_DIR }}
 
-      - name: Setup kubeconform
-        env:
-          KUBECONFORM_VERSION: v0.8.0 # keep in sync with scripts/makefiles/k8s.mk
-        # https://github.com/yannh/kubeconform/issues/200#issuecomment-1546763389
-        run: |
-          go install -ldflags "-X main.version=${KUBECONFORM_VERSION}" \
-            "github.com/yannh/kubeconform/cmd/kubeconform@${KUBECONFORM_VERSION}"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Setup the k8s toolchain
+        uses: $/.github/actions/setup-k8s-toolchain
 
       - name: kubeconform
         env:

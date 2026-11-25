@@ -1,9 +1,9 @@
 # Dependency updates (Renovate)
 
 A self-hosted Renovate updates the dependencies in this repository: Python
-lockfiles, Docker images, GitHub Actions, `uv`, and the Python patch version.
-Neither the Mend-hosted app nor Dependabot opens them. Dependabot alerts stay on
-as a vulnerability source only.
+lockfiles, Docker images, GitHub Actions, `uv`, the Python patch version,
+Kubernetes tools. Neither the Mend-hosted app nor Dependabot opens them.
+Dependabot alerts stay on as a vulnerability source only.
 
 | What | Where |
 | --- | --- |
@@ -52,7 +52,8 @@ pull request.
   Docker image majors and the monthly `lockFileMaintenance` runs; majors of
   Python packages, GitHub Actions and `uv` arrive as regular pull requests.
 - **Cool-downs.** 14 days for every dependency: pip-compile lockfiles, GitHub
-  Actions, and `uv`. Security fixes skip them.
+  Actions, `uv`, Helm charts, and tools installed with mise.
+  Security fixes skip them.
 - **One PR per dependency.** A pip-compile package gets a single PR that moves
   its pin in every `requirements/` directory at once (the resync post-upgrade
   task propagates it). No PRs grouped per directory or per area. The
@@ -151,12 +152,13 @@ only after the checks have finished:
 3. The reviewed path merges once Mergify's conditions match: the branch is
    up to date with `master` (the ruleset marks the checks *strict*), reviewers
    approve twice, request no changes, leave no thread open, and a code owner
-   approves. For the files Renovate writes, the owners are the four people in
+   approves. For the files Renovate writes, the owners are the people in
    the last block of `.github/CODEOWNERS`. They own *only* version manifests:
    `**/requirements/**`, Dockerfiles, `docker-compose*.yml`, `.python-version`,
-   and the Actions pinned under `.github/workflows/**`. One dependency bump
-   rewrites dozens of directories at once, so leaving those files to the
-   per-service rules would make every security fix wait on six or seven
+   `k8s/.mise.toml`, `scripts/makefiles/k8s.mk`, `charts/ops-local/**`,
+   `services/helmfile*`, and the Actions pinned under `.github/workflows/**`. One
+   dependency bump rewrites dozens of directories at once, so leaving those files
+   to the per-service rules would make every security fix wait on six or seven
    reviewers.
 
 Add the `🤖-do-not-merge` label to hold a pull request back, from either lane.
