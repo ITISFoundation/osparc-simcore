@@ -82,7 +82,7 @@ docker==7.2.0
     #   moto
 execnet==2.1.2
     # via pytest-xdist
-faker==40.44.0
+faker==40.54.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in

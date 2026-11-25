@@ -74,7 +74,7 @@ cryptography==50.0.2
     #   moto
 docker==7.2.0
     # via moto
-faker==40.44.0
+faker==40.54.0
     # via -r requirements/_test.in
 fastapi==0.162.3
     # via
