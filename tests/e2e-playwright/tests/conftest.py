@@ -191,10 +191,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 _test_start_times: dict[str, datetime.datetime] = {}
 
 # NOTE: pytest stashes share per-test state between hooks and fixtures: fixture teardowns
-# run after the call-phase makereport, so they can see the failure the hook recorded
-_CALL_FAILURE_STASH_KEY: Final[
-    Annotated[pytest.StashKey[pytest.ExceptionInfo], doc("the test's call-phase failure, if any")]
-] = pytest.StashKey()
+# run after the call-phase makereport, so they can see whether the test's call failed
+_CALL_FAILED_STASH_KEY: Final[Annotated[pytest.StashKey[bool], doc("the test's call phase failed")]] = pytest.StashKey()
 
 _BACKEND_COMPUTATIONS_STASH_KEY: Final[
     Annotated[
@@ -248,15 +246,11 @@ def pytest_runtest_makereport(item: pytest.Item, call):
 
     failed_in_call = call.when == "call" and report.failed and call.excinfo is not None
     if call.when == "call":
-        # NOTE: fixture teardowns run after this hook, so stashing the failure lets them capture
+        # NOTE: fixture teardowns run after this hook, so flagging the failure lets them capture
         # backend state while the test error is still the one being reported. A passing attempt
-        # clears the entry: rerun plugins reuse the same item, and a stale failure would attach
-        # the previous attempt's snapshot to a passing test
-        excinfo = call.excinfo
-        if report.failed and excinfo is not None:
-            item.stash[_CALL_FAILURE_STASH_KEY] = excinfo
-        elif _CALL_FAILURE_STASH_KEY in item.stash:
-            del item.stash[_CALL_FAILURE_STASH_KEY]
+        # clears the flag: rerun plugins reuse the same item, and a stale flag would attach the
+        # previous attempt's snapshot to a passing test
+        item.stash[_CALL_FAILED_STASH_KEY] = failed_in_call
 
     if failed_in_call:
         # Check if the test failed
@@ -298,10 +292,11 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         ) as ctx:
             ctx.logger.warning("\n%s", json.dumps(diagnostics, indent=2))
 
-    if call.when == "teardown" and item.stash.get(_CALL_FAILURE_STASH_KEY, None) is not None:
+    if call.when == "teardown" and item.stash.get(_CALL_FAILED_STASH_KEY, None):
         # NOTE: junitxml finalizes the testcase from the teardown-phase report, so properties
         # appended here reach the XML
         _emit_backend_diagnostics(item, report)
+        del item.stash[_CALL_FAILED_STASH_KEY]
 
     return report
 
@@ -950,7 +945,7 @@ def start_and_stop_pipeline(
 
     # NOTE: after a failed test, record what the backend says about each computation before
     # stopping it; pytest_runtest_makereport logs it at the teardown phase
-    if request.node.stash.get(_CALL_FAILURE_STASH_KEY, None) is not None:
+    if request.node.stash.get(_CALL_FAILED_STASH_KEY, None):
         request.node.stash[_BACKEND_COMPUTATIONS_STASH_KEY] = {
             pipeline_id: capture_backend_computation(api_request_context, product_url, pipeline_id)
             for pipeline_id in started_pipeline_ids
