@@ -21,7 +21,7 @@ KIND_CLUSTER_NAME := simcore
 
 .PHONY: install-tools
 install-tools: ## Installs k8s tools
-	@cd $(CURDIR) && mise trust && mise install
+	@cd $(CURDIR) && mise trust --quiet && mise install
 
 ##@ Cluster
 
