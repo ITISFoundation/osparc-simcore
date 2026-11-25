@@ -14,12 +14,12 @@ def validate_nullable_url(value: str | None) -> str | None:
 # A host that carries a scheme silently breaks the URL built on top of it.
 def validate_no_protocol_scheme(value: Any) -> Any:
     if isinstance(value, str):
-        trimmed = value.strip().rstrip("/")
+        trimmed = value.strip()
         if "://" in trimmed:
             msg = (
                 f"expected a hostname without protocol, e.g. 'registry.example.com' "
                 f"or 'registry.example.com:5000', got {value!r}"
             )
             raise ValueError(msg)
-        return trimmed
+        return trimmed.rstrip("/")
     return value

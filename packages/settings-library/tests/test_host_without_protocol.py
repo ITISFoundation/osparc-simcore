@@ -7,7 +7,6 @@ from typing import Annotated, Final
 import pytest
 from annotated_types import doc
 from pydantic import ValidationError
-
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
@@ -73,7 +72,13 @@ _HOST_FIELDS: Final[
 ]
 
 _IDS: Final[list[str]] = [f"{cls.__name__}.{field}" for cls, field, _ in _HOST_FIELDS]
-_PROTOCOL_VALUES: Final[list[str]] = ["http://svc", "https://svc:8080", "HTTP://svc"]
+_PROTOCOL_VALUES: Final[list[str]] = [
+    "http://svc",
+    "https://svc:8080",
+    "HTTP://svc",
+    "https://",  # protocol-only: still a scheme, must not survive trimming
+    "HTTP://",
+]
 
 
 @pytest.mark.parametrize(
