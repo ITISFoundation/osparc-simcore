@@ -823,9 +823,9 @@ def wait_for_nodes_outputs_updated(
     happened.
     """
     waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
-    # NOTE: the db-listener TIP is only meaningful when the body completed: a raise from the
-    # body means the pipeline never produced outputs, so no push was ever expected
-    body_failed = False
+    # NOTE: the db-listener TIP describes a wait that ran out of time once the caller's
+    # block was over, which is what `caller_block_failed` tells the message apart
+    caller_block_failed = False
     with (
         log_context(
             logging.INFO,
@@ -836,7 +836,7 @@ def wait_for_nodes_outputs_updated(
                     f"❌ missing outputs push for: {waiter.missing_outputs_report()}. "
                     + (
                         "(the pipeline wait inside failed first, see its error above)"
-                        if body_failed
+                        if caller_block_failed
                         else "TIP: check that the webserver's db-listener service is running properly!"
                     )
                 ),
@@ -847,7 +847,7 @@ def wait_for_nodes_outputs_updated(
         try:
             yield
         except BaseException:
-            body_failed = True
+            caller_block_failed = True
             raise
 
 

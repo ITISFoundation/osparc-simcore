@@ -581,7 +581,7 @@ def _timed_out_websocket() -> RobustWebSocket:
 
 
 def _satisfied_websocket() -> RobustWebSocket:
-    # NOTE: an already-settled wait, so exiting the outputs wait without a body error is
+    # NOTE: an already-settled wait, so exiting the outputs wait without a caller error is
     # not treated as a cancellation
     websocket = mock.create_autospec(RobustWebSocket, instance=True)
     websocket.expect_event.return_value = _FakeEventContextManager(done=True)
@@ -638,10 +638,10 @@ def test_pipeline_state_timeout_message_names_the_stalled_layer(
         assert (marker in caplog.text) is (marker in expected_fragments)
 
 
-def test_outputs_wait_with_failed_body_does_not_blame_the_db_listener(
+def test_outputs_wait_with_failed_caller_block_does_not_blame_the_db_listener(
     caplog: pytest.LogCaptureFixture,
 ):
-    # NOTE: when the wrapped block raises, no output was ever expected, so blaming the
+    # NOTE: when the caller's block raises, no output was ever expected, so blaming the
     # db-listener for the missing push would misdirect the reader
     def _pipeline_wait_failed() -> NoReturn:
         msg = "pipeline wait failed"
@@ -663,11 +663,11 @@ def test_outputs_wait_with_failed_body_does_not_blame_the_db_listener(
     assert "db-listener" not in caplog.text
 
 
-def test_outputs_wait_timeout_after_ok_body_still_suggests_the_db_listener(
+def test_outputs_wait_timeout_after_ok_caller_block_still_suggests_the_db_listener(
     caplog: pytest.LogCaptureFixture,
 ):
     # NOTE: outputs the backend pushed but the client never received IS a db-listener symptom,
-    # so the TIP must still fire when the body completed cleanly
+    # so the TIP must still fire when the caller's block completed cleanly
     with (
         pytest.raises(PlaywrightTimeoutError),
         caplog.at_level(logging.INFO),
