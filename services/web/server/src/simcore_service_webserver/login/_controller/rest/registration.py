@@ -55,6 +55,7 @@ from ...settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
+from ._password_login_continuation import password_login_continuation
 from ._rest_exceptions import create_resend_cooldown_error, handle_rest_requests_exceptions
 from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .registration_schemas import (
@@ -102,13 +103,28 @@ async def check_registration_invitation(request: web.Request):
 
 
 @routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
+@on_success_grant_session_access_to(
+    name="auth_register_phone",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_login_2fa",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_resend_2fa_code",
+    max_access_count=MAX_2FA_CODE_RESEND,
+)
 @handle_rest_requests_exceptions
 async def register(request: web.Request):
     """
     Starts user's registration by providing an email, password and
     invitation code (required by configuration).
 
-    Creates the account directly (no e-mail confirmation step) and grants login.
+    New accounts are created directly (no e-mail confirmation step) and granted
+    login. An email that already exists authenticates with the submitted
+    password and continues with the second factor when the product requires
+    2FA (same flow as auth_login, SEC-WS-31).
     """
     product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
@@ -165,7 +181,11 @@ async def register(request: web.Request):
 
     #  get authorized user or create new
     user = await _auth_service.get_user_or_none(request.app, email=registration.email)
+    new_account = user is None
     if user:
+        # existing account: this request authenticates it with the submitted
+        # password and nothing more; the second factor applies here exactly as
+        # in auth_login (SEC-WS-31)
         await _auth_service.authenticate_user(
             request.app,
             email=registration.email,
@@ -185,9 +205,6 @@ async def register(request: web.Request):
         )
 
     assert user is not None  # nosec
-    assert (  # nosec
-        product.name == invitation.product if invitation and invitation.product else True
-    )
 
     # grant product access (groups + SIGNAL_ON_USER_CONFIRMATION)
     await users_product_access_service.grant_user_access_to_product(
@@ -232,6 +249,11 @@ async def register(request: web.Request):
             )
         )
         # Don't fail registration if email fails to send
+
+    if not new_account:
+        # existing account: continue with the second factor when required
+        # (same flow as auth_login, SEC-WS-31)
+        return await password_login_continuation(request, user=user, product=product, settings=settings)
 
     # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
     # an abandoned earlier login may have left a pending email: drop it so

@@ -256,6 +256,32 @@ async def extract_email_from_invitation(
         return TypeAdapter(LowerCaseEmailStr).validate_python(content.guest)
 
 
+def _ensure_guest_email_matches(guest: str | None, *, guest_email: str) -> None:
+    """Rejects DB-type invitations whose guest tag is the wrong email
+
+    `guest` is a free-text field (e.g. 'invitation-20260102-3' from the CLI);
+    the check applies only when it is email-shaped, which is what the
+    invitations flows store.
+
+    Raises:
+        web.HTTPForbidden: if the invitation was issued for a different email
+    """
+    if not guest:
+        return
+    try:
+        guest_as_email = TypeAdapter(LowerCaseEmailStr).validate_python(guest)
+    except ValidationError:
+        return  # free-text tag, not an email: nothing to bind against
+    if guest_as_email.casefold() != guest_email.casefold():
+        raise web.HTTPForbidden(
+            text=(
+                "Invalid invitation code."
+                " This invitation was issued for a different email." + MSG_INVITATIONS_CONTACT_SUFFIX
+            ),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+
 async def check_and_consume_invitation(
     invitation_code: str,
     guest_email: str,
@@ -306,6 +332,19 @@ async def check_and_consume_invitation(
                 "created_at": confirmation.created_at,
             }
             invitation_data: ConfirmedInvitationData = _InvitationValidator.model_validate(confirmation_token_dict).data
+
+            # bind the code to what it claims: a code carrying another product
+            # or an email-shaped guest tag must not serve a different
+            # product/email (legacy codes without either are out of scope)
+            if invitation_data.product is not None and invitation_data.product != product.name:
+                raise web.HTTPForbidden(
+                    text=(
+                        "Invalid invitation code."
+                        " This invitation was not issued for this product." + MSG_INVITATIONS_CONTACT_SUFFIX
+                    ),
+                    content_type=MIMETYPE_APPLICATION_JSON,
+                )
+            _ensure_guest_email_matches(invitation_data.guest, guest_email=guest_email)
             return invitation_data
 
         except ValidationError as err:

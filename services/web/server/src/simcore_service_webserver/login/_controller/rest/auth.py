@@ -4,16 +4,12 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.logging.logging_base import get_log_record_extra
 from common_library.user_messages import user_message
-from models_library.authentication import TwoFactorAuthenticationMethod
-from pydantic import TypeAdapter
-from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.common_headers import X_FORWARDED_FOR
 from servicelib.logging_utils import log_context
-from simcore_postgres_database.models.users import UserRole
 
 from ...._meta import API_VTAG
-from ....locale import get_locale_or_none, translate_message
+from ....locale import translate_message
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_web
@@ -21,29 +17,22 @@ from ....session.access_policies_web import (
     on_success_grant_session_access_to,
     session_access_required,
 )
-from ....user_preferences import user_preferences_service
-from ....user_preferences.models import TwoFAFrontendUserPreference
 from ....web_requests_validation import parse_request_body_as
-from ....web_utils import envelope_response, flash_response
+from ....web_utils import flash_response
 from ... import _auth_service, _login_service, _login_throttle_service, _security_service, _twofa_service
 from ...constants import (
-    CODE_2FA_EMAIL_CODE_REQUIRED,
-    CODE_2FA_SMS_CODE_REQUIRED,
-    CODE_PHONE_NUMBER_REQUIRED,
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
-    MSG_2FA_CODE_SENT,
-    MSG_EMAIL_SENT,
     MSG_LOGGED_OUT,
-    MSG_PHONE_MISSING,
     MSG_UNAUTHORIZED_LOGIN_2FA,
     MSG_WRONG_2FA_CODE__EXPIRED,
     MSG_WRONG_2FA_CODE__INVALID,
 )
 from ...decorators import login_required
 from ...settings import LoginSettingsForProduct, get_plugin_settings
+from ._password_login_continuation import password_login_continuation
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email, set_pending_2fa_email
+from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .auth_schemas import LoginBody, LoginTwoFactorAuthBody, LogoutBody
 
 log = logging.getLogger(__name__)
@@ -87,122 +76,7 @@ async def login(request: web.Request):
     )
     await _auth_service.check_authorized_user_in_product(request.app, user_email=user["email"], product=product)
 
-    # Check if user role allows skipping 2FA or if 2FA is not required
-    skip_2fa = UserRole(user["role"]) == UserRole.TESTER
-    if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
-        # an abandoned earlier login may have left a pending email: drop it so
-        # that it cannot shadow this authenticated account
-        await clear_pending_2fa_email(request)
-        return await _security_service.login_granted_response(request, user=user)
-
-    # 2FA login process continuation
-    user_2fa_preference = await user_preferences_service.get_frontend_user_preference(
-        request.app,
-        user_id=user["id"],
-        product_name=product.name,
-        preference_class=TwoFAFrontendUserPreference,
-    )
-    if not user_2fa_preference:
-        user_2fa_authentication_method = TwoFactorAuthenticationMethod.SMS
-        preference_id = TwoFAFrontendUserPreference().preference_identifier
-        await user_preferences_service.set_frontend_user_preference(
-            request.app,
-            user_id=user["id"],
-            product_name=product.name,
-            frontend_preference_identifier=preference_id,
-            value=user_2fa_authentication_method,
-        )
-    else:
-        user_2fa_authentication_method = TypeAdapter(TwoFactorAuthenticationMethod).validate_python(
-            user_2fa_preference.value
-        )
-
-    if user_2fa_authentication_method == TwoFactorAuthenticationMethod.DISABLED:
-        # this account logs in with a single factor, so no pending email may be left around
-        await clear_pending_2fa_email(request)
-        return await _security_service.login_granted_response(request, user=user)
-
-    phone_registration_allowed = (
-        user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS and not user["phone"]
-    )
-    await set_pending_2fa_email(request, email=user["email"], phone_registration_allowed=phone_registration_allowed)
-
-    if phone_registration_allowed:
-        return envelope_response(
-            # LoginNextPage
-            {
-                "name": CODE_PHONE_NUMBER_REQUIRED,
-                "parameters": {
-                    "message": translate_message(MSG_PHONE_MISSING, request),
-                    "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
-                },
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
-
-    code = await _twofa_service.create_2fa_code(
-        app=request.app,
-        user_email=user["email"],
-        expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-    )
-
-    if user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS:
-        # create sms 2FA
-        assert user["phone"]  # nosec
-        assert settings.LOGIN_2FA_REQUIRED  # nosec
-        assert settings.LOGIN_TWILIO  # nosec
-        assert product.twilio_messaging_sid  # nosec
-
-        await _twofa_service.send_sms_code(
-            request.app,
-            phone_number=user["phone"],
-            code=code,
-            twilio_auth=settings.LOGIN_TWILIO,
-            twilio_messaging_sid=product.twilio_messaging_sid,
-            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=user["first_name"] or user["name"],
-            user_id=user["id"],
-            locale=get_locale_or_none(request),
-        )
-
-        return envelope_response(
-            # LoginNextPage
-            {
-                "name": CODE_2FA_SMS_CODE_REQUIRED,
-                "parameters": {
-                    "message": translate_message(MSG_2FA_CODE_SENT, request).format(
-                        phone_number=_twofa_service.mask_phone_number(user["phone"])
-                    ),
-                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-                },
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
-
-    # otherwise create email f2a
-    assert user_2fa_authentication_method == TwoFactorAuthenticationMethod.EMAIL  # nosec
-    await _twofa_service.send_email_code(
-        request.app,
-        user_email=user["email"],
-        code=code,
-        first_name=user["first_name"] or user["name"],
-        user_name=user["name"],
-        product_name=product.name,
-        host=request.host,
-        ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-        user_id=user["id"],
-        locale=get_locale_or_none(request),
-    )
-    return envelope_response(
-        {
-            "name": CODE_2FA_EMAIL_CODE_REQUIRED,
-            "parameters": {
-                "message": translate_message(MSG_EMAIL_SENT, request).format(email=user["email"]),
-                "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-            },
-        },
-        status=status.HTTP_202_ACCEPTED,
-    )
+    return await password_login_continuation(request, user=user, product=product, settings=settings)
 
 
 @routes.post(f"/{API_VTAG}/auth/validate-code-login", name="auth_login_2fa")
