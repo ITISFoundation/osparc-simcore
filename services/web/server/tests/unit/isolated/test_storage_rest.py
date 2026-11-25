@@ -4,7 +4,7 @@
 # pylint: disable=protected-access
 
 from collections.abc import Callable
-from typing import Final
+from typing import Final, NamedTuple
 
 import pytest
 from aiohttp import web
@@ -16,6 +16,17 @@ from simcore_service_webserver.storage._rest import _forward_request_to_storage,
 from yarl import URL
 
 _STORAGE_BASE: Final[str] = "http://storage:8080/v0"
+
+
+class _SpiedRequest(NamedTuple):
+    method: str
+    path: str
+    query: dict[str, str]
+
+
+class _StorageProxy(NamedTuple):
+    client: TestClient
+    spied: list[_SpiedRequest]
 
 
 @pytest.fixture
@@ -46,6 +57,13 @@ def test_product_name_is_appended_as_query_param(app: web.Application):
     url = _to_storage_url(request, product_name="osparc")
     assert url.query["product_name"] == "osparc"
     assert url.query["user_id"] == "42"
+
+
+def test_proxy_identity_query_params_win_over_client_values(app: web.Application):
+    request = _make_request("/v0/storage/locations?user_id=7&user_id=8&product_name=evil", app)
+    url = _to_storage_url(request, product_name="osparc")
+    assert url.query.getall("user_id") == ["42"]
+    assert url.query.getall("product_name") == ["osparc"]
 
 
 def test_action_verb_suffix_is_kept_raw(app: web.Application):
@@ -124,12 +142,12 @@ def test_encoded_delimiters_after_colon_stay_in_the_path(path: str, expected_raw
 def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPatch):
     # builds a proxy app forwarding through _forward_request_to_storage to a
     # spy storage server over real HTTP; the spy records what the proxy sent
-    async def _create() -> tuple[TestClient, list[tuple[str, str, dict[str, str]]]]:
-        seen: list[tuple[str, str, dict[str, str]]] = []
+    async def _create() -> _StorageProxy:
+        spied: list[_SpiedRequest] = []
 
         async def _storage_spy(request: web.Request) -> web.Response:
             # path and query are what storage's framework routes on
-            seen.append((request.method, request.path, dict(request.query)))
+            spied.append(_SpiedRequest(request.method, request.path, dict(request.query)))
             return web.json_response({"data": "ok", "links": None, "meta": None})
 
         spy_app = web.Application()
@@ -148,8 +166,8 @@ def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPat
 
         app_ = web.Application()
         app_.router.add_route("*", "/{tail:.*}", _proxy)
-        client: TestClient = await aiohttp_client(app_)
-        return client, seen
+        client = await aiohttp_client(app_)
+        return _StorageProxy(client=client, spied=spied)
 
     return _create
 
@@ -157,37 +175,39 @@ def create_storage_proxy(aiohttp_client: Callable, monkeypatch: pytest.MonkeyPat
 async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Callable):
     # the raw percent-encoded target must survive the server parser and reach
     # the dot-segment check unmodified
-    client, seen = await create_storage_proxy()
+    proxy = await create_storage_proxy()
 
-    resp = await client.get("/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus")
+    resp = await proxy.client.get("/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus")
     assert resp.status == status.HTTP_400_BAD_REQUEST
     assert "must not contain" in await resp.text()
-    assert not seen
+    assert not proxy.spied
 
-    resp = await client.get("/v0/storage/locations")
+    resp = await proxy.client.get("/v0/storage/locations")
     assert resp.status == status.HTTP_200_OK
-    assert seen == [("GET", "/v0/locations", {"user_id": "42"})]
+    assert proxy.spied == [_SpiedRequest("GET", "/v0/locations", {"user_id": "42"})]
 
 
 async def test_encoded_action_delimiters_reach_storage_in_the_path(create_storage_proxy: Callable):
     # the webserver-to-storage boundary: what the storage service parses must
     # be the path text plus the authenticated user_id only
-    client, seen = await create_storage_proxy()
+    proxy = await create_storage_proxy()
 
     # the encoded delimiters must not reach the wire as path/query separators:
     # storage must parse one query with the authenticated user_id only, the
     # injected text staying path text
-    resp = await client.post("/v0/storage/locations/0/files/api/0/uuid/foo:abort%3Fuser_id%3D7%26x%3D:complete")
+    resp = await proxy.client.post("/v0/storage/locations/0/files/api/0/uuid/foo:abort%3Fuser_id%3D7%26x%3D:complete")
     assert resp.status == status.HTTP_200_OK
-    assert seen[-1] == (
+    assert proxy.spied[-1] == _SpiedRequest(
         "POST",
         "/v0/locations/0/files/api/0/uuid/foo:abort?user_id=7&x=:complete",
         {"user_id": "42"},
     )
 
-    resp = await client.post("/v0/storage/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc%3Fuser_id%3D7")
+    resp = await proxy.client.post(
+        "/v0/storage/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc%3Fuser_id%3D7"
+    )
     assert resp.status == status.HTTP_200_OK
-    assert seen[-1] == (
+    assert proxy.spied[-1] == _SpiedRequest(
         "POST",
         "/v0/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc?user_id=7",
         {"user_id": "42"},
