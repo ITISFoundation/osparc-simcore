@@ -377,7 +377,7 @@ def test_no_lockfile_resync_left_behind(osparc_simcore_root_dir: Path):
     )
 
 
-def test_the_post_upgrade_task_runs_the_script_bare_and_is_allowed(
+def test_the_post_upgrade_tasks_run_their_scripts_bare_and_are_allowed(
     osparc_simcore_root_dir: Path,
 ):
     # Renovate skips a post-upgrade command that does not match allowedCommands in the
@@ -385,17 +385,25 @@ def test_the_post_upgrade_task_runs_the_script_bare_and_is_allowed(
     # than as a configuration error, so the two files are checked against each other here
     renovaterc = (osparc_simcore_root_dir / ".renovaterc.jsonc").read_text()
     post_upgrade = renovaterc[renovaterc.index('"postUpgradeTasks"') :]
-    (command,) = re.findall(r'"([^"]*resync_lockfiles\.py)"', post_upgrade)
-    assert command == "./.github/renovate/resync_lockfiles.py", (
-        "name the script bare: its PEP 723 header picks the interpreter and installs"
-        " packaging, so the command must not wrap it in a `uv run` invocation"
+    (commands,) = re.findall(r"\"commands\": \[(.*?)\]", post_upgrade, flags=re.DOTALL)
+    assert "./.github/renovate/resync_lockfiles.py" in commands
+    assert "./.github/renovate/sync_autoscaled_monitor_dask.py" in commands, (
+        "the dask sync must run after the resync: it reads the dask pin the resync settles"
+        f" in the sidecar lockfile, commands were {commands}"
     )
+    for command in re.findall(r'"(\./[^"]+)"', commands):
+        assert command.endswith(".py"), f"expected a bare script, got {command}"
+        assert not command.startswith("uv run"), (
+            "name the script bare: its PEP 723 header picks the interpreter and installs"
+            f" its dependencies, so {command} must not be wrapped in a `uv run` invocation"
+        )
 
     admin = (osparc_simcore_root_dir / ".github/renovate/global-config.json5").read_text()
     patterns = _RE_ALLOWED_COMMANDS.search(admin)
     assert patterns is not None, "no allowedCommands array in the admin configuration"
     allowed = json.loads(f"[{patterns.group(1)}]")
-    assert any(re.search(pattern, command) for pattern in allowed)
+    for command in re.findall(r'"(\./[^"]+)"', commands):
+        assert any(re.search(pattern, command) for pattern in allowed), f"{command} is not in allowedCommands"
 
 
 # Answers like uv for a resolve that takes the requested pin and pays for it by moving

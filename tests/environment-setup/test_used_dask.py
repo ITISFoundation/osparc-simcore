@@ -59,7 +59,8 @@ def test_autoscaled_monitor_pins_the_dask_sidecar_version(osparc_simcore_root_di
     assert dask == expected_dask_version, (
         f"Expected dask {expected_dask_version} in {AUTOSCALED_MONITOR_DIR}/pyproject.toml, got {dask}."
         f" Run 'make sync-dask-version' in {AUTOSCALED_MONITOR_DIR}."
-        " Renovate is disabled for it there because it cannot keep two files in step."
+        " On a Renovate pull request it is .github/renovate/sync_autoscaled_monitor_dask.py that"
+        " should have done it, so look for its section in renovate-resync-report.md."
     )
 
 
@@ -68,4 +69,5 @@ def test_autoscaled_monitor_locks_the_dask_sidecar_version(osparc_simcore_root_d
     assert dask == expected_dask_version, (
         f"Expected dask {expected_dask_version} in {AUTOSCALED_MONITOR_DIR}/uv.lock, got {dask}."
         f" Run 'make sync-dask-version' in {AUTOSCALED_MONITOR_DIR}."
+        " On a Renovate pull request, run it again once its post-upgrade task did."
     )

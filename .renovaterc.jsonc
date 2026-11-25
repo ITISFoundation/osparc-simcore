@@ -326,13 +326,15 @@
       ]
     },
     {
-      "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). A lockfile that takes its parent layer as --constraint therefore fails to compile while that parent still pins the old version, and that failure is what the renovate/artifacts check reports (see docs/renovate.md). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
+      "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). A lockfile that takes its parent layer as --constraint therefore fails to compile while that parent still pins the old version, and that failure is what the renovate/artifacts check reports (see docs/renovate.md). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version, and keep the dask client of scripts/maintenance/autoscaled-monitor on the dask version the sidecar ends up with. Allowed by allowedCommands in .github/renovate/global-config.json5",
       "matchManagers": [
         "pip-compile"
       ],
       "postUpgradeTasks": {
         "commands": [
-          "./.github/renovate/resync_lockfiles.py"
+          "./.github/renovate/resync_lockfiles.py",
+          // second so it reads the dask pin the resync just settled
+          "./.github/renovate/sync_autoscaled_monitor_dask.py"
         ],
         "dataFileTemplate": "{{#each upgrades}}{{{depName}}}=={{{newVersion}}}\n{{/each}}",
         "fileFilters": [
@@ -340,6 +342,9 @@
           "api/tests/requirements.txt",
           "ci/helpers/requirements/requirements.txt",
           "tests/environment-setup/requirements/requirements.txt",
+          // what the dask sync of the autoscaled-monitor CLI rewrites
+          "scripts/maintenance/autoscaled-monitor/pyproject.toml",
+          "scripts/maintenance/autoscaled-monitor/uv.lock",
           // the resync's failure report, so a lockfile left on a vulnerable version is visible in the PR and not only in the run log (the script removes it once a resync runs clean)
           "renovate-resync-report.md"
         ],
@@ -359,7 +364,7 @@
       "minimumReleaseAge": "14 days"
     },
     {
-      "description": "autoscaled-monitor is a dask client: it must talk to the cluster with the very same dask version the dask-sidecar runs, which services/dask-sidecar/requirements/_dask-distributed.txt pins. Renovate moving the pyproject pin on its own would leave the CLI ahead of the cluster, so the pin follows the sidecar instead: run 'make sync-dask-version' in scripts/maintenance/autoscaled-monitor (it reads the sidecar's pin and updates pyproject.toml + uv.lock), in the same pull request that updates the sidecar. tests/environment-setup/test_used_dask.py enforces the two pins match",
+      "description": "autoscaled-monitor is a dask client: it must talk to the cluster with the very same dask version the dask-sidecar runs, which services/dask-sidecar/requirements/_dask-distributed.txt pins. Renovate moving the pyproject pin on its own would leave the CLI ahead of the cluster, so the pin follows the sidecar instead: the second post-upgrade task of the rule above runs 'uv add --no-sync dask[distributed]==<sidecar version>' in the same branch that bumps dask (the CLI's own 'make sync-dask-version' does the same by hand). tests/environment-setup/test_used_dask.py enforces the two pins match",
       "matchFileNames": [
         "scripts/maintenance/autoscaled-monitor/**"
       ],
