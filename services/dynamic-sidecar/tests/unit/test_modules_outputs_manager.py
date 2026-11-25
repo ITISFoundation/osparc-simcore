@@ -5,6 +5,7 @@
 import asyncio
 import functools
 import inspect
+import shutil
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from inspect import FullArgSpec
@@ -533,6 +534,44 @@ async def test_reverted_content_after_a_replaced_put_is_uploaded_anyway(
 
 
 # TESTS: background scheduling and its output-IO gate
+
+
+async def test_background_never_uploads_empty_content_that_was_never_uploaded(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, _port_dir = single_port_manager
+    # the port directory does not exist and nothing was uploaded in this session
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.sleep(_SHORT_QUIET_S * 3)
+
+    # the empty scan is stable, but uploading it would clear remote data this session never wrote
+    assert pausable_upload.calls == []
+
+
+async def test_deleting_an_uploaded_port_directory_clears_it_in_the_background(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"v1")
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    pausable_upload.release.set()
+    await outputs_manager.wait_for_all_uploads_to_finish()
+    assert pausable_upload.calls.count(["output_1"]) == 1
+
+    pausable_upload.started.clear()
+    shutil.rmtree(port_dir)
+    outputs_manager.on_port_key_change("output_1")
+
+    # the port settled empty and this session certified content: the empty upload clears the remote
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    await outputs_manager.wait_for_all_uploads_to_finish()
+
+    assert pausable_upload.calls.count(["output_1"]) >= 2
+    watch = outputs_manager._port_watches["output_1"]  # noqa: SLF001
+    assert watch.trust.is_certified(monitor_module.EMPTY_PORT_FINGERPRINT)
 
 
 async def test_safety_sweep_finds_a_port_that_never_delivered_an_event(

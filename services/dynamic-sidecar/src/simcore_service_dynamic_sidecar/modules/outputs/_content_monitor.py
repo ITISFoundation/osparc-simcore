@@ -156,6 +156,11 @@ def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
     return hasher.hexdigest()
 
 
+EMPTY_PORT_FINGERPRINT: Final[Annotated[Fingerprint, doc("fingerprint of a port whose scan found no entries")]] = (
+    _compute_fingerprint({})
+)
+
+
 async def _await_cancelled_task(task: asyncio.Task[None]) -> None:
     """Awaits a task the caller cancelled, consuming only that task's own cancellation"""
     await asyncio.wait((task,))  # the task's exception/cancellation does not cross this await
@@ -313,11 +318,8 @@ class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
         try:
             scandir_iterator = os.scandir(directory)
         except FileNotFoundError:
-            if prefix:
-                return  # the directory vanished mid-scan: the next scan sees what is there now
-            # a missing port root hides all content: the record keeps the port unstable
-            _logger.warning("port directory %s is missing, content unverified", directory)
-            entries[f"{prefix}."] = _unlistable_record()
+            # a missing directory holds no content: the empty scan is the truth about disk
+            _logger.debug("directory %s is missing, scanned as empty", directory)
             return
         except OSError as err:
             # an unlistable directory hides content: the port stays pending until it can be read again

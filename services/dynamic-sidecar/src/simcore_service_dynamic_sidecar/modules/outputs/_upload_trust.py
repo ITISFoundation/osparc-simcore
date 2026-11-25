@@ -22,6 +22,10 @@ class PortUploadTrust:
         """True when a completed upload certified exactly this content"""
         return fingerprint is not None and self._uploaded_fingerprint == fingerprint
 
+    def has_certified_upload(self) -> bool:
+        """True while this process holds a certification for the port"""
+        return self._uploaded_fingerprint is not None
+
     def note_upload_started(self, fingerprint: Fingerprint) -> None:
         """Records the fingerprint the upload is sending, verified after the PUT."""
         self._upload_candidate = fingerprint

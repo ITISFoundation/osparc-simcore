@@ -31,7 +31,13 @@ from ...core.rabbitmq import post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
 from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
-from ._content_monitor import DEFAULT_HASH_WORKERS, Fingerprint, PortContentMonitor, StabilityOutcome
+from ._content_monitor import (
+    DEFAULT_HASH_WORKERS,
+    EMPTY_PORT_FINGERPRINT,
+    Fingerprint,
+    PortContentMonitor,
+    StabilityOutcome,
+)
 from ._context import OutputsContext
 from ._upload_trust import PortUploadTrust
 
@@ -210,8 +216,13 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         if not self._background_uploads_enabled:
             _logger.info("port %s: output IO disabled, the sweep on re-enable will retry this check", port_key)
             return
-        if (watch := self._get_port_watch(port_key)) is not None and watch.trust.is_certified(fingerprint):
+        watch = self._get_port_watch(port_key)
+        if watch is not None and watch.trust.is_certified(fingerprint):
             return  # identical content to the last successful upload: nothing left to send
+        if watch is not None and fingerprint == EMPTY_PORT_FINGERPRINT and not watch.trust.has_certified_upload():
+            # an empty upload clears the remote port: only a session that stored content there may clear it
+            _logger.info("port %s: empty and never uploaded: an upload would clear remote data, skipping", port_key)
+            return
         if not await self._port_key_tracker.add_pending_unless_uploading(port_key):
             _logger.info(
                 "port %s: new content while an upload is in flight, the post-upload check picks it up", port_key

@@ -5,6 +5,7 @@
 import asyncio
 import logging
 import os
+import shutil
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -401,6 +402,41 @@ async def test_unreadable_port_directory_cannot_be_certified(
     assert outcome.outcome is StabilityOutcome.UNSTABLE
     assert monitor.stable_fingerprint() is None
     assert any("cannot be listed" in r.message for r in caplog.records)
+
+
+async def test_missing_port_directory_scans_as_empty_content(
+    hash_pool: ThreadPoolExecutor,
+    on_stable_content: AsyncMock,
+    no_quiet_delay: None,
+    tmp_path: Path,
+):
+    # a port directory that does not exist holds no content: the scan must say so, not stay pending
+    monitor = PortContentMonitor(
+        port_key=_PORT_KEY,
+        directory=tmp_path / "no-such-port",
+        hash_executor=hash_pool,
+        on_stable_content=on_stable_content,
+    )
+
+    result = await monitor.check_now()
+
+    assert result.outcome is StabilityOutcome.STABLE
+    assert result.fingerprint == monitor_module.EMPTY_PORT_FINGERPRINT
+
+
+async def test_deleting_the_port_directory_reports_empty_content(
+    monitor: PortContentMonitor, port_dir: Path, trust: PortUploadTrust
+):
+    (port_dir / "f.dat").write_bytes(b"payload")
+    await _stable_fingerprint(monitor)
+    await _record_upload(monitor, trust)
+
+    shutil.rmtree(port_dir)
+    result = await monitor.check_now()
+
+    assert result.outcome is StabilityOutcome.STABLE
+    assert result.fingerprint == monitor_module.EMPTY_PORT_FINGERPRINT
+    assert trust.is_certified(result.fingerprint) is False
 
 
 async def test_deep_directory_chain_is_scanned_without_recursion(monitor: PortContentMonitor, port_dir: Path):
