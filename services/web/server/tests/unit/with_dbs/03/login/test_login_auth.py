@@ -11,6 +11,7 @@ import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack
 from http import HTTPStatus
+from uuid import uuid4
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
@@ -407,7 +408,9 @@ def _free_failed_login_attempts(client: TestClient) -> int:
     return login_settings.LOGIN_THROTTLE.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
 
 
-async def test_login_is_throttled_after_repeated_wrong_passwords(client: TestClient, mocker: MockerFixture):
+async def test_login_is_throttled_after_repeated_wrong_passwords(
+    client: TestClient, mocker: MockerFixture, clean_login_throttle_state: None
+):
     assert client.app
     url = client.app.router["auth_login"].url_for()
 
@@ -425,7 +428,7 @@ async def test_login_is_throttled_after_repeated_wrong_passwords(client: TestCli
         check_credentials.assert_not_called()
 
 
-async def test_login_throttle_is_per_email(client: TestClient):
+async def test_login_throttle_is_per_email(client: TestClient, clean_login_throttle_state: None):
     assert client.app
     url = client.app.router["auth_login"].url_for()
 
@@ -453,10 +456,12 @@ async def test_successful_login_resets_failed_attempts(client: TestClient):
             await assert_status(r, status.HTTP_200_OK)
 
 
-async def test_login_throttle_also_applies_to_unknown_emails(client: TestClient, faker: Faker):
+async def test_login_throttle_also_applies_to_unknown_emails(client: TestClient, clean_login_throttle_state: None):
     assert client.app
     url = client.app.router["auth_login"].url_for()
-    payload = {"email": faker.unique.email(), "password": "wrong."}
+    # not drawn from `faker`, which re-seeds per test: the back-off this module configures lasts
+    # a minute and would then block logins of any later test using the same drawn email
+    payload = {"email": f"unregistered-{uuid4()}@example.org", "password": "wrong."}
 
     for _ in range(_free_failed_login_attempts(client) + 1):
         r = await client.post(url.path, json=payload)

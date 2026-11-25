@@ -163,7 +163,7 @@ async def test_registration_with_registered_user(
 
 
 async def test_registration_of_registered_user_is_throttled_like_login(
-    client: TestClient, mocker: MockerFixture, cleanup_db_tables: None
+    client: TestClient, mocker: MockerFixture, cleanup_db_tables: None, clean_login_throttle_state: None
 ):
     assert client.app
     # simulates a user registered in another product, who can reach the password check
