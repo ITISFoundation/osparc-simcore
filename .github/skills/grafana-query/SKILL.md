@@ -104,8 +104,9 @@ lists what a deployment can run: `webserver`, `static-webserver`, `api-server`,
 `dask-scheduler`, `dask-sidecar`, `storage`, `sto-worker`,
 `sto-worker-cpu-bound`, `resource-usage-tracker`, `wb-api-server`, `wb-auth`,
 `wb-db-event-listener`, `wb-garbage-collector`, `notifications`,
-`notifications-worker`, `payments`, `invitations`, `datcore-adapter`,
-`autoscaling`, `clusters-keeper`, `migration`, `traefik`, `postgres`, `redis`.
+`notifications-email-worker`, `notifications-sms-worker`, `payments`,
+`invitations`, `datcore-adapter`, `autoscaling`,
+`clusters-keeper`, `migration`, `traefik`, `postgres`, `redis`.
 A deployment runs a subset, so confirm the name in the logs before querying it.
 
 Dynamic services have their own streams: `dy-proxy_<node-uuid>`,
