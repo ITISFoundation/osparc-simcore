@@ -10,7 +10,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
-from typing import Annotated, Final
+from typing import Annotated, Final, NamedTuple
 from uuid import uuid4
 
 import xxhash
@@ -27,6 +27,8 @@ _HASH_CHUNK_SIZE: Final[
     Annotated[ByteSize, doc("read size per hashing step; a power of two above the OS page size")]
 ] = TypeAdapter(ByteSize).validate_python("4MiB")
 
+_NO_METADATA_SENTINEL: Final[Annotated[int, doc("size and mtime value for records that describe no regular file")]] = -1
+
 DEFAULT_HASH_WORKERS: Final[Annotated[int, doc("files hashed concurrently by the shared pool")]] = 4
 
 type OnStableChangeCB = Callable[[str], Awaitable[None]]
@@ -35,7 +37,7 @@ type OnStableChangeCB = Callable[[str], Awaitable[None]]
 class CheckOutcome(Enum):
     STABLE_MATCHING = auto()  # equal to the last uploaded fingerprint
     STABLE_NEW = auto()  # different from the last uploaded fingerprint
-    UNSTABLE = auto()  # the episode ended with the content still moving
+    UNSTABLE = auto()  # the content was still changing when the check ended
 
 
 @dataclass(slots=True)
@@ -53,31 +55,43 @@ class _FileRecord:
     seen_mtime_ns: Annotated[int, doc("mtime observed by the most recent scan")]
 
 
-def _hash_file(path: Path) -> tuple[bytes, os.stat_result]:
+class _HashedFile(NamedTuple):
+    digest: bytes
+    stat_result: os.stat_result
+
+
+def _hash_file(path: Path) -> _HashedFile:
     hasher = xxhash.xxh3_64()
     with path.open("rb") as file:
         while chunk := file.read(_HASH_CHUNK_SIZE):
             hasher.update(chunk)
+        # fstat on the descriptor pairs the stat with the hashed bytes even if the path is renamed mid-read
         stat_after = os.fstat(file.fileno())
-    return hasher.digest(), stat_after
+    return _HashedFile(digest=hasher.digest(), stat_result=stat_after)
 
 
 def _fill_digest(job: tuple[str, _FileRecord]) -> None:
     path_str, record = job
     try:
-        digest, stat_after = _hash_file(Path(path_str))
+        hashed = _hash_file(Path(path_str))
+    except FileNotFoundError:
+        # files vanishing while the container writes is expected churn
+        _logger.debug("port file %s vanished while hashing, treating it as changed", path_str)
+        record.digest = uuid4().bytes
+        return
     except OSError as err:
         # a changing digest keeps the port unstable, so saves still upload it
         _logger.warning("port file %s cannot be hashed (%s), treating it as changed", path_str, err)
         record.digest = uuid4().bytes
         return
-    record.digest = digest
-    record.digest_size = stat_after.st_size
-    record.digest_mtime_ns = stat_after.st_mtime_ns
+    record.digest = hashed.digest
+    record.digest_size = hashed.stat_result.st_size
+    record.digest_mtime_ns = hashed.stat_result.st_mtime_ns
 
 
 def _broken_link_kind(entry: os.DirEntry[str]) -> str:
-    """Returns the kind string of an entry that cannot be stat'ed."""
+    """Kind string identifying an entry that cannot be stat'ed: its link target when readable,
+    otherwise its name"""
     with suppress(OSError):
         # readlink can fail as well: ENAMETOOLONG on a deep tree
         return f"x{Path(entry.path).readlink()}"
@@ -90,8 +104,8 @@ def _nonfile_record(kind: str) -> _FileRecord:
         digest=os.fsencode(f"s{kind}"),
         digest_size=None,
         digest_mtime_ns=None,
-        seen_size=-1,
-        seen_mtime_ns=-1,
+        seen_size=_NO_METADATA_SENTINEL,
+        seen_mtime_ns=_NO_METADATA_SENTINEL,
     )
 
 
@@ -101,8 +115,8 @@ def _unlistable_record() -> _FileRecord:
         digest=None,
         digest_size=None,
         digest_mtime_ns=None,
-        seen_size=-1,
-        seen_mtime_ns=-1,
+        seen_size=_NO_METADATA_SENTINEL,
+        seen_mtime_ns=_NO_METADATA_SENTINEL,
     )
 
 
@@ -112,7 +126,7 @@ def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
         record = entries[rel_path]
         if record.digest is None:
             entry_text = f"p\x00{rel_path}"  # a pending hash never equals a settled record
-        elif record.seen_size < 0:  # a non-file record carries its kind in digest
+        elif record.seen_size == _NO_METADATA_SENTINEL:  # a non-file record carries its kind in digest
             entry_text = f"{os.fsdecode(record.digest)}\x00{rel_path}"
         else:
             entry_text = f"f\x00{rel_path}\x00{record.digest_size}\x00{record.digest.hex()}"

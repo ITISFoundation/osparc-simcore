@@ -56,10 +56,10 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
 
     def _get_relative_path_parents(self, path: bytes | str) -> list[str]:
         try:
-            spath_relative_to_outputs = Path(os.fsdecode(path)).relative_to(self.outputs_path)
+            relative_path = Path(os.fsdecode(path)).relative_to(self.outputs_path)
         except ValueError:
             return []
-        return [f"{x}" for x in spath_relative_to_outputs.parents]
+        return [f"{x}" for x in relative_path.parents]
 
     def event_handler(self, event: FileSystemEvent) -> None:
         if not self._is_event_propagation_enabled:
