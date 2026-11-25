@@ -1251,15 +1251,22 @@ FAILURE_DIAGNOSIS_LOGS_QUERY: Final[Annotated[str, doc("LogsQL over the services
 )
 
 
+_BACKEND_SNAPSHOT_TIMEOUT_MS: Final[
+    Annotated[int, doc("bound for a diagnostic GET against a deployment that is unhealthy by definition")]
+] = 5 * SECOND
+
+
 def capture_backend_computation(
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
     project_id: str,
+    *,
+    timeout_ms: int = _BACKEND_SNAPSHOT_TIMEOUT_MS,
 ) -> dict[str, Any]:
     """What the backend reports about `project_id`. Any failure becomes an error entry, because it
     must neither mask the test's own error nor skip stopping the computation."""
     try:
-        response = api_request_context.get(f"{product_url}v0/computations/{project_id}")
+        response = api_request_context.get(f"{product_url}v0/computations/{project_id}", timeout=timeout_ms)
         if not response.ok:
             msg = f"HTTP {response.status}: {response.text()[:200]}"
             raise RuntimeError(msg)  # noqa: TRY301

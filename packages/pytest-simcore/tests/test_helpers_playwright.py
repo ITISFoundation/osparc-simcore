@@ -1458,6 +1458,7 @@ def test_capture_backend_computation_snapshots_every_variant_of_the_project():
     captured = capture_backend_computation(api_request_context, AnyUrl("https://foo.test"), f"{stalled.id}")
 
     assert captured[f"{stalled.id}"]["state"] == RunningState.PUBLISHED.value
+    assert api_request_context.get.call_args.kwargs["timeout"] > 0
 
 
 @pytest.mark.parametrize(
