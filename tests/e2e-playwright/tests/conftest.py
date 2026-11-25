@@ -942,15 +942,16 @@ def start_and_stop_pipeline(
             ):
                 page.get_by_test_id("runStudyBtn").click()
 
-            response = request_info.value.response()
-            assert response
-            assert response.ok, f"{response.json()}"
-            response_body = response.json()
-            assert "data" in response_body
-            assert "pipeline_id" in response_body["data"]
+                response = request_info.value.response()
+                assert response
+                assert response.ok, f"{response.json()}"
+                response_body = response.json()
+                assert "data" in response_body
+                assert "pipeline_id" in response_body["data"]
 
-            pipeline_id = response_body["data"]["pipeline_id"]
-            started_pipeline_ids.append(pipeline_id)
+                pipeline_id = response_body["data"]["pipeline_id"]
+                # NOTE: recorded here so a computation the backend accepted is still diagnosed and stopped
+                started_pipeline_ids.append(pipeline_id)
 
             ctx.messages.done = f"Started computation with {pipeline_id=} in {product_url=}..."
 
@@ -958,8 +959,7 @@ def start_and_stop_pipeline(
 
     yield _do
 
-    # NOTE: after a failed test, record what the backend says about each computation before
-    # stopping it; pytest_runtest_makereport logs it at the teardown phase
+    # NOTE: after a failed test, snapshot the computations before stopping them; makereport logs it
     if request.node.stash.get(_CALL_FAILED_STASH_KEY, None):
         request.node.stash[_BACKEND_COMPUTATIONS_STASH_KEY] = {
             pipeline_id: capture_backend_computation(api_request_context, product_url, pipeline_id)
