@@ -290,11 +290,11 @@ pycparser==2.22
     # via
     #   -c requirements/_base.txt
     #   cffi
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
