@@ -41,9 +41,12 @@ _OTHER_NODE_ID: Final[str] = "2fb4808a-e403-4a46-b52c-892560d27862"
 
 # NOTE: each stall diagnosis is recognised here by a fragment of its own text, so a test case can
 # say which diagnosis it expects without repeating the hint sentences
-_SCHEDULING_STALL_MARKER: Final[str] = "never scheduled"
-_CLUSTER_WAIT_MARKER: Final[str] = "waiting on a cluster"
-_STALL_HINT_MARKERS: Final[tuple[str, ...]] = (_SCHEDULING_STALL_MARKER, _CLUSTER_WAIT_MARKER)
+_NEVER_SENT_TO_SCHEDULER_MARKER: Final[str] = "never scheduled"
+_NO_CLUSTER_MARKER: Final[str] = "no dask-scheduler is available"
+_STALL_HINT_MARKERS: Final[tuple[str, ...]] = (
+    _NEVER_SENT_TO_SCHEDULER_MARKER,
+    _NO_CLUSTER_MARKER,
+)
 
 
 def _socketio_message(name: str, obj: dict[str, Any]) -> str:
@@ -588,22 +591,22 @@ def _satisfied_websocket() -> RobustWebSocket:
     [
         pytest.param(
             RunningState.PUBLISHED,
-            (_SCHEDULING_STALL_MARKER, "director-v2"),
+            (_NEVER_SENT_TO_SCHEDULER_MARKER, "director-v2"),
             id="published-blames-backend-scheduling",
         ),
         pytest.param(
             RunningState.PENDING,
-            (_SCHEDULING_STALL_MARKER, "dask-scheduler"),
+            (_NEVER_SENT_TO_SCHEDULER_MARKER, "dask-scheduler"),
             id="pending-blames-backend-scheduling",
         ),
         pytest.param(
             RunningState.WAITING_FOR_CLUSTER,
-            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            (_NO_CLUSTER_MARKER, "autoscaling"),
             id="cluster-wait-blames-the-cluster-layer",
         ),
         pytest.param(
             RunningState.WAITING_FOR_RESOURCES,
-            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            (_NO_CLUSTER_MARKER, "autoscaling"),
             id="resource-wait-blames-the-cluster-layer",
         ),
         pytest.param(RunningState.STARTED, (), id="a-stuck-running-pipeline-names-no-layer"),
@@ -1196,7 +1199,7 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
         pytest.param(
             RunningState.PUBLISHED,
             {_NODE_ID: RunningState.NOT_STARTED},
-            ("never scheduled", "dask-scheduler"),
+            (_NEVER_SENT_TO_SCHEDULER_MARKER, "director-v2"),
             id="published-with-no-task-scheduled-blames-scheduling",
         ),
         pytest.param(
@@ -1221,7 +1224,7 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
         pytest.param(
             RunningState.WAITING_FOR_CLUSTER,
             {_NODE_ID: RunningState.NOT_STARTED},
-            (_CLUSTER_WAIT_MARKER, "autoscaling"),
+            (_NO_CLUSTER_MARKER, "autoscaling"),
             id="cluster-wait-blames-the-cluster-layer",
         ),
         pytest.param(
@@ -1277,7 +1280,7 @@ def test_backend_computation_snapshot_reads_the_list_the_web_server_returns():
     }
     # NOTE: the model's example is PUBLISHED with every node NOT_STARTED, i.e. a scheduling stall
     reported = [marker for hint in snapshot["stall_hints"] for marker in _STALL_HINT_MARKERS if marker in hint]
-    assert reported == [_SCHEDULING_STALL_MARKER]
+    assert reported == [_NEVER_SENT_TO_SCHEDULER_MARKER]
 
 
 @pytest.mark.parametrize(

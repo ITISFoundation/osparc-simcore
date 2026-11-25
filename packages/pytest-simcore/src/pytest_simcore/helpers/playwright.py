@@ -1086,47 +1086,49 @@ _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
     RunningState.ABORTED,
 )
 
-_PIPELINE_SCHEDULING_STALL_STATES: Final[
+# NOTE: the names follow `RunningState`'s own definitions (models_library/projects_state.py):
+# a timeout means a different layer failing in each state
+_STATES_NEVER_SENT_TO_SCHEDULER: Final[
     Annotated[
         tuple[RunningState, ...],
-        doc("the backend has accepted the computation but no task has reached the scheduler yet"),
+        doc("the backend accepted the computation but has not handed any task to the Dask scheduler"),
     ]
 ] = (RunningState.PUBLISHED, RunningState.PENDING)
 
-_PIPELINE_SCHEDULING_STALL_HINT: Final[
+_NEVER_SENT_TO_SCHEDULER_HINT: Final[
     Annotated[
         str,
-        doc(
-            "appended when the pipeline times out in PUBLISHED/PENDING: director-v2 accepted it "
-            "but handed no task to the scheduler, a frequent cause being an unreachable dask-scheduler"
-        ),
+        doc("appended when the pipeline times out before a task reached the scheduler"),
     ]
 ] = (
-    "HINT: the backend accepted the pipeline but never scheduled it — check director-v2 logs "
+    "HINT: the backend accepted the pipeline but never scheduled it: check director-v2 logs "
     "(DaskClientAcquisisitonError) and that the dask-scheduler service has running replicas"
 )
 
-_CLUSTER_WAIT_STATES: Final[
+_STATES_WAITING_FOR_A_CLUSTER: Final[
     Annotated[
         tuple[RunningState, ...],
         doc("director-v2 asked for a cluster or resources and nothing came back"),
     ]
 ] = (RunningState.WAITING_FOR_CLUSTER, RunningState.WAITING_FOR_RESOURCES)
 
-_CLUSTER_WAIT_HINT: Final[
+_NO_CLUSTER_HINT: Final[
     Annotated[
         str,
         doc("appended when the pipeline waits on a cluster that never arrives"),
     ]
-] = "HINT: the computation is waiting on a cluster: check the autoscaling and dask-scheduler services"
+] = (
+    "HINT: no dask-scheduler is available to run the task: check the autoscaling, clusters-keeper "
+    "and dask-scheduler services"
+)
 
 
 def _pipeline_stall_raised_message(state: RunningState, expected_states: tuple[RunningState, ...]) -> str:
     message = f"pipeline failed or timed out with {state}. Expected one of {expected_states=}"
-    if state in _PIPELINE_SCHEDULING_STALL_STATES:
-        message = f"{message}. {_PIPELINE_SCHEDULING_STALL_HINT}"
-    elif state in _CLUSTER_WAIT_STATES:
-        message = f"{message}. {_CLUSTER_WAIT_HINT}"
+    if state in _STATES_NEVER_SENT_TO_SCHEDULER:
+        message = f"{message}. {_NEVER_SENT_TO_SCHEDULER_HINT}"
+    elif state in _STATES_WAITING_FOR_A_CLUSTER:
+        message = f"{message}. {_NO_CLUSTER_HINT}"
     return message
 
 
@@ -1141,13 +1143,13 @@ def classify_backend_stall(
     # NOTE: an empty node_statuses has nothing to schedule, so it must not be reported as a
     # pipeline the backend failed to schedule
     if (
-        state in _PIPELINE_SCHEDULING_STALL_STATES
+        state in _STATES_NEVER_SENT_TO_SCHEDULER
         and node_statuses
         and all(status == RunningState.NOT_STARTED for status in node_statuses.values())
     ):
-        hints.append(_PIPELINE_SCHEDULING_STALL_HINT)
-    elif state in _CLUSTER_WAIT_STATES:
-        hints.append(_CLUSTER_WAIT_HINT)
+        hints.append(_NEVER_SENT_TO_SCHEDULER_HINT)
+    elif state in _STATES_WAITING_FOR_A_CLUSTER:
+        hints.append(_NO_CLUSTER_HINT)
     if state == RunningState.FAILED:
         failed_nodes = sorted(node_id for node_id, status in node_statuses.items() if status == RunningState.FAILED)
         if failed_nodes:
