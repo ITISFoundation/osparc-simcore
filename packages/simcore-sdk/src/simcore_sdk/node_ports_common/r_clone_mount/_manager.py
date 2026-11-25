@@ -323,7 +323,7 @@ class RCloneMountManager:
         mount_restored = False
         with log_context(_logger, logging.DEBUG, "ensuring rclone mount is responsive"):
             # snapshot: ensure_unmounted()/recovery below mutate the dict across awaits
-            for mount_id, mount in list(self._tracked_mounts.items()):
+            for mount_id, mount in list(self._tracked_mounts.items()):  # NOSONAR
                 lock = await self._try_lock_mount_lifecycle(mount_id)
                 if lock is None:
                     continue
@@ -365,7 +365,7 @@ class RCloneMountManager:
             await cancel_wait_task(self._task_ensure_mounts_working)
 
         # snapshot: ensure_unmounted pops from the dict across awaits inside the loop
-        for tracked_mount in list(self._tracked_mounts.values()):
+        for tracked_mount in list(self._tracked_mounts.values()):  # NOSONAR
             try:
                 await self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
             except (WaitingForQueueToBeEmptyError, WaitingForTransfersToCompleteError) as unmount_err:
