@@ -71,7 +71,7 @@ shellingham==1.5.4
     # via typer
 tomlkit==0.14.0
     # via pylint
-typer==0.29.0
+typer==0.29.1
     # via -r requirements/_tools.in
 typing-extensions==4.16.0
     # via
