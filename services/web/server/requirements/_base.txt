@@ -169,7 +169,7 @@ grpcio==1.78.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-grpc
-gunicorn==23.0.0
+gunicorn==27.0.0
     # via -r requirements/_base.in
 h11==0.16.0
     # via
@@ -402,7 +402,6 @@ packaging==26.3
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
-    #   gunicorn
     #   kombu
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-sqlalchemy
