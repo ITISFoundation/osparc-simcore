@@ -539,22 +539,25 @@ async def test_new_project_merges_accessible_default_tags_and_discards_stale_def
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("copy_project", [False, True], ids=["new", "copy-with-selection"])
 async def test_new_project_preserves_concurrent_default_tag_preference_update(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
+    user_project: ProjectDict,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
     storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
     osparc_product_name: str,
     monkeypatch: pytest.MonkeyPatch,
+    copy_project: bool,
 ):
     assert client.app
 
     tag_ids: list[int] = []
-    for name in ("original default", "new default"):
+    for name in ("original default", "new default", "selected"):
         response = await client.post(
             client.app.router["create_tag"].url_for(),
             json={"name": name, "color": "#336699"},
@@ -564,6 +567,7 @@ async def test_new_project_preserves_concurrent_default_tag_preference_update(
 
     original_tag_id = tag_ids[0]
     new_tag_id = tag_ids[1]
+    selected_tag_id = tag_ids[2]
     stale_tag_id = 2_147_483_647
     preference_url = client.app.router["set_frontend_preference"].url_for(preference_id="defaultStudyTagIds")
     response = await client.patch(preference_url, json={"value": [original_tag_id, stale_tag_id]})
@@ -572,8 +576,13 @@ async def test_new_project_preserves_concurrent_default_tag_preference_update(
     list_tags_entered = asyncio.Event()
     release_list_tags = asyncio.Event()
     original_list_tags = tags_service.list_tags
+    list_tags_calls = 0
 
     async def delayed_list_tags(app: web.Application, user_id: UserID) -> list[TagGet]:
+        nonlocal list_tags_calls
+        list_tags_calls += 1
+        if copy_project and list_tags_calls == 1:
+            return await original_list_tags(app, user_id)
         list_tags_entered.set()
         await release_list_tags.wait()
         return await original_list_tags(app, user_id)
@@ -585,7 +594,9 @@ async def test_new_project_preserves_concurrent_default_tag_preference_update(
             status.HTTP_201_CREATED,
             logged_user,
             primary_group,
-            expected_tags=[original_tag_id],
+            from_study=user_project if copy_project else None,
+            project={"tags": [selected_tag_id]} if copy_project else None,
+            expected_tags=[selected_tag_id, original_tag_id] if copy_project else [original_tag_id],
         )
 
     monkeypatch.setattr(tags_service, "list_tags", delayed_list_tags)
@@ -602,7 +613,7 @@ async def test_new_project_preserves_concurrent_default_tag_preference_update(
         await asyncio.wait_for(asyncio.gather(creation_task, return_exceptions=True), timeout=75)
 
     project = creation_task.result()
-    assert project["tags"] == [original_tag_id]
+    assert project["tags"] == ([selected_tag_id, original_tag_id] if copy_project else [original_tag_id])
     saved_preference = await user_preferences_service.get_frontend_user_preference(
         client.app,
         UserID(logged_user["id"]),

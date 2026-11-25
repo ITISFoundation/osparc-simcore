@@ -41,6 +41,7 @@ from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..folders import _folders_repository as folders_folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import copy_data_folders_from_project, get_project_total_size_simcore_s3
+from ..tags import tags_service
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
 from . import _folders_repository, _projects_repository, _projects_service, _trash_service
@@ -135,6 +136,7 @@ async def _prepare_project_copy(
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
+    requested_tag_ids: list[int] | None = None,
 ) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
     """
     Raises:
@@ -146,6 +148,10 @@ async def _prepare_project_copy(
         user_id=user_id,
     )
     _projects_service.raise_if_project_is_trashed(source_project)
+    if requested_tag_ids:
+        accessible_tag_ids = {tag.id for tag in await tags_service.list_tags(app, user_id)}
+        if not set(requested_tag_ids).issubset(accessible_tag_ids | set(source_project.get("tags", []))):
+            raise web.HTTPBadRequest(text="One or more tags do not exist or are not accessible")
 
     settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
@@ -326,6 +332,8 @@ async def _compose_project_data(
         for key in OVERRIDABLE_DOCUMENT_KEYS:
             if non_null_value := predefined_project.get(key):
                 new_project[key] = non_null_value
+        if "tags" in predefined_project:
+            new_project["tags"] = predefined_project["tags"]
     else:
         # when predefined_project is ProjectCreateNew
         # when predefined_project is ProjectCreateNew
@@ -449,6 +457,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                     as_template=as_template,
                     deep_copy=copy_data,
                     task_progress=progress,
+                    requested_tag_ids=predefined_project.get("tags") if predefined_project else None,
                 )
                 if project_node_coro:
                     project_nodes = await project_node_coro
