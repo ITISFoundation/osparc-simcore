@@ -42,9 +42,11 @@ _OTHER_NODE_ID: Final[str] = "2fb4808a-e403-4a46-b52c-892560d27862"
 # NOTE: each stall diagnosis is recognised here by a fragment of its own text, so a test case can
 # say which diagnosis it expects without repeating the hint sentences
 _NEVER_SENT_TO_SCHEDULER_MARKER: Final[str] = "never scheduled"
+_NO_WORKER_MARKER: Final[str] = "no worker picked the task up"
 _NO_CLUSTER_MARKER: Final[str] = "no dask-scheduler is available"
 _STALL_HINT_MARKERS: Final[tuple[str, ...]] = (
     _NEVER_SENT_TO_SCHEDULER_MARKER,
+    _NO_WORKER_MARKER,
     _NO_CLUSTER_MARKER,
 )
 
@@ -595,19 +597,21 @@ def _satisfied_websocket() -> RobustWebSocket:
             id="published-blames-backend-scheduling",
         ),
         pytest.param(
+            # NOTE: a task reaches PENDING once the scheduler gave it a job id, so the wait then
+            # lacks a worker rather than a scheduler
             RunningState.PENDING,
-            (_NEVER_SENT_TO_SCHEDULER_MARKER, "dask-scheduler"),
-            id="pending-blames-backend-scheduling",
+            (_NO_WORKER_MARKER, "dask-sidecar"),
+            id="pending-blames-the-worker-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_RESOURCES,
+            (_NO_WORKER_MARKER, "autoscaling"),
+            id="resource-wait-blames-the-worker-layer",
         ),
         pytest.param(
             RunningState.WAITING_FOR_CLUSTER,
             (_NO_CLUSTER_MARKER, "autoscaling"),
             id="cluster-wait-blames-the-cluster-layer",
-        ),
-        pytest.param(
-            RunningState.WAITING_FOR_RESOURCES,
-            (_NO_CLUSTER_MARKER, "autoscaling"),
-            id="resource-wait-blames-the-cluster-layer",
         ),
         pytest.param(RunningState.STARTED, (), id="a-stuck-running-pipeline-names-no-layer"),
     ],
@@ -617,8 +621,6 @@ def test_pipeline_state_timeout_message_names_the_stalled_layer(
     expected_fragments: Annotated[tuple[str, ...], doc("fragments the failure message must carry for this state")],
     caplog: pytest.LogCaptureFixture,
 ):
-    # NOTE: PUBLISHED/PENDING means the backend accepted the pipeline but never handed a task to
-    # the scheduler, WAITING_FOR_* means it asked for a cluster that never arrived
     with pytest.raises(PlaywrightTimeoutError), caplog.at_level(logging.INFO):
         wait_for_pipeline_state(
             state,
@@ -1220,6 +1222,18 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
             {},
             (),
             id="published-without-nodes-is-not-blamed-on-scheduling",
+        ),
+        pytest.param(
+            RunningState.PENDING,
+            {_NODE_ID: RunningState.PENDING},
+            (_NO_WORKER_MARKER, "dask-sidecar"),
+            id="pending-blames-the-worker-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_RESOURCES,
+            {_NODE_ID: RunningState.WAITING_FOR_RESOURCES},
+            (_NO_WORKER_MARKER, "autoscaling"),
+            id="resource-wait-blames-the-worker-layer",
         ),
         pytest.param(
             RunningState.WAITING_FOR_CLUSTER,
