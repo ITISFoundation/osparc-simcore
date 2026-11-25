@@ -21,16 +21,20 @@ def get_app():
         return FastAPIAppServer(app=fastapi_app)
 
     assert settings.NOTIFICATIONS_CELERY  # nosec
-    return create_worker_app(
+    celery_app = create_worker_app(
         settings.NOTIFICATIONS_CELERY,
         register_worker_tasks_cb=partial(register_worker_tasks, settings),
         app_server_factory_cb=_app_server_factory,
         log_format_local_dev_enabled=settings.NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.NOTIFICATIONS_LOG_FILTER_MAPPING,
+        log_filter_mapping=settings.NOTIFICATIONS_LOG_FILTER_MAPPING,
         tracing_config=tracing_config,
         log_base_level=settings.logging_level,
         noisy_loggers=None,
     )
+    # the shared default stores task arguments verbatim in the result backend's
+    # extended metadata; SMS task arguments carry verification codes and phone numbers
+    celery_app.conf.result_extended = False
+    return celery_app
 
 
 app = get_app()
