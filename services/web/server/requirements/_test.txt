@@ -61,13 +61,13 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.5.0
+click==8.5.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   rich-toolkit
     #   uvicorn
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -85,13 +85,13 @@ email-validator==2.3.0
     #   pydantic
 execnet==2.1.2
     # via pytest-xdist
-faker==40.38.0
+faker==40.44.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-fastapi==0.162.0
+fastapi==0.162.3
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
@@ -99,13 +99,13 @@ fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.15.0
     # via fastapi-cli
-fastapi-pagination==0.16.1
+fastapi-pagination==0.16.2
     # via -r requirements/_test.in
 fastar==0.11.0
     # via
     #   fastapi
     #   fastapi-cloud-cli
-filelock==4.2.7
+filelock==4.2.10
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -142,7 +142,7 @@ httpx2==2.16.0
     # via
     #   -c requirements/_base.txt
     #   fastapi
-hypothesis==6.170.14
+hypothesis==6.170.15
     # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
@@ -295,6 +295,7 @@ pydantic==2.14.3
     #   fastapi-pagination
     #   pydantic-extra-types
     #   pydantic-settings
+    #   typer
 pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
@@ -303,7 +304,7 @@ pydantic-extra-types==2.11.1
     # via
     #   -c requirements/_base.txt
     #   fastapi
-pydantic-settings==2.14.2
+pydantic-settings==2.16.2
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -409,7 +410,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -419,7 +420,7 @@ starlette==1.6.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   fastapi
-tenacity==9.1.4
+tenacity==9.2.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -430,12 +431,12 @@ truststore==0.10.5
     #   -c requirements/_base.txt
     #   httpcore2
     #   httpx2
-typer==0.27.3
+typer==0.29.1
     # via
     #   -c requirements/_base.txt
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiofiles==25.1.0.20260518
+types-aiofiles==25.1.0.20261107
     # via -r requirements/_test.in
 types-greenlet==3.5.0.20260518
     # via sqlalchemy
@@ -463,6 +464,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   pydantic-settings
     #   rich-toolkit
     #   sqlalchemy
     #   typing-inspection

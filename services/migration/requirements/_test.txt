@@ -13,11 +13,11 @@ certifi==2026.10.19
     #   requests
 charset-normalizer==3.4.6
     # via requests
-coverage==7.17.1
+coverage==7.17.2
     # via pytest-cov
 docker==7.2.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.10
     # via -r requirements/_test.in
 idna==3.19
     # via requests
@@ -76,11 +76,11 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-sqlalchemy==2.1.6
+sqlalchemy==2.1.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-tenacity==9.1.4
+tenacity==9.2.1
     # via -r requirements/_test.in
 types-greenlet==3.5.0.20260518
     # via sqlalchemy

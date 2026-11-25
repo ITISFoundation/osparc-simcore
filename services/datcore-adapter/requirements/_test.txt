@@ -25,15 +25,15 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 execnet==2.1.2
     # via pytest-xdist
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.10
     # via -r requirements/_test.in
 h11==0.16.0
     # via

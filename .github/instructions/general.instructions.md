@@ -49,6 +49,8 @@ that file type or service over a general rule.
   response to the user under a heading named 'Validation'.
 - Run the narrowest relevant validation available. Report which tests or checks
   you did not run and why.
+- Before reporting validation, re-read every instruction file whose `applyTo`
+  matches a file you changed and check its rules against the diff.
 - Run `pre-commit run --files <changed files>` and fix all
   findings. Never commit with `--no-verify`. If a pre-commit hook fails, fix
   the findings or explain them; do not bypass the hook.

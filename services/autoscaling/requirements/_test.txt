@@ -61,11 +61,11 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.5.0
+click==8.5.1
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -82,11 +82,11 @@ docker==7.2.0
     #   moto
 execnet==2.1.2
     # via pytest-xdist
-faker==40.38.0
+faker==40.44.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.7
+filelock==4.2.10
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in

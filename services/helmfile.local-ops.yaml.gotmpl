@@ -101,10 +101,10 @@ releases:
           - name: TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT
             value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT" | quote }}
 
-  - name: mailpit
+  - name: buggregator
     namespace: ops
     createNamespace: true
-    chart: ../charts/ops-local/mailpit
+    chart: ../charts/ops-local/buggregator
 
   - name: postgres
     namespace: ops

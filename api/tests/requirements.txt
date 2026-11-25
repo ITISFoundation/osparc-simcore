@@ -15,7 +15,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-coverage==7.17.1
+coverage==7.17.2
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -79,7 +79,7 @@ pydantic==2.14.3
     #   pydantic-settings
 pydantic-core==2.50.4
     # via pydantic
-pydantic-settings==2.15.0
+pydantic-settings==2.16.2
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
@@ -127,6 +127,7 @@ typing-extensions==4.16.0
     #   openapi-core
     #   pydantic
     #   pydantic-core
+    #   pydantic-settings
     #   typing-inspection
 typing-inspection==0.4.4
     # via

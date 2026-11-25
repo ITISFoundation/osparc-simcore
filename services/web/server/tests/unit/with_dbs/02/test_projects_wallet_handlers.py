@@ -8,6 +8,7 @@
 from collections.abc import Iterator
 from decimal import Decimal
 from http import HTTPStatus
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,13 +21,23 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
 from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.products import ProductName
+from models_library.users import UserID
+from models_library.wallets import WalletID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_projects import NewProject
 from servicelib.aiohttp import status
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.groups._groups_service import get_product_group_for_user
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
+from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
+from simcore_service_webserver.products._service import load_products
+from simcore_service_webserver.products.products_service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
@@ -218,3 +229,156 @@ async def test_pay_project_debt(
     resp = await client.post(f"{base_url}", json={"amount": -100})
     data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
     assert mock_pay_project_debt.assert_called_once
+
+
+# --- product-bound wallet attachment (see project:clone guard precedent) -----
+
+
+@pytest.fixture
+async def user_group_in_second_product(
+    client: TestClient, logged_user: UserInfoDict, s4l_products_db: ProductName
+) -> int:
+    assert client.app
+    await auto_add_user_to_product_group(client.app, user_id=UserID(logged_user["id"]), product_name=s4l_products_db)
+    # products are cached in the app on startup: reload so the new product is discoverable
+    client.app[PRODUCTS_APPKEY] = {product.name: product for product in await load_products(client.app)}
+    product = get_product(client.app, s4l_products_db)
+    assert product.group_id
+    group, _ = await get_product_group_for_user(
+        client.app, user_id=UserID(logged_user["id"]), product_gid=product.group_id
+    )
+    return group.gid
+
+
+@pytest.fixture
+def wallet_in_second_product(
+    postgres_db: sa.engine.Engine,
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+) -> Iterator[WalletID]:
+    with postgres_db.connect() as con:
+        result = con.execute(
+            wallets.insert()
+            .values(
+                name="My wallet in other product",
+                owner=user_group_in_second_product,
+                status="ACTIVE",
+                product_name=s4l_products_db,
+            )
+            .returning(sa.literal_column("*"))
+        )
+        row = result.fetchone()
+        assert row is not None
+        wallet_id = WalletID(row.wallet_id)
+    yield wallet_id
+    with postgres_db.connect() as con:
+        con.execute(wallets.delete().where(wallets.c.name == "My wallet in other product"))
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
+async def test_connect_wallet_denied_when_claimed_product_mismatches_project_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    s4l_products_db: ProductName,
+    wallet_in_second_product: WalletID,
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
+    expected: HTTPStatus,
+):
+    """A wallet valid in the *claimed* product must not attach to a project of another product."""
+    assert client.app
+
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{wallet_in_second_product}"
+    )
+    resp = await client.put(f"{base_url}", headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
+    await assert_status(resp, expected)
+
+    # and nothing was attached
+    base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
+    resp = await client.get(f"{base_url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data is None
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
+async def test_connect_wallet_denied_when_claimed_product_mismatches_even_with_own_wallet(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    setup_wallets_db: list[WalletGet],
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
+    expected: HTTPStatus,
+):
+    assert client.app
+
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
+    )
+    resp = await client.put(f"{base_url}", headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
+    await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
+async def test_pay_project_debt_denied_when_claimed_product_mismatches_project_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    setup_wallets_db: list[WalletGet],
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
+    mock_pay_project_debt: MagicMock,
+    expected: HTTPStatus,
+):
+    """A debt payment claimed under another product must not reach the payment RPC."""
+    assert client.app
+
+    # attach a wallet under the project's own product
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
+    )
+    resp = await client.put(f"{base_url}")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # pay the debt with a second wallet, claiming a product other than the project's
+    base_url = client.app.router["pay_project_debt"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
+    )
+    resp = await client.post(f"{base_url}", json={"amount": -100}, headers={X_PRODUCT_NAME_HEADER: s4l_products_db})
+    await assert_status(resp, expected)
+
+    mock_pay_project_debt.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_400_BAD_REQUEST)])
+async def test_open_project_denied_when_claimed_product_mismatches_project_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    s4l_products_db: ProductName,
+    user_group_in_second_product: int,
+    tests_data_dir: Path,
+    osparc_product_name: ProductName,
+    expected: HTTPStatus,
+):
+    """Opening a project must not run its wallet/debt checks under another product."""
+    assert client.app
+
+    # empty workbench: opening it must fail at the product check before any service start
+    async with NewProject(
+        {"workbench": {}},
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        base_url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+        resp = await client.post(
+            f"{base_url}", json="a-client-session-id", headers={X_PRODUCT_NAME_HEADER: s4l_products_db}
+        )
+        await assert_status(resp, expected)

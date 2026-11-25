@@ -150,7 +150,7 @@ services:
 
   redis:
     # NOTE: currently autoscaling requires redis to run
-    image: "valkey/valkey:7.2.15@sha256:828b1cbb1c258e02b9cd9588063fa997e097444e610d3f3c00d43e21400e2b8d"
+    image: "valkey/valkey:7.2.16@sha256:edf27a750238c2a8be56d6c365d21930926cfee23385efe88cc6df9df2c911a1"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     healthcheck:
@@ -172,7 +172,7 @@ services:
           cpus: "1.0"
 
   prometheus:
-    image: prom/prometheus:v3.14.0@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+    image: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.config.file=/etc/prometheus/web.yml"

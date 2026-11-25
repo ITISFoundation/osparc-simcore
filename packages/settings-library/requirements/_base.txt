@@ -18,11 +18,12 @@ pydantic==2.14.3
     #   -r requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
+    #   typer
 pydantic-core==2.50.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.14.2
+pydantic-settings==2.16.2
     # via -r requirements/_base.in
 pygments==2.21.0
     # via rich
@@ -34,13 +35,14 @@ rich==14.3.4
     #   typer
 shellingham==1.5.4
     # via typer
-typer==0.27.3
+typer==0.29.1
     # via -r requirements/_base.in
 typing-extensions==4.16.0
     # via
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   pydantic-settings
     #   typing-inspection
 typing-inspection==0.4.5
     # via

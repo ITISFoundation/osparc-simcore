@@ -20,7 +20,7 @@
 
 services:
   adminer:
-    image: adminer:6.3.0
+    image: adminer:6.3.1
     init: true
     environment:
       ADMINER_DEFAULT_SERVER: postgres
@@ -72,16 +72,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
 
-  mailpit:
-    # Fake SMTP server with web UI — https://mailpit.axllent.org
-    image: axllent/mailpit:v1.34.0
+  buggregator:
+    # Fake SMTP server (plus error/dump collector) with web UI — https://buggregator.dev
+    # Captured events are kept in memory only, i.e. a restart drops them.
+    image: ghcr.io/buggregator/server:2.14.0
     init: true
-    command:
-      - --smtp-auth-accept-any
-      - --smtp-auth-allow-insecure
     ports:
       - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
+      - "8025:8000" # Web UI
     networks:
       - simcore_default
     healthcheck:
@@ -92,7 +90,7 @@ services:
           "--quiet",
           "--tries=1",
           "--spider",
-          "http://localhost:8025/",
+          "http://localhost:8000/api/version",
         ]
       interval: 5s
       timeout: 10s
@@ -143,7 +141,8 @@ services:
         celery_tasks:${REDIS_HOST}:${REDIS_PORT}:9:${REDIS_PASSWORD},
         documents:${REDIS_HOST}:${REDIS_PORT}:10:${REDIS_PASSWORD},
         aiocache:${REDIS_HOST}:${REDIS_PORT}:11:${REDIS_PASSWORD},
-        chatbox_usage:${REDIS_HOST}:${REDIS_PORT}:12:${REDIS_PASSWORD}
+        chatbox_usage:${REDIS_HOST}:${REDIS_PORT}:12:${REDIS_PASSWORD},
+        login_throttle:${REDIS_HOST}:${REDIS_PORT}:13:${REDIS_PASSWORD}
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"

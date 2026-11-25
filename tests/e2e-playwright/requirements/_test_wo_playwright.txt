@@ -23,9 +23,9 @@ dnspython==2.9.2
     #   email-validator
 email-validator==2.3.0
     # via pydantic
-faker==40.43.0
+faker==40.44.0
     # via -r requirements/_test_wo_playwright.in
-filelock==4.2.7
+filelock==4.2.10
     # via -r requirements/_test_wo_playwright.in
 h11==0.16.0
     # via httpcore
@@ -76,7 +76,7 @@ pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-pydantic-settings==2.16.1
+pydantic-settings==2.16.2
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 pygments==2.21.0
     # via pytest

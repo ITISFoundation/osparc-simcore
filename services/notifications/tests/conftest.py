@@ -73,7 +73,7 @@ def mock_environment(
                 {
                     "mail_servers": {
                         "local": {
-                            "host": "mailpit",
+                            "host": "buggregator",
                             "port": 1025,
                             "protocol": "UNENCRYPTED",
                         }
