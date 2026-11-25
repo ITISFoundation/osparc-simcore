@@ -246,6 +246,44 @@ async def test_check_now_cancels_an_armed_episode(
     assert fingerprinter.has_pending_work() is False
 
 
+async def test_cancelling_an_armed_episode_stops_it_without_upload(
+    fingerprinter: PortFingerprint, on_stable_change: AsyncMock, port_dir: Path, mocker: MockerFixture
+):
+    # a cancellation from outside the fingerprinter (e.g. app shutdown) must not fall through
+    # into a scan: the cancelled episode may not request an upload
+    mocker.patch.object(fingerprinter_module, "_QUIET_SECONDS", 10.0)
+    (port_dir / "a.dat").write_bytes(b"hello")
+
+    fingerprinter.note_event()
+    episode_task = fingerprinter._episode_task  # noqa: SLF001
+    assert episode_task is not None
+    await asyncio.sleep(0)  # let the episode reach its quiet-period sleep
+
+    episode_task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await episode_task
+
+    await asyncio.sleep(0.3)
+    assert on_stable_change.call_count == 0
+
+
+async def test_check_now_propagates_cancellation_of_its_caller(
+    fingerprinter: PortFingerprint, port_dir: Path, mocker: MockerFixture
+):
+    # check_now cancels the armed episode; a cancellation aimed at check_now itself while it
+    # awaits that episode must propagate, not be consumed by the episode cleanup
+    mocker.patch.object(fingerprinter_module, "_QUIET_SECONDS", 10.0)
+    (port_dir / "a.dat").write_bytes(b"hello")
+
+    fingerprinter.note_event()  # leaves an armed episode for check_now to cancel
+    caller = asyncio.create_task(fingerprinter.check_now())
+    await asyncio.sleep(0)  # let check_now reach the await on the episode it cancelled
+
+    caller.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await caller
+
+
 async def test_upload_of_content_that_changed_during_put_is_not_recorded(
     fingerprinter: PortFingerprint, port_dir: Path
 ):

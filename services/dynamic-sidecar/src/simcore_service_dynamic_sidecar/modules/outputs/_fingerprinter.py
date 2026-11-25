@@ -4,7 +4,6 @@ import asyncio
 import logging
 import os
 import stat as stat_module
-from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
@@ -122,6 +121,14 @@ def _compute_fingerprint(entries: dict[str, _FileRecord]) -> str:
     return hasher.hexdigest()
 
 
+async def _await_cancelled_task(task: asyncio.Task[None]) -> None:
+    """Awaits a task the caller has just cancelled: consumes the task's own cancellation and
+    propagates a cancellation aimed at the awaiting code instead"""
+    await asyncio.wait((task,))  # the task's exception/cancellation does not cross this await
+    if not task.cancelled():
+        task.result()  # re-raises the task's own failure, as awaiting it directly did
+
+
 class PortFingerprint:  # pylint: disable=too-many-instance-attributes
     """Tracks one port directory: events arm a timer; quiet expiry runs the scan checks."""
 
@@ -162,8 +169,8 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         return self._episode_task is not None and not self._episode_task.done()
 
     async def _armed_episode(self, seq: int) -> None:
-        with suppress(asyncio.CancelledError):
-            await asyncio.sleep(_QUIET_SECONDS)
+        # cancellation ends the episode: no scan and no upload run after a cancel
+        await asyncio.sleep(_QUIET_SECONDS)
         if seq != self._episode_seq:
             return  # a newer event took over
         outcome = await self._run_episode(seq)
@@ -175,8 +182,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         self._episode_seq += 1
         if self._episode_task is not None and not self._episode_task.done():
             self._episode_task.cancel()
-            with suppress(CancelledError):
-                await self._episode_task
+            await _await_cancelled_task(self._episode_task)
         seq = self._episode_seq
         outcome = await self._run_episode(seq)
         return outcome if outcome is not None else CheckOutcome.UNSTABLE
@@ -203,10 +209,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
             for _ in range(_EPISODE_MAX_SCANS):
                 if seq != self._episode_seq:
                     break
-                try:
-                    result = await self._scan()
-                except asyncio.CancelledError:
-                    break
+                result = await self._scan()  # cancellation propagates: the episode stops here
                 if seq != self._episode_seq:
                     break
                 if result.pending_hashes > 0:
@@ -262,8 +265,7 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         """Rescans after a successful PUT; records the content as uploaded unless it changed."""
         if self._episode_task is not None and not self._episode_task.done():
             self._episode_task.cancel()
-            with suppress(CancelledError):
-                await self._episode_task
+            await _await_cancelled_task(self._episode_task)
         await self._scan()
         unchanged = (
             self._pending_hashes == 0 and self._fingerprint is not None and self._fingerprint == self._upload_candidate
