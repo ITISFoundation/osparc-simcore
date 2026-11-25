@@ -1191,14 +1191,13 @@ def classify_backend_stall(
     `node_statuses` maps each node id to its state on the backend.
     """
     hints: list[str] = []
-    # NOTE: an empty node_statuses has nothing to schedule, so it must not be reported as a
-    # pipeline the backend failed to schedule
-    if (
-        state in _STATES_NEVER_SENT_TO_SCHEDULER
-        and node_statuses
-        and all(status == RunningState.NOT_STARTED for status in node_statuses.values())
-    ):
-        hints.append(_NEVER_SENT_TO_SCHEDULER_HINT)
+    if state in _STATES_NEVER_SENT_TO_SCHEDULER:
+        # NOTE: publishing a run marks its tasks PUBLISHED, so a task with no job id is reported as
+        # NOT_STARTED or PUBLISHED. Anything further along means it reached the scheduler.
+        # An empty node_statuses has no task to schedule and must not be blamed on scheduling.
+        not_sent_to_scheduler = (RunningState.NOT_STARTED, RunningState.PUBLISHED)
+        if node_statuses and all(status in not_sent_to_scheduler for status in node_statuses.values()):
+            hints.append(_NEVER_SENT_TO_SCHEDULER_HINT)
     elif state in _STATES_WAITING_FOR_A_WORKER:
         hints.append(_NO_WORKER_HINT)
     elif state in _STATES_WAITING_FOR_A_CLUSTER:

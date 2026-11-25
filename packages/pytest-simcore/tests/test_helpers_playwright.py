@@ -1299,6 +1299,14 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
             id="published-with-no-task-scheduled-blames-scheduling",
         ),
         pytest.param(
+            # NOTE: publishing a run already marks its tasks PUBLISHED, so a scheduler outage leaves
+            # both the run and its nodes in PUBLISHED with nothing scheduled
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.PUBLISHED},
+            (_NEVER_SENT_TO_SCHEDULER_MARKER, "director-v2"),
+            id="published-with-published-tasks-blames-scheduling",
+        ),
+        pytest.param(
             RunningState.PUBLISHED,
             {_NODE_ID: RunningState.STARTED},
             (),
