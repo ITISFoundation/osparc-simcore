@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from datetime import timedelta
 from functools import partial
-from typing import Annotated, Final
+from typing import Annotated, Final, NamedTuple
 
 from annotated_types import doc
 from common_library.async_tools import cancel_wait_task
@@ -30,8 +30,9 @@ from ...core.rabbitmq import post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
 from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
+from ._content_monitor import DEFAULT_HASH_WORKERS, PortContentMonitor, StabilityOutcome
 from ._context import OutputsContext
-from ._fingerprinter import DEFAULT_HASH_WORKERS, CheckOutcome, PortFingerprint
+from ._upload_trust import PortUploadTrust
 
 _logger = logging.getLogger(__name__)
 
@@ -133,6 +134,13 @@ class _PortKeyTracker:
             self._uploading_port_keys.clear()
 
 
+class _PortWatch(NamedTuple):
+    """Per-port pair: the filesystem monitor and the upload certification built on top of it"""
+
+    monitor: PortContentMonitor
+    trust: PortUploadTrust
+
+
 class OutputsManager:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
@@ -155,10 +163,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self.task_progress_cb = progress_cb
 
         self._port_key_tracker = _PortKeyTracker()
-        self._hash_executor = ThreadPoolExecutor(
-            max_workers=DEFAULT_HASH_WORKERS, thread_name_prefix="outputs_fingerprint"
-        )
-        self._fingerprints: dict[str, PortFingerprint] = {}
+        self._hash_executor = ThreadPoolExecutor(max_workers=DEFAULT_HASH_WORKERS, thread_name_prefix="outputs_content")
+        self._port_watches: dict[str, _PortWatch] = {}
         self._task_uploading: Task | None = None
         self._task_uploading_followup: Task | None = None
         self._task_scheduler_worker: Task | None = None
@@ -171,27 +177,28 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         # keep track if a port was uploaded and there was an error, remove said error if last upload was ok
         self._last_upload_error_tracker: dict[str, str | None] = {}
 
-    def _get_fingerprint(self, port_key: str) -> PortFingerprint | None:
+    def _get_port_watch(self, port_key: str) -> _PortWatch | None:
         if port_key not in self.outputs_context.file_type_port_keys:
             return None
-        fingerprint = self._fingerprints.get(port_key)
-        if fingerprint is None:
-            fingerprint = PortFingerprint(
+        watch = self._port_watches.get(port_key)
+        if watch is None:
+            monitor = PortContentMonitor(
                 port_key=port_key,
                 directory=self.outputs_context.outputs_path / port_key,
                 hash_executor=self._hash_executor,
-                on_stable_change=self._on_stable_change,
+                on_stable_content=self._on_stable_content,
             )
-            self._fingerprints[port_key] = fingerprint
-        return fingerprint
+            watch = _PortWatch(monitor=monitor, trust=PortUploadTrust(port_key=port_key, monitor=monitor))
+            self._port_watches[port_key] = watch
+        return watch
 
     def on_port_key_change(self, port_key: str) -> None:
         """called on filesystem activity for a port: (re)starts the quiet countdown"""
-        fingerprint = self._get_fingerprint(port_key)
-        if fingerprint is None:
+        watch = self._get_port_watch(port_key)
+        if watch is None:
             _logger.debug("port key %s changed but is not a file port: ignored", port_key)
             return
-        fingerprint.note_event()
+        watch.monitor.record_filesystem_event()
 
     def set_background_uploads_enabled(self, *, is_enabled: bool) -> None:
         """Background scheduling follows the output-IO state; explicit saves stay ungated"""
@@ -199,11 +206,13 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             self._sweep_forced = True  # content may have changed while disabled: re-check everything
         self._background_uploads_enabled = is_enabled
 
-    async def _on_stable_change(self, port_key: str) -> None:
-        """a quiet-proven fingerprint differing from the last upload: schedule the upload"""
+    async def _on_stable_content(self, port_key: str, fingerprint: str) -> None:
+        """a quiet-proven fingerprint: schedule the upload unless that content is already certified"""
         if not self._background_uploads_enabled:
             _logger.info("port %s: output IO disabled, the sweep on re-enable will retry this check", port_key)
             return
+        if (watch := self._get_port_watch(port_key)) is not None and watch.trust.is_certified(fingerprint):
+            return  # identical content to the last successful upload: nothing left to send
         if not await self._port_key_tracker.add_pending_unless_uploading(port_key):
             _logger.info(
                 "port %s: new content while an upload is in flight, the post-upload check picks it up", port_key
@@ -216,14 +225,14 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         assert len(port_keys) > 0  # nosec
 
         for port_key in port_keys:
-            if (fingerprint := self._get_fingerprint(port_key)) is None:
+            if (watch := self._get_port_watch(port_key)) is None:
                 continue
             # capture the candidate as late as possible: it is what the PUT is about to send
-            if (candidate := fingerprint.take_upload_candidate()) is not None:
-                fingerprint.note_upload_started(candidate)
+            if (candidate := watch.monitor.stable_fingerprint()) is not None:
+                watch.trust.note_upload_started(candidate)
             else:
                 # this PUT archives content the scan could not identify, so it certifies nothing
-                fingerprint.note_upload_uncertified()
+                watch.trust.note_upload_uncertified()
 
         async def _upload_ports() -> None:
             with log_context(_logger, logging.INFO, f"Uploading port keys: {port_keys}"):
@@ -280,22 +289,22 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             for port_key in port_keys:
                 if port_key in failed_port_keys:
                     continue  # the sweep retries it after the content goes quiet
-                fingerprint = self._get_fingerprint(port_key)
-                if fingerprint is None:
+                watch = self._get_port_watch(port_key)
+                if watch is None:
                     continue
                 with log_catch(_logger, reraise=False):
-                    if not await fingerprint.verify_upload_completed():
+                    if not await watch.trust.verify_upload_completed():
                         _logger.info("Port %s changed during upload, waiting for it to settle", port_key)
                         rearm_port_keys.add(port_key)
 
-            # re-arm first: a waiter must not see a cleared tracker with an episode pending
+            # re-arm first: a waiter must not see a cleared tracker with a check pending
             for port_key in rearm_port_keys:
-                fingerprint = self._get_fingerprint(port_key)
-                if fingerprint is None:
+                watch = self._get_port_watch(port_key)
+                if watch is None:
                     continue
                 # the PUT stored bytes no scan verified: the previous certification is void
-                fingerprint.note_upload_uncertified()
-                fingerprint.note_event()
+                watch.trust.note_upload_uncertified()
+                watch.monitor.record_filesystem_event()
         finally:
             # the uploading set must never outlive this task: it blocks every later upload
             await self._port_key_tracker.remove_all_uploading()
@@ -327,13 +336,13 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     break  # output IO was disabled mid-sweep: re-enabling forces a new sweep
                 if port_key in uploading_port_keys:
                     continue
-                if port_key not in self._fingerprints and not self._port_directory_has_content(port_key):
+                if port_key not in self._port_watches and not self._port_directory_has_content(port_key):
                     continue  # an untracked empty port has nothing to discover
                 # a lost first notification must not leave the port invisible to every later sweep
-                if (fingerprint := self._get_fingerprint(port_key)) is None:
+                if (watch := self._get_port_watch(port_key)) is None:
                     continue
                 with log_catch(_logger, reraise=False):
-                    await fingerprint.sweep()
+                    await watch.monitor.sweep()
         finally:
             self._next_sweep_mono = time.monotonic() + _SWEEP_INTERVAL_S
 
@@ -378,8 +387,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 await cancel_wait_task(self._task_scheduler_worker, max_delay=self.task_monitor_interval_s)
             if self._task_sweep is not None:
                 await _cancel_task(self._task_sweep, self.task_cancellation_timeout_s)
-            for fingerprint in self._fingerprints.values():
-                fingerprint.shutdown()
+            for watch in self._port_watches.values():
+                watch.monitor.shutdown()
             self._hash_executor.shutdown(wait=False, cancel_futures=True)
 
     async def port_key_content_changed(self, port_key: str) -> None:
@@ -406,13 +415,13 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
         # a save uploads now: check every port without waiting for quiet
         for file_port_key in self.outputs_context.file_type_port_keys:
-            fingerprint = self._get_fingerprint(file_port_key)
-            assert fingerprint is not None  # nosec
-            outcome = await fingerprint.check_now()
-            if outcome is CheckOutcome.STABLE_MATCHING:
+            watch = self._get_port_watch(file_port_key)
+            assert watch is not None  # nosec
+            result = await watch.monitor.check_now()
+            if result.outcome is StabilityOutcome.STABLE and watch.trust.is_certified(result.fingerprint):
                 _logger.info("Skipping upload of port %s: content matches the last successful upload", file_port_key)
             else:
-                if outcome is CheckOutcome.UNSTABLE:
+                if result.outcome is StabilityOutcome.UNSTABLE:
                     _logger.warning(
                         "port %s content is still moving at save time, uploading the current state", file_port_key
                     )
@@ -436,19 +445,19 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             return False
         file_port_keys = set(self.outputs_context.file_type_port_keys)
         return not any(
-            fingerprint.has_pending_work()
-            for port_key, fingerprint in self._fingerprints.items()
+            watch.monitor.has_pending_work()
+            for port_key, watch in self._port_watches.items()
             if port_key in file_port_keys
         )
 
-    async def _in_flight_upload_round_running(self) -> bool:
+    def _in_flight_upload_round_running(self) -> bool:
         return (self._task_uploading is not None and not self._task_uploading.done()) or (
             self._task_uploading_followup is not None and not self._task_uploading_followup.done()
         )
 
     async def _wait_in_flight_upload_round(self) -> None:
         """Waits for the current upload task and its follow-up verification, if any are running"""
-        while await self._in_flight_upload_round_running():  # noqa: ASYNC110
+        while self._in_flight_upload_round_running():  # noqa: ASYNC110
             await asyncio.sleep(self.task_monitor_interval_s)
 
 

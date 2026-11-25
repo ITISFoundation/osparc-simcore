@@ -1,4 +1,4 @@
-"""Quiet-trigger content tracking for the outputs upload policy."""
+"""Stability tracking of one output port directory: filesystem knowledge only, no upload state."""
 
 import asyncio
 import logging
@@ -21,7 +21,9 @@ _logger = logging.getLogger(__name__)
 
 _QUIET_SECONDS: Final[Annotated[PositiveFloat, doc("time without events after which the content is checked")]] = 3.0
 
-_EPISODE_MAX_SCANS: Final[Annotated[PositiveInt, doc("scans an episode may use to prove the content stable")]] = 3
+_STABILITY_MAX_SCANS: Final[
+    Annotated[PositiveInt, doc("scans one stability check may use to prove the content stable")]
+] = 3
 
 _HASH_CHUNK_SIZE: Final[
     Annotated[ByteSize, doc("read size per hashing step; a power of two above the OS page size")]
@@ -31,13 +33,19 @@ _NO_METADATA_SENTINEL: Final[Annotated[int, doc("size and mtime value for record
 
 DEFAULT_HASH_WORKERS: Final[Annotated[int, doc("files hashed concurrently by the shared pool")]] = 4
 
-type OnStableChangeCB = Callable[[str], Awaitable[None]]
+type OnStableContentCB = Annotated[
+    Callable[[str, str], Awaitable[None]], doc("called with (port_key, fingerprint) once content settles")
+]
 
 
-class CheckOutcome(Enum):
-    STABLE_MATCHING = auto()  # equal to the last uploaded fingerprint
-    STABLE_NEW = auto()  # different from the last uploaded fingerprint
+class StabilityOutcome(Enum):
+    STABLE = auto()  # two finished scans agreed and no hash is pending
     UNSTABLE = auto()  # the content was still changing when the check ended
+
+
+class ContentCheckResult(NamedTuple):
+    outcome: StabilityOutcome
+    fingerprint: Annotated[str | None, doc("the proven fingerprint when STABLE, None otherwise")]
 
 
 @dataclass(slots=True)
@@ -143,8 +151,9 @@ async def _await_cancelled_task(task: asyncio.Task[None]) -> None:
         task.result()  # re-raises the task's own failure, as awaiting it directly did
 
 
-class PortFingerprint:  # pylint: disable=too-many-instance-attributes
-    """Tracks one port directory: events arm a timer; quiet expiry runs the scan checks."""
+class PortContentMonitor:  # pylint: disable=too-many-instance-attributes
+    """Tracks one port directory: filesystem events arm a timer; quiet expiry runs a stability check.
+    Reports settled content through `on_stable_content`; knows nothing about uploads."""
 
     def __init__(
         self,
@@ -152,97 +161,110 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
         port_key: str,
         directory: Path,
         hash_executor: ThreadPoolExecutor,
-        on_stable_change: OnStableChangeCB,
+        on_stable_content: OnStableContentCB,
     ) -> None:
         self._port_key = port_key
         self._directory = directory
         self._hash_executor = hash_executor
-        self._on_stable_change = on_stable_change
+        self._on_stable_content = on_stable_content
 
         self._entries: dict[str, _FileRecord] = {}
         self._fingerprint: str | None = None
-        self._uploaded_fingerprint: str | None = None
-        self._upload_candidate: str | None = None
         self._pending_hashes: int = 0
 
         self._scan_lock = asyncio.Lock()
-        self._episode_seq = 0
-        self._episode_task: asyncio.Task[None] | None = None
+        self._check_generation = 0
+        self._check_task: asyncio.Task[None] | None = None
 
-    def note_event(self) -> None:
-        """Records filesystem activity: the check episode starts `_QUIET_SECONDS` after the last one."""
-        self._episode_seq += 1  # invalidates any episode already running
-        if self._episode_task is not None and not self._episode_task.done():
-            self._episode_task.cancel()
-        self._episode_task = asyncio.create_task(
-            self._armed_episode(self._episode_seq), name=f"fingerprint_quiet_{self._port_key}"
+    def record_filesystem_event(self) -> None:
+        """Records filesystem activity: the stability check runs `_QUIET_SECONDS` after the last event."""
+        self._check_generation += 1  # invalidates any check already running
+        self._cancel_armed_check()
+        self._check_task = asyncio.create_task(
+            self._arm_stability_check(self._check_generation), name=f"content_stability_check_{self._port_key}"
         )
 
     def has_pending_work(self) -> bool:
-        """True while an armed timer or a running check could still schedule an upload."""
-        return self._episode_task is not None and not self._episode_task.done()
+        """True while an armed timer or a running check could still report stable content."""
+        return self._check_task is not None and not self._check_task.done()
 
-    async def _armed_episode(self, seq: int) -> None:
-        # cancellation ends the episode: no scan and no upload run after a cancel
-        await asyncio.sleep(_QUIET_SECONDS)
-        if seq != self._episode_seq:
-            return  # a newer event took over
-        outcome = await self._run_episode(seq)
-        if outcome is CheckOutcome.STABLE_NEW and seq == self._episode_seq:
-            await self._on_stable_change(self._port_key)
-
-    async def check_now(self) -> CheckOutcome:
-        """Runs a check episode immediately (save path); cancels any armed episode."""
-        self._episode_seq += 1
-        if self._episode_task is not None and not self._episode_task.done():
-            self._episode_task.cancel()
-            await _await_cancelled_task(self._episode_task)
-        seq = self._episode_seq
-        outcome = await self._run_episode(seq)
-        return outcome if outcome is not None else CheckOutcome.UNSTABLE
+    async def check_now(self) -> ContentCheckResult:
+        """Runs a stability check immediately (save path); cancels any armed check."""
+        self._check_generation += 1
+        if self._check_task is not None and not self._check_task.done():
+            self._check_task.cancel()
+            await _await_cancelled_task(self._check_task)
+        return await self._run_stability_check(self._check_generation)
 
     async def sweep(self) -> None:
         """Background safety check for lost events; skips ports whose own timer owns the decision."""
         if self.has_pending_work():
             return
-        outcome = await self._run_episode(self._episode_seq)
-        if outcome is CheckOutcome.STABLE_NEW:
-            _logger.info("port %s: safety sweep found unuploaded content", self._port_key)
-            await self._on_stable_change(self._port_key)
+        result = await self._run_stability_check(self._check_generation)
+        if result.outcome is StabilityOutcome.STABLE and (fingerprint := result.fingerprint) is not None:
+            await self._on_stable_content(self._port_key, fingerprint)
+
+    def stable_fingerprint(self) -> str | None:
+        """The current fingerprint while the last scan left no hash pending; None while content is
+        in motion. Reads the last scan only, it does not run one."""
+        if self._pending_hashes > 0 or self._fingerprint is None:
+            return None
+        return self._fingerprint
+
+    async def rescan(self) -> str | None:
+        """Cancels any armed check and scans once; the fingerprint when the scan leaves no hash pending"""
+        self._check_generation += 1
+        if self._check_task is not None and not self._check_task.done():
+            self._check_task.cancel()
+            await _await_cancelled_task(self._check_task)
+        await self._scan()
+        return self.stable_fingerprint()
 
     def shutdown(self) -> None:
-        self._episode_seq += 1  # a running episode sees a stale sequence and stops
-        if self._episode_task is not None and not self._episode_task.done():
-            self._episode_task.cancel()
+        self._check_generation += 1  # a running check sees a stale generation and stops
+        self._cancel_armed_check()
 
-    async def _run_episode(self, seq: int) -> CheckOutcome | None:
-        """Scans until two finished scans agree; None when an event abandoned the episode."""
-        previous: _ScanResult | None = None
-        outcome: CheckOutcome | None = None
+    def _cancel_armed_check(self) -> None:
+        if self._check_task is not None and not self._check_task.done():
+            self._check_task.cancel()
+
+    async def _arm_stability_check(self, generation: int) -> None:
+        # cancellation ends the check: no scan and no report run after a cancel
+        await asyncio.sleep(_QUIET_SECONDS)
+        if generation != self._check_generation:
+            return  # a newer event took over
+        result = await self._run_stability_check(generation)
+        if (
+            result.outcome is StabilityOutcome.STABLE
+            and (fingerprint := result.fingerprint) is not None
+            and generation == self._check_generation
+        ):
+            await self._on_stable_content(self._port_key, fingerprint)
+
+    async def _run_stability_check(self, generation: int) -> ContentCheckResult:
+        """Scans until two finished scans agree; UNSTABLE when they do not, an event takes over,
+        or a scan fails"""
         try:
-            for _ in range(_EPISODE_MAX_SCANS):
-                if seq != self._episode_seq:
-                    break
-                result = await self._scan()  # cancellation propagates: the episode stops here
-                if seq != self._episode_seq:
-                    break
-                if result.pending_hashes > 0:
-                    previous = None  # a half-scanned port cannot confirm anything
-                    continue
-                if previous is not None and result.fingerprint == previous.fingerprint:
-                    outcome = (
-                        CheckOutcome.STABLE_MATCHING
-                        if result.fingerprint == self._uploaded_fingerprint
-                        else CheckOutcome.STABLE_NEW
-                    )
-                    break
-                previous = result
-            else:
-                outcome = CheckOutcome.UNSTABLE
+            return await self._scan_until_agreement(generation)
         except Exception:  # pylint: disable=broad-except
             _logger.warning("port %s content check failed, will retry", self._port_key, exc_info=True)
-            return None
-        return outcome
+            return ContentCheckResult(outcome=StabilityOutcome.UNSTABLE, fingerprint=None)
+
+    async def _scan_until_agreement(self, generation: int) -> ContentCheckResult:
+        previous: _ScanResult | None = None
+        for _ in range(_STABILITY_MAX_SCANS):
+            if generation != self._check_generation:
+                break
+            result = await self._scan()  # cancellation propagates: the check stops here
+            if generation != self._check_generation:
+                break
+            if result.pending_hashes > 0:
+                previous = None  # a half-scanned port cannot confirm anything
+                continue
+            if previous is not None and result.fingerprint == previous.fingerprint:
+                return ContentCheckResult(outcome=StabilityOutcome.STABLE, fingerprint=result.fingerprint)
+            previous = result
+        return ContentCheckResult(outcome=StabilityOutcome.UNSTABLE, fingerprint=None)
 
     async def _scan(self) -> _ScanResult:
         async with self._scan_lock:
@@ -259,34 +281,6 @@ class PortFingerprint:  # pylint: disable=too-many-instance-attributes
             self._fingerprint = fingerprint
             self._pending_hashes = sum(1 for record in entries.values() if record.digest is None)
             return _ScanResult(fingerprint=fingerprint, pending_hashes=self._pending_hashes)
-
-    def take_upload_candidate(self) -> str | None:
-        """Captures the confirmed fingerprint an upload would send; None while content is in motion."""
-        if self._pending_hashes > 0 or self._fingerprint is None:
-            return None
-        return self._fingerprint
-
-    def note_upload_started(self, fingerprint: str) -> None:
-        """Records the captured fingerprint the upload is sending, verified after the PUT."""
-        self._upload_candidate = fingerprint
-
-    def note_upload_uncertified(self) -> None:
-        """Clears the certification of an unidentified PUT: its content stays eligible."""
-        self._upload_candidate = None
-        self._uploaded_fingerprint = None
-
-    async def verify_upload_completed(self) -> bool:
-        """Rescans after a successful PUT; records the content as uploaded unless it changed."""
-        if self._episode_task is not None and not self._episode_task.done():
-            self._episode_task.cancel()
-            await _await_cancelled_task(self._episode_task)
-        await self._scan()
-        unchanged = (
-            self._pending_hashes == 0 and self._fingerprint is not None and self._fingerprint == self._upload_candidate
-        )
-        if unchanged:
-            self._uploaded_fingerprint = self._fingerprint
-        return unchanged
 
     def _collect_entries(self) -> tuple[dict[str, _FileRecord], list[tuple[str, _FileRecord]]]:
         """Lists and stats the tree, then queues only the files that changed for hashing."""

@@ -29,19 +29,20 @@ from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
-from simcore_service_dynamic_sidecar.modules.outputs import _fingerprinter as fingerprinter_module
+from simcore_service_dynamic_sidecar.modules.outputs import _content_monitor as monitor_module
 from simcore_service_dynamic_sidecar.modules.outputs import configure_outputs
+from simcore_service_dynamic_sidecar.modules.outputs._content_monitor import _ScanResult
 from simcore_service_dynamic_sidecar.modules.outputs._context import (
     OutputsContext,
     configure_outputs_context,
 )
-from simcore_service_dynamic_sidecar.modules.outputs._fingerprinter import _ScanResult
 from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     OutputsManager,
     UploadPortsFailedError,
     _PortKeyTracker,
     configure_outputs_manager,
 )
+from simcore_service_dynamic_sidecar.modules.outputs._upload_trust import PortUploadTrust
 
 # UTILS
 
@@ -92,7 +93,7 @@ def test_configure_outputs_preserves_lifespan_order(mocker: MockerFixture):
 @pytest.fixture
 def short_quiet(mocker: MockerFixture) -> None:
     """short quiet period so event-driven tests do not wait for the production delay"""
-    mocker.patch.object(fingerprinter_module, "_QUIET_SECONDS", _SHORT_QUIET_S)
+    mocker.patch.object(monitor_module, "_QUIET_SECONDS", _SHORT_QUIET_S)
 
 
 @pytest.fixture
@@ -770,7 +771,7 @@ async def test_raising_post_upload_check_does_not_wedge_the_manager(
     mocker: MockerFixture,
 ):
     verify = mocker.patch.object(
-        fingerprinter_module.PortFingerprint,
+        PortUploadTrust,
         "verify_upload_completed",
         new_callable=AsyncMock,
         side_effect=RuntimeError("mocked_check_raised"),
@@ -804,21 +805,21 @@ async def test_upload_that_certified_nothing_is_uploaded_again(
     port_dir = outputs_path / port_key
     port_dir.mkdir(parents=True, exist_ok=True)
     (port_dir / "f.dat").write_bytes(b"content the first upload could not identify")
-    fingerprint = outputs_manager._get_fingerprint(port_key)  # noqa: SLF001
-    assert fingerprint is not None
-    real_take_upload_candidate = fingerprint.take_upload_candidate
+    watch = outputs_manager._get_port_watch(port_key)  # noqa: SLF001
+    assert watch is not None
+    real_stable_fingerprint = watch.monitor.stable_fingerprint
 
     uncertified = True
 
-    def _take_upload_candidate_uncertified_once() -> str | None:
+    def _stable_fingerprint_uncertified_once() -> str | None:
         # the first PUT races a write: the scan offers no candidate, so it archives unknown bytes
         nonlocal uncertified
         if uncertified:
             uncertified = False
             return None
-        return real_take_upload_candidate()
+        return real_stable_fingerprint()
 
-    mocker.patch.object(fingerprint, "take_upload_candidate", side_effect=_take_upload_candidate_uncertified_once)
+    mocker.patch.object(watch.monitor, "stable_fingerprint", side_effect=_stable_fingerprint_uncertified_once)
 
     await outputs_manager.port_key_content_changed(port_key)
     await outputs_manager.wait_for_all_uploads_to_finish()
@@ -842,17 +843,18 @@ async def test_slow_safety_sweep_on_one_port_does_not_delay_another_port(
         pytest.skip("needs one blocked and one healthy port")
 
     release = asyncio.Event()
-    slow_fingerprint = outputs_manager._get_fingerprint(port_keys[0])  # noqa: SLF001
-    assert slow_fingerprint is not None
-    real_scan = fingerprinter_module.PortFingerprint._scan  # noqa: SLF001
+    slow_watch = outputs_manager._get_port_watch(port_keys[0])  # noqa: SLF001
+    assert slow_watch is not None
+    slow_monitor = slow_watch.monitor
+    real_scan = monitor_module.PortContentMonitor._scan  # noqa: SLF001
 
     async def _scan_when_slow(self, *args, **kwargs) -> _ScanResult:
-        if self is slow_fingerprint:
+        if self is slow_monitor:
             await release.wait()
             return _ScanResult(fingerprint="blocked", pending_hashes=0)
         return await real_scan(self, *args, **kwargs)
 
-    mocker.patch.object(fingerprinter_module.PortFingerprint, "_scan", new=_scan_when_slow)
+    mocker.patch.object(monitor_module.PortContentMonitor, "_scan", new=_scan_when_slow)
 
     outputs_manager.set_all_ports_for_upload()
     await asyncio.sleep(outputs_manager.task_monitor_interval_s * 5)  # let the sweep block

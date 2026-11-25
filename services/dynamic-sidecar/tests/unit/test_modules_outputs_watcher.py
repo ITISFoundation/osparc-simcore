@@ -35,7 +35,7 @@ from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
-from simcore_service_dynamic_sidecar.modules.outputs import _fingerprinter as fingerprinter_module
+from simcore_service_dynamic_sidecar.modules.outputs import _content_monitor as monitor_module
 from simcore_service_dynamic_sidecar.modules.outputs import (
     _watcher as outputs_watcher_core,
 )
@@ -105,7 +105,7 @@ async def outputs_manager(
     outputs_context: OutputsContext,
     port_notifier: PortNotifier,
 ) -> AsyncIterable[OutputsManager]:
-    mocker.patch.object(fingerprinter_module, "_QUIET_SECONDS", 0.1)
+    mocker.patch.object(monitor_module, "_QUIET_SECONDS", 0.1)
     outputs_manager = OutputsManager(
         outputs_context=outputs_context,
         port_notifier=port_notifier,

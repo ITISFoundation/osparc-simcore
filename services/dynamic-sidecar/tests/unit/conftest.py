@@ -28,7 +28,7 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
-from simcore_service_dynamic_sidecar.modules.outputs import _fingerprinter
+from simcore_service_dynamic_sidecar.modules.outputs import _content_monitor
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from tenacity import retry
 from tenacity.after import after_log
@@ -46,7 +46,7 @@ _COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
 @pytest.fixture
 def no_quiet_delay(mocker: MockerFixture) -> None:
     """shortens the outputs quiet period so tests skip the production delay"""
-    mocker.patch.object(_fingerprinter, "_QUIET_SECONDS", 0.0)
+    mocker.patch.object(_content_monitor, "_QUIET_SECONDS", 0.0)
 
 
 #
