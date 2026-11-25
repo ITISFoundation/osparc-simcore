@@ -1169,8 +1169,8 @@ def _pipeline_wait_raised_message(
 ) -> str:
     """The `log_context` failure message for a pipeline wait.
 
-    The hints describe a wait that ran out of time, so they are left out of any other error (a
-    websocket that never connected or could not be reattached says nothing about the backend.
+    The hints describe a wait that ran out of time, so any other error (a websocket that never
+    connected or could not be reattached) says nothing about the backend and gets no hint.
     """
     message = f"pipeline failed or timed out with {state}. Expected one of {expected_states=}"
     if not timed_out:
