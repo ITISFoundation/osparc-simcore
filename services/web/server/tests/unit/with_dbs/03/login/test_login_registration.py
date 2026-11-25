@@ -12,6 +12,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.users import MyProfileRestGet
 from models_library.products import ProductName
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_error, assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -19,6 +20,7 @@ from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
+from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.login import _auth_service
@@ -53,6 +55,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         {
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
+            "LOGIN_THROTTLE_BASE_DELAY": "PT1M",
         },
     )
 
@@ -145,7 +148,7 @@ async def test_registration_with_registered_user(
     assert client.app
 
     async with NewUser(app=client.app) as user:
-        await auto_add_user_to_product_group(client.app, user_id=user["id"], product_name=default_product_name)
+        await auto_add_user_to_product_group(client.app, user_id=UserID(user["id"]), product_name=default_product_name)
 
         url = client.app.router["auth_register"].url_for()
         response = await client.post(
@@ -157,6 +160,35 @@ async def test_registration_with_registered_user(
             },
         )
     await assert_error(response, status.HTTP_409_CONFLICT, MSG_EMAIL_ALREADY_REGISTERED)
+
+
+async def test_registration_of_registered_user_is_throttled_like_login(
+    client: TestClient, mocker: MockerFixture, cleanup_db_tables: None
+):
+    assert client.app
+    # simulates a user registered in another product, who can reach the password check
+    mocker.patch.object(registration, "check_other_registrations")
+    login_settings = client.app[APP_SETTINGS_APPKEY].WEBSERVER_LOGIN
+    assert login_settings
+    url = client.app.router["auth_register"].url_for()
+
+    async with NewUser(app=client.app) as user:
+        wrong_password = f"{user['raw_password']}-wrong"
+
+        for _ in range(login_settings.LOGIN_THROTTLE.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
+            response = await client.post(
+                url.path, json={"email": user["email"], "password": wrong_password, "confirm": wrong_password}
+            )
+            await assert_status(response, status.HTTP_401_UNAUTHORIZED)
+
+        check_credentials = mocker.spy(_auth_service, "check_authorized_user_credentials")
+        response = await client.post(
+            url.path,
+            json={"email": user["email"], "password": user["raw_password"], "confirm": user["raw_password"]},
+        )
+
+        await assert_status(response, status.HTTP_429_TOO_MANY_REQUESTS)
+        check_credentials.assert_not_called()
 
 
 async def test_registration_invitation_stays_valid_if_once_tried_with_weak_password(
@@ -174,7 +206,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     mocker.patch(
         f"{registration.__name__}.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
@@ -259,7 +291,7 @@ async def test_registration_with_invalid_confirmation_code(
     mocker.patch(
         "simcore_service_webserver.login.settings.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,  # <----- NO invitation
             LOGIN_TWILIO=None,
@@ -289,7 +321,7 @@ async def test_registration_without_confirmation(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
@@ -350,7 +382,7 @@ async def test_registration_with_invitation(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
             LOGIN_TWILIO=None,
@@ -410,7 +442,7 @@ async def test_registraton_with_invitation_for_trial_account(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
