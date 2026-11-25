@@ -45,6 +45,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.valkey_tools import flush_databases
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -52,7 +53,7 @@ from servicelib import tracing
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
@@ -175,6 +176,28 @@ def app_environment(
             },
         )
     )
+
+
+@pytest.fixture
+async def clean_login_throttle_state(redis_service: RedisSettings) -> AsyncIterator[None]:
+    """Empties the login back-off database before and after the requesting test
+
+    The back-off counters live in the LOGIN_THROTTLE database keyed by email digest and nothing
+    else clears them, so they outlive the test that wrote them and reject the logins of whichever
+    test draws the same email next (`faker` re-seeds its shared instance on every test, so two
+    tests draw the same address). Request this fixture in every test that trips a back-off.
+    """
+    client: aioredis.Redis = aioredis.from_url(
+        redis_service.build_redis_dsn(RedisDatabase.LOGIN_THROTTLE),
+        encoding="utf-8",
+        decode_responses=True,
+    )
+    try:
+        await flush_databases(client)
+        yield
+    finally:
+        await flush_databases(client)
+        await client.aclose(close_connection_pool=True)
 
 
 @pytest.fixture
