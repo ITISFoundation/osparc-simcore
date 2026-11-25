@@ -63,7 +63,7 @@ docker==7.2.0
     # via -r requirements/_test.in
 email-validator==2.3.0
     # via pydantic
-faker==40.44.0
+faker==40.54.0
     # via -r requirements/_test.in
 fast-depends==3.0.11
     # via faststream
