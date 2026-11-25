@@ -6,12 +6,14 @@ import contextlib
 import logging
 from collections.abc import Callable
 from datetime import timedelta
-from typing import Any
+from typing import Any, Final
 
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
     check_node_files_panel,
     get_node_id_from_service_key,
     wait_for_service_running,
@@ -24,7 +26,17 @@ _IS_SERVICE_LEGACY = True
 
 # Dash inserts this element while a callback (i.e. the computation) is running
 _DASH_LOADING_CALLBACK_SELECTOR = "._dash-loading-callback"
-_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT = 30 * 1000
+
+# The spinner ships inside Dash's index HTML, but waiting for it also covers the iframe's own render,
+# so this stays generous; it is not part of the computation budget. The failing CI runs' own timings
+# put it at 0.5-1.4 s, i.e. the old single 30 s budget was never protecting the iframe load.
+_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT: Final[int] = 30 * SECOND
+
+# The Bornstein solver runs synchronously inside the service, in the initial Dash callback (a POST to
+# `_dash-update-component` that only answers when the computation is done). Measured on a busy master
+# deployment: ~20 s typically, ~31 s at worst, so the budget has to sit well above that or ordinary
+# latency jitter turns the run red. Kept equal to the 2-minute service-start budget the CI job grants.
+_DASH_COMPUTATION_TIMEOUT: Final[int] = 2 * MINUTE
 
 _EXPECTED_OUTPUT_FILES: list[str] = [
     "output.csv",
@@ -56,15 +68,14 @@ def test_bornstein(
     restore_iframe(page)
 
     loading_callback = iframe_locator.locator(_DASH_LOADING_CALLBACK_SELECTOR)
-    # best-effort: the computation may already be done by the time we get here
     with log_context(
         logging.INFO,
-        "Waiting for Bornstein computation to finish "
-        f"(timeout={timedelta(milliseconds=2 * _DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)})",
+        f"Waiting for Bornstein computation to finish (timeout={timedelta(milliseconds=_DASH_COMPUTATION_TIMEOUT)})",
     ):
+        # best-effort: the computation may already be done by the time we get here
         with contextlib.suppress(PlaywrightTimeoutError, TimeoutError):
             loading_callback.wait_for(state="attached", timeout=_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)
-        loading_callback.wait_for(state="detached", timeout=_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)
+        loading_callback.wait_for(state="detached", timeout=_DASH_COMPUTATION_TIMEOUT)
 
     check_node_files_panel(
         page,
