@@ -21,6 +21,7 @@ from pytest_simcore.helpers.faker_factories import (
     random_project,
 )
 from pytest_simcore.helpers.typing_env import FrozenEnvVarsDict
+from pytest_simcore.k8s_cluster import deployed_ops_workloads
 from pytest_simcore.simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from simcore_postgres_database.models.products import products
@@ -97,6 +98,15 @@ def postgres_service_docker_swarm(docker_services, docker_ip, docker_compose_fil
 def k8s_ops_workloads_selection() -> list[str]:
     """Overrides pytest-simcore fixture"""
     return ["postgres"]
+
+
+@pytest.fixture(scope="session")
+def k8s_ops_workloads(
+    k8s_cluster: None, osparc_simcore_k8s_dir: Path, k8s_ops_workloads_selection: list[str], keep_docker_up: bool
+) -> Iterator[list[str]]:
+    """Overrides pytest-simcore fixture: keeps the ops workloads up for the whole session"""
+    with deployed_ops_workloads(osparc_simcore_k8s_dir, k8s_ops_workloads_selection, keep_docker_up) as releases:
+        yield releases
 
 
 @pytest.fixture(scope="session")

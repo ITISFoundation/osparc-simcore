@@ -1,13 +1,7 @@
-"""kind cluster lifecycle for the k8s flavor of the tests, analog to `docker_swarm`
-
-The cluster is created with `make -C k8s create-cluster` when it does not exist. At session end it is
-deleted with `make -C k8s delete-cluster` only when this session created it and
-`--keep-docker-up` is not set. A cluster created outside pytest is never deleted.
-"""
-
 import logging
 import subprocess
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Annotated, Final
@@ -49,24 +43,30 @@ def k8s_cluster(osparc_simcore_k8s_dir: Path, request: pytest.FixtureRequest) ->
         request.session.stash[_K8S_CLUSTER_CREATED_STASH_KEY] = osparc_simcore_k8s_dir
 
 
-@pytest.fixture(scope="session")
+@contextmanager
+def deployed_ops_workloads(k8s_dir: Path, selection: list[str], keep_up: bool) -> Generator[list[str]]:
+    for release in selection:
+        _run_make(k8s_dir, "helmfile-ops-apply", f"RELEASE={release}")
+
+    yield selection
+
+    if not keep_up:
+        for release in reversed(selection):
+            _run_make(k8s_dir, "helmfile-ops-destroy", f"RELEASE={release}")
+
+
+@pytest.fixture(scope="module")
 def k8s_ops_workloads_selection() -> list[str]:
     """Selection of ops services that `k8s_ops_workloads` deploys. Override it in the test suite"""
     return []
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def k8s_ops_workloads(
     k8s_cluster: None, osparc_simcore_k8s_dir: Path, k8s_ops_workloads_selection: list[str], keep_docker_up: bool
 ) -> Iterator[list[str]]:
-    for release in k8s_ops_workloads_selection:
-        _run_make(osparc_simcore_k8s_dir, "helmfile-ops-apply", f"RELEASE={release}")
-
-    yield k8s_ops_workloads_selection
-
-    if not keep_docker_up:
-        for release in reversed(k8s_ops_workloads_selection):
-            _run_make(osparc_simcore_k8s_dir, "helmfile-ops-destroy", f"RELEASE={release}")
+    with deployed_ops_workloads(osparc_simcore_k8s_dir, k8s_ops_workloads_selection, keep_docker_up) as releases:
+        yield releases
 
 
 def pytest_sessionfinish(session: pytest.Session) -> None:
