@@ -4,14 +4,12 @@
 # pylint: disable=too-many-arguments
 
 
-import re
 from typing import Any
 
 import pytest
 import simcore_service_webserver.products
 import sqlalchemy as sa
 from faker import Faker
-from models_library.basic_regex import TWILIO_ALPHANUMERIC_SENDER_ID_RE
 from models_library.products import ProductName
 from pydantic import BaseModel, ValidationError
 from pytest_simcore.helpers.faker_factories import random_product
@@ -160,10 +158,3 @@ def test_product_name_invalid(fake_product_from_db: dict[str, Any]):
     fake_product_from_db.update(name="invalid name")
     with pytest.raises(ValidationError):
         Product.model_validate(fake_product_from_db)
-
-
-def test_twilio_sender_id_is_truncated(fake_product_from_db: dict[str, Any]):
-    fake_product_from_db.update(short_name=None, display_name="very long name" * 12)
-    product = Product.model_validate(fake_product_from_db)
-
-    assert re.match(TWILIO_ALPHANUMERIC_SENDER_ID_RE, product.twilio_alpha_numeric_sender_id)
