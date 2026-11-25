@@ -9,6 +9,7 @@ from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from celery_library.async_jobs import submit_job
+from common_library.user_messages import user_message
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
@@ -91,11 +92,16 @@ def _has_dot_segment(path_parts: tuple[str, ...]) -> bool:
     return any(component in {".", ".."} for part in path_parts for component in part.split("/"))
 
 
-def _encode_storage_path_segment(segment: str) -> str:
-    """Quotes a path part, keeping '/' and the ':' of FastAPI's ':action' suffix readable."""
-    if ":" in segment[1:]:
-        return quote(segment, safe="/:")
-    return quote(segment)
+def _quote_keeping_action_colon(path_part: str) -> str:
+    """Quotes a path part, keeping '/' and the ':' of FastAPI's ':action' suffix readable.
+
+    Only a part that carries an action (a ':' that is not its first character) keeps its colons
+    raw, for storage to route on. Every other part is quoted strictly, so a decoded '?', '#' or
+    space cannot start the query or the fragment of the request forwarded to storage.
+    """
+    if ":" in path_part[1:]:
+        return quote(path_part, safe="/:")
+    return quote(path_part)
 
 
 def _to_storage_url(request: web.Request, product_name: ProductName | None = None) -> URL:
@@ -111,11 +117,11 @@ def _to_storage_url(request: web.Request, product_name: ProductName | None = Non
 
     basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
-    path_segments = request.url.parts[basepath_index:]
-    if _has_dot_segment(path_segments):
-        raise web.HTTPBadRequest
+    path_parts = request.url.parts[basepath_index:]
+    if _has_dot_segment(path_parts):
+        raise web.HTTPBadRequest(text=user_message("The storage path must not contain '.' or '..' segments."))
 
-    fastapi_encoded_suffix = "/".join(_encode_storage_path_segment(segment) for segment in path_segments)
+    fastapi_encoded_suffix = "/".join(_quote_keeping_action_colon(path_part) for path_part in path_parts)
 
     url = (
         url.joinpath(fastapi_encoded_suffix, encoded=True)

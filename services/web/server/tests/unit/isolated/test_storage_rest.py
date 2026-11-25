@@ -114,34 +114,13 @@ def test_dot_like_names_are_allowed(segment: str, app: web.Application):
         ),
         # already-encoded dots stay encoded: storage decodes once and sees a file name
         ("/v0/storage/locations/0/files/x%252e%252e/status", "/v0/locations/0/files/x%252e%252e/status"),
-    ],
-)
-def test_special_characters_are_encoded_in_the_forwarded_path(path: str, expected_raw_path: str, app: web.Application):
-    request = _make_request(path, app)
-    url = _to_storage_url(request)
-    assert url.raw_path == expected_raw_path
-    assert dict(url.query) == {"user_id": "42"}
-
-
-@pytest.mark.parametrize(
-    "path, expected_raw_path",
-    [
-        # decoded '?', '#' and ' ' after the ':action' colon must stay inside the
-        # path: on the wire the first '?' would start the query and let the
-        # injected user_id take precedence over the proxy-appended one
         (
             "/v0/storage/locations/0/files/api/0/uuid/foo:abort%3Fuser_id%3D7%26x%3D:complete",
             "/v0/locations/0/files/api/0/uuid/foo:abort%3Fuser_id%3D7%26x%3D:complete",
         ),
-        (
-            "/v0/storage/locations/0/files/x:a%23b:complete",
-            "/v0/locations/0/files/x:a%23b:complete",
-        ),
-        (
-            "/v0/storage/locations/0/files/x:a%20b:abort",
-            "/v0/locations/0/files/x:a%20b:abort",
-        ),
-        # action in the middle of the path, with segments trailing it
+        ("/v0/storage/locations/0/files/x:a%23b:complete", "/v0/locations/0/files/x:a%23b:complete"),
+        ("/v0/storage/locations/0/files/x:a%20b:abort", "/v0/locations/0/files/x:a%20b:abort"),
+        # action in the middle of the path, with parts trailing it
         (
             "/v0/storage/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc123",
             "/v0/locations/0/files/api/0/uuid/proj/f.txt:complete/futures/abc123",
@@ -156,7 +135,13 @@ def test_special_characters_are_encoded_in_the_forwarded_path(path: str, expecte
         ),
     ],
 )
-def test_encoded_delimiters_after_colon_stay_in_the_path(path: str, expected_raw_path: str, app: web.Application):
+def test_special_characters_stay_encoded_in_the_forwarded_path(path: str, expected_raw_path: str, app: web.Application):
+    """Only '/' and the ':action' colon survive quoting in the forwarded request target.
+
+    A decoded '?', '#' or ' ' in the request target starts its query or fragment, and storage
+    splits at the first '?': a user_id arriving there would take precedence over the one this
+    proxy appends from the authenticated identity.
+    """
     request = _make_request(path, app)
     url = _to_storage_url(request)
     assert url.raw_path == expected_raw_path
@@ -202,9 +187,7 @@ async def test_encoded_traversal_is_rejected_over_http(create_storage_proxy: Cal
 
     resp = await proxy.client.get("/v0/storage/locations/0/files/..%2f..%2f..%2f..%2fstatus")
     assert resp.status == status.HTTP_400_BAD_REQUEST
-    # the response carries aiohttp's default status text and explains nothing
-    assert resp.reason == "Bad Request"
-    assert "storage path" not in await resp.text()
+    assert "The storage path must not contain '.' or '..' segments." in await resp.text()
     assert not proxy.spied
 
     resp = await proxy.client.get("/v0/storage/locations")
