@@ -45,7 +45,11 @@ on:
       - "api/tests/requirements.txt"
       - "package.json"
       - "package-lock.json"
+      - "k8s/.mise.toml"
+      - "charts/ops-local/**"
+      - "services/helmfile*"
       - ".renovaterc.jsonc"
+      - ".github/actions/**"
       - ".github/renovate/**"
       - ".github/workflows/**"
   issues:
