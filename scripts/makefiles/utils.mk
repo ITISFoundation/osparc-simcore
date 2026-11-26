@@ -1,4 +1,4 @@
-# Utility functions for Makefiles
+# Utility functions useful for all possible Makefiles
 
 
 # Check that given variables are set and all have non-empty values,

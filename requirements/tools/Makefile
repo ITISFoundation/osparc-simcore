@@ -21,6 +21,8 @@ REPODIR := $(shell git rev-parse --show-toplevel)
 PACKAGES_DIR := $(abspath $(REPODIR)/packages)
 SERVICES_DIR := $(abspath $(REPODIR)/services)
 
+include $(REPODIR)/scripts/makefiles/utils.mk
+
 IMAGE := local/requirements/tools
 
 UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
@@ -152,11 +154,6 @@ help: ## this colorful help
 	@echo ""
 	@echo "  make only-tools upgrade=black            # Upgrade black only in tools requirements"
 	@echo ""
-
-
-.PHONY: guard-%
-guard-%:
-	@if [ "${${*}}" = "" ]; then echo "Environment variable $* not set"; exit 1; fi
 
 
 .PHONY: report
