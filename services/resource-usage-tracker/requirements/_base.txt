@@ -434,7 +434,7 @@ pycryptodome==3.23.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   stream-zip
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -449,7 +449,7 @@ pydantic==2.14.3
     #   pydantic-extra-types
     #   pydantic-settings
     #   typer
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   pydantic
@@ -580,7 +580,7 @@ truststore==0.10.5
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   httpcore2
     #   httpx2
-typer==0.29.0
+typer==0.29.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in

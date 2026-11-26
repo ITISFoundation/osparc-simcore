@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/requirements.txt requirements/requirements.in
 annotated-types==0.8.0
     # via pydantic
-faker==40.44.0
+faker==40.54.0
     # via -r requirements/requirements.in
 filelock==4.2.10
     # via -r requirements/requirements.in
@@ -12,9 +12,9 @@ packaging==26.0
     # via pytest
 pluggy==1.6.0
     # via pytest
-pydantic==2.14.3
+pydantic==2.14.4
     # via -r requirements/requirements.in
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via pydantic
 pygments==2.21.0
     # via pytest

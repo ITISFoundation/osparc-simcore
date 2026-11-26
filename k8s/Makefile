@@ -10,6 +10,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/globals.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/k8s.mk
+include $(REPO_BASE_DIR)/scripts/makefiles/utils.mk
 
 # VARIABLES ----------------------------------------------
 
@@ -19,19 +20,25 @@ KIND_CLUSTER_NAME := simcore
 
 ##@ Environment
 
-.PHONY: cluster-exists
-cluster-exists: _require-valid-kind
-	@kind get clusters | grep --quiet --line-regexp '$(KIND_CLUSTER_NAME)'
+.PHONY: install-tools
+install-tools: _require-mise ## Installs k8s tools
+	@cd $(CURDIR) && mise trust --quiet && mise install
+
+##@ Cluster
 
 .PHONY: create-cluster
-create-cluster: _require-valid-kind .init-swarm ## Creates Kubernetes cluster unless it exists
+create-cluster: .init-swarm ## Creates Kubernetes cluster unless it exists
 	@if ! $(MAKE) --no-print-directory cluster-exists; then \
 		cd $(CURDIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml; \
 	fi
 
 .PHONY: delete-cluster
-delete-cluster: _require-valid-kind ## Deletes Kubernetes cluster
+delete-cluster: ## Deletes Kubernetes cluster
 	kind delete cluster --name $(KIND_CLUSTER_NAME)
+
+.PHONY: cluster-exists
+cluster-exists: _require-valid-kind
+	@kind get clusters | grep --quiet --line-regexp '$(KIND_CLUSTER_NAME)'
 
 .PHONY: recreate-cluster
 recreate-cluster: ## Recreates Kubernetes cluster
@@ -39,12 +46,12 @@ recreate-cluster: ## Recreates Kubernetes cluster
 	@$(MAKE) create-cluster
 
 .PHONY: load-images-into-cluster
-load-images-into-cluster: _require-valid-kind ## Loads simcore images into Kubernetes cluster
+load-images-into-cluster: ## Loads simcore images into Kubernetes cluster
 	@images=$$(docker images --filter 'reference=local/*:development' --format '{{.Repository}}:{{.Tag}}'); \
 	test -n "$$images" || { echo "no local/{service}:development images. Build them first with 'make build-devel'."; exit 1; }; \
 	kind load docker-image --name $(KIND_CLUSTER_NAME) $$images
 
-##@ Development
+##@ Services
 
 .PHONY: down-devel up-devel
 down-devel: ## Stops local development environment
@@ -73,10 +80,11 @@ helmfile-simcore-diff: .helmfile-simcore-diff ## Shows changes in simcore servic
 ##@ Tests
 
 .PHONY: helm-unittest
-helm-unittest: _require-valid-helm-unittest  ## Runs helm-unittest tests of the simcore-service chart
-	@helm unittest --color --strict $(REPO_BASE_DIR)/charts/simcore-service
+helm-unittest: HELM_UNITTEST_BIN := helm-unittest # installed via mise
+helm-unittest: ## Runs helm-unittest tests of the simcore-service chart
+	@$(HELM_UNITTEST_BIN) --color --strict $(REPO_BASE_DIR)/charts/simcore-service
 
-kubeconform: guard-TEMPLATES_DIR guard-KUBERNETES_VERSION _require-valid-kubeconform
+kubeconform: guard-TEMPLATES_DIR guard-KUBERNETES_VERSION
 kubeconform: ## Validates Kubernetes manifests with kubeconform
 	@kubeconform \
 		-schema-location default \

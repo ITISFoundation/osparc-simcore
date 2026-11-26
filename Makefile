@@ -13,6 +13,8 @@ SHELL := /bin/bash
 .SHELLFLAGS := -o errexit -o pipefail -c
 MAKE_C := $(MAKE) --no-print-directory --directory
 
+include ./scripts/makefiles/utils.mk
+
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
 IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
@@ -131,17 +133,6 @@ S3_ENDPOINT := http://$(get_my_ip):9001
 export S3_ENDPOINT
 endif
 
-# Check that given variables are set and all have non-empty values,
-# die with an error otherwise.
-#
-# Params:
-#   1. Variable name(s) to test.
-#   2. (optional) Error message to print.
-guard-%:
-	@ if [ "${${*}}" = "" ]; then \
-		echo "Environment variable $* not set"; \
-		exit 1; \
-	fi
 
 # Check that given variables are set and all have non-empty values,
 # exit with an error otherwise.

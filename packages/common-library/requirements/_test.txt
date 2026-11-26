@@ -8,7 +8,7 @@ coverage==7.17.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==40.44.0
+faker==40.54.0
     # via -r requirements/_test.in
 filelock==4.2.10
     # via -r requirements/_test.in
@@ -26,11 +26,11 @@ polib==1.2.0
     # via -r requirements/_test.in
 pprintpp==0.4.0
     # via pytest-icdiff
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/_base.txt
     #   pydantic-settings
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via
     #   -c requirements/_base.txt
     #   pydantic

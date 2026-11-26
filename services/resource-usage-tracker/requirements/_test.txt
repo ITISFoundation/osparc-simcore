@@ -78,7 +78,7 @@ docker==7.2.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==40.44.0
+faker==40.54.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
@@ -208,11 +208,11 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via
     #   -c requirements/_base.txt
     #   pydantic

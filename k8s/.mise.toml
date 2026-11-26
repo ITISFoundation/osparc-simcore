@@ -1,0 +1,6 @@
+[tools]
+helm = "3.22.1"
+"github:helm-unittest/helm-unittest" = { version = "1.2.1", rename_exe = "helm-unittest" }
+helmfile = "1.1.6"
+kind = "0.32.0"
+kubeconform = "0.8.0"

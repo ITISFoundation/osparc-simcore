@@ -4,12 +4,12 @@ Mostly resolves and redirect to storage API
 """
 
 import logging
-import urllib.parse
 from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from celery_library.async_jobs import submit_job
+from common_library.user_messages import user_message
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
@@ -82,8 +82,34 @@ def _get_storage_vtag(app: web.Application) -> str:
     return storage_prefix
 
 
+def _has_dot_segment(path_parts: tuple[str, ...]) -> bool:
+    """True if any component forwarded to storage is '.' or '..'.
+
+    A part of ``URL.parts`` is percent-decoded and can hold several components: clients
+    encode the separators inside a file identifier (``api%2F0%2Fproject%2Fnode``), so each
+    part is split before it is checked.
+    """
+    return any(component in {".", ".."} for part in path_parts for component in part.split("/"))
+
+
+def _quote_keeping_action_colon(path_part: str) -> str:
+    """Quotes a path part, keeping '/' and the ':' of FastAPI's ':action' suffix readable.
+
+    Only a part that carries an action (a ':' that is not its first character) keeps its colons
+    raw, for storage to route on. Every other part is quoted strictly, so a decoded '?', '#' or
+    space cannot start the query or the fragment of the request forwarded to storage.
+    """
+    if ":" in path_part[1:]:
+        return quote(path_part, safe="/:")
+    return quote(path_part)
+
+
 def _to_storage_url(request: web.Request, product_name: ProductName | None = None) -> URL:
-    """Converts web-api url to storage-api url"""
+    """Converts web-api url to storage-api url
+
+    Raises:
+        web.HTTPBadRequest: on path segments '.'/'..'
+    """
     userid = request[RQT_USERID_KEY]
 
     # storage service API endpoint
@@ -91,13 +117,11 @@ def _to_storage_url(request: web.Request, product_name: ProductName | None = Non
 
     basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
-    # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
-    suffix = "/".join(request.url.parts[basepath_index:])
-    # we need to quote anything before the column, but not the column
-    if (column_index := suffix.find(":")) > 0:
-        fastapi_encoded_suffix = urllib.parse.quote(suffix[:column_index], safe="/") + suffix[column_index:]
-    else:
-        fastapi_encoded_suffix = urllib.parse.quote(suffix, safe="/")
+    path_parts = request.url.parts[basepath_index:]
+    if _has_dot_segment(path_parts):
+        raise web.HTTPBadRequest(text=user_message("The storage path must not contain '.' or '..' segments."))
+
+    fastapi_encoded_suffix = "/".join(_quote_keeping_action_colon(path_part) for path_part in path_parts)
 
     url = (
         url.joinpath(fastapi_encoded_suffix, encoded=True)

@@ -180,7 +180,7 @@ protobuf==6.33.5
     #   -c requirements/_base.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -188,7 +188,7 @@ pydantic==2.14.3
     #   pydantic-extra-types
     #   pydantic-settings
     #   typer
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -249,7 +249,7 @@ truststore==0.10.5
     #   -c requirements/_base.txt
     #   httpcore2
     #   httpx2
-typer==0.29.0
+typer==0.29.1
     # via
     #   -c requirements/_base.txt
     #   fastapi-cli

@@ -16812,8 +16812,7 @@
                 "type": "number"
               },
               {
-                "type": "string",
-                "maxLength": 200
+                "type": "string"
               }
             ],
             "title": "Costperunit"
