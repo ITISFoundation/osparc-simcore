@@ -312,13 +312,9 @@ class AccessLayerRepository(BaseRepository):
         user_id: UserID,
         file_id: StorageFileID,
     ) -> AccessRights:
-        """Rights over `api/{file_id}/{filename/with/folders}` with no own metadata entry
-
-        Children of a registered api/ directory never get an entry of their own and
-        must follow that directory's ownership. Any prefix from `api/{file_id}` up to
-        the direct parent can be the registered directory. If none is registered,
-        ownership is still not defined and the caller may claim it (first to register
-        owns).
+        """Children of an api/ directory have no metadata entry of their own and
+        follow the ownership of the nearest registered ancestor prefix. If none is
+        registered, the caller may claim the path (first to register owns).
         """
         components = file_id.split("/")
         ancestor: _RegisteredDirectory | None = None
