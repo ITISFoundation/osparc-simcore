@@ -84,6 +84,9 @@ target/
 
 # dotenv
 .env
+.env.local
+.env.local.tmp
+.env.tmp
 
 # virtualenv
 .venv27

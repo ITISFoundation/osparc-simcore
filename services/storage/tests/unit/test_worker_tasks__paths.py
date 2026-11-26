@@ -8,7 +8,7 @@ from models_library.users import UserID
 from simcore_service_storage.api._worker_tasks import _paths as paths_worker_tasks
 
 
-async def test_delete_paths_completes_in_flight_children_before_raising(monkeypatch):
+async def test_delete_paths_completes_in_flight_children_before_raising(monkeypatch: pytest.MonkeyPatch):
     """When one delete fails, the siblings must still run to completion (their
     connection cleanup) before the error is raised: reraise=True would abandon
     them and leak their pooled database connections
@@ -17,7 +17,7 @@ async def test_delete_paths_completes_in_flight_children_before_raising(monkeypa
     slow_path = Path("22222222-2222-2222-2222-222222222222/node/file.txt")
     completed_paths: list[Path] = []
 
-    async def delete_path(user_id: UserID, path: Path):
+    async def delete_path(user_id: UserID, path: Path) -> None:
         try:
             if path == failing_path:
                 message = "no access to file"
@@ -43,6 +43,4 @@ async def test_delete_paths_completes_in_flight_children_before_raising(monkeypa
             paths={failing_path, slow_path},
         )
 
-    # the sibling that was still in flight at the error must have completed,
-    # otherwise its pooled connection cleanup would never run
     assert set(completed_paths) == {failing_path, slow_path}
