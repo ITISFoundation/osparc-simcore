@@ -953,7 +953,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 logging.INFO,
                 msg=f"{src_project_uuid} -> {dst_project_uuid}: Step 3.3: effective copying {len(copy_tasks)} files",
             ):
-                await limited_gather(*copy_tasks, limit=MAX_CONCURRENT_S3_TASKS)
+                copy_results: list[FileMetaData | BaseException] = await limited_gather(
+                    *copy_tasks,
+                    reraise=False,
+                    limit=MAX_CONCURRENT_S3_TASKS,
+                )
+                if error := next((result for result in copy_results if isinstance(result, BaseException)), None):
+                    raise error
 
     async def _get_size_and_num_files(self, fmd: FileMetaDataAtDB) -> tuple[ByteSize | UNDEFINED_SIZE_TYPE, int]:
         if not fmd.is_directory:
