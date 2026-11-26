@@ -56,6 +56,8 @@ Makefile                                           @pcrespov @sanderegg
 requirements/*                                         @pcrespov
 tools/*                                                @pcrespov
 
+scripts/maintenance/autoscaled-monitor/*               @sanderegg
+
 # Dependencies managed by Renovate (see docs/renovate.md). These rules come last on
 # purpose: the last matching pattern wins, and a Renovate PR rewrites the same
 # dependency in dozens of directories at once (resyncing a single lockfile pin touches

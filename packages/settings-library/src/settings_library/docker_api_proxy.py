@@ -4,11 +4,13 @@ from typing import Annotated
 from pydantic import Field, SecretStr
 
 from .base import BaseCustomSettings
-from .basic_types import PortInt
+from .basic_types import HostNamePortStr, PortInt
 
 
 class DockerApiProxysettings(BaseCustomSettings):
-    DOCKER_API_PROXY_HOST: Annotated[str, Field(description="hostname of the docker-api-proxy service")]
+    DOCKER_API_PROXY_HOST: Annotated[
+        HostNamePortStr, Field(description="hostname of the docker-api-proxy service (without protocol)")
+    ]
     DOCKER_API_PROXY_PORT: Annotated[PortInt, Field(description="port of the docker-api-proxy service")] = 8888
     DOCKER_API_PROXY_SECURE: bool = False
 

@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import PortInt, VersionTag
+from settings_library.basic_types import HostNamePortStr, PortInt, VersionTag
 from settings_library.utils_service import (
     DEFAULT_FASTAPI_PORT,
     MixinServiceSettings,
@@ -10,7 +10,7 @@ from settings_library.utils_service import (
 
 
 class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
-    DIRECTOR_V2_HOST: str = "director-v2"
+    DIRECTOR_V2_HOST: HostNamePortStr = "director-v2"
     DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
     DIRECTOR_V2_VTAG: VersionTag = "v2"
 
