@@ -219,7 +219,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         watch = self._get_port_watch(port_key)
         if watch is not None and watch.trust.is_certified(fingerprint):
             return  # identical content to the last successful upload: nothing left to send
-        if watch is not None and fingerprint == EMPTY_PORT_FINGERPRINT and not watch.trust.has_certified_upload():
+        if watch is not None and fingerprint == EMPTY_PORT_FINGERPRINT and not watch.trust.has_stored_content():
             # an empty upload clears the remote port: only a session that stored content there may clear it
             _logger.info("port %s: empty and never uploaded: an upload would clear remote data, skipping", port_key)
             return

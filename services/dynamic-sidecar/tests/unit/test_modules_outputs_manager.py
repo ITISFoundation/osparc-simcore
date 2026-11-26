@@ -575,6 +575,32 @@ async def test_deleting_an_uploaded_port_directory_clears_it_in_the_background(
     assert watch.trust.is_certified(monitor_module.EMPTY_PORT_FINGERPRINT)
 
 
+async def test_deleting_the_directory_during_the_put_still_clears_the_remote(
+    pausable_upload: PausableUpload,
+    single_port_manager: tuple[OutputsManager, Path],
+):
+    outputs_manager, port_dir = single_port_manager
+    _write_port_version(port_dir, b"v1")
+    outputs_manager.on_port_key_change("output_1")
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+
+    # the PUT ships v1 and the directory is gone before it completes: the PUT certifies nothing
+    shutil.rmtree(port_dir)
+    pausable_upload.started.clear()
+    pausable_upload.release.set()
+
+    # the re-armed check settles on empty: the session already stored content, so the clear runs without a save
+    await asyncio.wait_for(pausable_upload.started.wait(), timeout=10)
+    assert pausable_upload.calls.count(["output_1"]) == 2
+
+    watch = outputs_manager._port_watches["output_1"]  # noqa: SLF001
+    deadline = asyncio.get_running_loop().time() + 10
+    while not watch.trust.is_certified(monitor_module.EMPTY_PORT_FINGERPRINT):
+        if asyncio.get_running_loop().time() > deadline:
+            pytest.fail("the empty clear was never certified")
+        await asyncio.sleep(0.01)
+
+
 async def test_safety_sweep_finds_a_port_that_never_delivered_an_event(
     short_sweep: None,
     mock_upload_outputs: AsyncMock,

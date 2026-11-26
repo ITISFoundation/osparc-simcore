@@ -17,14 +17,11 @@ class PortUploadTrust:
         self._monitor = monitor
         self._upload_candidate: Fingerprint | None = None
         self._uploaded_fingerprint: Fingerprint | None = None
+        self._stored_content = False
 
     def is_certified(self, fingerprint: Fingerprint | None) -> bool:
         """True when a completed upload certified exactly this content"""
         return fingerprint is not None and self._uploaded_fingerprint == fingerprint
-
-    def has_certified_upload(self) -> bool:
-        """True while this process holds a certification for the port"""
-        return self._uploaded_fingerprint is not None
 
     def note_upload_started(self, fingerprint: Fingerprint) -> None:
         """Records the fingerprint the upload is sending, verified after the PUT."""
@@ -35,8 +32,13 @@ class PortUploadTrust:
         self._upload_candidate = None
         self._uploaded_fingerprint = None
 
+    def has_stored_content(self) -> bool:
+        """True once any PUT for this port completed in this process; survives certification invalidation"""
+        return self._stored_content
+
     async def verify_upload_completed(self) -> bool:
         """Rescans after a successful PUT; records the content as certified unless it changed"""
+        self._stored_content = True  # called only for PUTs that completed without error
         fingerprint = await self._monitor.rescan()
         unchanged = fingerprint is not None and fingerprint == self._upload_candidate
         if unchanged:
