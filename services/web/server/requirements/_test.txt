@@ -287,7 +287,7 @@ psycopg-binary==3.3.9
     # via psycopg
 py-cpuinfo2==10.1.1
     # via pytest-benchmark
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -296,7 +296,7 @@ pydantic==2.14.3
     #   pydantic-extra-types
     #   pydantic-settings
     #   typer
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
