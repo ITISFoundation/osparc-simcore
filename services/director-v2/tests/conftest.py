@@ -190,7 +190,7 @@ def mock_env(
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
             "REGISTRY_USER": "test",
-            "REGISTRY_URL": faker.url(),
+            "REGISTRY_URL": faker.domain_name(),
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
             # NOTE: the checkout-scoped stack name, so that swarm services created by tests
