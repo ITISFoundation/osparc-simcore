@@ -11,6 +11,8 @@ on:
       - ".github/workflows/ci-k8s-charts.yml"
       - "charts/**"
       - "k8s/**"
+      - "packages/pytest-simcore/**"
+      - "services/api-server/**"
       - "services/**/helmfile*"
       - "services/**/helm-values*"
       - ".env-devel"
@@ -68,6 +70,48 @@ jobs:
         with:
           report_type: test_results
           files: api/tests/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-api-server:
+    timeout-minutes: 20
+    name: "[unit] api-server"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/api-server/requirements/ci.txt"
+      - name: Setup k8s toolchain
+        uses: $/.github/actions/setup-k8s-toolchain
+      - name: install
+        run: ./ci/github/unit-testing/api-server.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/api-server.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/api-server.bash test
+      - name: OAS backwards compatibility check
+        run: ./ci/github/unit-testing/api-server.bash openapi-diff
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: services/api-server/junit.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 

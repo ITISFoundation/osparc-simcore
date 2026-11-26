@@ -4,7 +4,8 @@ Inventory of every job in
 [`ci-build-test.yml`](../../.github/workflows/ci-build-test.yml) and what it
 needs to run. It feeds
 [`ci-build-test-k8s.yml`](../../.github/workflows/ci-build-test-k8s.yml):
-only the rows with `none` infra run without a cluster.
+the rows with `none` infra run there without a cluster, the rows whose infra
+already has a k8s implementation run against a kind cluster.
 
 ## What makes a test need Docker
 
@@ -16,7 +17,12 @@ it `postgres_engine`, `postgres_db`, `sqlalchemy_async_engine`,
 `docker_api`/`docker_client`/`async_docker_client`, `docker_registry`, and
 everything in `pytest_simcore.docker_compose`/`docker_swarm`. Declaring those
 plugins in `conftest.py` is not enough — a test, or a fixture it uses, has to
-request one. Suites may also need host binaries: `rclone`
+request one. `postgres_dsn` is the first fixture that resolves through the
+selected cluster orchestrator: under `k8s` its postgres comes from the kind
+cluster, so a suite that needs postgres only already runs there. The releases
+`k8s_ops_workloads` deploys are the ones both module selections name, because
+`postgres`, `rabbit` and `redis` are core services in compose but ops releases
+in the helmfile. Suites may also need host binaries: `rclone`
 (`ci/github/helpers/install_rclone.bash`) and 7zip (`install_7zip.bash`).
 
 The `<n>/<total>` count below is the number of test files naming a
@@ -57,7 +63,7 @@ the workflow. Each line reads: suite, infra it needs, docker files, whether
   `services/agent/tests/unit`
 - `api`: none (0/5, k8s: yes)
   `api/tests`
-- `api-server`: postgres in `_with_db` (1/70, k8s: no)
+- `api-server`: postgres in `_with_db` (1/70, k8s: yes, only `_with_db`)
   `services/api-server/tests/unit`
 - `autoscaling`: docker (6/26, k8s: no)
   `services/autoscaling/tests/unit`
@@ -155,7 +161,8 @@ pushes only.
   `api/test__one_time_payment_workflows.py`,
   `api/test__payment_method_workflows.py`.
 - Suites that need Docker in a few files only cannot join the no-infra jobs
-  without a split: `api-server` (`_with_db`, 5 files), `simcore-sdk`
+  without a split: `simcore-sdk`
   (`test_node_ports_common_r_clone_mount.py`), `dask-sidecar`
   (`test_computational_docker_utils.py`), `pytest-simcore` (3 files),
-  `service-library` (23 of 93).
+  `service-library` (23 of 93). `api-server` is split already: its k8s job runs
+  `tests/unit/_with_db` and leaves the rabbit/redis modules to the swarm job.

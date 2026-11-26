@@ -9,6 +9,7 @@ from typing import Annotated, Final
 import pytest
 from annotated_types import doc
 
+from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_SERVICES_SELECTION
 from .helpers.constants import HEADER_STR
 from .helpers.logging_tools import log_context
 
@@ -67,16 +68,23 @@ def deployed_ops_workloads(k8s_dir: Path, selection: list[str], keep_up: bool) -
 
 
 @pytest.fixture(scope="module")
-def k8s_ops_workloads_selection() -> list[str]:
-    """Selection of ops services that `k8s_ops_workloads` deploys. Override it in the test suite"""
-    return []
-
-
-@pytest.fixture(scope="module")
 def k8s_ops_workloads(
-    k8s_cluster: None, osparc_simcore_k8s_dir: Path, k8s_ops_workloads_selection: list[str], keep_docker_up: bool
+    k8s_cluster: None,
+    osparc_simcore_k8s_dir: Path,
+    keep_docker_up: bool,
+    request: pytest.FixtureRequest,
 ) -> Iterator[list[str]]:
-    with deployed_ops_workloads(osparc_simcore_k8s_dir, k8s_ops_workloads_selection, keep_docker_up) as releases:
+    """Deploys the ops releases named by the module config the Swarm stacks use
+
+    `postgres`, `rabbit` and `redis` are core services in docker-compose but ops releases in the
+    helmfile, so both selections feed here and their values are helm release names: a name listed
+    in both deploys once, a name the ops helmfile does not know makes `helmfile-ops-apply` fail.
+    """
+    requested = [
+        *getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, []),
+        *getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, []),
+    ]
+    with deployed_ops_workloads(osparc_simcore_k8s_dir, list(dict.fromkeys(requested)), keep_docker_up) as releases:
         yield releases
 
 

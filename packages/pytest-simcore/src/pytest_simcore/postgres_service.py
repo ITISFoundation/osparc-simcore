@@ -27,8 +27,9 @@ from .helpers.postgres_tools import (
     maintenance_engine_context,
     wait_engine_ready,
 )
-from .helpers.typing_env import EnvVarsDict
+from .helpers.typing_env import EnvVarsDict, FrozenEnvVarsDict
 from .helpers.xdist import get_worker_id, is_xdist_worker, run_once_across_workers
+from .simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 
 _logger = logging.getLogger(__name__)
 
@@ -47,6 +48,15 @@ def _as_pg_config(postgres_dsn: Mapping[str, Any]) -> PostgresTestConfig:
 
 @pytest.fixture(scope="module")
 def postgres_dsn(
+    request: pytest.FixtureRequest, simcore_cluster_orchestrator: SimcoreClusterOrchestrator
+) -> PostgresTestConfig:
+    """Config of a postgres deployed by the selected cluster orchestrator"""
+    pg_config: PostgresTestConfig = request.getfixturevalue(f"postgres_dsn_{simcore_cluster_orchestrator}")
+    return pg_config
+
+
+@pytest.fixture(scope="module")
+def postgres_dsn_docker_swarm(
     docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
 ) -> PostgresTestConfig:
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
@@ -69,6 +79,28 @@ def postgres_dsn(
     }
 
     return pg_config
+
+
+@pytest.fixture(scope="module")
+def postgres_dsn_k8s(
+    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict, request: pytest.FixtureRequest
+) -> PostgresTestConfig:
+    """Config of the postgres release running in the kubernetes cluster"""
+    assert "postgres" in k8s_ops_workloads
+
+    # the tests run on the host while postgres runs inside the cluster: k8s/kind-config.yaml
+    # maps the postgres node port (30432) to the host port 5432
+    database = env_devel_dict_session["POSTGRES_DB"]
+    if is_xdist_worker(request):
+        database = f"{database}_{get_worker_id(request)}"
+
+    return {
+        "user": env_devel_dict_session["POSTGRES_USER"],
+        "password": env_devel_dict_session["POSTGRES_PASSWORD"],
+        "database": database,
+        "host": "127.0.0.1",
+        "port": "5432",
+    }
 
 
 _MINUTE: Final[int] = 60
