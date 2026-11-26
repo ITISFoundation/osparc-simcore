@@ -23,6 +23,12 @@ DOCKER_LOGIN_KILL_DELAY: Final[
     Annotated[timedelta, doc("time `timeout` waits after SIGTERM before it sends SIGKILL")]
 ] = timedelta(seconds=1)
 DOCKER_LOGIN_RETRY_DELAY: Final[Annotated[timedelta, doc("time between two login attempts")]] = timedelta(seconds=1)
+DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT: Final[
+    Annotated[timedelta, doc("shortest time a login attempt gets, whatever the start time allows")]
+] = timedelta(seconds=1)
+DOCKER_LOGIN_SHARE_OF_START_TIME: Final[
+    Annotated[float, doc("part of EC2_INSTANCES_MAX_START_TIME the login retries may use")]
+] = 0.5
 
 #
 # EC2 tags

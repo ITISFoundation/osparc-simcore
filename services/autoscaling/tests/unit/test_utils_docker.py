@@ -6,6 +6,7 @@
 import asyncio
 import datetime
 import itertools
+import logging
 import random
 import secrets
 import shutil
@@ -973,8 +974,8 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     monkeypatch: pytest.MonkeyPatch,
 ):
     monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_MAX_ATTEMPTS", 1)
-    # a one-second budget leaves a one-second attempt after the kill delay and the retry delay are subtracted
-    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=3))
+    # half of 6 s for 1 attempt, minus the 1 s kill delay and the 1 s retry delay, leaves a 1 s attempt
+    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=6))
     calls_file = tmp_path / "calls"
     calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "hanging", docker=_DOCKER_HANGS_ON_LOGIN)
@@ -991,15 +992,31 @@ def test_get_docker_login_on_start_bash_command_scales_the_attempt_timeout_with_
     example_registry_settings: RegistrySettings,
 ):
     command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=90))
-    # 90 s over 3 attempts, minus the 1 s kill delay and the 1 s retry delay
-    assert "timeout -k 1 28 docker login " in command, f"unexpected timeout budget in {command}"
+    # half of 90 s over 3 attempts, minus the 1 s kill delay and the 1 s retry delay
+    assert "timeout -k 1 13 docker login " in command, f"unexpected timeout budget in {command}"
 
 
-def test_get_docker_login_on_start_bash_command_keeps_a_positive_timeout_for_small_budgets(
-    example_registry_settings: RegistrySettings,
+def test_get_docker_login_on_start_bash_command_keeps_sub_second_delays(
+    example_registry_settings: RegistrySettings, monkeypatch: pytest.MonkeyPatch
 ):
-    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=1))
-    assert "timeout -k 1 1 docker login " in command, f"timeout would be non-positive in {command}"
+    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_KILL_DELAY", datetime.timedelta(milliseconds=500))
+    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_RETRY_DELAY", datetime.timedelta(milliseconds=250))
+    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
+
+    # a truncated `-k 0` would disable the SIGKILL fallback
+    assert "timeout -k 0.5 " in command, f"the kill delay lost its sub-second part in {command}"
+    assert "sleep 0.25;" in command, f"the retry delay lost its sub-second part in {command}"
+
+
+def test_get_docker_login_on_start_bash_command_overruns_a_too_small_start_budget_with_a_warning(
+    example_registry_settings: RegistrySettings, caplog: pytest.LogCaptureFixture
+):
+    """Below DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT per attempt the loop is allowed to outlast its budget, and says so"""
+    with caplog.at_level(logging.WARNING):
+        command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=1))
+
+    assert "timeout -k 1 1 docker login " in command, f"expected the 1 s minimum attempt timeout in {command}"
+    assert "EC2_INSTANCES_MAX_START_TIME" in caplog.text, "an overrunning login budget must be logged"
 
 
 def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_settings: RegistrySettings):

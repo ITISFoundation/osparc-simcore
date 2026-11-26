@@ -45,7 +45,9 @@ from ..constants import (
     DOCKER_COMPOSE_PULL_SCRIPT_PATH,
     DOCKER_LOGIN_KILL_DELAY,
     DOCKER_LOGIN_MAX_ATTEMPTS,
+    DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT,
     DOCKER_LOGIN_RETRY_DELAY,
+    DOCKER_LOGIN_SHARE_OF_START_TIME,
     PRE_PULL_COMPOSE_PATH,
 )
 from ..core.settings import ApplicationSettings
@@ -459,26 +461,40 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempoten
     raise RuntimeError(msg)
 
 
+def _as_bash_seconds(duration: datetime.timedelta) -> str:
+    """`timeout` and `sleep` accept fractional seconds, so no sub-second part is dropped"""
+    return f"{duration.total_seconds():g}"
+
+
 def get_docker_login_on_start_bash_command(
     registry_settings: RegistrySettings, instance_max_start_time: datetime.timedelta
 ) -> str:
     """Returns the command logging a machine in to the registry at boot, retrying it up to DOCKER_LOGIN_MAX_ATTEMPTS.
 
-    The whole retry loop must finish inside the time the autoscaling service gives a machine to join the swarm,
-    so one attempt gets `instance_max_start_time` split over the attempts, minus the kill delays and the delays
-    in between. The retry runs in a subshell that exits on the first success or with an error after the last
-    attempt. The command contains no `&` because the boot script joins its steps on it.
+    The retry loop gets DOCKER_LOGIN_SHARE_OF_START_TIME of `instance_max_start_time`, which is counted from
+    launch, so boot, custom scripts and the swarm join keep the rest. Each attempt gets that budget split over the
+    attempts, minus the kill delay and the retry delay, and at least DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT: below that
+    the loop outlasts its budget and a warning is logged. The retry runs in a subshell that exits on the first
+    success or with an error after the last attempt. The command contains no `&` because the boot script joins
+    its steps on it.
     """
-    attempt_budget = (
-        instance_max_start_time / DOCKER_LOGIN_MAX_ATTEMPTS - DOCKER_LOGIN_KILL_DELAY - DOCKER_LOGIN_RETRY_DELAY
-    )
-    attempt_timeout_s = max(int(attempt_budget.total_seconds()), 1)
+    login_budget = instance_max_start_time * DOCKER_LOGIN_SHARE_OF_START_TIME
+    attempt_timeout = login_budget / DOCKER_LOGIN_MAX_ATTEMPTS - DOCKER_LOGIN_KILL_DELAY - DOCKER_LOGIN_RETRY_DELAY
+    if attempt_timeout < DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT:
+        _logger.warning(
+            "EC2_INSTANCES_MAX_START_TIME=%s leaves %s per registry login attempt, using %s instead: "
+            "a machine that cannot log in may be terminated before its last attempt",
+            instance_max_start_time,
+            attempt_timeout,
+            DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT,
+        )
+        attempt_timeout = DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT
     login_command = " ".join(
         [
             "echo",
             f'"{registry_settings.REGISTRY_PW.get_secret_value()}"',
             "|",
-            f"timeout -k {int(DOCKER_LOGIN_KILL_DELAY.total_seconds())} {attempt_timeout_s}",
+            f"timeout -k {_as_bash_seconds(DOCKER_LOGIN_KILL_DELAY)} {_as_bash_seconds(attempt_timeout)}",
             "docker",
             "login",
             "--username",
@@ -487,11 +503,11 @@ def get_docker_login_on_start_bash_command(
             registry_settings.resolved_registry_url,
         ]
     )
-    retry_delay_s = int(DOCKER_LOGIN_RETRY_DELAY.total_seconds())
+    retry_delay = _as_bash_seconds(DOCKER_LOGIN_RETRY_DELAY)
     commands = [
         f'attempt=0; while [ "$attempt" -lt {DOCKER_LOGIN_MAX_ATTEMPTS} ]; do attempt=$((attempt + 1))',
         f"if {login_command}; then exit 0; fi",
-        f'if [ "$attempt" -lt {DOCKER_LOGIN_MAX_ATTEMPTS} ]; then sleep {retry_delay_s}; fi',
+        f'if [ "$attempt" -lt {DOCKER_LOGIN_MAX_ATTEMPTS} ]; then sleep {retry_delay}; fi',
         "done",
         "exit 1",
     ]
