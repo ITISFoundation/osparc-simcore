@@ -13,12 +13,12 @@ from pydantic.config import JsonDict
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
-from .basic_types import PortInt
+from .basic_types import HostNamePortStr, PortInt
 
 
 class PostgresSettings(BaseCustomSettings):
     # entrypoint
-    POSTGRES_HOST: str
+    POSTGRES_HOST: HostNamePortStr
     POSTGRES_PORT: PortInt = 5432
 
     # auth

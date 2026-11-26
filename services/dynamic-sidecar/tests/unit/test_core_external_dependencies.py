@@ -83,7 +83,7 @@ def mock_environment(
             "REGISTRY_USER": faker.user_name(),
             "REGISTRY_PW": faker.password(),
             "REGISTRY_SSL": f"{faker.pybool()}",
-            "REGISTRY_URL": faker.url(),
+            "REGISTRY_URL": faker.domain_name(),
             **base_mock_envs,
         },
     )

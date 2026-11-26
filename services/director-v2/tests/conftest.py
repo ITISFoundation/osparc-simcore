@@ -81,7 +81,9 @@ def project_slug_dir(services_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def package_dir() -> Path:
-    dirpath = Path(simcore_service_director_v2.__file__).resolve().parent
+    module_file = simcore_service_director_v2.__file__
+    assert module_file is not None  # nosec
+    dirpath = Path(module_file).resolve().parent
     assert dirpath.exists()
     return dirpath
 
@@ -188,7 +190,7 @@ def mock_env(
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
             "REGISTRY_USER": "test",
-            "REGISTRY_URL": faker.url(),
+            "REGISTRY_URL": faker.domain_name(),
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
             # NOTE: the checkout-scoped stack name, so that swarm services created by tests
