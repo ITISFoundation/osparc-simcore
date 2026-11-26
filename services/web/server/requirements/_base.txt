@@ -184,11 +184,11 @@ hpack==4.2.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   h2
-httpcore2==2.16.0
+httpcore2==2.16.2
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   httpx2
-httpx2==2.16.0
+httpx2==2.16.2
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in

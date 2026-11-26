@@ -112,11 +112,11 @@ h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore2
-httpcore2==2.16.0
+httpcore2==2.16.2
     # via
     #   -c requirements/_base.txt
     #   httpx2
-httpx2==2.16.0
+httpx2==2.16.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

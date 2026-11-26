@@ -126,7 +126,7 @@ h11==0.16.0
     #   uvicorn
 httpcore==1.0.9
     # via httpx
-httpcore2==2.16.0
+httpcore2==2.16.2
     # via
     #   -c requirements/_base.txt
     #   httpx2
@@ -138,7 +138,7 @@ httpx==0.28.1
     #   fastapi
     #   fastapi-cloud-cli
     #   respx
-httpx2==2.16.0
+httpx2==2.16.2
     # via
     #   -c requirements/_base.txt
     #   fastapi
