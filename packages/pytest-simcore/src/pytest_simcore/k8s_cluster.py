@@ -9,6 +9,7 @@ from typing import Annotated, Final
 import pytest
 from annotated_types import doc
 
+from .helpers.constants import HEADER_STR
 from .helpers.logging_tools import log_context
 
 _logger: logging.Logger = logging.getLogger(__name__)
@@ -24,12 +25,22 @@ _K8S_CLUSTER_CREATED_STASH_KEY: Final[
 
 
 def _run_make(k8s_dir: Path, target: str, *make_vars: str, check: bool = True) -> subprocess.CompletedProcess[bytes]:
-    with log_context(logging.INFO, f"running 'make {target} {' '.join(make_vars)}' in {k8s_dir}", logger=_logger):
-        return subprocess.run(  # noqa: S603
-            ["make", "-C", f"{k8s_dir}", target, *make_vars],  # noqa: S607
-            check=check,
-            timeout=_K8S_MAKE_TIMEOUT.total_seconds(),
-        )
+    cmd: list[str] = ["make", "-C", f"{k8s_dir}", target, *make_vars]
+    with log_context(logging.INFO, f"running '{' '.join(cmd)}'", logger=_logger):
+        try:
+            return subprocess.run(  # noqa: S603
+                cmd,
+                check=check,
+                capture_output=True,
+                timeout=_K8S_MAKE_TIMEOUT.total_seconds(),
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as err:
+            msg = (
+                f"'{' '.join(cmd)}' failed: {err}\n"
+                f"{HEADER_STR.format('stdout')}{(err.stdout or b'').decode('utf8', 'replace')}\n"
+                f"{HEADER_STR.format('stderr')}{(err.stderr or b'').decode('utf8', 'replace')}"
+            )
+            raise RuntimeError(msg) from err
 
 
 def _k8s_cluster_exists(k8s_dir: Path) -> bool:

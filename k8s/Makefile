@@ -37,7 +37,7 @@ delete-cluster: ## Deletes Kubernetes cluster
 	kind delete cluster --name $(KIND_CLUSTER_NAME)
 
 .PHONY: cluster-exists
-cluster-exists: _require-valid-kind
+cluster-exists:
 	@kind get clusters | grep --quiet --line-regexp '$(KIND_CLUSTER_NAME)'
 
 .PHONY: recreate-cluster
