@@ -5,7 +5,7 @@
 
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, NamedTuple
 from uuid import uuid4
 
 import pytest
@@ -126,7 +126,7 @@ async def _insert_fmd(
     engine: AsyncEngine,
     *,
     file_id: str,
-    user_id: int,
+    user_id: UserID,
     is_directory: bool,
     project_id: str | None = None,
 ) -> None:
@@ -148,15 +148,21 @@ async def _insert_fmd(
         )
 
 
+class _RegisteredApiDirectory(NamedTuple):
+    directory_file_id: str
+    child_file_id: str
+
+
 @asynccontextmanager
 async def _registered_api_directory(
     engine: AsyncEngine,
     *,
     owner_id: UserID,
     project_id: ProjectID | None = None,
-) -> AsyncIterator[tuple[str, str]]:
+    directory_suffix: str = "data",
+) -> AsyncIterator[_RegisteredApiDirectory]:
     api_file_id = f"{uuid4()}"
-    directory_file_id = f"api/{api_file_id}/data"
+    directory_file_id = f"api/{api_file_id}/{directory_suffix}"
     child_file_id = f"{directory_file_id}/secret.csv"
     await _insert_fmd(
         engine,
@@ -167,7 +173,7 @@ async def _registered_api_directory(
     )
     try:
         # the child has no entry of its own: that is the layout of a synced directory
-        yield directory_file_id, child_file_id
+        yield _RegisteredApiDirectory(directory_file_id=directory_file_id, child_file_id=child_file_id)
     finally:
         async with engine.begin() as conn:
             await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id == directory_file_id))
@@ -178,12 +184,29 @@ async def test_api_directory_children_follow_directory_ownership(
 ):
     repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
 
-    async with _registered_api_directory(sqlalchemy_async_engine, owner_id=user_id) as (_, child_file_id):
-        access = await repository.get_file_access_rights(user_id=user_id, file_id=child_file_id)
+    async with _registered_api_directory(sqlalchemy_async_engine, owner_id=user_id) as api_directory:
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=api_directory.child_file_id)
         assert access == AccessRights.all()
 
         # a foreign user must get nothing on a child of someone else's api/ directory
-        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=child_file_id)
+        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=api_directory.child_file_id)
+        assert access == AccessRights.none()
+
+
+async def test_api_subdirectory_children_follow_directory_ownership(
+    user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    # the registered directory is a sub-folder, not the api/{file_id} root:
+    # the ancestor scan must reach the child's direct parent
+    repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+    async with _registered_api_directory(
+        sqlalchemy_async_engine, owner_id=user_id, directory_suffix="data/sub"
+    ) as api_directory:
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=api_directory.child_file_id)
+        assert access == AccessRights.all()
+
+        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=api_directory.child_file_id)
         assert access == AccessRights.none()
 
 
@@ -199,11 +222,10 @@ async def test_api_directory_children_follow_project_sharing(
     )
 
     repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
-    async with _registered_api_directory(sqlalchemy_async_engine, owner_id=user_id, project_id=project_id) as (
-        _,
-        child_file_id,
-    ):
-        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=child_file_id)
+    async with _registered_api_directory(
+        sqlalchemy_async_engine, owner_id=user_id, project_id=project_id
+    ) as api_directory:
+        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=api_directory.child_file_id)
         assert access.read is True
         assert access.write is False
 

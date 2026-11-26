@@ -38,6 +38,7 @@
 """
 
 import logging
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from models_library.groups import GroupID
@@ -62,17 +63,22 @@ from ._base import BaseRepository
 _logger = logging.getLogger(__name__)
 
 
-async def _get_registered_ancestor(
-    connection: AsyncConnection, ancestor_file_id: str
-) -> tuple[UserID, str | None] | None:
-    """Owner (user_id, project_id) of the registered directory `ancestor_file_id`, or None if unregistered"""
+class _RegisteredDirectory(NamedTuple):
+    """Ownership entry of a directory registered in file_meta_data"""
+
+    user_id: UserID
+    project_id: str | None
+
+
+async def _get_registered_ancestor(connection: AsyncConnection, ancestor_file_id: str) -> _RegisteredDirectory | None:
+    """Owner of the registered directory `ancestor_file_id`, or None if unregistered"""
     result = await connection.execute(
         sa.select(file_meta_data.c.user_id, file_meta_data.c.project_id).where(
             file_meta_data.c.file_id == ancestor_file_id
         )
     )
     if row := result.one_or_none():
-        return UserID(row.user_id), row.project_id
+        return _RegisteredDirectory(user_id=UserID(row.user_id), project_id=row.project_id)
     return None
 
 
@@ -318,7 +324,7 @@ class AccessLayerRepository(BaseRepository):
         owns).
         """
         components = file_id.split("/")
-        ancestor: tuple[UserID, str | None] | None = None
+        ancestor: _RegisteredDirectory | None = None
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             for level in range(2, len(components)):
                 ancestor = await _get_registered_ancestor(conn, "/".join(components[:level]))
