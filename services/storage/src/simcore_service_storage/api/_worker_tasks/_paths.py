@@ -9,7 +9,7 @@ from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from pydantic import ByteSize
 from servicelib.logging_utils import log_context
-from servicelib.utils import limited_gather
+from servicelib.utils import limited_gather, raise_first_error
 
 from ...constants import MAX_CONCURRENT_S3_TASKS
 from ...dsm import get_dsm_provider
@@ -42,10 +42,9 @@ async def delete_paths(
     assert task_key  # nosec
     with log_context(_logger, logging.INFO, msg=f"delete {paths=} in {location_id=} for {user_id=}, {product_name=}"):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
-        results: list[BaseException | None] = await limited_gather(
+        results = await limited_gather(
             *[dsm.delete_path(user_id, path) for path in paths],
             reraise=False,
             limit=MAX_CONCURRENT_S3_TASKS,
         )
-        if error := next((result for result in results if isinstance(result, BaseException)), None):
-            raise error
+        raise_first_error(results)

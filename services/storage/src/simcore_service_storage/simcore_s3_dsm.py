@@ -44,7 +44,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationEr
 from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
-from servicelib.utils import ensure_ends_with, limited_gather
+from servicelib.utils import ensure_ends_with, limited_gather, raise_first_error
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -953,13 +953,12 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 logging.INFO,
                 msg=f"{src_project_uuid} -> {dst_project_uuid}: Step 3.3: effective copying {len(copy_tasks)} files",
             ):
-                copy_results: list[FileMetaData | BaseException] = await limited_gather(
+                copy_results = await limited_gather(
                     *copy_tasks,
                     reraise=False,
                     limit=MAX_CONCURRENT_S3_TASKS,
                 )
-                if error := next((result for result in copy_results if isinstance(result, BaseException)), None):
-                    raise error
+                raise_first_error(copy_results)
 
     async def _get_size_and_num_files(self, fmd: FileMetaDataAtDB) -> tuple[ByteSize | UNDEFINED_SIZE_TYPE, int]:
         if not fmd.is_directory:
