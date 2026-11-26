@@ -4,13 +4,13 @@ from typing import Annotated
 from pydantic import AnyHttpUrl, Field, TypeAdapter
 
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import PortInt, VersionTag
+from settings_library.basic_types import HostNamePortStr, PortInt, VersionTag
 
 
 class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_ENABLED: bool = True
 
-    DIRECTOR_HOST: str = "director"
+    DIRECTOR_HOST: HostNamePortStr = "director"
     DIRECTOR_PORT: PortInt = TypeAdapter(PortInt).validate_python(8000)
     DIRECTOR_VTAG: Annotated[VersionTag, Field(description="Director-v0 service API's version tag")] = "v0"
 

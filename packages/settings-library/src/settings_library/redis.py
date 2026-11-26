@@ -5,7 +5,7 @@ from pydantic.types import NonNegativeInt, SecretStr
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
-from .basic_types import PortInt
+from .basic_types import HostNamePortStr, PortInt
 
 
 class RedisDatabase(IntEnum):
@@ -28,7 +28,7 @@ class RedisDatabase(IntEnum):
 class RedisSettings(BaseCustomSettings):
     # host
     REDIS_SECURE: bool = False
-    REDIS_HOST: str = "redis"
+    REDIS_HOST: HostNamePortStr = "redis"
     REDIS_PORT: PortInt = 6789
 
     # auth
