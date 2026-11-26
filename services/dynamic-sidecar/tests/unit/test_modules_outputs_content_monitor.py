@@ -421,7 +421,7 @@ def _patch_open_to_rewrite_once_after_first_chunk(mocker: MockerFixture, target:
             self._handle.close()
 
     def _open_then_rewrite(self: Path, *args, **kwargs):
-        handle = real_open(self, *args, **kwargs)
+        handle = real_open(self, *args, **kwargs)  # pylint: disable=consider-using-with  # the monitor wraps the returned handle in with
         if args and args[0] == "rb" and self == target:
             return _RewriteAfterFirstChunk(handle)
         return handle
