@@ -14,15 +14,11 @@ HELMFILE_COMMAND_FLAGS ?=
 # utils
 #
 
-# Check that given variables are set and all have non-empty values,
-# die with an error otherwise.
-#
-# Params:
-#   1. Variable name(s) to test.
-#   2. (optional) Error message to print.
-guard-%:
-	@ if [ "${${*}}" = "" ]; then \
-		echo "Environment variable $* not set"; \
+.PHONY: _require-mise
+_require-mise:
+	@if ! command -v mise >/dev/null 2>&1; then \
+		echo "'mise' is not installed. Install it to continue."; \
+		echo "See https://mise.jdx.dev/"; \
 		exit 1; \
 	fi
 

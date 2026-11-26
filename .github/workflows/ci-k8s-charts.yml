@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/ci-k8s-charts.yml"
+      - ".github/actions/setup-k8s-toolchain/**"
       - "charts/**"
       - "k8s/**"
       - "services/**/helmfile*"

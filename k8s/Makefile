@@ -10,6 +10,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/globals.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/k8s.mk
+include $(REPO_BASE_DIR)/scripts/makefiles/utils.mk
 
 # VARIABLES ----------------------------------------------
 
@@ -20,7 +21,7 @@ KIND_CLUSTER_NAME := simcore
 ##@ Environment
 
 .PHONY: install-tools
-install-tools: ## Installs k8s tools
+install-tools: _require-mise ## Installs k8s tools
 	@cd $(CURDIR) && mise trust --quiet && mise install
 
 ##@ Cluster
@@ -71,7 +72,7 @@ helmfile-simcore-diff: .helmfile-simcore-diff ## Shows changes in simcore servic
 ##@ Tests
 
 .PHONY: helm-unittest
-helm-unittest: HELM_UNITTEST_BIN := untt # installed via mise
+helm-unittest: HELM_UNITTEST_BIN := helm-unittest # installed via mise
 helm-unittest: ## Runs helm-unittest tests of the simcore-service chart
 	@$(HELM_UNITTEST_BIN) --color --strict $(REPO_BASE_DIR)/charts/simcore-service
 
