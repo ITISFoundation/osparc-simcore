@@ -10,13 +10,14 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Final
+from typing import IO, Final
 from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.outputs import _content_monitor as monitor_module
 from simcore_service_dynamic_sidecar.modules.outputs._content_monitor import (
+    ContentCheckResult,
     PortContentMonitor,
     StabilityOutcome,
     _ScanResult,
@@ -389,6 +390,80 @@ async def test_unreadable_file_keeps_upload_eligible(
         assert any("poison.dat" in r.message for r in caplog.records)
     finally:
         poison.chmod(0o600)
+
+
+def _patch_open_to_rewrite_once_after_first_chunk(mocker: MockerFixture, target: Path, final_bytes: bytes) -> None:
+    """Wraps Path.open so the first read of `target` is rewritten mid-hash, once"""
+    real_open = Path.open
+    rewrite_pending = True
+
+    class _RewriteAfterFirstChunk:
+        def __init__(self, handle: IO[bytes]):
+            self._handle, self._reads = handle, 0
+
+        def read(self, size: int) -> bytes:
+            self._reads += 1
+            nonlocal rewrite_pending
+            if self._reads == 2 and rewrite_pending:
+                rewrite_pending = False
+                with open(self._handle.name, "r+b") as writer:  # noqa: PTH123  # Path.open is patched; the builtin avoids recursion
+                    writer.seek(0)
+                    writer.write(final_bytes)
+            return self._handle.read(size)
+
+        def fileno(self) -> int:
+            return self._handle.fileno()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            self._handle.close()
+
+    def _open_then_rewrite(self: Path, *args, **kwargs):
+        handle = real_open(self, *args, **kwargs)
+        if args and args[0] == "rb" and self == target:
+            return _RewriteAfterFirstChunk(handle)
+        return handle
+
+    mocker.patch.object(Path, "open", new=_open_then_rewrite)
+
+
+async def test_chunk_rewritten_while_hashing_is_not_cached(
+    monitor: PortContentMonitor,
+    port_dir: Path,
+    tmp_path: Path,
+    hash_pool: ThreadPoolExecutor,
+    mocker: MockerFixture,
+):
+    # a rewrite between the last read and the final fstat would otherwise cache a stale digest under fresh metadata
+    target = port_dir / "big.dat"
+    target.write_bytes(b"a" * 12)
+    final_bytes = b"b" * 12
+    mocker.patch.object(monitor_module, "_HASH_CHUNK_SIZE", 4)
+
+    reference_dir = tmp_path / "reference"
+    reference_dir.mkdir()
+    (reference_dir / "big.dat").write_bytes(final_bytes)
+    reference = PortContentMonitor(
+        port_key=_PORT_KEY,
+        directory=reference_dir,
+        hash_executor=hash_pool,
+        on_stable_content=AsyncMock(),
+    )
+    reference_fingerprint = await _stable_fingerprint(reference)
+
+    _patch_open_to_rewrite_once_after_first_chunk(mocker, target, final_bytes)
+
+    result: ContentCheckResult | None = None
+    for _ in range(3):  # the refused digest must return the port to a re-hash, never to a cache
+        result = await monitor.check_now()
+        if result.outcome is StabilityOutcome.STABLE:
+            break
+
+    assert result is not None
+    assert result.outcome is StabilityOutcome.STABLE
+    assert result.fingerprint == reference_fingerprint
 
 
 async def test_unreadable_port_directory_cannot_be_certified(

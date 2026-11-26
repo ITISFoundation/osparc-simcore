@@ -77,13 +77,25 @@ class _HashedFile(NamedTuple):
     stat_result: os.stat_result
 
 
+class _ChangedWhileHashingError(OSError):
+    """The file metadata moved between the two fstat calls around hashing"""
+
+
 def _hash_file(path: Path) -> _HashedFile:
     hasher = xxhash.xxh3_64()
     with path.open("rb") as file:
+        stat_before = os.fstat(file.fileno())
         while chunk := file.read(_HASH_CHUNK_SIZE):
             hasher.update(chunk)
         # fstat on the descriptor pairs the stat with the hashed bytes even if the path is renamed mid-read
         stat_after = os.fstat(file.fileno())
+    if (
+        stat_before.st_size != stat_after.st_size
+        or stat_before.st_mtime_ns != stat_after.st_mtime_ns
+        or stat_before.st_ctime_ns != stat_after.st_ctime_ns
+    ):
+        # a writer moved the file while it was read: the digest may not belong to stat_after
+        raise _ChangedWhileHashingError
     return _HashedFile(digest=hasher.digest(), stat_result=stat_after)
 
 
