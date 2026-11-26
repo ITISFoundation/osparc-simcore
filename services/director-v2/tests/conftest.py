@@ -81,7 +81,9 @@ def project_slug_dir(services_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def package_dir() -> Path:
-    dirpath = Path(simcore_service_director_v2.__file__).resolve().parent
+    module_file = simcore_service_director_v2.__file__
+    assert module_file is not None  # nosec
+    dirpath = Path(module_file).resolve().parent
     assert dirpath.exists()
     return dirpath
 
