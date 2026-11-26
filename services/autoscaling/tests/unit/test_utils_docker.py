@@ -14,7 +14,7 @@ import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import aiodocker
 import arrow
@@ -913,6 +913,9 @@ sleep 300
 """
 
 
+_INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=1)
+
+
 @pytest.fixture
 def example_registry_settings() -> RegistrySettings:
     return RegistrySettings(
@@ -927,7 +930,7 @@ def example_registry_settings() -> RegistrySettings:
 def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
     example_registry_settings: RegistrySettings, tmp_path: Path
 ):
-    command = get_docker_login_on_start_bash_command(example_registry_settings)
+    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file = tmp_path / "calls"
     calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "retried", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN)
@@ -941,7 +944,7 @@ def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
 def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
     example_registry_settings: RegistrySettings, tmp_path: Path
 ):
-    command = get_docker_login_on_start_bash_command(example_registry_settings)
+    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file, args_file = tmp_path / "calls", tmp_path / "args"
     calls_file.write_text("")
     args_file.write_text("")
@@ -969,9 +972,9 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_ATTEMPT_TIMEOUT_S", 1)
     monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_MAX_ATTEMPTS", 1)
-    command = get_docker_login_on_start_bash_command(example_registry_settings)
+    # a one-second budget leaves a one-second attempt after the kill delay and the retry delay are subtracted
+    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=3))
     calls_file = tmp_path / "calls"
     calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "hanging", docker=_DOCKER_HANGS_ON_LOGIN)
@@ -984,8 +987,23 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     assert time.monotonic() - started < 10, "the login attempt was not cut short by timeout"
 
 
+def test_get_docker_login_on_start_bash_command_scales_the_attempt_timeout_with_the_start_budget(
+    example_registry_settings: RegistrySettings,
+):
+    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=90))
+    # 90 s over 3 attempts, minus the 1 s kill delay and the 1 s retry delay
+    assert "timeout -k 1 28 docker login " in command, f"unexpected timeout budget in {command}"
+
+
+def test_get_docker_login_on_start_bash_command_keeps_a_positive_timeout_for_small_budgets(
+    example_registry_settings: RegistrySettings,
+):
+    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=1))
+    assert "timeout -k 1 1 docker login " in command, f"timeout would be non-positive in {command}"
+
+
 def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_settings: RegistrySettings):
-    command = get_docker_login_on_start_bash_command(example_registry_settings)
+    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
     # the boot script joins its steps on `&&`, so a step holding one would be read as several steps
     assert "&" not in command, f"the boot script joins its steps on `&&`, got {command}"
 

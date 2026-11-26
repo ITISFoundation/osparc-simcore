@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 from typing import Annotated, Final
 
@@ -18,13 +19,10 @@ DOCKER_PULL_COMMAND: Final[str] = f"{DOCKER_COMPOSE_CMD} -f {PRE_PULL_COMPOSE_PA
 # EC2 boot scripts
 #
 DOCKER_LOGIN_MAX_ATTEMPTS: Final[Annotated[PositiveInt, doc("attempts a booting machine makes to log in")]] = 3
-DOCKER_LOGIN_ATTEMPT_TIMEOUT_S: Final[
-    Annotated[PositiveInt, doc("seconds a single login may run before `timeout` sends SIGTERM")]
-] = 20
-DOCKER_LOGIN_KILL_DELAY_S: Final[
-    Annotated[PositiveInt, doc("seconds `timeout` waits after SIGTERM before it sends SIGKILL")]
-] = 1
-DOCKER_LOGIN_RETRY_DELAY_S: Final[Annotated[PositiveInt, doc("seconds between two login attempts")]] = 1
+DOCKER_LOGIN_KILL_DELAY: Final[
+    Annotated[timedelta, doc("time `timeout` waits after SIGTERM before it sends SIGKILL")]
+] = timedelta(seconds=1)
+DOCKER_LOGIN_RETRY_DELAY: Final[Annotated[timedelta, doc("time between two login attempts")]] = timedelta(seconds=1)
 
 #
 # EC2 tags

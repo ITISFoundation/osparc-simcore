@@ -103,7 +103,10 @@ def ec2_warm_buffer_startup_script(
         assert app_settings.AUTOSCALING_REGISTRY  # nosec
         if app_settings.AUTOSCALING_REGISTRY.REGISTRY_AUTH:
             startup_commands.append(
-                utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY)
+                utils_docker.get_docker_login_on_start_bash_command(
+                    app_settings.AUTOSCALING_REGISTRY,
+                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
+                )
             )
         startup_commands.append(utils_docker.write_compose_file_command(desired_pre_pull_images))
     return " && ".join(startup_commands)
