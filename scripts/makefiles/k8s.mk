@@ -3,6 +3,12 @@
 #
 
 #
+# Vars
+#
+
+K8S_DIR = $(REPO_BASE_DIR)/k8s
+
+#
 # Helmfile configuration
 #
 
@@ -23,10 +29,10 @@ _require-mise:
 	fi
 
 # run_helmfile <helmfile_file> <command>
-# Example: $(call run_helmfile,services/helmfile.yaml.gotmpl,lint)
+# Example: $(call run_helmfile,$(REPO_BASE_DIR)/services/helmfile.yaml.gotmpl,lint)
 define run_helmfile
-    cd $(REPO_BASE_DIR) || exit 1; \
-    set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
+    cd $(K8S_DIR) || exit 1; \
+    set -a; source $(REPO_BASE_DIR)/.env-devel; source $(K8S_DIR)/.env-devel-k8s-override; set +a; \
     $(HELMFILE_ENV) helmfile $(HELMFILE_GLOBAL_FLAGS) -f $(1) $(2) $(HELMFILE_COMMAND_FLAGS)
 endef
 
@@ -39,10 +45,10 @@ endef
 	@$(MAKE) .helmfile-simcore-$*
 
 .helmfile-ops-%:
-	@$(call run_helmfile,services/helmfile.local-ops.yaml.gotmpl,$*)
+	@$(call run_helmfile,$(REPO_BASE_DIR)/services/helmfile.local-ops.yaml.gotmpl,$*)
 
 .helmfile-simcore-%:
-	@$(call run_helmfile,services/helmfile.yaml.gotmpl,$*)
+	@$(call run_helmfile,$(REPO_BASE_DIR)/services/helmfile.yaml.gotmpl,$*)
 
 .PHONY: .init-swarm
 .init-swarm:
