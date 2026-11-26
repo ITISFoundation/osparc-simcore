@@ -54,12 +54,26 @@ from simcore_postgres_database.storage_models import file_meta_data, user_to_gro
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ...constants import EXPORTS_S3_PREFIX
+from ...constants import API_S3_PREFIX, EXPORTS_S3_PREFIX
 from ...exceptions.errors import InvalidFileIdentifierError
 from ...models import AccessRights
 from ._base import BaseRepository
 
 _logger = logging.getLogger(__name__)
+
+
+async def _get_registered_ancestor(
+    connection: AsyncConnection, ancestor_file_id: str
+) -> tuple[UserID, str | None] | None:
+    """Owner (user_id, project_id) of the registered directory `ancestor_file_id`, or None if unregistered"""
+    result = await connection.execute(
+        sa.select(file_meta_data.c.user_id, file_meta_data.c.project_id).where(
+            file_meta_data.c.file_id == ancestor_file_id
+        )
+    )
+    if row := result.one_or_none():
+        return UserID(row.user_id), row.project_id
+    return None
 
 
 async def _get_user_groups_ids(connection: AsyncConnection, user_id: UserID) -> list[GroupID]:
@@ -288,9 +302,47 @@ class AccessLayerRepository(BaseRepository):
 
         return access_rights
 
+    async def _get_api_data_access_rights(
+        self,
+        *,
+        connection: AsyncConnection | None,
+        user_id: UserID,
+        file_id: StorageFileID,
+    ) -> AccessRights:
+        """Rights over `api/{file_id}/{filename/with/folders}` with no own metadata entry
+
+        Children of a registered api/ directory never get an entry of their own and
+        must follow that directory's ownership. Any prefix from `api/{file_id}` up to
+        the direct parent can be the registered directory. If none is registered,
+        ownership is still not defined and the caller may claim it (first to register
+        owns).
+        """
+        components = file_id.split("/")
+        ancestor: tuple[UserID, str | None] | None = None
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            for level in range(2, len(components)):
+                ancestor = await _get_registered_ancestor(conn, "/".join(components[:level]))
+                if ancestor is not None:
+                    break
+
+        if ancestor is None:
+            return AccessRights.all()
+
+        ancestor_user_id, ancestor_project_id = ancestor
+        if int(ancestor_user_id) == user_id:
+            return AccessRights.all()
+
+        if not ancestor_project_id:
+            return AccessRights.none()
+
+        return await self.get_project_access_rights(
+            connection=connection, user_id=user_id, project_id=ProjectID(ancestor_project_id)
+        )
+
     async def _get_access_without_metardata_entry(
         self,
         *,
+        connection: AsyncConnection | None,
         user_id: UserID,
         file_id: StorageFileID,
     ) -> AccessRights:
@@ -304,16 +356,15 @@ class AccessLayerRepository(BaseRepository):
         #
 
         try:
-            parent, _, _ = file_id.split("/", maxsplit=2)
+            parent, child, _ = file_id.split("/", maxsplit=2)
 
-            if parent == "api":
-                # ownership still not defined, so we assume it is user_id
-                return AccessRights.all()
+            if parent == API_S3_PREFIX:
+                return await self._get_api_data_access_rights(connection=connection, user_id=user_id, file_id=file_id)
 
             if parent == EXPORTS_S3_PREFIX:
-                # ownership still not defined, so we assume it is user_id
+                # the path embeds the owner: exports/{user_id}/{filename}
                 # NOTE: all permissions are required for: downloading, uploading and aborting
-                return AccessRights.all()
+                return AccessRights.all() if int(child) == user_id else AccessRights.none()
 
             # otherwise assert 'parent' string corresponds to a valid UUID
             access_rights = await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(parent))
@@ -351,7 +402,7 @@ class AccessLayerRepository(BaseRepository):
         if access_rights is not None:
             return access_rights
 
-        return await self._get_access_without_metardata_entry(user_id=user_id, file_id=file_id)
+        return await self._get_access_without_metardata_entry(connection=connection, user_id=user_id, file_id=file_id)
 
     async def get_readable_project_ids(
         self,
