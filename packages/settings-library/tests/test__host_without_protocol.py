@@ -92,7 +92,7 @@ def test_host_field_rejects_protocol(
     field: str,
     required: Mapping[str, object],
     bad_value: str,
-) -> None:
+):
     with pytest.raises(ValidationError, match="without protocol"):
         settings_cls.model_validate({**required, field: bad_value})
 
@@ -106,12 +106,12 @@ def test_host_field_accepts_hostname(
     settings_cls: type[BaseCustomSettings],
     field: str,
     required: Mapping[str, object],
-) -> None:
+):
     settings = settings_cls.model_validate({**required, field: "svc.local:5000"})
     assert getattr(settings, field) == "svc.local:5000"
 
 
-def test_registry_url_trims_whitespace_and_trailing_slash(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_registry_url_trims_whitespace_and_trailing_slash():
     settings = RegistrySettings.model_validate(
         {
             "REGISTRY_AUTH": False,
@@ -122,17 +122,4 @@ def test_registry_url_trims_whitespace_and_trailing_slash(monkeypatch: pytest.Mo
         }
     )
     assert settings.REGISTRY_URL == "registry.example.com"
-    assert str(settings.api_url) == "https://registry.example.com/v2"
-
-
-def test_resolved_registry_url_has_no_double_protocol() -> None:
-    settings = RegistrySettings.model_validate(
-        {
-            "REGISTRY_AUTH": False,
-            "REGISTRY_USER": "usr",
-            "REGISTRY_PW": "pwd",
-            "REGISTRY_SSL": True,
-            "REGISTRY_URL": "registry.example.com",
-        }
-    )
     assert str(settings.api_url) == "https://registry.example.com/v2"
