@@ -64,14 +64,11 @@ _logger = logging.getLogger(__name__)
 
 
 class _RegisteredDirectory(NamedTuple):
-    """Ownership entry of a directory registered in file_meta_data"""
-
     user_id: UserID
     project_id: str | None
 
 
 async def _get_registered_ancestor(connection: AsyncConnection, ancestor_file_id: str) -> _RegisteredDirectory | None:
-    """Owner of the registered directory `ancestor_file_id`, or None if unregistered"""
     result = await connection.execute(
         sa.select(file_meta_data.c.user_id, file_meta_data.c.project_id).where(
             file_meta_data.c.file_id == ancestor_file_id
