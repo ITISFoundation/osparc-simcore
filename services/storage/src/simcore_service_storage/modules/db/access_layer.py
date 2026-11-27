@@ -38,6 +38,7 @@
 """
 
 import logging
+from pathlib import PurePosixPath
 from typing import NamedTuple
 
 import sqlalchemy as sa
@@ -68,13 +69,22 @@ class _RegisteredDirectory(NamedTuple):
     project_id: ProjectID | None
 
 
+# `parents` ends with the one-component prefix (e.g. `api`) and the relative
+# root `.`: neither can be a registered directory
+_ROOT_PARENTS_TO_DROP = 2
+
+
 def _ancestor_prefixes(file_id: str) -> list[str]:
     """Prefix of every ancestor directory of file_id, direct parent first
 
     Analogous to PurePath.parents: every ancestor, not only the direct parent.
+    Directory ids end with a slash, which PurePosixPath absorbs into the path
+    itself; include it then, so a directory registered without the trailing
+    slash still matches.
     """
-    components = file_id.split("/")
-    return ["/".join(components[:level]) for level in range(len(components) - 1, 1, -1)]
+    path = PurePosixPath(file_id)
+    prefixes = [path, *path.parents] if file_id.endswith("/") else list(path.parents)
+    return [f"{p}" for p in prefixes[:-_ROOT_PARENTS_TO_DROP]]
 
 
 async def _get_registered_directories(
