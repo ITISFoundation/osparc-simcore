@@ -8,14 +8,11 @@ on:
   pull_request:
     paths:
       - ".github/workflows/ci-build-test-k8s.yml"
-      - ".github/workflows/ci-k8s-charts.yml"
+      - ".github/actions/setup-k8s-toolchain/**"
       - "charts/**"
       - "k8s/**"
-      - "packages/pytest-simcore/**"
-      - "services/api-server/**"
       - "services/**/helmfile*"
       - "services/**/helm-values*"
-      - ".env-devel"
       - "scripts/makefiles/k8s.mk"
   workflow_dispatch:
 
