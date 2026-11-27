@@ -110,7 +110,9 @@ async def _get_registered_directories(
     }
 
 
-async def _has_registered_descendants_by_others(connection: AsyncConnection, *, file_id: str, user_id: UserID) -> bool:
+async def _has_registered_descendants_by_other_users(
+    connection: AsyncConnection, *, file_id: str, user_id: UserID
+) -> bool:
     """True if another user has entries registered as descendants of file_id, i.e.
     at paths starting with `file_id/`: file_id is matched as a directory path prefix
     """
@@ -126,16 +128,14 @@ async def _has_registered_descendants_by_others(connection: AsyncConnection, *, 
     return result.first() is not None
 
 
-async def _has_descendants_the_caller_cannot_delete(
-    connection: AsyncConnection, *, file_id: str, user_id: UserID
-) -> bool:
-    """True if a descendant entry of file_id, i.e. at a path starting with
-    `file_id/` (file_id as directory prefix), denies the caller delete rights:
-    owned by someone else without a project, or shared through a project the
-    caller cannot delete. The project rights mirror `get_project_access_rights`,
-    owner override included: the override applies only on top of a readable group
-    grant, so a caller whose grants were revoked has no rights even as project
-    owner.
+async def _can_delete_all_sub_entries(connection: AsyncConnection, *, file_id: str, user_id: UserID) -> bool:
+    """True if the caller has delete rights over every descendant entry of file_id,
+    i.e. at a path starting with `file_id/` (file_id as directory prefix). A
+    descendant the caller cannot delete is one owned by someone else without a
+    project, or shared through a project the caller cannot delete. The project
+    rights mirror `get_project_access_rights`, owner override included: the
+    override applies only on top of a readable group grant, so a caller whose
+    grants were revoked has no rights even as project owner.
     """
     user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
     private_grants = sa.select(sa.literal(1)).where(
@@ -172,7 +172,7 @@ async def _has_descendants_the_caller_cannot_delete(
         .where(
             file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/", autoescape=True),
             file_meta_data.c.user_id != user_id,
-            sa.or_(
+            ~sa.or_(
                 file_meta_data.c.project_id.is_(None),
                 ~sa.exists(
                     sa.select(sa.literal(1))
@@ -183,7 +183,7 @@ async def _has_descendants_the_caller_cannot_delete(
         )
         .limit(1)
     )
-    return result.first() is not None
+    return result.first() is None
 
 
 async def _get_user_groups_ids(connection: AsyncConnection, user_id: UserID) -> list[GroupID]:
@@ -438,7 +438,7 @@ class AccessLayerRepository(BaseRepository):
                 access_rights = await self._access_rights_of_registered_directory(
                     connection=conn, user_id=user_id, directory=group[0]
                 )
-                if (access_rights.write or access_rights.delete) and await _has_descendants_the_caller_cannot_delete(
+                if (access_rights.write or access_rights.delete) and not await _can_delete_all_sub_entries(
                     conn, file_id=file_id, user_id=user_id
                 ):
                     # deleting this path cascades into entries the caller cannot delete
@@ -450,7 +450,7 @@ class AccessLayerRepository(BaseRepository):
 
             # deleting an unregistered id cascades to everything below it, so a path
             # populated by other users is not up for grabs
-            if await _has_registered_descendants_by_others(conn, file_id=file_id, user_id=user_id):
+            if await _has_registered_descendants_by_other_users(conn, file_id=file_id, user_id=user_id):
                 return AccessRights.none()
             return AccessRights.all()
 
