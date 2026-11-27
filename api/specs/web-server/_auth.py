@@ -4,8 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, Any
-
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
@@ -13,7 +11,6 @@ from models_library.api_schemas_webserver.auth import (
 )
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError, Log
-from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login._controller.rest.auth_schemas import (
     LoginBody,
@@ -63,6 +60,10 @@ async def check_registration_invitation(check: InvitationCheck):
     "/auth/register",
     response_model=Envelope[Log],
     operation_id="auth_register",
+    responses={
+        status.HTTP_429_TOO_MANY_REQUESTS: {"model": EnvelopedError},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError},
+    },
 )
 async def register(_body: RegisterBody):
     """User registration"""
@@ -101,11 +102,12 @@ async def phone_confirmation(_body: PhoneConfirmationBody):
     status_code=status.HTTP_201_CREATED,
     operation_id="auth_login",
     responses={
-        # status.HTTP_503_SERVICE_UNAVAILABLE
         status.HTTP_401_UNAUTHORIZED: {
             "model": EnvelopedError,
             "description": "unauthorized reset due to invalid token code",
-        }
+        },
+        status.HTTP_429_TOO_MANY_REQUESTS: {"model": EnvelopedError},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError},
     },
 )
 async def login(_body: LoginBody):
@@ -165,6 +167,21 @@ async def check_auth():
 
 
 @router.post(
+    "/auth:login-guard",
+    operation_id="auth_login_guard",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "model": EnvelopedError,
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError},
+    },
+)
+async def login_guard(_body: LoginBody):
+    """checks whether a login attempt is allowed for the email, i.e. not in back-off after repeated failures"""
+
+
+@router.post(
     "/auth/reset-password",
     response_model=Envelope[Log],
     operation_id="initiate_reset_password",
@@ -210,20 +227,6 @@ async def complete_reset_password(code: str, _body: ResetPasswordConfirmation): 
 )
 async def change_email(_body: ChangeEmailBody):
     """logged in user changes email"""
-
-
-class PasswordCheckSchema(BaseModel):
-    strength: Annotated[
-        confloat(ge=0.0, le=1.0),
-        Field(
-            description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
-        ),
-    ]
-    rating: Annotated[
-        str | None,
-        Field(description="Human readable rating from infinitely weak to very strong"),
-    ] = None
-    improvements: Any | None = None
 
 
 @router.post(

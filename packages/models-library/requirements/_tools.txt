@@ -2,6 +2,10 @@
 #    uv pip compile --output-file=requirements/_tools.txt requirements/_tools.in
 annotated-doc==0.0.4
     # via typer
+annotated-types==0.8.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 astroid==4.3.4
     # via pylint
 black==26.10.1
@@ -43,6 +47,14 @@ platformdirs==4.9.4
     #   -c requirements/_test.txt
     #   black
     #   pylint
+pydantic==2.14.4
+    # via
+    #   -c requirements/_base.txt
+    #   typer
+pydantic-core==2.50.5
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 pygments==2.21.0
     # via
     #   -c requirements/_test.txt
@@ -59,10 +71,17 @@ shellingham==1.5.4
     # via typer
 tomlkit==0.14.0
     # via pylint
-typer==0.28.0
+typer==0.29.1
     # via -r requirements/_tools.in
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
+    #   pydantic
+    #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.5
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic

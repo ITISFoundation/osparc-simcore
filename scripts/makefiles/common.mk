@@ -13,6 +13,7 @@ include $(_MK_DIR)globals.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/python-lint.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/version.mk
+include $(REPO_BASE_DIR)/scripts/makefiles/utils.mk
 
 
 #

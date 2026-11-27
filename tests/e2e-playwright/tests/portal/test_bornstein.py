@@ -6,25 +6,58 @@ import contextlib
 import logging
 from collections.abc import Callable
 from datetime import timedelta
-from typing import Any
+from typing import Annotated, Any, Final
 
+from annotated_types import doc
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
     check_node_files_panel,
     get_node_id_from_service_key,
     wait_for_service_running,
 )
 from pytest_simcore.helpers.playwright_portal import restore_iframe
 
-# NOTE: bornstein-viewer is a legacy dynamic service (port of the legacy Bornstein.js, which calls
-# `waitForServices(..., waitForConnected=true)`), so the websocket node-progress path never fires.
-_IS_SERVICE_LEGACY = True
+_IS_SERVICE_LEGACY: Final[
+    Annotated[
+        bool,
+        doc(
+            "bornstein-viewer is a legacy dynamic service (port of the legacy Bornstein.js, which "
+            "calls `waitForServices(..., waitForConnected=true)`), so the websocket node-progress "
+            "path never fires"
+        ),
+    ]
+] = True
 
-# Dash inserts this element while a callback (i.e. the computation) is running
-_DASH_LOADING_CALLBACK_SELECTOR = "._dash-loading-callback"
-_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT = 30 * 1000
+_DASH_LOADING_CALLBACK_SELECTOR: Final[
+    Annotated[str, doc("element Dash inserts while a callback (i.e. the computation) is running")]
+] = "._dash-loading-callback"
+
+_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT: Final[
+    Annotated[
+        int,
+        doc(
+            "budget for the best-effort spinner-appear probe: the spinner ships inside Dash's index "
+            "HTML, but the wait also covers the iframe's own render, so it stays generous and is "
+            "not part of the computation budget"
+        ),
+    ]
+] = 30 * SECOND
+
+_DASH_COMPUTATION_TIMEOUT: Final[
+    Annotated[
+        int,
+        doc(
+            "budget for waiting for the spinner to detach: the Bornstein solver runs synchronously "
+            "in the initial Dash callback (a POST to `_dash-update-component` that only answers "
+            "when the computation is done), measured ~20 s typically and ~31 s at worst on a busy "
+            "master deployment; kept equal to the 2-minute service-start budget the CI job grants"
+        ),
+    ]
+] = 2 * MINUTE
 
 _EXPECTED_OUTPUT_FILES: list[str] = [
     "output.csv",
@@ -56,15 +89,14 @@ def test_bornstein(
     restore_iframe(page)
 
     loading_callback = iframe_locator.locator(_DASH_LOADING_CALLBACK_SELECTOR)
-    # best-effort: the computation may already be done by the time we get here
     with log_context(
         logging.INFO,
-        "Waiting for Bornstein computation to finish "
-        f"(timeout={timedelta(milliseconds=2 * _DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)})",
+        f"Waiting for Bornstein computation to finish (timeout={timedelta(milliseconds=_DASH_COMPUTATION_TIMEOUT)})",
     ):
+        # best-effort: the computation may already be done by the time we get here
         with contextlib.suppress(PlaywrightTimeoutError, TimeoutError):
             loading_callback.wait_for(state="attached", timeout=_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)
-        loading_callback.wait_for(state="detached", timeout=_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)
+        loading_callback.wait_for(state="detached", timeout=_DASH_COMPUTATION_TIMEOUT)
 
     check_node_files_panel(
         page,

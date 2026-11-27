@@ -8,11 +8,11 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 import asyncio
 import datetime
 import functools
+import inspect
 import logging
 import logging.handlers
 import queue
 import sys
-from asyncio import iscoroutinefunction
 from collections.abc import Callable, Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
@@ -101,19 +101,17 @@ class CustomFormatter(logging.Formatter):
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-_DEFAULT_FORMATTING: Final[str] = " | ".join(
-    [
-        "log_level=%(levelname)s",
-        "log_timestamp=%(asctime)s",
-        "log_source=%(name)s:%(funcName)s(%(lineno)d)[%(processName)s/%(threadName)s]",
-        "log_uid=%(log_uid)s",
-        "log_oec=%(log_oec)s",
-        "log_trace_id=%(otelTraceID)s",
-        "log_span_id=%(otelSpanID)s",
-        "log_trace_sampled=%(otelTraceSampled)s",
-        "log_msg=%(message)s",
-    ]
-)
+_DEFAULT_FORMATTING: Final[str] = " | ".join([
+    "log_level=%(levelname)s",
+    "log_timestamp=%(asctime)s",
+    "log_source=%(name)s:%(funcName)s(%(lineno)d)[%(processName)s/%(threadName)s]",
+    "log_uid=%(log_uid)s",
+    "log_oec=%(log_oec)s",
+    "log_trace_id=%(otelTraceID)s",
+    "log_span_id=%(otelSpanID)s",
+    "log_trace_sampled=%(otelTraceSampled)s",
+    "log_msg=%(message)s",
+])
 
 _LOCAL_FORMATTING: Final[str] = (
     "%(levelname)s: [%(asctime)s/%(processName)s] "
@@ -525,7 +523,7 @@ def log_decorator(
             stack_info=exc_stack_info,
         )
 
-        if iscoroutinefunction(func_or_coro):
+        if inspect.iscoroutinefunction(func_or_coro):
 
             @functools.wraps(func_or_coro)
             async def _async_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -706,28 +704,24 @@ def log_context(
 
 def guess_message_log_level(message: str) -> LogLevelInt:
     lower_case_message = message.lower().strip()
-    if lower_case_message.startswith(
-        (
-            "error",
-            "[error]",
-            "err",
-            "[err]",
-            "exception",
-            "[exception]",
-            "exc:",
-            "exc ",
-            "[exc]",
-        )
-    ):
+    if lower_case_message.startswith((
+        "error",
+        "[error]",
+        "err",
+        "[err]",
+        "exception",
+        "[exception]",
+        "exc:",
+        "exc ",
+        "[exc]",
+    )):
         return logging.ERROR
-    if lower_case_message.startswith(
-        (
-            "warning",
-            "[warning]",
-            "warn",
-            "[warn]",
-        )
-    ):
+    if lower_case_message.startswith((
+        "warning",
+        "[warning]",
+        "warn",
+        "[warn]",
+    )):
         return logging.WARNING
     return logging.INFO
 
@@ -769,12 +763,10 @@ def _store_logger_state(loggers: list[logging.Logger]) -> list[_LoggerState]:
     # log which loggers states were stored
     _logger.info(
         "Stored logger states: %s. TIP: these loggers configuration will be restored later.",
-        json_dumps(
-            [
-                f"{state.logger.name}(handlers={len(state.handlers)}, propagate={state.propagate})"
-                for state in logger_states
-            ]
-        ),
+        json_dumps([
+            f"{state.logger.name}(handlers={len(state.handlers)}, propagate={state.propagate})"
+            for state in logger_states
+        ]),
     )
     return logger_states
 
