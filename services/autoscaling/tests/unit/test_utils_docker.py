@@ -13,11 +13,12 @@ import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import aiodocker
 import arrow
 import pytest
+from annotated_types import doc
 from aws_library.ec2 import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
@@ -40,8 +41,8 @@ from models_library.services_metadata_runtime import (
 )
 from pydantic import ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.ec2_boot import BootScriptRunner
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from pytest_simcore.helpers.typing_ec2_boot import BootScriptRunner
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_autoscaling.constants import (
@@ -857,20 +858,31 @@ async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
     assert join_script_non_idempotent.count("docker swarm join") == 1
 
 
-_DOCKER_SUCCEEDS_ON_SECOND_LOGIN: Final[str] = """#!/usr/bin/env bash
+_DOCKER_SUCCEEDS_ON_SECOND_LOGIN: Final[
+    Annotated[str, doc("fake docker command that counts its calls in $CALLS_FILE and succeeds from the second on")]
+] = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
 test "$calls" -ge 2
 """
 
-_DOCKER_ALWAYS_FAILS_LOGIN: Final[str] = """#!/usr/bin/env bash
+_DOCKER_ALWAYS_FAILS_LOGIN: Final[
+    Annotated[
+        str,
+        doc("fake docker command that counts its calls in $CALLS_FILE, logs its arguments in $ARGS_FILE, always fails"),
+    ]
+] = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
 if [ -n "$ARGS_FILE" ]; then printf '%s\\n' "$*" >> "$ARGS_FILE"; fi
 exit 1
 """
 
-_DOCKER_HANGS_ON_LOGIN: Final[str] = """#!/usr/bin/env bash
+_DOCKER_HANGS_ON_LOGIN: Final[
+    Annotated[
+        str, doc("fake docker command that never returns on its own, so only `timeout` can stop its login attempt")
+    ]
+] = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
 sleep 300

@@ -18,8 +18,8 @@ from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import TypeAdapter
-from pytest_simcore.ec2_boot import BootScriptRunner
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_ec2_boot import BootScriptRunner
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceData

@@ -5,26 +5,20 @@ import secrets
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Final, Protocol
+from typing import Annotated, Final
 
 import pytest
+from annotated_types import doc
 
 from .helpers.bash_tools import create_link_to_tool_in_path, make_path_write_executable
+from .helpers.typing_ec2_boot import BootScriptRunner
 
-_EC2_BOOT_TOOLS: Final[tuple[str, ...]] = ("bash", "cat", "sleep", "timeout")
-
-
-class BootScriptRunner(Protocol):
-    """Runs a bash script with a restricted set of executables, like a booting machine would"""
-
-    def __call__(
-        self,
-        script: str,
-        executables: Mapping[str, str],
-        env: Mapping[str, str] | None = None,
-        *,
-        timeout: float = 60,
-    ) -> subprocess.CompletedProcess[str]: ...
+_EC2_BOOT_TOOLS: Final[Annotated[tuple[str, ...], doc("commands available before the boot script runs")]] = (
+    "bash",
+    "cat",
+    "sleep",
+    "timeout",
+)
 
 
 @pytest.fixture
