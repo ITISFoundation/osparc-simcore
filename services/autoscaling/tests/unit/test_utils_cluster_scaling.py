@@ -36,16 +36,16 @@ from simcore_service_autoscaling.utils.utils_docker import (
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
-def _boot_steps(startup_script: str) -> list[str]:
+def _find_boot_steps(startup_script: str) -> list[str]:
     return startup_script.split(" && ")
 
 
-def _write_executable(path: Path, content: str) -> None:
+def _make_path_write_executable(path: Path, content: str) -> None:
     path.write_text(content)
     path.chmod(0o755)
 
 
-def _link_tool(bin_dir: Path, tool: str) -> None:
+def _create_link_to_tool_in_path(bin_dir: Path, tool: str) -> None:
     tool_path = shutil.which(tool)
     assert tool_path
     (bin_dir / tool).symlink_to(tool_path)
@@ -171,7 +171,7 @@ async def test_ec2_startup_script_just_ami(
     assert not instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
-    steps = _boot_steps(startup_script)
+    steps = _find_boot_steps(startup_script)
     assert len(steps) == 2, f"expected a login and a swarm join, got {steps}"
     assert " docker login " in steps[0], f"expected the machine to log in before joining, got {steps[0]}"
     assert steps[-1].startswith("docker swarm join --availability=drain --token "), (
@@ -244,7 +244,7 @@ async def test_ec2_startup_script_with_pre_pulling(
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
-    steps = _boot_steps(startup_script)
+    steps = _find_boot_steps(startup_script)
     login = next(step for step in steps if " docker login " in step)
     join = next(step for step in steps if step.startswith("docker swarm join "))
     assert login.startswith("( "), f"expected the login to retry in a subshell, got {login}"
@@ -270,16 +270,16 @@ async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
-    executed = tmp_path / "executed"
-    executed.write_text("")
+    docker_calls_log_path = tmp_path / "docker-calls.log"
+    docker_calls_log_path.write_text("")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     for tool in ("bash", "cat", "chmod", "sleep", "timeout"):
-        _link_tool(bin_dir, tool)
-    _write_executable(
+        _create_link_to_tool_in_path(bin_dir, tool)
+    _make_path_write_executable(
         bin_dir / "docker",
         """#!/usr/bin/env bash
-echo "$*" >> "$EXECUTED"
+echo "$*" >> "$DOCKER_CALLS_LOG"
 test "$1" != login
 """,
     )
@@ -290,15 +290,15 @@ test "$1" != login
         startup_script,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        env={"PATH": f"{bin_dir}", "EXECUTED": str(executed)},
+        env={"PATH": f"{bin_dir}", "DOCKER_CALLS_LOG": str(docker_calls_log_path)},
         cwd=tmp_path,
     )
     _, stderr = await asyncio.wait_for(process.communicate(), timeout=60)
 
     assert process.returncode != 0, stderr
-    recorded = executed.read_text()
-    assert "login" in recorded, "the boot script never tried to log in"
-    assert "swarm join" not in recorded, "the machine joined the swarm without credentials"
+    logged_docker_calls = docker_calls_log_path.read_text()
+    assert "login" in logged_docker_calls, "the boot script never tried to log in"
+    assert "swarm join" not in logged_docker_calls, "the machine joined the swarm without credentials"
 
 
 async def test_ec2_startup_script_with_custom_scripts(
@@ -312,7 +312,7 @@ async def test_ec2_startup_script_with_custom_scripts(
         assert not instance_boot_specific.pre_pull_images
         startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
-        steps = _boot_steps(startup_script)
+        steps = _find_boot_steps(startup_script)
         num_custom_scripts = len(ec2_instances_boot_ami_scripts)
         assert steps[:num_custom_scripts] == ec2_instances_boot_ami_scripts, (
             f"expected the custom boot scripts first, got {steps}"
@@ -334,7 +334,7 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
-    steps = _boot_steps(startup_script)
+    steps = _find_boot_steps(startup_script)
     assert len(steps) == 1, f"expected only a swarm join without a registry, got {steps}"
     assert steps[0].startswith("docker swarm join "), f"expected the machine to join the swarm, got {steps[0]}"
     assert "docker login" not in startup_script, f"expected no login without a registry, got {startup_script}"
@@ -354,7 +354,7 @@ async def test_ec2_startup_script_with_pre_pulling_but_anonymous_registry(
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
-    steps = _boot_steps(startup_script)
+    steps = _find_boot_steps(startup_script)
     # images pull without credentials here, so a login failure must not keep the machine out of the swarm
     assert "docker login" not in startup_script, f"expected no login without registry authentication, got {steps}"
     join = next(step for step in steps if step.startswith("docker swarm join "))
