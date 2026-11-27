@@ -99,11 +99,9 @@ async def _get_registered_directories(
     }
 
 
-async def _has_entries_registered_by_others_below(
-    connection: AsyncConnection, *, file_id: str, user_id: UserID
-) -> bool:
-    """True if another user has entries registered below file_id, i.e. at paths
-    starting with `file_id/`: file_id is matched as a directory path prefix
+async def _has_registered_descendants_by_others(connection: AsyncConnection, *, file_id: str, user_id: UserID) -> bool:
+    """True if another user has entries registered as descendants of file_id, i.e.
+    at paths starting with `file_id/`: file_id is matched as a directory path prefix
     """
     result = await connection.execute(
         sa.select(sa.literal(1))
@@ -117,10 +115,10 @@ async def _has_entries_registered_by_others_below(
     return result.first() is not None
 
 
-async def _has_entries_below_the_caller_cannot_delete(
+async def _has_descendants_the_caller_cannot_delete(
     connection: AsyncConnection, *, file_id: str, user_id: UserID
 ) -> bool:
-    """True if an entry registered below file_id, i.e. at a path starting with
+    """True if a descendant entry of file_id, i.e. at a path starting with
     `file_id/` (file_id as directory prefix), denies the caller delete rights:
     owned by someone else without a project, or shared through a project the
     caller cannot delete. The project rights mirror `get_project_access_rights`,
@@ -429,7 +427,7 @@ class AccessLayerRepository(BaseRepository):
                 access_rights = await self._access_rights_of_registered_directory(
                     connection=conn, user_id=user_id, directory=group[0]
                 )
-                if (access_rights.write or access_rights.delete) and await _has_entries_below_the_caller_cannot_delete(
+                if (access_rights.write or access_rights.delete) and await _has_descendants_the_caller_cannot_delete(
                     conn, file_id=file_id, user_id=user_id
                 ):
                     # deleting this path cascades into entries the caller cannot delete
@@ -441,7 +439,7 @@ class AccessLayerRepository(BaseRepository):
 
             # deleting an unregistered id cascades to everything below it, so a path
             # populated by other users is not up for grabs
-            if await _has_entries_registered_by_others_below(conn, file_id=file_id, user_id=user_id):
+            if await _has_registered_descendants_by_others(conn, file_id=file_id, user_id=user_id):
                 return AccessRights.none()
             return AccessRights.all()
 
