@@ -1,6 +1,7 @@
 from contextlib import suppress
 
 from aiohttp import web
+from common_library.users_enums import UserRole
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import (
     AccessRightsDict,
@@ -8,6 +9,7 @@ from models_library.groups import (
     GroupID,
     GroupMember,
     GroupsByTypeTuple,
+    GroupType,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
@@ -15,10 +17,11 @@ from models_library.products import ProductName
 from models_library.users import UserID, UserNameID
 from pydantic import EmailStr
 
+from ..products import products_service
 from ..products.models import Product
 from ..users import users_service
 from . import _groups_repository
-from .exceptions import GroupNotFoundError, GroupsError
+from .exceptions import GroupNotFoundError, GroupsError, UserInsufficientRightsError
 
 #
 # GROUPS
@@ -31,6 +34,77 @@ async def get_group_by_gid(app: web.Application, group_id: GroupID) -> Group | N
     if group_db:
         return Group.model_construct(**group_db.model_dump())
     return None
+
+
+def _check_requested_rights_are_subset(
+    *,
+    user_id: UserID,
+    group_id: GroupID,
+    allowed_rights: AccessRightsDict,
+    requested_rights: AccessRightsDict,
+) -> None:
+    for permission in ("read", "write", "delete"):
+        if requested_rights[permission] and not allowed_rights[permission]:
+            raise UserInsufficientRightsError(user_id=user_id, gid=group_id, permission=permission)
+
+
+async def check_group_sharing_allowed(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    group_id: GroupID,
+    product_name: ProductName,
+    allowed_rights: AccessRightsDict,
+    requested_rights: AccessRightsDict,
+    resource_is_template: bool = False,
+) -> None:
+    """Validates that ``user_id`` — holding ``allowed_rights`` on a resource — may grant
+    ``requested_rights`` on that resource to ``group_id``.
+
+    Group-type rules mirror the client's collaborators manager:
+    - the platform Everyone group is never shareable
+    - the product Everyone group only on TEMPLATE resources by TESTER+ callers
+      (server-side twin of the client's `study.everyone.share` gate)
+    - the product support group is always shareable
+    - other STANDARD groups (organizations) require caller membership
+    - PRIMARY groups (individual users) are always shareable
+
+    Grants must also be a subset of the caller's own rights, so a collaborator can never
+    widen what they hand out (including their own row).
+
+    Raises:
+        GroupNotFoundError: if the group does not exist or the caller is not a member of
+            the target organization
+        UserInsufficientRightsError: if the group type/role gate or the rights-subset
+            check fails
+    """
+    group: Group | None = await get_group_by_gid(app, group_id)
+    if group is None:
+        raise GroupNotFoundError(gid=group_id)
+
+    product = products_service.get_product(app, product_name=product_name)
+
+    if group.group_type == GroupType.EVERYONE:
+        raise UserInsufficientRightsError(user_id=user_id, gid=group_id, permission="write")
+
+    if product.group_id is not None and group_id == product.group_id:
+        # product Everyone group
+        user_role = await users_service.get_user_role(app, user_id=user_id)
+        if not resource_is_template or user_role < UserRole.TESTER:
+            raise UserInsufficientRightsError(user_id=user_id, gid=group_id, permission="write")
+
+    elif group.group_type == GroupType.STANDARD and (
+        product.support_standard_group_id is None or group_id != product.support_standard_group_id
+    ):
+        # organization: only members may share resources with it
+        await _groups_repository.get_any_group_for_user(app, user_id=user_id, group_gid=group_id)
+
+    _check_requested_rights_are_subset(
+        user_id=user_id,
+        group_id=group_id,
+        allowed_rights=allowed_rights,
+        requested_rights=requested_rights,
+    )
 
 
 #

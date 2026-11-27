@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.projects_access_rights import (
     ProjectShareAccepted,
 )
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
@@ -312,3 +313,94 @@ async def test_share_project_with_roles(
         },
     )
     await assert_status(resp, expected_status)
+
+
+@pytest.mark.acceptance_test("regression: write-only sharee must not self-grant DELETE")
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_write_only_sharee_cannot_self_grant_delete(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as sharee:
+        # owner shares as read+write only
+        url = client.app.router["create_project_group"].url_for(
+            project_id=f"{user_project['uuid']}",
+            group_id=f"{sharee['primary_gid']}",
+        )
+        resp = await client.post(f"{url}", json={"read": True, "write": True, "delete": False})
+        await assert_status(resp, status.HTTP_201_CREATED)
+
+        async with switch_client_session_to(client, sharee):
+            # sharee raises their OWN row to delete -> forbidden (self-escalation)
+            url = client.app.router["replace_project_group"].url_for(
+                project_id=f"{user_project['uuid']}",
+                group_id=f"{sharee['primary_gid']}",
+            )
+            resp = await client.put(f"{url}", json={"read": True, "write": True, "delete": True})
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+            # sharee downgrades their own row -> allowed (subset of their rights)
+            resp = await client.put(f"{url}", json={"read": True, "write": False, "delete": False})
+            await assert_status(resp, status.HTTP_200_OK)
+
+
+@pytest.mark.acceptance_test("regression: collaborator must not grant rights they do not hold")
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_sharee_cannot_grant_delete_to_third_party(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    assert client.app
+
+    async with (
+        NewUser(app=client.app) as sharee,
+        NewUser(app=client.app) as third_user,
+    ):
+        url = client.app.router["create_project_group"].url_for(
+            project_id=f"{user_project['uuid']}",
+            group_id=f"{sharee['primary_gid']}",
+        )
+        resp = await client.post(f"{url}", json={"read": True, "write": True, "delete": False})
+        await assert_status(resp, status.HTTP_201_CREATED)
+
+        async with switch_client_session_to(client, sharee):
+            # sharee attempts to grant delete (which they lack) to a third party
+            url = client.app.router["create_project_group"].url_for(
+                project_id=f"{user_project['uuid']}",
+                group_id=f"{third_user['primary_gid']}",
+            )
+            resp = await client.post(f"{url}", json={"read": True, "write": True, "delete": True})
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+            # sharee CAN forward rights they hold
+            resp = await client.post(f"{url}", json={"read": True, "write": True, "delete": False})
+            await assert_status(resp, status.HTTP_201_CREATED)
+
+
+@pytest.mark.acceptance_test("regression: resources must not be shareable with the Everyone group")
+@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.ADMIN])
+async def test_cannot_share_with_everyone_group(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    assert client.app
+
+    url = client.app.router["create_project_group"].url_for(
+        project_id=f"{user_project['uuid']}",
+        group_id="1",  # EVERYONE group
+    )
+    resp = await client.post(f"{url}", json={"read": True, "write": True, "delete": True})
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+    # a non-existent group must be a clear 404, not a 500
+    url = client.app.router["create_project_group"].url_for(
+        project_id=f"{user_project['uuid']}",
+        group_id="9999999",
+    )
+    resp = await client.post(f"{url}", json={"read": True, "write": False, "delete": False})
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)

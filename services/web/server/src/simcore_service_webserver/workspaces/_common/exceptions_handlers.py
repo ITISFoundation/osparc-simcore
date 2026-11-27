@@ -9,6 +9,7 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from ...groups.exceptions import GroupNotFoundError, UserInsufficientRightsError
 from ...projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ..errors import (
     WorkspaceAccessForbiddenError,
@@ -20,6 +21,17 @@ _logger = logging.getLogger(__name__)
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    GroupNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("The group with ID {gid} could not be found.", _version=1),
+    ),
+    UserInsufficientRightsError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        user_message(
+            "You do not have sufficient rights for {permission} access to group {gid}.",
+            _version=1,
+        ),
+    ),
     WorkspaceGroupNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
@@ -39,14 +51,16 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "Unable to delete workspace because one or more projects are currently running. Please stop all running services and try again.",
+            "Unable to delete workspace because one or more projects are currently running. "
+            "Please stop all running services and try again.",
             _version=1,
         ),
     ),
     ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
-            "Something went wrong while stopping running services in projects within this workspace before trashing. Aborting trash.",
+            "Something went wrong while stopping running services in projects within this workspace "
+            "before trashing. Aborting trash.",
             _version=1,
         ),
     ),
