@@ -528,6 +528,24 @@ async def test_symlink_with_undecodable_target_is_scanned(
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
 
 
+async def test_adding_or_removing_a_symlink_changes_the_fingerprint(
+    monitor: PortContentMonitor, port_directory: Path, tmp_path: Path
+):
+    # a symlink is an entry of its own: its presence joins the fingerprint, like any file
+    (port_directory / "a.dat").write_bytes(b"hello")
+    first = (await monitor.check_now()).fingerprint
+
+    (tmp_path / "outside.dat").write_bytes(b"target")
+    (port_directory / "link.dat").symlink_to(tmp_path / "outside.dat")
+    with_link = (await monitor.check_now()).fingerprint
+
+    (port_directory / "link.dat").unlink()
+    without_link = (await monitor.check_now()).fingerprint
+
+    assert with_link != first
+    assert without_link == first
+
+
 async def test_names_that_are_not_valid_utf8_are_distinguished(monitor: PortContentMonitor, port_directory: Path):
     (port_directory / os.fsdecode(b"calf\xe9")).write_bytes(b"x")
     await _assert_port_content_is_stable(monitor)
