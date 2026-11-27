@@ -65,18 +65,43 @@ _logger = logging.getLogger(__name__)
 
 class _RegisteredDirectory(NamedTuple):
     user_id: UserID
+    # the file_meta_data column stores the project UUID as string (FK projects.uuid)
     project_id: str | None
 
 
-async def _get_registered_ancestor(connection: AsyncConnection, ancestor_file_id: str) -> _RegisteredDirectory | None:
+def _ancestor_prefixes(file_id: str) -> list[str]:
+    """Parent prefixes of file_id, ordered from the direct parent towards the root"""
+    components = file_id.split("/")
+    return ["/".join(components[:level]) for level in range(len(components) - 1, 1, -1)]
+
+
+async def _get_registered_directories(
+    connection: AsyncConnection, stored_file_ids: list[str]
+) -> list[_RegisteredDirectory]:
+    """Entries registered under any of stored_file_ids: the same prefix stored
+    with and without its trailing slash (a directory accepts both forms)
+    """
     result = await connection.execute(
         sa.select(file_meta_data.c.user_id, file_meta_data.c.project_id).where(
-            file_meta_data.c.file_id == ancestor_file_id
+            file_meta_data.c.file_id.in_(stored_file_ids)
         )
     )
-    if row := result.one_or_none():
-        return _RegisteredDirectory(user_id=UserID(row.user_id), project_id=row.project_id)
-    return None
+    return [_RegisteredDirectory(user_id=UserID(row.user_id), project_id=row.project_id) for row in result.fetchall()]
+
+
+async def _has_entries_registered_by_others_below(
+    connection: AsyncConnection, *, file_id: str, user_id: UserID
+) -> bool:
+    result = await connection.execute(
+        sa.select(sa.literal(1))
+        .select_from(file_meta_data)
+        .where(
+            file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/"),
+            file_meta_data.c.user_id != user_id,
+        )
+        .limit(1)
+    )
+    return result.first() is not None
 
 
 async def _get_user_groups_ids(connection: AsyncConnection, user_id: UserID) -> list[GroupID]:
@@ -312,33 +337,62 @@ class AccessLayerRepository(BaseRepository):
         user_id: UserID,
         file_id: StorageFileID,
     ) -> AccessRights:
-        """Children of an api/ directory have no metadata entry of their own and
-        follow the ownership of the nearest registered ancestor prefix. If none is
-        registered, the caller may claim the path (first to register owns).
+        """A file inside a registered api/ directory has no entry of its own and is
+        governed by its nearest registered ancestor, so a nested directory takes
+        precedence over the directories above it. Each ancestor prefix is looked up
+        with and without its trailing slash; registrations that disagree deny access.
+        A path without registered ancestor can be claimed by the caller (first to
+        register owns) unless entries of other users are already registered below it.
         """
-        components = file_id.split("/")
-        ancestor: _RegisteredDirectory | None = None
+        ancestor_prefixes = _ancestor_prefixes(file_id)
+
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            for level in range(2, len(components)):
-                ancestor = await _get_registered_ancestor(conn, "/".join(components[:level]))
-                if ancestor is not None:
-                    break
+            for prefix in ancestor_prefixes:
+                registered = await _get_registered_directories(conn, [prefix, f"{prefix}/"])
+                if not registered:
+                    continue
+                if len(set(registered)) > 1:
+                    _logger.warning(
+                        "file_meta_data holds conflicting entries for %s and %s/, revoking all rights",
+                        prefix,
+                        prefix,
+                    )
+                    return AccessRights.none()
+                return await self._access_rights_of_registered_directory(
+                    connection=connection, user_id=user_id, directory=registered[0]
+                )
 
-        if ancestor is None:
+            # deleting an unregistered id cascades to everything below it, so a path
+            # populated by other users is not up for grabs
+            if await _has_entries_registered_by_others_below(conn, file_id=file_id, user_id=user_id):
+                return AccessRights.none()
             return AccessRights.all()
 
-        ancestor_user_id, ancestor_project_id = ancestor
-        if int(ancestor_user_id) == user_id:
+    async def _access_rights_of_registered_directory(
+        self,
+        *,
+        connection: AsyncConnection | None,
+        user_id: UserID,
+        directory: _RegisteredDirectory,
+    ) -> AccessRights:
+        if int(directory.user_id) == user_id:
             return AccessRights.all()
-
-        if not ancestor_project_id:
+        if not directory.project_id:
             return AccessRights.none()
-
         return await self.get_project_access_rights(
-            connection=connection, user_id=user_id, project_id=ProjectID(ancestor_project_id)
+            connection=connection, user_id=user_id, project_id=ProjectID(directory.project_id)
         )
 
-    async def _get_access_without_metardata_entry(
+    @staticmethod
+    def _get_exports_access_rights(*, user_id: UserID, sub_path: str) -> AccessRights:
+        """The owner of an exports/ path is embedded in it: exports/{user_id}/{filename}
+
+        NOTE: all permissions are required for: downloading, uploading and aborting
+        """
+        path_owner_id = sub_path.split("/", maxsplit=1)[0]
+        return AccessRights.all() if int(path_owner_id) == user_id else AccessRights.none()
+
+    async def _get_access_without_metadata_entry(
         self,
         *,
         connection: AsyncConnection | None,
@@ -355,18 +409,16 @@ class AccessLayerRepository(BaseRepository):
         #
 
         try:
-            parent, child, _ = file_id.split("/", maxsplit=2)
+            root_folder, sub_path = file_id.split("/", maxsplit=1)
 
-            if parent == API_S3_PREFIX:
+            if root_folder == API_S3_PREFIX:
                 return await self._get_api_data_access_rights(connection=connection, user_id=user_id, file_id=file_id)
 
-            if parent == EXPORTS_S3_PREFIX:
-                # the path embeds the owner: exports/{user_id}/{filename}
-                # NOTE: all permissions are required for: downloading, uploading and aborting
-                return AccessRights.all() if int(child) == user_id else AccessRights.none()
+            if root_folder == EXPORTS_S3_PREFIX:
+                return self._get_exports_access_rights(user_id=user_id, sub_path=sub_path)
 
-            # otherwise assert 'parent' string corresponds to a valid UUID
-            access_rights = await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(parent))
+            # otherwise assert 'root_folder' string corresponds to a valid UUID
+            access_rights = await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(root_folder))
             if not access_rights:
                 _logger.warning(
                     "File %s references a project that does not exists in db",
@@ -401,7 +453,7 @@ class AccessLayerRepository(BaseRepository):
         if access_rights is not None:
             return access_rights
 
-        return await self._get_access_without_metardata_entry(connection=connection, user_id=user_id, file_id=file_id)
+        return await self._get_access_without_metadata_entry(connection=connection, user_id=user_id, file_id=file_id)
 
     async def get_readable_project_ids(
         self,

@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
+from models_library.api_schemas_storage.storage_schemas import UNDEFINED_SIZE
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -19,10 +20,12 @@ from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_postgres_database.storage_models import file_meta_data
+from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB
 from simcore_service_storage.modules.db.access_layer import (
     AccessLayerRepository,
     AccessRights,
 )
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -122,35 +125,42 @@ async def test_get_readable_project_ids_shared_workspace(
     assert project_id in readable
 
 
-async def _insert_fmd(
+# api/ file ids look like `api/{api_dataset_id}/{folders}/{file_name}`: only uploaded
+# files get a file_meta_data entry, plus directories registered via the paths API
+# (stored with or without trailing slash). Files inside a registered directory have no
+# entry of their own and are governed by the nearest registered directory above them.
+
+
+async def _insert_registered_directory(
     engine: AsyncEngine,
     *,
     file_id: str,
     user_id: UserID,
-    is_directory: bool,
-    project_id: str | None = None,
+    project_id: ProjectID | None = None,
 ) -> None:
+    fmd = FileMetaData.from_simcore_node(
+        user_id=user_id,
+        file_id=file_id,
+        bucket="simcore-testing-bucket",
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=None,
+        file_size=UNDEFINED_SIZE,
+        is_directory=True,
+        project_id=f"{project_id}" if project_id else None,
+    )
     async with engine.begin() as conn:
-        await conn.execute(
-            file_meta_data.insert().values(
-                location_id="0",
-                location="simcore.s3",
-                bucket_name="simcore-testing-bucket",
-                object_name=file_id,
-                project_id=project_id,
-                user_id=user_id,
-                file_id=file_id,
-                file_size=1024 if not is_directory else None,
-                created_at=sa.func.now(),
-                last_modified=sa.func.now(),
-                is_directory=is_directory,
-            )
-        )
+        await conn.execute(file_meta_data.insert().values(FileMetaDataAtDB.model_validate(fmd).model_dump()))
 
 
-class _RegisteredApiDirectory(NamedTuple):
-    directory_file_id: str
-    child_file_id: str
+async def _remove_registered_directories(engine: AsyncEngine, file_ids: list[str]) -> None:
+    async with engine.begin() as conn:
+        await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
+
+
+class _ApiDirectory(NamedTuple):
+    directory_file_id: str  # the registered directory, as stored in file_meta_data
+    file_in_directory_id: str  # a file inside it, with no entry of its own
 
 
 @asynccontextmanager
@@ -160,57 +170,117 @@ async def _registered_api_directory(
     owner_id: UserID,
     project_id: ProjectID | None = None,
     directory_suffix: str = "data",
-) -> AsyncIterator[_RegisteredApiDirectory]:
-    api_file_id = f"{uuid4()}"
-    directory_file_id = f"api/{api_file_id}/{directory_suffix}"
-    child_file_id = f"{directory_file_id}/secret.csv"
-    await _insert_fmd(
-        engine,
-        file_id=directory_file_id,
-        user_id=owner_id,
-        is_directory=True,
-        project_id=f"{project_id}" if project_id else None,
-    )
+    trailing_slash: bool = False,
+) -> AsyncIterator[_ApiDirectory]:
+    directory_file_id = f"api/{uuid4()}/{directory_suffix}"
+    if trailing_slash:
+        directory_file_id += "/"
+    file_in_directory_id = f"{directory_file_id.rstrip('/')}/file.txt"
+
+    await _insert_registered_directory(engine, file_id=directory_file_id, user_id=owner_id, project_id=project_id)
     try:
-        # the child has no entry of its own: that is the layout of a synced directory
-        yield _RegisteredApiDirectory(directory_file_id=directory_file_id, child_file_id=child_file_id)
+        yield _ApiDirectory(directory_file_id=directory_file_id, file_in_directory_id=file_in_directory_id)
     finally:
-        async with engine.begin() as conn:
-            await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id == directory_file_id))
+        await _remove_registered_directories(engine, [directory_file_id])
 
 
-async def test_api_directory_children_follow_directory_ownership(
+async def test_files_in_registered_api_directory_follow_directory_ownership(
     user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
 ):
     repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
 
     async with _registered_api_directory(sqlalchemy_async_engine, owner_id=user_id) as api_directory:
-        access = await repository.get_file_access_rights(user_id=user_id, file_id=api_directory.child_file_id)
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=api_directory.file_in_directory_id)
         assert access == AccessRights.all()
 
-        # a foreign user must get nothing on a child of someone else's api/ directory
-        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=api_directory.child_file_id)
+        # a foreign user must get nothing on a file inside someone else's api/ directory
+        access = await repository.get_file_access_rights(
+            user_id=other_user_id, file_id=api_directory.file_in_directory_id
+        )
         assert access == AccessRights.none()
 
 
-async def test_api_subdirectory_children_follow_directory_ownership(
+async def test_files_in_nested_registered_api_directory_follow_directory_ownership(
     user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
 ):
-    # the registered directory is a sub-folder, not the api/{file_id} root:
-    # the ancestor scan must reach the child's direct parent
+    # the registered directory is a nested folder, not the api/{api_dataset_id} root:
+    # the ancestor lookup must reach the file's direct parent
     repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
 
     async with _registered_api_directory(
         sqlalchemy_async_engine, owner_id=user_id, directory_suffix="data/sub"
     ) as api_directory:
-        access = await repository.get_file_access_rights(user_id=user_id, file_id=api_directory.child_file_id)
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=api_directory.file_in_directory_id)
         assert access == AccessRights.all()
 
-        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=api_directory.child_file_id)
+        access = await repository.get_file_access_rights(
+            user_id=other_user_id, file_id=api_directory.file_in_directory_id
+        )
         assert access == AccessRights.none()
 
 
-async def test_api_directory_children_follow_project_sharing(
+async def test_api_directory_registered_with_trailing_slash_governs_files_inside_it(
+    user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    # a directory may be stored as `path/` (see SimcoreS3DirectoryID) or `path`
+    repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+    async with _registered_api_directory(
+        sqlalchemy_async_engine, owner_id=user_id, trailing_slash=True
+    ) as api_directory:
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=api_directory.file_in_directory_id)
+        assert access == AccessRights.all()
+
+        access = await repository.get_file_access_rights(
+            user_id=other_user_id, file_id=api_directory.file_in_directory_id
+        )
+        assert access == AccessRights.none()
+
+
+async def test_files_in_api_directory_governed_by_nearest_registered_directory(
+    user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    # other_user_id owns the outer directory, user_id the nested one: the files in the
+    # nested directory must follow the nested directory, not the outer one
+    api_dataset_id = f"{uuid4()}"
+    outer_directory = f"api/{api_dataset_id}/data"
+    inner_directory = f"{outer_directory}/sub"
+    file_in_directory_id = f"{inner_directory}/file.txt"
+
+    await _insert_registered_directory(sqlalchemy_async_engine, file_id=outer_directory, user_id=other_user_id)
+    await _insert_registered_directory(sqlalchemy_async_engine, file_id=inner_directory, user_id=user_id)
+    try:
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=file_in_directory_id)
+        assert access == AccessRights.all()
+
+        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=file_in_directory_id)
+        assert access == AccessRights.none()
+    finally:
+        await _remove_registered_directories(sqlalchemy_async_engine, [outer_directory, inner_directory])
+
+
+async def test_conflicting_api_directory_registrations_deny_access(
+    user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    # the same prefix registered twice with different owners under both stored forms
+    directory_without_slash = f"api/{uuid4()}/data"
+    directory_with_slash = f"{directory_without_slash}/"
+    file_in_directory_id = f"{directory_with_slash}file.txt"
+
+    await _insert_registered_directory(sqlalchemy_async_engine, file_id=directory_without_slash, user_id=user_id)
+    await _insert_registered_directory(sqlalchemy_async_engine, file_id=directory_with_slash, user_id=other_user_id)
+    try:
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+        for requester in (user_id, other_user_id):
+            access = await repository.get_file_access_rights(user_id=requester, file_id=file_in_directory_id)
+            assert access == AccessRights.none()
+    finally:
+        await _remove_registered_directories(sqlalchemy_async_engine, [directory_without_slash, directory_with_slash])
+
+
+async def test_files_in_registered_api_directory_follow_project_sharing(
     user_id: UserID,
     collaborator_id: UserID,
     project_id: ProjectID,
@@ -225,7 +295,9 @@ async def test_api_directory_children_follow_project_sharing(
     async with _registered_api_directory(
         sqlalchemy_async_engine, owner_id=user_id, project_id=project_id
     ) as api_directory:
-        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=api_directory.child_file_id)
+        access = await repository.get_file_access_rights(
+            user_id=collaborator_id, file_id=api_directory.file_in_directory_id
+        )
         assert access.read is True
         assert access.write is False
 
@@ -233,11 +305,34 @@ async def test_api_directory_children_follow_project_sharing(
 async def test_unregistered_api_directory_is_claimable_by_caller(
     other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
 ):
-    # nothing registered anywhere under api/{file_id}: first to register owns
+    # nothing registered anywhere under api/{api_dataset_id}: first to register owns
     repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
     file_id = f"api/{uuid4()}/data/new-file.txt"
     access = await repository.get_file_access_rights(user_id=other_user_id, file_id=file_id)
     assert access == AccessRights.all()
+
+
+async def test_unregistered_api_directory_with_foreign_contents_is_not_claimable(
+    user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    # deleting an unregistered id cascades to everything below it, so a directory
+    # already populated by another user must not be claimable by the caller
+    api_dataset_id = f"{uuid4()}"
+    parent_directory = f"api/{api_dataset_id}/data"
+    registered_subdirectory = f"{parent_directory}/sub"
+
+    await _insert_registered_directory(sqlalchemy_async_engine, file_id=registered_subdirectory, user_id=user_id)
+    try:
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=parent_directory)
+        assert access == AccessRights.none()
+
+        # the owner can still operate on their own unregistered parent directory
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=parent_directory)
+        assert access == AccessRights.all()
+    finally:
+        await _remove_registered_directories(sqlalchemy_async_engine, [registered_subdirectory])
 
 
 async def test_exports_file_access_bound_to_owner(
