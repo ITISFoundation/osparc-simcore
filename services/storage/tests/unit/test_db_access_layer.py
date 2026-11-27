@@ -274,6 +274,27 @@ async def test_conflicting_api_directory_registrations_deny_access(
             assert access == AccessRights.none()
 
 
+async def test_api_directory_registered_in_both_stored_forms_by_same_owner_is_not_conflicting(
+    user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    # the same directory stored with and without trailing slash by its owner is
+    # one registration, not a conflict: access stays governed by it
+    directory = f"api/{uuid4()}/data"
+    file_in_directory_id = f"{directory}/file.txt"
+
+    async with _registered_directories(
+        sqlalchemy_async_engine,
+        [(directory, user_id), (f"{directory}/", user_id)],
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=file_in_directory_id)
+        assert access == AccessRights.all()
+
+        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=file_in_directory_id)
+        assert access == AccessRights.none()
+
+
 async def test_api_directory_ancestor_denies_unregistered_path_with_foreign_contents(
     user_id: UserID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
 ):

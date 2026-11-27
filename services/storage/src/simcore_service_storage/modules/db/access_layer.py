@@ -101,7 +101,7 @@ async def _has_entries_registered_by_others_below(
         sa.select(sa.literal(1))
         .select_from(file_meta_data)
         .where(
-            file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/"),
+            file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/", autoescape=True),
             file_meta_data.c.user_id != user_id,
         )
         .limit(1)
