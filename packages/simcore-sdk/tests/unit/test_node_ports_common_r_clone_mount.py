@@ -58,6 +58,7 @@ from tenacity import (
     wait_fixed,
 )
 from types_aiobotocore_s3 import S3Client
+from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 _dampen_noisy_loggers(("botocore", "aiobotocore", "aioboto3", "moto.server"))
 
@@ -119,7 +120,9 @@ async def s3_client(r_clone_settings: RCloneSettings, bucket_name: S3BucketName)
         # Cleanup: remove all files from bucket
         response = await client.list_objects_v2(Bucket=bucket_name)
         if "Contents" in response:
-            objects_to_delete = [{"Key": obj["Key"]} for obj in response["Contents"]]
+            objects_to_delete: list[ObjectIdentifierTypeDef] = [
+                {"Key": key} for obj in response["Contents"] if (key := obj.get("Key"))
+            ]
             if objects_to_delete:
                 await client.delete_objects(Bucket=bucket_name, Delete={"Objects": objects_to_delete})
 
@@ -314,7 +317,8 @@ async def _get_file_checksums_from_s3(
 
     checksums = {}
     for obj in response.get("Contents", []):
-        key = obj["Key"]
+        if (key := obj.get("Key")) is None:
+            continue
         file_response = await s3_client.get_object(Bucket=bucket_name, Key=key)
         checksum = await create_sha256_checksum(file_response["Body"])
         relative_path = Path(key).relative_to(Path(remote_path))
@@ -1049,3 +1053,123 @@ async def test_start_mount_recreates_stale_reconnected_container(
     assert remove_container_call_count.call_count == 1, "stale container must be removed exactly once"
     assert wait_ready_call_count.call_count == 2, "interface readiness must be checked for both attempts"
     assert mocked_tracked_mount._rc_client.rc_port == fresh_port, "new container uses the fresh port"  # noqa: SLF001
+
+
+@pytest.fixture
+def make_manager_with_mounts() -> Callable[[dict[Path, AsyncMock], int], RCloneMountManager]:
+    """Builds an RCloneMountManager tracking one mount per given path, with mocked mounts."""
+
+    def _make(mounts: dict[Path, AsyncMock], index: int) -> RCloneMountManager:
+        manager = object.__new__(RCloneMountManager)
+        manager._task_ensure_mounts_working = None  # noqa: SLF001
+        manager.delegate = AsyncMock()
+        manager._tracked_mounts = {}  # noqa: SLF001
+        manager._reverse_path_search = {}  # noqa: SLF001
+        manager._mount_lifecycle_locks = {}  # noqa: SLF001
+        for path, mount in mounts.items():
+            mount.local_mount_path = path
+            mount.index = index
+            mount_id = get_mount_id(path, index)
+            manager._tracked_mounts[mount_id] = mount  # noqa: SLF001
+            manager._reverse_path_search[mount_id] = cast(StorageFileID, "remote/path")  # noqa: SLF001
+            manager._mount_lifecycle_locks[mount_id] = asyncio.Lock()  # noqa: SLF001
+        return manager
+
+    return _make
+
+
+async def test_ensure_unmounted_keeps_mount_tracked_when_transfer_wait_fails(
+    tmp_path: Path,
+    index: int,
+    make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],
+):
+    tracked_mount = AsyncMock()
+    tracked_mount.wait_for_all_transfers_to_complete.side_effect = RuntimeError("transfers never drained")
+    manager = make_manager_with_mounts({tmp_path: tracked_mount}, index)
+
+    with pytest.raises(RuntimeError):
+        await manager.ensure_unmounted(local_mount_path=tmp_path, index=index)
+
+    assert manager.is_mount_tracked(local_mount_path=tmp_path, index=index)
+    tracked_mount.stop_mount.assert_not_awaited()
+
+
+async def test_ensure_unmounted_untracks_mount_after_successful_stop(
+    tmp_path: Path,
+    index: int,
+    make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],
+):
+    tracked_mount = AsyncMock()
+    manager = make_manager_with_mounts({tmp_path: tracked_mount}, index)
+
+    await manager.ensure_unmounted(local_mount_path=tmp_path, index=index)
+
+    tracked_mount.stop_mount.assert_awaited_once()
+    assert not manager.is_mount_tracked(local_mount_path=tmp_path, index=index)
+
+
+async def test_responsiveness_worker_skips_mount_while_unmounting(
+    tmp_path: Path,
+    index: int,
+    make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],
+):
+    """A mount whose stop is in flight must not be recreated by the worker:
+    the unmount would then untrack a freshly created running container.
+    """
+    tracked_mount = AsyncMock()
+    wait_started = asyncio.Event()
+    wait_release = asyncio.Event()
+
+    async def _slow_transfer_wait() -> None:
+        wait_started.set()
+        await wait_release.wait()
+
+    tracked_mount.wait_for_all_transfers_to_complete.side_effect = _slow_transfer_wait
+    tracked_mount.is_healthy.return_value = False
+    manager = make_manager_with_mounts({tmp_path: tracked_mount}, index)
+
+    unmount = asyncio.create_task(manager.ensure_unmounted(local_mount_path=tmp_path, index=index))
+    await wait_started.wait()
+
+    await manager._worker_ensure_mount_is_responsive()  # noqa: SLF001
+
+    assert not tracked_mount.start_mount.await_count, "worker must not restore a mount being unmounted"
+
+    wait_release.set()
+    await unmount
+    assert not manager.is_mount_tracked(local_mount_path=tmp_path, index=index)
+
+
+async def test_responsiveness_worker_restores_unhealthy_mount(
+    tmp_path: Path,
+    index: int,
+    make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],
+):
+    tracked_mount = AsyncMock()
+    tracked_mount.is_healthy.return_value = False
+    manager = make_manager_with_mounts({tmp_path: tracked_mount}, index)
+
+    await manager._worker_ensure_mount_is_responsive()  # noqa: SLF001
+
+    tracked_mount.stop_mount.assert_awaited_once_with(skip_transfer_wait=True)
+    tracked_mount.start_mount.assert_awaited_once()
+
+
+async def test_teardown_unmounts_healthy_mount_when_another_mount_fails(
+    tmp_path: Path,
+    index: int,
+    make_manager_with_mounts: Callable[[dict[Path, AsyncMock], int], RCloneMountManager],
+):
+    failing_mount = AsyncMock()
+    failing_mount.wait_for_all_transfers_to_complete.side_effect = RuntimeError("unreachable rclone")
+    healthy_mount = AsyncMock()
+
+    manager = make_manager_with_mounts(
+        {tmp_path / "failing": failing_mount, tmp_path / "healthy": healthy_mount},
+        index,
+    )
+
+    await manager.teardown()
+
+    failing_mount.stop_mount.assert_not_awaited()
+    healthy_mount.stop_mount.assert_awaited_once()

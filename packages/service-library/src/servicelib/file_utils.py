@@ -1,7 +1,6 @@
-import asyncio
 import hashlib
 import shutil
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 from logging import Logger
 from pathlib import Path
@@ -15,12 +14,14 @@ from aiofiles.os import remove
 from aiofiles.os import wrap as sync_to_async
 from pydantic import ByteSize, TypeAdapter
 
+from .utils import limited_gather
+
 CHUNK_4KB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("4kb")  # 4K blocks
 CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8MiB")  # 8mIB blocks
 
 
-class AsyncStream(Protocol):
-    async def read(self, size: int = -1) -> bytes: ...
+class _AsyncStream(Protocol):
+    async def read(self, size: int = -1, /) -> bytes: ...
 
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
@@ -39,12 +40,12 @@ async def _rm(path: Path, *, ignore_errors: bool):
 async def remove_directory(path: Path, *, only_children: bool = False, ignore_errors: bool = False) -> None:
     """Optional parameter allows to remove all children and keep directory"""
     if only_children:
-        await asyncio.gather(*[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")])
+        await limited_gather(*[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")], limit=2)  # noqa: ASYNC240
     else:
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
-async def create_sha256_checksum(async_stream: AsyncStream, *, chunk_size: ByteSize = CHUNK_8MB) -> str:
+async def create_sha256_checksum(async_stream: _AsyncStream, *, chunk_size: ByteSize = CHUNK_8MB) -> str:
     """
     Usage:
     import aiofiles
@@ -55,15 +56,14 @@ async def create_sha256_checksum(async_stream: AsyncStream, *, chunk_size: ByteS
     SEE https://ant.apache.org/manual/Tasks/checksum.html
     WARNING: bandit reports the use of insecure MD2, MD4, MD5, or SHA1 hash function.
     """
-    sha256_hash = hashlib.sha256()  # nosec
-    return await _eval_hash_async(async_stream, sha256_hash, chunk_size)
+    return await _eval_hash_async(async_stream, chunk_size)
 
 
 async def _eval_hash_async(
-    async_stream: AsyncStream,
-    hasher: "hashlib._Hash",
+    async_stream: _AsyncStream,
     chunk_size: ByteSize,
 ) -> str:
+    hasher = hashlib.sha256()  # nosec
     while chunk := await async_stream.read(chunk_size):
         hasher.update(chunk)
     digest = hasher.hexdigest()
@@ -80,7 +80,7 @@ def _get_directory_snapshot(path: Path) -> dict[str, tuple[float, int]]:
 
 
 @contextmanager
-def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterator[None]:
+def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Generator[None]:
     before: dict[str, tuple[float, int]] = _get_directory_snapshot(path)
     yield
     after: dict[str, tuple[float, int]] = _get_directory_snapshot(path)
@@ -116,7 +116,7 @@ def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterato
 
 
 @asynccontextmanager
-async def temporary_text_file(content: str) -> AsyncIterator[str]:
+async def temporary_text_file(content: str) -> AsyncGenerator[str]:
     async with tempfile.NamedTemporaryFile("w") as f:
         await f.write(content)
         await f.flush()

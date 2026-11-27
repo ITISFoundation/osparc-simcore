@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager, suppress
@@ -7,6 +8,7 @@ from typing import Final
 from aiodocker import DockerError
 from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import (
     CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
@@ -23,15 +25,34 @@ from .instrumentation import get_instrumentation
 
 _logger = logging.getLogger(__name__)
 
-_TRANSPORT_ENDPOINT_IS_NOT_CONNECTED_SUBSTR: Final[str] = "transport endpoint is not connected"
+_STALE_MOUNTPOINT_ERROR_SUBSTRS: Final[tuple[str, ...]] = (
+    "transport endpoint is not connected",
+    "device or resource busy",
+)
+
+_UNMOUNT_HELPER_TIMEOUT_S: Final = 30
+
+
+class VolumeMountpointInUseError(RuntimeError):
+    """A running container binds the mountpoint, so the lazy unmount must not run"""
+
+    def __init__(self, *, volume_name: str, mountpoint: Path, after_unmount: bool) -> None:
+        when = "after" if after_unmount else "before"
+        super().__init__(
+            f"volume '{volume_name}' mountpoint '{mountpoint}' held by a running container {when} lazy unmount"
+        )
+        self.volume_name = volume_name
+        self.mountpoint = mountpoint
+        self.after_unmount = after_unmount
 
 
 def _reverse_string(to_reverse: str) -> str:
     return to_reverse[::-1]
 
 
-def _is_transport_endpoint_not_connected_error(exc: DockerError) -> bool:
-    return _TRANSPORT_ENDPOINT_IS_NOT_CONNECTED_SUBSTR in str(exc).lower()
+def _is_stale_mountpoint_error(exc: DockerError) -> bool:
+    error_text = str(exc).lower()
+    return any(sub in error_text for sub in _STALE_MOUNTPOINT_ERROR_SUBSTRS)
 
 
 _EXCLUDE_VOLUMES: Final[tuple[str, ...]] = (
@@ -49,9 +70,13 @@ def _does_volume_require_backup(volume_name: str) -> bool:
 
 
 async def get_unused_dynamic_sidecar_volumes(docker: Docker) -> set[str]:
-    """Returns all volumes unused by sidecars"""
+    """Returns all dynamic-sidecar volumes not referenced by any container"""
     volumes = await docker.volumes.list()
-    all_volumes: set[str] = {volume["Name"] for volume in volumes["Volumes"]}
+    volume_infos: list[dict] = volumes["Volumes"] or []
+    all_volumes: set[str] = {volume["Name"] for volume in volume_infos}
+    volume_names_by_mountpoint: dict[str, str] = {
+        str(Path(volume["Mountpoint"])): volume["Name"] for volume in volume_infos if volume.get("Mountpoint")
+    }
 
     containers = await docker.containers.list(all=True)
 
@@ -59,9 +84,17 @@ async def get_unused_dynamic_sidecar_volumes(docker: Docker) -> set[str]:
     for container in containers:
         container_info = await container.show()
         mounts = container_info.get("Mounts", [])
+        container_is_running = container_info.get("State", {}).get("Running", False)
         for mount in mounts:
             if mount["Type"] == "volume":
                 used_volumes.add(mount["Name"])
+            # rclone mount containers (rcm-*) bind the volume mountpoint; exited ones hold no mount
+            elif (
+                container_is_running
+                and mount["Type"] == "bind"
+                and (volume_name := volume_names_by_mountpoint.get(str(Path(mount["Source"]))))
+            ):
+                used_volumes.add(volume_name)
 
     unused_volumes = all_volumes - used_volumes
     return {v for v in unused_volumes if v.startswith(PREFIX_DYNAMIC_SIDECAR_VOLUMES)}
@@ -95,6 +128,50 @@ async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> N
         _logger.debug("No backup is required for '%s'", volume_name)
 
 
+async def _volume_mountpoint_is_held_by_running_container(docker: Docker, mountpoint: Path) -> bool:
+    mountpoint_path = Path(mountpoint)
+    containers = await docker.containers.list(all=False)  # already restricted to running
+    for container in containers:
+        container_info = await container.show()
+        for mount in container_info.get("Mounts", []):
+            if mount["Type"] == "bind" and Path(mount["Source"]).is_relative_to(mountpoint_path):
+                return True
+    return False
+
+
+async def _resolve_mountpoint(volume: DockerVolume) -> Path | None:
+    try:
+        volume_info = await volume.show()
+        mountpoint_str = volume_info.get("Mountpoint")
+        return Path(mountpoint_str) if mountpoint_str else None
+    except DockerError as show_err:
+        if show_err.status == status.HTTP_404_NOT_FOUND:
+            raise
+        return None
+
+
+async def _ensure_not_held(docker: Docker, mountpoint: Path, *, volume_name: str, after_unmount: bool) -> None:
+    if await _volume_mountpoint_is_held_by_running_container(docker, mountpoint):
+        raise VolumeMountpointInUseError(volume_name=volume_name, mountpoint=mountpoint, after_unmount=after_unmount)
+
+
+async def _lazy_unmount_stale_mountpoint(docker: Docker, volume: DockerVolume, *, volume_name: str) -> Path | None:
+    """Lazy-unmounts the volume's stale mountpoint; returns it, or None if unresolvable"""
+    mountpoint = await _resolve_mountpoint(volume)
+    if mountpoint is None:
+        return None
+
+    # a running binder means the volume went live again; the unmount would propagate via rshared and kill its mount
+    await _ensure_not_held(docker, mountpoint, volume_name=volume_name, after_unmount=False)
+
+    with log_context(_logger, logging.INFO, f"lazy unmount '{mountpoint}' for volume '{volume_name}'"):
+        await _try_lazy_unmount(docker, mountpoint)
+
+    # narrows, does not close, the race: a binder that attached meanwhile already had its mount propagated
+    await _ensure_not_held(docker, mountpoint, volume_name=volume_name, after_unmount=True)
+    return mountpoint
+
+
 async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool) -> None:
     """Removes a volume and backs data up if required"""
     with (
@@ -105,18 +182,12 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
         if requires_backup:
             await _backup_volume(app, docker, volume_name=volume_name)
 
-        settings: ApplicationSettings = app.state.settings
-        get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
-
         volume = DockerVolume(docker, volume_name)
 
         try:
             await volume.delete()
         except DockerError as err:
-            if err.status == status.HTTP_404_NOT_FOUND:
-                raise
-
-            if not _is_transport_endpoint_not_connected_error(err):
+            if err.status == status.HTTP_404_NOT_FOUND or not _is_stale_mountpoint_error(err):
                 raise
 
             # NOTE: This happens on hosts with stale FUSE mountpoints under the
@@ -127,31 +198,40 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
                 volume_name,
             )
 
-            mountpoint: Path | None = None
             try:
-                volume_info = await volume.show()
-                mountpoint_str = volume_info.get("Mountpoint")
-                mountpoint = Path(mountpoint_str) if mountpoint_str else None
-            except DockerError as show_err:
-                if show_err.status == status.HTTP_404_NOT_FOUND:
-                    raise
+                mountpoint = await _lazy_unmount_stale_mountpoint(docker, volume, volume_name=volume_name)
+            except VolumeMountpointInUseError as in_use:
+                # expected outcome: the periodic cleanup worker retries on the next cycle
+                _logger.warning("%s; skipping deletion", in_use)
+                return
 
-            if mountpoint is not None:
-                with log_context(
-                    _logger,
-                    logging.INFO,
-                    f"lazy unmount of stale mountpoint '{mountpoint}' for volume '{volume_name}'",
-                ):
-                    await _try_lazy_unmount(docker, mountpoint)
+            try:
+                await volume.delete(force=True)
+            except DockerError as retry_err:
+                if mountpoint is not None and _is_stale_mountpoint_error(retry_err):
+                    # error level: recovery requires host intervention; the troubleshooting kwargs
+                    # carry the details, so no traceback is attached
+                    _logger.error(  # noqa: TRY400
+                        **create_troubleshooting_log_kwargs(
+                            f"Volume '{volume_name}' is still busy after lazy unmount",
+                            error=retry_err,
+                            error_context={"mountpoint": f"{mountpoint}"},
+                            tip=f"run 'umount -l {mountpoint}' on the host",
+                        ),
+                    )
+                    return
+                raise
 
-            await volume.delete(force=True)
-
+        settings: ApplicationSettings = app.state.settings
         get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
 
 
 def _find_volumes_root(path: Path) -> Path:
     # path =  /mnt/sdb1/volumes/volume_name...
     parts = path.parts
+    if "volumes" not in parts:
+        error_msg = f"unexpected docker data-root layout: 'volumes' not in path '{path}'"
+        raise ValueError(error_msg)
     first_occurrence = parts.index("volumes")
     return Path(*parts[: first_occurrence + 1])
 
@@ -164,9 +244,9 @@ async def _try_lazy_unmount(docker: Docker, mountpoint: Path) -> None:
     container = await docker.containers.run(
         config={
             "Image": f"rclone/rclone:{r_clone_version}",
-            "Entrypoint": ["sh", "-c", f"fusermount3 -uz {mountpoint}"],
+            "Entrypoint": ["fusermount3", "-uz", f"{mountpoint}"],  # no shell: no quoting issues
             "HostConfig": {
-                "AutoRemove": True,
+                # no AutoRemove: the container must survive exit long enough to fetch its logs
                 "CapAdd": ["SYS_ADMIN"],
                 "Devices": [
                     {
@@ -182,15 +262,15 @@ async def _try_lazy_unmount(docker: Docker, mountpoint: Path) -> None:
             },
         }
     )
-
-    # Wait for container to stop and get its exit status
-    result = await container.wait()
-    status_code = result.get("StatusCode", 1)
-
-    if status_code != 0:
-        logs = await container.log(stdout=True, stderr=True)
-        msg = f"rclone helper failed (exit {status_code}):\n{''.join(logs)}"
-        raise RuntimeError(msg)
+    try:
+        result = await asyncio.wait_for(container.wait(), timeout=_UNMOUNT_HELPER_TIMEOUT_S)
+        if (status_code := result.get("StatusCode", 1)) != 0:
+            logs = await container.log(stdout=True, stderr=True)
+            msg = f"rclone helper failed (exit {status_code}):\n{''.join(logs)}"
+            raise RuntimeError(msg)
+    finally:
+        with suppress(DockerError):
+            await container.delete(force=True)
 
 
 async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> set[str]:
