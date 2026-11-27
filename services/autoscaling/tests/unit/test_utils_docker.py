@@ -11,7 +11,7 @@ import random
 import secrets
 import subprocess
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final
@@ -41,7 +41,6 @@ from models_library.services_metadata_runtime import (
 )
 from pydantic import ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.bash_tools import create_link_to_tool_in_path, make_path_write_executable
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
@@ -860,28 +859,6 @@ async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
     assert join_script_non_idempotent.count("docker swarm join") == 1
 
 
-def _make_boot_bin_dir(tmp_path: Path, name: str, *, docker: str) -> Path:
-    """Directory holding the subset of tools a booting machine has available to the login snippet"""
-    bin_dir = tmp_path / name
-    bin_dir.mkdir()
-    tools = ["bash", "cat", "sleep", "timeout"]
-    for tool in tools:
-        create_link_to_tool_in_path(bin_dir, tool)
-    make_path_write_executable(bin_dir / "docker", docker)
-    return bin_dir
-
-
-def _create_process(script: str, bin_dir: Path, extra_env: Mapping[str, str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(  # noqa: S603
-        [str(bin_dir / "bash"), "-c", script],
-        capture_output=True,
-        text=True,
-        timeout=60,
-        env={"PATH": f"{bin_dir}", **extra_env},
-        check=False,
-    )
-
-
 # counts the calls it receives in $CALLS_FILE and succeeds from the second one on
 _DOCKER_SUCCEEDS_ON_SECOND_LOGIN = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
@@ -920,29 +897,35 @@ def mock_registry_settings() -> RegistrySettings:
 
 
 def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
-    mock_registry_settings: RegistrySettings, tmp_path: Path
+    mock_registry_settings: RegistrySettings,
+    tmp_path: Path,
+    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
 ):
     command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file = tmp_path / "calls"
     calls_file.write_text("")
-    bin_dir = _make_boot_bin_dir(tmp_path, "retried", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN)
 
-    result = _create_process(command, bin_dir, {"CALLS_FILE": str(calls_file)})
+    result = run_as_if_in_ec2(command, {"docker": _DOCKER_SUCCEEDS_ON_SECOND_LOGIN}, {"CALLS_FILE": str(calls_file)})
 
     assert result.returncode == 0, result.stderr
     assert calls_file.read_text() == "2\n", "the login was not retried until it succeeded"
 
 
 def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
-    mock_registry_settings: RegistrySettings, tmp_path: Path
+    mock_registry_settings: RegistrySettings,
+    tmp_path: Path,
+    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
 ):
     command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file, args_file = tmp_path / "calls", tmp_path / "args"
     calls_file.write_text("")
     args_file.write_text("")
-    bin_dir = _make_boot_bin_dir(tmp_path, "failing", docker=_DOCKER_ALWAYS_FAILS_LOGIN)
 
-    result = _create_process(command, bin_dir, {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)})
+    result = run_as_if_in_ec2(
+        command,
+        {"docker": _DOCKER_ALWAYS_FAILS_LOGIN},
+        {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)},
+    )
 
     # a machine that cannot log in must fail its boot chain, else it joins the swarm without credentials
     assert result.returncode != 0, "a machine that cannot log in must not report a booted machine"
@@ -962,16 +945,16 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     mock_registry_settings: RegistrySettings,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
 ):
     monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_MAX_ATTEMPTS", 1)
     # half of 6 s for 1 attempt, minus the 1 s kill delay and the 1 s retry delay, leaves a 1 s attempt
     command = get_docker_login_on_start_bash_command(mock_registry_settings, datetime.timedelta(seconds=6))
     calls_file = tmp_path / "calls"
     calls_file.write_text("")
-    bin_dir = _make_boot_bin_dir(tmp_path, "hanging", docker=_DOCKER_HANGS_ON_LOGIN)
 
     started = time.monotonic()
-    result = _create_process(command, bin_dir, {"CALLS_FILE": str(calls_file)})
+    result = run_as_if_in_ec2(command, {"docker": _DOCKER_HANGS_ON_LOGIN}, {"CALLS_FILE": str(calls_file)})
 
     assert result.returncode != 0, "a login cut short by timeout must still fail the boot chain"
     assert calls_file.read_text() == "1\n", "a hung login must not be retried beyond its timeout"

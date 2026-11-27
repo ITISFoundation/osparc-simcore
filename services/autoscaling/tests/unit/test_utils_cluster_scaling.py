@@ -4,10 +4,10 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 import datetime
 import json
 import secrets
+import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from random import choice, shuffle
@@ -19,7 +19,6 @@ from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import TypeAdapter
-from pytest_simcore.helpers.bash_tools import create_link_to_tool_in_path, make_path_write_executable
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -248,6 +247,7 @@ async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
     with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
     app_settings: ApplicationSettings,
     tmp_path: Path,
+    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
 ):
     """A machine that cannot log in must not join the swarm
 
@@ -261,30 +261,18 @@ async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
 
     docker_calls_log_path = tmp_path / "docker-calls.log"
     docker_calls_log_path.write_text("")
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    for tool in ("bash", "cat", "chmod", "sleep", "timeout"):
-        create_link_to_tool_in_path(bin_dir, tool)
-    make_path_write_executable(
-        bin_dir / "docker",
-        """#!/usr/bin/env bash
+    result = run_as_if_in_ec2(
+        startup_script,
+        {
+            "docker": """#!/usr/bin/env bash
 echo "$*" >> "$DOCKER_CALLS_LOG"
 test "$1" != login
-""",
+"""
+        },
+        {"DOCKER_CALLS_LOG": str(docker_calls_log_path)},
     )
 
-    process = await asyncio.create_subprocess_exec(
-        str(bin_dir / "bash"),
-        "-c",
-        startup_script,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        env={"PATH": f"{bin_dir}", "DOCKER_CALLS_LOG": str(docker_calls_log_path)},
-        cwd=tmp_path,
-    )
-    _, stderr = await asyncio.wait_for(process.communicate(), timeout=60)
-
-    assert process.returncode != 0, stderr
+    assert result.returncode != 0, result.stderr
     logged_docker_calls = docker_calls_log_path.read_text()
     assert "login" in logged_docker_calls, "the boot script never tried to log in"
     assert "swarm join" not in logged_docker_calls, "the machine joined the swarm without credentials"
