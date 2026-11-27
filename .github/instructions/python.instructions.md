@@ -47,6 +47,9 @@ Target the Python version in `.python-version`.
   ```
 
   Import `doc` from `annotated_types` and `Annotated`/`Final` from `typing`.
+- Express a duration as `timedelta`, not as a bare number of seconds, so the
+  unit travels with the value. Convert with `total_seconds()` only where the
+  consuming API takes seconds.
 
 ## Documentation
 
