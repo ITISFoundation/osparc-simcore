@@ -74,17 +74,11 @@ def k8s_ops_workloads(
     keep_docker_up: bool,
     request: pytest.FixtureRequest,
 ) -> Iterator[list[str]]:
-    """Deploys the ops releases named by the module config the Swarm stacks use
-
-    `postgres`, `rabbit` and `redis` are core services in docker-compose but ops releases in the
-    helmfile, so both selections feed here and their values are helm release names: a name listed
-    in both deploys once, a name the ops helmfile does not know makes `helmfile-ops-apply` fail.
-    """
-    requested = [
+    services = [
         *getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, []),
         *getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, []),
     ]
-    with deployed_ops_workloads(osparc_simcore_k8s_dir, list(dict.fromkeys(requested)), keep_docker_up) as releases:
+    with deployed_ops_workloads(osparc_simcore_k8s_dir, services, keep_docker_up) as releases:
         yield releases
 
 
