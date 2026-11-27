@@ -10,6 +10,7 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
@@ -105,3 +106,54 @@ async def test_workspaces_groups_full_workflow(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
         assert data[0]["gid"] == logged_user["primary_gid"]
+
+
+@pytest.mark.acceptance_test("regression: write-only workspace member must not self-grant DELETE")
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_write_only_member_cannot_self_grant_delete(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    workspaces_clean_db: AsyncIterator[None],
+):
+    assert client.app
+
+    url = client.app.router["create_workspace"].url_for()
+    resp = await client.post(f"{url}", json={"name": "Shared workspace", "description": ""})
+    added_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    async with NewUser(app=client.app) as member:
+        url = client.app.router["create_workspace_group"].url_for(
+            workspace_id=f"{added_workspace['workspaceId']}",
+            group_id=f"{member['primary_gid']}",
+        )
+        resp = await client.post(f"{url}", json={"read": True, "write": True, "delete": False})
+        await assert_status(resp, status.HTTP_201_CREATED)
+
+        async with switch_client_session_to(client, member):
+            url = client.app.router["replace_workspace_group"].url_for(
+                workspace_id=f"{added_workspace['workspaceId']}",
+                group_id=f"{member['primary_gid']}",
+            )
+            resp = await client.put(f"{url}", json={"read": True, "write": True, "delete": True})
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+
+@pytest.mark.acceptance_test("regression: workspaces must not be shareable with the Everyone group")
+@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.ADMIN])
+async def test_cannot_share_workspace_with_everyone_group(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    workspaces_clean_db: AsyncIterator[None],
+):
+    assert client.app
+
+    url = client.app.router["create_workspace"].url_for()
+    resp = await client.post(f"{url}", json={"name": "My workspace", "description": ""})
+    added_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    url = client.app.router["create_workspace_group"].url_for(
+        workspace_id=f"{added_workspace['workspaceId']}",
+        group_id="1",  # EVERYONE group
+    )
+    resp = await client.post(f"{url}", json={"read": True, "write": True, "delete": True})
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)

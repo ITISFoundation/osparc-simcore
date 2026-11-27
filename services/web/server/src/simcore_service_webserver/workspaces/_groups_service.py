@@ -2,12 +2,13 @@ import logging
 from datetime import datetime
 
 from aiohttp import web
-from models_library.groups import GroupID
+from models_library.groups import AccessRightsDict, GroupID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceWithAccessRights, WorkspaceID
 from pydantic import BaseModel, ConfigDict
 
+from ..groups.groups_service import check_group_sharing_allowed
 from ..users import users_service
 from . import _groups_repository as workspaces_groups_db
 from . import _workspaces_repository as workspaces_workspaces_repository
@@ -40,12 +41,25 @@ async def create_workspace_group(
     delete: bool,
     product_name: ProductName,
 ) -> WorkspaceGroupGet:
-    await check_user_workspace_access(
+    caller_workspace = await check_user_workspace_access(
         app=app,
         user_id=user_id,
         workspace_id=workspace_id,
         product_name=product_name,
         permission="write",
+    )
+
+    await check_group_sharing_allowed(
+        app,
+        user_id=user_id,
+        group_id=group_id,
+        product_name=product_name,
+        allowed_rights=AccessRightsDict(
+            read=caller_workspace.my_access_rights.read,
+            write=caller_workspace.my_access_rights.write,
+            delete=caller_workspace.my_access_rights.delete,
+        ),
+        requested_rights={"read": read, "write": write, "delete": delete},
     )
 
     workspace_group_db: WorkspaceGroupGetDB = await workspaces_groups_db.create_workspace_group(
@@ -113,6 +127,19 @@ async def update_workspace_group(
             raise WorkspaceAccessForbiddenError(
                 details=f"User does not have access to modify owner workspace group in workspace {workspace_id}"
             )
+
+    await check_group_sharing_allowed(
+        app,
+        user_id=user_id,
+        group_id=group_id,
+        product_name=product_name,
+        allowed_rights=AccessRightsDict(
+            read=workspace.my_access_rights.read,
+            write=workspace.my_access_rights.write,
+            delete=workspace.my_access_rights.delete,
+        ),
+        requested_rights={"read": read, "write": write, "delete": delete},
+    )
 
     workspace_group_db: WorkspaceGroupGetDB = await workspaces_groups_db.update_workspace_group(
         app=app,

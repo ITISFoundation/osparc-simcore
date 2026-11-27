@@ -24,6 +24,7 @@ from ...exception_handling import (
 )
 from ...exception_handling._base import ExceptionHandlersMap
 from ...folders.errors import FolderAccessForbiddenError, FolderNotFoundError
+from ...groups.exceptions import GroupNotFoundError, UserInsufficientRightsError
 from ...resource_usage.errors import DefaultPricingPlanNotFoundError
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletAccessForbiddenError, WalletNotEnoughCreditsError
@@ -267,6 +268,17 @@ _CONVERSATION_ERRORS: ExceptionToHttpErrorMap = {
 
 
 _OTHER_ERRORS: ExceptionToHttpErrorMap = {
+    GroupNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("The group with ID {gid} could not be found.", _version=1),
+    ),
+    UserInsufficientRightsError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        user_message(
+            "You do not have sufficient rights for {permission} access to group {gid}.",
+            _version=1,
+        ),
+    ),
     CatalogNotAvailableRpcError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message("The catalog service is currently unavailable.", _version=1),

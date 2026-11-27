@@ -8,10 +8,11 @@ from models_library.access_rights import AccessRights
 from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectType
 from models_library.users import UserID
 from pydantic import BaseModel, EmailStr, TypeAdapter
 
+from ..groups.groups_service import check_group_sharing_allowed
 from ..users import users_service
 from . import _access_rights_service, _groups_repository
 from ._groups_models import ProjectGroupGetDB
@@ -41,12 +42,29 @@ async def create_project_group(
     delete: bool,
     product_name: ProductName,
 ) -> ProjectGroupGet:
-    await _access_rights_service.check_user_project_permission(
+    caller_access_rights = await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
         product_name=product_name,
         permission="write",
+    )
+
+    project_db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
+    project = await project_db.get_project_db(project_id)
+
+    await check_group_sharing_allowed(
+        app,
+        user_id=user_id,
+        group_id=sharee_group_id,
+        product_name=product_name,
+        allowed_rights={
+            "read": bool(caller_access_rights.read),
+            "write": bool(caller_access_rights.write),
+            "delete": bool(caller_access_rights.delete),
+        },
+        requested_rights={"read": read, "write": write, "delete": delete},
+        resource_is_template=project.type == ProjectType.TEMPLATE,
     )
 
     project_group_db: ProjectGroupGetDB = await _groups_repository.create_project_group(
@@ -99,7 +117,7 @@ async def replace_project_group(
     delete: bool,
     product_name: ProductName,
 ) -> ProjectGroupGet:
-    await _access_rights_service.check_user_project_permission(
+    caller_access_rights = await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -119,6 +137,20 @@ async def replace_project_group(
                 project_uuid=project_id,
                 details=f"User does not have access to modify owner project group in project {project_id}",
             )
+
+    await check_group_sharing_allowed(
+        app,
+        user_id=user_id,
+        group_id=group_id,
+        product_name=product_name,
+        allowed_rights={
+            "read": bool(caller_access_rights.read),
+            "write": bool(caller_access_rights.write),
+            "delete": bool(caller_access_rights.delete),
+        },
+        requested_rights={"read": read, "write": write, "delete": delete},
+        resource_is_template=project.type == ProjectType.TEMPLATE,
+    )
 
     project_group_db: ProjectGroupGetDB = await _groups_repository.replace_project_group(
         app=app,
