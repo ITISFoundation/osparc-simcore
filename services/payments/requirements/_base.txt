@@ -430,7 +430,7 @@ pydantic-extra-types==2.11.1
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   fastapi
-pydantic-settings==2.16.2
+pydantic-settings==2.16.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
