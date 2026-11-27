@@ -69,7 +69,10 @@ class _RegisteredDirectory(NamedTuple):
 
 
 def _ancestor_prefixes(file_id: str) -> list[str]:
-    """Parent prefixes of file_id, ordered from the direct parent towards the root"""
+    """Prefix of every ancestor directory of file_id, direct parent first
+
+    Analogous to PurePath.parents: every ancestor, not only the direct parent.
+    """
     components = file_id.split("/")
     return ["/".join(components[:level]) for level in range(len(components) - 1, 1, -1)]
 
@@ -99,6 +102,9 @@ async def _get_registered_directories(
 async def _has_entries_registered_by_others_below(
     connection: AsyncConnection, *, file_id: str, user_id: UserID
 ) -> bool:
+    """True if another user has entries registered below file_id, i.e. at paths
+    starting with `file_id/`: file_id is matched as a directory path prefix
+    """
     result = await connection.execute(
         sa.select(sa.literal(1))
         .select_from(file_meta_data)
@@ -114,11 +120,13 @@ async def _has_entries_registered_by_others_below(
 async def _has_entries_below_the_caller_cannot_delete(
     connection: AsyncConnection, *, file_id: str, user_id: UserID
 ) -> bool:
-    """Entries below file_id whose own access rights do not grant the caller delete:
-    owned by someone else without a project, or shared through a project the caller
-    cannot delete. The project rights mirror `get_project_access_rights`, owner
-    override included: the override applies only on top of a readable group grant,
-    so a caller whose grants were revoked has no rights even as project owner.
+    """True if an entry registered below file_id, i.e. at a path starting with
+    `file_id/` (file_id as directory prefix), denies the caller delete rights:
+    owned by someone else without a project, or shared through a project the
+    caller cannot delete. The project rights mirror `get_project_access_rights`,
+    owner override included: the override applies only on top of a readable group
+    grant, so a caller whose grants were revoked has no rights even as project
+    owner.
     """
     user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
     private_grants = sa.select(sa.literal(1)).where(
