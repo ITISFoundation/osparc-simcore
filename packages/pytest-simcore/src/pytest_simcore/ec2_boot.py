@@ -1,7 +1,10 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+import contextlib
+import os
 import secrets
+import signal
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
@@ -21,6 +24,12 @@ _EC2_BOOT_TOOLS: Final[Annotated[tuple[str, ...], doc("commands available before
 )
 
 
+def _kill_process_group(process_group_id: int) -> None:
+    """SIGKILL every process in the group, since killing only the shell would leave its children running"""
+    with contextlib.suppress(ProcessLookupError):  # the group already exited on its own
+        os.killpg(process_group_id, signal.SIGKILL)
+
+
 @pytest.fixture
 def run_as_if_in_ec2(tmp_path: Path) -> BootScriptRunner:
     """Run a bash script the way a booting EC2 machine would: with PATH holding only ``_EC2_BOOT_TOOLS``
@@ -28,6 +37,9 @@ def run_as_if_in_ec2(tmp_path: Path) -> BootScriptRunner:
     Scripts passed as ``executables`` are written into that PATH, so a stubbed ``docker`` is the machine's
     only docker. A command the machine would not have is not found there, which fails the script just as
     it would on a real machine.
+
+    Raises ``subprocess.TimeoutExpired`` when the run outlives ``timeout``, after killing the script and
+    everything it started.
     """
 
     def _run(
@@ -44,13 +56,22 @@ def run_as_if_in_ec2(tmp_path: Path) -> BootScriptRunner:
         for name, content in executables.items():
             make_path_write_executable(bin_dir / name, content)
 
-        return subprocess.run(  # noqa: S603
+        # the shell leads its own process group so that a timeout can signal everything it started
+        with subprocess.Popen(  # noqa: S603
             [str(bin_dir / "bash"), "-c", script],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
             env={"PATH": f"{bin_dir}", **(env or {})},
-            check=False,
-        )
+            start_new_session=True,
+        ) as process:
+            try:
+                stdout, stderr = process.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                _kill_process_group(process.pid)
+                stdout, stderr = process.communicate()
+                raise subprocess.TimeoutExpired(process.args, timeout, output=stdout, stderr=stderr) from None
+
+        return subprocess.CompletedProcess(process.args, process.returncode, stdout, stderr)
 
     return _run
