@@ -24,7 +24,7 @@ charset-normalizer==3.5.1
     # via requests
 docker==7.2.0
     # via -r requirements/requirements.in
-fastapi==0.162.2
+fastapi==0.162.3
     # via -r requirements/requirements.in
 frozenlist==1.8.0
     # via
@@ -45,9 +45,9 @@ propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
-pydantic==2.14.3
+pydantic==2.14.4
     # via fastapi
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via pydantic
 requests==2.34.2
     # via docker

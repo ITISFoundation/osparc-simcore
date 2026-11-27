@@ -246,12 +246,15 @@ async def get(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
+    project_uuid_or_none: ProjectID | None,
 ) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(conversations.c.conversation_id == f"{conversation_id}")
     )
+    if project_uuid_or_none is not None:
+        select_query = select_query.where(conversations.c.project_uuid == f"{project_uuid_or_none}")
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)
@@ -267,6 +270,7 @@ async def update(
     *,
     conversation_id: ConversationID,
     updates: ConversationPatchDB,
+    project_uuid_or_none: ProjectID | None,
 ) -> ConversationGetDB:
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
@@ -274,13 +278,14 @@ async def update(
         conversations.c.modified.name: func.now(),
     }
 
+    update_query = (
+        conversations.update().values(**_updates).where(conversations.c.conversation_id == f"{conversation_id}")
+    )
+    if project_uuid_or_none is not None:
+        update_query = update_query.where(conversations.c.project_uuid == f"{project_uuid_or_none}")
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
-            conversations.update()
-            .values(**_updates)
-            .where(conversations.c.conversation_id == f"{conversation_id}")
-            .returning(*_SELECTION_ARGS)
-        )
+        result = await conn.execute(update_query.returning(*_SELECTION_ARGS))
         row = result.one_or_none()
         if row is None:
             raise ConversationErrorNotFoundError(conversation_id=conversation_id)
@@ -292,6 +297,11 @@ async def delete(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
+    project_uuid_or_none: ProjectID | None,
 ) -> None:
+    delete_query = conversations.delete().where(conversations.c.conversation_id == f"{conversation_id}")
+    if project_uuid_or_none is not None:
+        delete_query = delete_query.where(conversations.c.project_uuid == f"{project_uuid_or_none}")
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.execute(conversations.delete().where(conversations.c.conversation_id == f"{conversation_id}"))
+        await conn.execute(delete_query)

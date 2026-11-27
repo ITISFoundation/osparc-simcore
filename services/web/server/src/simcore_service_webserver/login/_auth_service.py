@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import functools
 import secrets
 from datetime import datetime
@@ -15,10 +16,10 @@ from ..db.plugin import get_asyncpg_engine
 from ..groups.groups_service import is_user_by_email_in_group
 from ..products.models import Product
 from ..security import security_service
-from . import _login_service
+from . import _login_service, _login_throttle_service
 from .constants import MSG_UNKNOWN_EMAIL
 from .errors import WeakPasswordError, WrongPasswordError
-from .settings import LoginSettingsForProduct
+from .settings import LoginSettingsForProduct, get_plugin_settings
 
 
 @functools.cache
@@ -156,6 +157,52 @@ async def check_authorized_user_credentials(
             new_password_hash=await asyncio.to_thread(security_service.encrypt_password, password),
         )
     return user
+
+
+async def authenticate_user(
+    app: web.Application,
+    *,
+    email: str,
+    password: str,
+    product: Product,
+    client_ip: _login_throttle_service.ClientIP | None = None,
+) -> UserInfoDict:
+    """Checks login credentials, with exponential back-off after repeated failures per email
+
+    Clients in LOGIN_THROTTLE_TRUSTED_NETWORKS are never blocked nor counted, and their
+    successful logins still clear the counters of the email
+
+    Raises:
+        LoginThrottledError: while the email is in back-off
+        LoginThrottleUnavailableError: if the throttle storage fails
+        WrongPasswordError: when the password is invalid or the user does not exist
+        web.HTTPUnauthorized: 401
+    """
+    throttle_settings = get_plugin_settings(app, product_name=product.name).LOGIN_THROTTLE
+    is_trusted = _login_throttle_service.is_trusted_client(client_ip, settings=throttle_settings)
+    attempt_lock = (
+        contextlib.nullcontext() if is_trusted else _login_throttle_service.exclusive_login_attempt(app, email=email)
+    )
+
+    async with attempt_lock:
+        if not is_trusted:
+            await _login_throttle_service.raise_if_login_throttled(app, email=email)
+
+        user = await get_user_or_none(app, email=email)
+        try:
+            user = await check_authorized_user_credentials(app, user, password=password, product=product)
+        except WrongPasswordError:
+            if not is_trusted:
+                await _login_throttle_service.register_failed_login(
+                    app,
+                    email=email,
+                    user_id=user["id"] if user else None,
+                    settings=throttle_settings,
+                )
+            raise
+
+        await _login_throttle_service.clear_failed_logins(app, email=email)
+        return user
 
 
 async def check_authorized_user_in_product(

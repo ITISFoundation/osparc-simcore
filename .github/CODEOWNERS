@@ -56,6 +56,8 @@ Makefile                                           @pcrespov @sanderegg
 requirements/*                                         @pcrespov
 tools/*                                                @pcrespov
 
+scripts/maintenance/autoscaled-monitor/*               @sanderegg
+
 # Dependencies managed by Renovate (see docs/renovate.md). These rules come last on
 # purpose: the last matching pattern wins, and a Renovate PR rewrites the same
 # dependency in dozens of directories at once (resyncing a single lockfile pin touches
@@ -71,8 +73,13 @@ tools/*                                                @pcrespov
 /package.json                                          @sanderegg @pcrespov @GitHK @giancarloromeo
 /package-lock.json                                     @sanderegg @pcrespov @GitHK @giancarloromeo
 /.renovaterc.jsonc                                     @sanderegg @pcrespov @GitHK @giancarloromeo
+/.github/actions/setup-k8s-toolchain/**                @sanderegg @pcrespov @GitHK @giancarloromeo
 /.github/workflows/**                                  @sanderegg @pcrespov @GitHK @giancarloromeo
 /.github/renovate/**                                   @sanderegg @pcrespov @GitHK @giancarloromeo
+/k8s/.mise.toml                                        @sanderegg @pcrespov @GitHK @giancarloromeo @YuryHrytsuk
+/scripts/makefiles/k8s.mk                              @sanderegg @pcrespov @GitHK @giancarloromeo @YuryHrytsuk
+/charts/ops-local/**                                   @sanderegg @pcrespov @GitHK @giancarloromeo @YuryHrytsuk
+/services/helmfile*                                    @sanderegg @pcrespov @GitHK @giancarloromeo @YuryHrytsuk
 
 # The compose file listing the vendor services keeps the ops team on it. Since CODEOWNERS
 # has no negation and **/docker-compose*.yml above already matched it, this last rule has

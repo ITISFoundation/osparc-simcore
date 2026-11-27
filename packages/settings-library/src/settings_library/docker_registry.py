@@ -3,6 +3,7 @@ from typing import Annotated, Any, Self
 
 from pydantic import (
     AnyHttpUrl,
+    BeforeValidator,
     Field,
     SecretStr,
     TypeAdapter,
@@ -12,21 +13,26 @@ from pydantic import (
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
+from .basic_types import HostNamePortStr
+from .utils_validators import validate_no_protocol_scheme
 
 
 class RegistrySettings(BaseCustomSettings):
     REGISTRY_AUTH: Annotated[bool, Field(description="do registry authentication")]
     REGISTRY_PATH: Annotated[
         str | None,
+        BeforeValidator(validate_no_protocol_scheme),
         Field(
-            # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine"
+            # This is useful in case of a local registry, where the registry url (path)
+            # is relative to the host docker engine
             description="development mode only, in case a local registry is used - "
-            "this is the hostname to the docker registry as seen from the host running the containers (e.g. 127.0.0.1:5000)",
+            "this is the hostname to the docker registry as seen from the host "
+            "running the containers (e.g. 127.0.0.1:5000)",
         ),
     ] = None
 
     REGISTRY_URL: Annotated[
-        str,
+        HostNamePortStr,
         Field(
             # NOTE: name is misleading, http or https protocol are not included
             description="hostname of docker registry (without protocol but with port if available)",
@@ -77,7 +83,7 @@ class RegistrySettings(BaseCustomSettings):
                     "REGISTRY_USER": "theregistryuser",
                     "REGISTRY_PW": "some_secret_value",
                     "REGISTRY_SSL": "True",
-                    "REGISTRY_URL": "registry.osparc-master.speag.com",
+                    "REGISTRY_URL": "registry.example.com",
                 }
             ],
         }

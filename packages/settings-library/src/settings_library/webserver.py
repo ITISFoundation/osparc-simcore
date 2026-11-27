@@ -1,12 +1,12 @@
 from functools import cached_property
 
 from .base import BaseCustomSettings
-from .basic_types import PortInt, VersionTag
+from .basic_types import HostNamePortStr, PortInt, VersionTag
 from .utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings, URLPart
 
 
 class WebServerSettings(BaseCustomSettings, MixinServiceSettings):
-    WEBSERVER_HOST: str = "webserver"
+    WEBSERVER_HOST: HostNamePortStr = "webserver"
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
     WEBSERVER_VTAG: VersionTag = "v0"
 

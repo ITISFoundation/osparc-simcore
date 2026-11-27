@@ -27,11 +27,11 @@ coverage==7.17.2
     #   pytest-cov
 docker==7.2.0
     # via -r requirements/_test.in
-faker==40.44.0
+faker==40.54.0
     # via -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.9
+filelock==4.2.10
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -92,7 +92,7 @@ packaging==26.3
     #   pytest
 pathspec==1.0.4
     # via mypy
-playwright==1.64.1
+playwright==1.65.1
     # via -r requirements/_test.in
 pluggy==1.6.0
     # via
@@ -106,8 +106,6 @@ psycopg==3.3.9
     # via sqlalchemy
 psycopg-binary==3.3.9
     # via psycopg
-pyee==13.0.1
-    # via playwright
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
@@ -167,7 +165,6 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   anyio
     #   mypy
-    #   pyee
     #   sqlalchemy
 urllib3==2.8.0
     # via

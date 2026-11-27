@@ -108,7 +108,7 @@ fast-depends==3.0.11
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   faststream
-fastapi==0.162.2
+fastapi==0.162.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
@@ -394,7 +394,7 @@ pycryptodome==3.23.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   stream-zip
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
@@ -408,7 +408,8 @@ pydantic==2.14.3
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.50.4
+    #   typer
+pydantic-core==2.50.5
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   pydantic
@@ -526,7 +527,7 @@ truststore==0.10.5
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   httpcore2
     #   httpx2
-typer==0.28.0
+typer==0.29.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/settings-library/requirements/_base.in

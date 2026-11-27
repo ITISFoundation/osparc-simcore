@@ -7,7 +7,7 @@ from pydantic.types import SecretStr
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
-from .basic_types import PortInt
+from .basic_types import HostNamePortStr, PortInt
 
 
 class RabbitDsn(AnyUrl):
@@ -16,7 +16,7 @@ class RabbitDsn(AnyUrl):
 
 class RabbitSettings(BaseCustomSettings):
     # host
-    RABBIT_HOST: str
+    RABBIT_HOST: HostNamePortStr
     RABBIT_PORT: PortInt = 5672
     RABBIT_SECURE: bool
     # NOTE: "/" is RabbitMQ's default vhost; kept as default so existing deployments

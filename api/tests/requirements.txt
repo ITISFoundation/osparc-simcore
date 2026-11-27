@@ -72,12 +72,12 @@ propcache==0.5.4
     # via
     #   aiohttp
     #   yarl
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
     #   pydantic-settings
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via pydantic
 pydantic-settings==2.16.2
     # via
