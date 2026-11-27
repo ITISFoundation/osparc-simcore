@@ -4,6 +4,7 @@ from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
+from types import MappingProxyType
 from typing import Annotated, Final
 
 import pytest
@@ -12,6 +13,8 @@ from annotated_types import doc
 from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_SERVICES_SELECTION
 from .helpers.constants import HEADER_STR
 from .helpers.logging_tools import log_context
+from .helpers.monkeypatch_envs import load_dotenv
+from .helpers.typing_env import FrozenEnvVarsDict
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
@@ -46,6 +49,12 @@ def _run_make(k8s_dir: Path, target: str, *make_vars: str, check: bool = True) -
 
 def _k8s_cluster_exists(k8s_dir: Path) -> bool:
     return _run_make(k8s_dir, "cluster-exists", check=False).returncode == 0
+
+
+@pytest.fixture(scope="session")
+def kubernetes_cluster_env(kind_env_file: Path) -> FrozenEnvVarsDict:
+    """Host address and ports where the kind cluster publishes its workloads (k8s/kind.env)"""
+    return MappingProxyType(load_dotenv(kind_env_file, verbose=True, interpolate=True))
 
 
 @pytest.fixture(scope="session")

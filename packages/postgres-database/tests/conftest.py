@@ -102,12 +102,12 @@ def k8s_ops_workloads(k8s_cluster: None, osparc_simcore_k8s_dir: Path, keep_dock
 
 
 @pytest.fixture(scope="session")
-def postgres_service_k8s(k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict) -> str:
+def postgres_service_k8s(
+    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict, kubernetes_cluster_env: FrozenEnvVarsDict
+) -> str:
     """Deploys postgres in the kind cluster and returns a responsive DSN."""
-
-    # tests run locally while postgres run inside kubernetes cluster
-    host = "127.0.0.1"
-    port = 5432
+    host = kubernetes_cluster_env["KIND_HOST"]
+    port = kubernetes_cluster_env["KIND_POSTGRES_HOST_PORT"]
 
     user = env_devel_dict_session["POSTGRES_USER"]
     password = env_devel_dict_session["POSTGRES_PASSWORD"]

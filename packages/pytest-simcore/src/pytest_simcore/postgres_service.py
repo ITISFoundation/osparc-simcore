@@ -83,13 +83,14 @@ def postgres_dsn_docker_swarm(
 
 @pytest.fixture(scope="module")
 def postgres_dsn_k8s(
-    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict, request: pytest.FixtureRequest
+    k8s_ops_workloads: list[str],
+    env_devel_dict_session: FrozenEnvVarsDict,
+    kubernetes_cluster_env: FrozenEnvVarsDict,
+    request: pytest.FixtureRequest,
 ) -> PostgresTestConfig:
     """Config of the postgres release running in the kubernetes cluster"""
     assert "postgres" in k8s_ops_workloads
 
-    # the tests run on the host while postgres runs inside the cluster: k8s/kind-config.yaml
-    # maps the postgres node port (30432) to the host port 5432
     database = env_devel_dict_session["POSTGRES_DB"]
     if is_xdist_worker(request):
         database = f"{database}_{get_worker_id(request)}"
@@ -98,8 +99,8 @@ def postgres_dsn_k8s(
         "user": env_devel_dict_session["POSTGRES_USER"],
         "password": env_devel_dict_session["POSTGRES_PASSWORD"],
         "database": database,
-        "host": "127.0.0.1",
-        "port": "5432",
+        "host": kubernetes_cluster_env["KIND_HOST"],
+        "port": kubernetes_cluster_env["KIND_POSTGRES_HOST_PORT"],
     }
 
 

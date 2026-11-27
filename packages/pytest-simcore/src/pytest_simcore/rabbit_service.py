@@ -205,16 +205,15 @@ def rabbit_admin_env_vars_dict_docker_swarm(
 
 @pytest.fixture(scope="module")
 def rabbit_admin_env_vars_dict_k8s(
-    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict
+    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict, kubernetes_cluster_env: FrozenEnvVarsDict
 ) -> EnvVarsDict:
-    """k8s/kind-config.yaml maps the rabbit AMQP node port to the host port 5672"""
     assert "rabbit" in k8s_ops_workloads
 
     return {
         "RABBIT_USER": env_devel_dict_session["RABBIT_USER"],
         "RABBIT_PASSWORD": env_devel_dict_session["RABBIT_PASSWORD"],
-        "RABBIT_HOST": get_localhost_ip(),
-        "RABBIT_PORT": "5672",
+        "RABBIT_HOST": kubernetes_cluster_env["KIND_HOST"],
+        "RABBIT_PORT": kubernetes_cluster_env["KIND_RABBIT_HOST_PORT"],
         "RABBIT_SECURE": env_devel_dict_session["RABBIT_SECURE"],
     }
 
@@ -269,15 +268,15 @@ def rabbit_management_url_docker_swarm(docker_stack: dict, env_vars_for_docker_c
 
 
 @pytest.fixture(scope="module")
-def rabbit_management_url_k8s(k8s_ops_workloads: list[str]) -> str:
+def rabbit_management_url_k8s(k8s_ops_workloads: list[str], kubernetes_cluster_env: FrozenEnvVarsDict) -> str:
     assert "rabbit" in k8s_ops_workloads
-    return f"http://{get_localhost_ip()}:15672"
+    return f"http://{kubernetes_cluster_env['KIND_HOST']}:{kubernetes_cluster_env['KIND_RABBIT_MANAGEMENT_HOST_PORT']}"
 
 
 @pytest.fixture
 def wait_till_queue_has_consumer(
     rabbit_management_url: str,
-    env_vars_for_docker_compose: EnvVarsDict,
+    rabbit_admin_env_vars_dict: EnvVarsDict,
 ) -> Callable[[str, str], Awaitable[None]]:
     """Returns a coroutine that waits until `queue_name` has a consumer in `vhost`
 
@@ -287,8 +286,8 @@ def wait_till_queue_has_consumer(
     everything published meanwhile. Gating on the queue having a consumer turns that silent message
     loss into a setup failure.
     """
-    user = env_vars_for_docker_compose["RABBIT_USER"]
-    password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
+    user = rabbit_admin_env_vars_dict["RABBIT_USER"]
+    password = rabbit_admin_env_vars_dict["RABBIT_PASSWORD"]
 
     def _not_ready_yet(exc: BaseException) -> bool:
         return _is_transient_network_error(exc) or isinstance(exc, LookupError)

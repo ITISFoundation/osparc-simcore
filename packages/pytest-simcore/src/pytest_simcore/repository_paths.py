@@ -93,6 +93,14 @@ def env_devel_k8s_override_file(osparc_simcore_k8s_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def kind_env_file(osparc_simcore_k8s_dir: Path) -> Path:
+    """Path to osparc-simcore/k8s/kind.env file"""
+    kind_env_fpath = osparc_simcore_k8s_dir / "kind.env"
+    assert kind_env_fpath.exists()
+    return kind_env_fpath
+
+
+@pytest.fixture(scope="session")
 def services_docker_compose_file(services_dir: Path) -> Path:
     dcpath = services_dir / "docker-compose.yml"
     assert dcpath.exists()

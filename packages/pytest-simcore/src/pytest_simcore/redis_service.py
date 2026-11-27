@@ -111,12 +111,13 @@ def redis_settings_docker_swarm(
 
 
 @pytest.fixture
-def redis_settings_k8s(k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict) -> RedisSettings:
-    """k8s/kind-config.yaml maps the redis node port to the host port 6379"""
+def redis_settings_k8s(
+    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict, kubernetes_cluster_env: FrozenEnvVarsDict
+) -> RedisSettings:
     assert "redis" in k8s_ops_workloads
     return RedisSettings(
-        REDIS_HOST=get_localhost_ip(),
-        REDIS_PORT=6379,
+        REDIS_HOST=kubernetes_cluster_env["KIND_HOST"],
+        REDIS_PORT=TypeAdapter(PortInt).validate_python(kubernetes_cluster_env["KIND_REDIS_HOST_PORT"]),
         REDIS_PASSWORD=SecretStr(env_devel_dict_session["REDIS_PASSWORD"]),
     )
 

@@ -1,3 +1,4 @@
+# Rendered into kind-config.yaml by `make kind-config.yaml` with the variables of kind.env
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 
@@ -16,11 +17,11 @@ nodes:
       #
       # OPS
       #
-      - { containerPort: 30432, hostPort: 5432 }   # postgres
-      - { containerPort: 30379, hostPort: 6379 }   # redis
+      - { containerPort: 30432, hostPort: ${KIND_POSTGRES_HOST_PORT} }   # postgres
+      - { containerPort: 30379, hostPort: ${KIND_REDIS_HOST_PORT} }   # redis
       - { containerPort: 31881, hostPort: 18081 }  # redis-commander
-      - { containerPort: 30672, hostPort: 5672 }   # rabbit AMQP
-      - { containerPort: 31672, hostPort: 15672 }  # rabbit management UI
+      - { containerPort: 30672, hostPort: ${KIND_RABBIT_HOST_PORT} }   # rabbit AMQP
+      - { containerPort: 31672, hostPort: ${KIND_RABBIT_MANAGEMENT_HOST_PORT} }  # rabbit management UI
       - { containerPort: 30080, hostPort: 9000 }   # headlamp
       - { containerPort: 31808, hostPort: 18080 }  # adminer
       - { containerPort: 30555, hostPort: 5555 }   # flower
