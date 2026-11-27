@@ -123,6 +123,9 @@ def create_project(
             logged_user,
             primary_group,
             project={"name": name, "workbench": workbench},
+            # the reply carries the state the web-server computed per node, which the workbench
+            # sent here cannot know
+            ignore_node_state=True,
         )
 
     return _create

@@ -229,18 +229,55 @@ def monkeypatch_setenv_from_app_config(
     return _patch
 
 
-def _comparable_field(project: dict[str, Any], key: str) -> Any:
-    """`project[key]` as a project creation request can compare it
+def _workbench_wo_state(workbench: dict[str, Any]) -> dict[str, Any]:
+    """`workbench` without the node `state`
 
     A project the web-server returns carries the `state` it computed for every node, which
-    the workbench sent in the request cannot know.
+    the workbench sent in the creation request cannot know.
     """
-    if key != "workbench":
-        return project[key]
     return {
         node_id: {field: value for field, value in node.items() if field != "state"}
-        for node_id, node in project[key].items()
+        for node_id, node in workbench.items()
     }
+
+
+def _assert_project_matches_request_fields(
+    expected_data: dict[str, Any],
+    new_project: dict[str, Any],
+    *,
+    from_study: dict | None,
+    ignore_node_state: bool,
+) -> None:
+    """Compare every field the request sets with what the web-server returned
+
+    `modified_fields` lists the fields the web-server writes itself, so they cannot be
+    compared. `ignore_node_state` compares the workbench without the node `state`.
+    """
+    modified_fields = [
+        # invariant fields
+        "uuid",
+        "prjOwner",
+        "creationDate",
+        "lastChangeDate",
+        "accessRights",
+        "workbench" if from_study else None,
+        "ui" if from_study else None,
+        # dynamic
+        "state",
+        "permalink",
+        "folderId",
+        "type",
+        "templateType",
+    ]
+
+    def _comparable(project: dict[str, Any], key: str) -> Any:
+        if ignore_node_state and key == "workbench":
+            return _workbench_wo_state(project[key])
+        return project[key]
+
+    for key in expected_data:
+        if key not in modified_fields:
+            assert _comparable(expected_data, key) == _comparable(new_project, key)
 
 
 @pytest.fixture
@@ -358,6 +395,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         copy_data: bool | None = None,
         expected_tags: list[int] | None = None,
         minimal_copy_override: bool = False,
+        ignore_node_state: bool = False,
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> ProjectDict:
@@ -475,26 +513,12 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             )
             assert new_project_access_rights == expected_data["accessRights"]
 
-            modified_fields = [
-                # invariant fields
-                "uuid",
-                "prjOwner",
-                "creationDate",
-                "lastChangeDate",
-                "accessRights",
-                "workbench" if from_study else None,
-                "ui" if from_study else None,
-                # dynamic
-                "state",
-                "permalink",
-                "folderId",
-                "type",
-                "templateType",
-            ]
-
-            for key in expected_data:
-                if key not in modified_fields:
-                    assert _comparable_field(expected_data, key) == _comparable_field(new_project, key)
+            _assert_project_matches_request_fields(
+                expected_data,
+                new_project,
+                from_study=from_study,
+                ignore_node_state=ignore_node_state,
+            )
 
         created_project_uuids.append(new_project["uuid"])
         used_clients.append(client)
