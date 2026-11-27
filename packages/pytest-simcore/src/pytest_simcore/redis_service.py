@@ -23,9 +23,10 @@ from yarl import URL
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.logging_tools import log_context
-from .helpers.typing_env import EnvVarsDict
+from .helpers.typing_env import EnvVarsDict, FrozenEnvVarsDict
 from .helpers.valkey_tools import flush_databases, get_valkey_databases_count
 from .helpers.xdist import get_worker_id, is_xdist_worker
+from .simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 
 log = logging.getLogger(__name__)
 
@@ -60,12 +61,27 @@ def _worker_db_offset(request: pytest.FixtureRequest, deployed_databases_count: 
 
 @pytest.fixture
 async def redis_settings(
+    request: pytest.FixtureRequest, simcore_cluster_orchestrator: SimcoreClusterOrchestrator
+) -> RedisSettings:
+    """Returns the settings of a redis service that is up and responsive"""
+    settings: RedisSettings = request.getfixturevalue(f"redis_settings_{simcore_cluster_orchestrator}")
+    with log_context(
+        logging.INFO,
+        f"waiting for redis at {settings.REDIS_HOST}:{settings.REDIS_PORT} "
+        f"(db offset {settings.REDIS_DB_OFFSET}) to be responsive",
+        logger=log,
+    ):
+        await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
+
+    return settings
+
+
+@pytest.fixture
+def redis_settings_docker_swarm(
     docker_stack: dict,  # stack is up
     env_vars_for_docker_compose: EnvVarsDict,
     request: pytest.FixtureRequest,
 ) -> RedisSettings:
-    """Returns the settings of a redis service that is up and responsive"""
-
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_redis" in docker_stack["services"]
 
@@ -86,21 +102,23 @@ async def redis_settings(
     # With run-scoped stack names that coincidence is gone, so look the real name up.
     port = get_service_published_port("redis", int(env_vars_for_docker_compose["REDIS_PORT"]), stack_name=prefix)
     # test runner is running on the host computer
-    settings = RedisSettings(
+    return RedisSettings(
         REDIS_HOST=get_localhost_ip(),
         REDIS_PORT=TypeAdapter(PortInt).validate_python(port),
         REDIS_PASSWORD=SecretStr(env_vars_for_docker_compose["REDIS_PASSWORD"]),
         REDIS_DB_OFFSET=db_offset,
     )
-    with log_context(
-        logging.INFO,
-        f"waiting for redis at {settings.REDIS_HOST}:{settings.REDIS_PORT} "
-        f"(db offset {settings.REDIS_DB_OFFSET}) to be responsive",
-        logger=log,
-    ):
-        await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 
-    return settings
+
+@pytest.fixture
+def redis_settings_k8s(k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict) -> RedisSettings:
+    """k8s/kind-config.yaml maps the redis node port to the host port 6379"""
+    assert "redis" in k8s_ops_workloads
+    return RedisSettings(
+        REDIS_HOST=get_localhost_ip(),
+        REDIS_PORT=6379,
+        REDIS_PASSWORD=SecretStr(env_devel_dict_session["REDIS_PASSWORD"]),
+    )
 
 
 @pytest.fixture()

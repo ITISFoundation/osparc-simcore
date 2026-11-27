@@ -30,8 +30,9 @@ from tenacity.wait import wait_fixed, wait_random_exponential
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.logging_tools import log_context
-from .helpers.typing_env import EnvVarsDict
+from .helpers.typing_env import EnvVarsDict, FrozenEnvVarsDict
 from .helpers.xdist import get_worker_id, is_xdist_worker
+from .simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 
 _logger = logging.getLogger(__name__)
 
@@ -176,8 +177,51 @@ def _delete_user(management_url: str, user: str, admin_user: str, admin_password
 
 
 @pytest.fixture(scope="module")
+def rabbit_admin_env_vars_dict(
+    request: pytest.FixtureRequest, simcore_cluster_orchestrator: SimcoreClusterOrchestrator
+) -> EnvVarsDict:
+    """RABBIT_* env vars with the admin credentials of the broker deployed by the selected cluster orchestrator"""
+    envs: EnvVarsDict = request.getfixturevalue(f"rabbit_admin_env_vars_dict_{simcore_cluster_orchestrator}")
+    return envs
+
+
+@pytest.fixture(scope="module")
+def rabbit_admin_env_vars_dict_docker_swarm(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
+) -> EnvVarsDict:
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
+    assert f"{prefix}_rabbit" in docker_stack["services"]
+
+    port = get_service_published_port("rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"]), stack_name=prefix)
+
+    return {
+        "RABBIT_USER": env_vars_for_docker_compose["RABBIT_USER"],
+        "RABBIT_PASSWORD": env_vars_for_docker_compose["RABBIT_PASSWORD"],
+        "RABBIT_HOST": get_localhost_ip(),
+        "RABBIT_PORT": f"{port}",
+        "RABBIT_SECURE": env_vars_for_docker_compose["RABBIT_SECURE"],
+    }
+
+
+@pytest.fixture(scope="module")
+def rabbit_admin_env_vars_dict_k8s(
+    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict
+) -> EnvVarsDict:
+    """k8s/kind-config.yaml maps the rabbit AMQP node port to the host port 5672"""
+    assert "rabbit" in k8s_ops_workloads
+
+    return {
+        "RABBIT_USER": env_devel_dict_session["RABBIT_USER"],
+        "RABBIT_PASSWORD": env_devel_dict_session["RABBIT_PASSWORD"],
+        "RABBIT_HOST": get_localhost_ip(),
+        "RABBIT_PORT": "5672",
+        "RABBIT_SECURE": env_devel_dict_session["RABBIT_SECURE"],
+    }
+
+
+@pytest.fixture(scope="module")
 def rabbit_worker_principal(
-    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
+    rabbit_admin_env_vars_dict: EnvVarsDict, request: pytest.FixtureRequest
 ) -> Iterator[RabbitWorkerPrincipal]:
     """Isolates each xdist worker's RabbitMQ traffic in its own vhost AND user on the SAME shared
     broker: some exchanges/queues (e.g. comp_scheduler broadcasts, `aio_pika`'s own hardcoded
@@ -185,20 +229,15 @@ def rabbit_worker_principal(
     the default vhost cross-talk. Naming the worker in both also makes the broker's log lines
     attributable, which is what lets a test still fail on a warning/error it caused.
     No-op (default vhost "/" and the stack's own user) when not running under xdist.
-
-    NOTE: module-scoped (not session-scoped) to match `docker_stack`'s scope: a fixture cannot
-    depend on one with a narrower scope.
     """
-    admin_user = env_vars_for_docker_compose["RABBIT_USER"]
-    admin_password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
+    admin_user = rabbit_admin_env_vars_dict["RABBIT_USER"]
+    admin_password = rabbit_admin_env_vars_dict["RABBIT_PASSWORD"]
     if not is_xdist_worker(request):
         yield RabbitWorkerPrincipal(vhost="/", user=admin_user, password=admin_password)
         return
 
     worker_id = get_worker_id(request)
-    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
-    assert f"{prefix}_rabbit" in docker_stack["services"]
-    management_url = _get_management_url(prefix)
+    management_url: str = request.getfixturevalue("rabbit_management_url")
     principal = RabbitWorkerPrincipal(
         vhost=f"pytest_{worker_id}", user=f"pytest_{worker_id}", password=f"pytest-{worker_id}-password"
     )
@@ -215,11 +254,24 @@ def rabbit_worker_principal(
 
 
 @pytest.fixture(scope="module")
-def rabbit_management_url(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict) -> str:
-    """Base URL of the management API of the stack's `rabbit` service"""
+def rabbit_management_url(
+    request: pytest.FixtureRequest, simcore_cluster_orchestrator: SimcoreClusterOrchestrator
+) -> str:
+    url: str = request.getfixturevalue(f"rabbit_management_url_{simcore_cluster_orchestrator}")
+    return url
+
+
+@pytest.fixture(scope="module")
+def rabbit_management_url_docker_swarm(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict) -> str:
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
     return _get_management_url(prefix)
+
+
+@pytest.fixture(scope="module")
+def rabbit_management_url_k8s(k8s_ops_workloads: list[str]) -> str:
+    assert "rabbit" in k8s_ops_workloads
+    return f"http://{get_localhost_ip()}:15672"
 
 
 @pytest.fixture
@@ -290,21 +342,13 @@ def wait_till_rabbit_client_is_connected() -> Callable[[RabbitMQClient], Awaitab
 
 @pytest.fixture
 def rabbit_env_vars_dict(
-    docker_stack: dict,
-    env_vars_for_docker_compose: EnvVarsDict,
+    rabbit_admin_env_vars_dict: EnvVarsDict,
     rabbit_worker_principal: RabbitWorkerPrincipal,
 ) -> EnvVarsDict:
-    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
-    assert f"{prefix}_rabbit" in docker_stack["services"]
-
-    port = get_service_published_port("rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"]), stack_name=prefix)
-
     return {
+        **rabbit_admin_env_vars_dict,
         "RABBIT_USER": rabbit_worker_principal.user,
         "RABBIT_PASSWORD": rabbit_worker_principal.password,
-        "RABBIT_HOST": get_localhost_ip(),
-        "RABBIT_PORT": f"{port}",
-        "RABBIT_SECURE": env_vars_for_docker_compose["RABBIT_SECURE"],
         "RABBIT_VHOST": rabbit_worker_principal.vhost,
     }
 

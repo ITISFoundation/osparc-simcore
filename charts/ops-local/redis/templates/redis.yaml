@@ -41,7 +41,7 @@ spec:
           command:
             - sh
             - -c
-            - exec valkey-server --save 60 1 --loglevel verbose --databases 13 --appendonly yes --appendfsync everysec --requirepass "$REDIS_PASSWORD"
+            - exec valkey-server --save 60 1 --loglevel verbose --databases 14 --appendonly yes --appendfsync everysec --requirepass "$REDIS_PASSWORD"
           envFrom:
             - secretRef:
                 name: redis
