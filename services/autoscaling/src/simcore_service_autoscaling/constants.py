@@ -1,8 +1,10 @@
+from datetime import timedelta
 from pathlib import Path
-from typing import Final
+from typing import Annotated, Final
 
+from annotated_types import doc
 from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2Tags
-from pydantic import TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 
 _APPLICATION_TAG_PREFIX: Final[str] = "io.simcore.autoscaling"
 
@@ -12,6 +14,21 @@ DOCKER_COMPOSE_CMD: Final[str] = "docker compose"
 PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/docker-pull.compose.yml")
 DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
 DOCKER_PULL_COMMAND: Final[str] = f"{DOCKER_COMPOSE_CMD} -f {PRE_PULL_COMPOSE_PATH} -p buffering pull"
+
+#
+# EC2 boot scripts
+#
+DOCKER_LOGIN_MAX_ATTEMPTS: Final[Annotated[PositiveInt, doc("attempts a booting machine makes to log in")]] = 3
+DOCKER_LOGIN_KILL_DELAY: Final[
+    Annotated[timedelta, doc("time `timeout` waits after SIGTERM before it sends SIGKILL")]
+] = timedelta(seconds=1)
+DOCKER_LOGIN_RETRY_DELAY: Final[Annotated[timedelta, doc("time between two login attempts")]] = timedelta(seconds=1)
+DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT: Final[
+    Annotated[timedelta, doc("shortest time a login attempt gets, whatever the start time allows")]
+] = timedelta(seconds=1)
+DOCKER_LOGIN_SHARE_OF_START_TIME: Final[
+    Annotated[float, doc("part of EC2_INSTANCES_MAX_START_TIME the login retries may use")]
+] = 0.5
 
 #
 # EC2 tags

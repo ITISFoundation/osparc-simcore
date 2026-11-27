@@ -12,7 +12,7 @@ event triggers it?*:
 - `_-*` — reusable workflow library (`workflow_call` only); never runs
   standalone and produces no checks.
 - no prefix — scope-named checks or scheduled scans that state the subsystem
-  they guard (e.g. `client-eslint`, `codspeed`, `codeql-analysis`).
+  they guard (e.g. `client-eslint`, `codeql-analysis`).
 
 Rules:
 

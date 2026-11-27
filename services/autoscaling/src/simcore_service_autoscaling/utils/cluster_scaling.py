@@ -56,20 +56,33 @@ def associate_ec2_instances_with_nodes(
 
 
 async def ec2_startup_script(ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings) -> str:
-    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
+    """Composes the user-data script a cold-started machine runs once on first boot.
+
+    The registry login comes before the swarm join, so a machine without credentials never joins. Pre-pulling
+    comes after the join: a failed pull costs a service that has to pull its own image, not the machine.
+    """
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    startup_commands: list[str] = ec2_boot_specific.custom_boot_scripts.copy()
+
+    if (registry := app_settings.AUTOSCALING_REGISTRY) and registry.REGISTRY_AUTH:
+        startup_commands.append(
+            utils_docker.get_docker_login_on_start_bash_command(
+                registry, app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+            )
+        )
+
     startup_commands.append(
         await utils_docker.get_docker_swarm_join_bash_command(
             join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED, idempotent=False
         )
     )
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if app_settings.AUTOSCALING_REGISTRY:
-        startup_commands.append(utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY))
 
-        if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
+    if app_settings.AUTOSCALING_REGISTRY and (
+        pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-        ):
-            startup_commands.append(pull_image_cmd)
+        )
+    ):
+        startup_commands.append(pull_image_cmd)
 
     return " && ".join(startup_commands)
 

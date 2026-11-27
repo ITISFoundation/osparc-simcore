@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import pytest
-from aws_library.ec2 import AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagValue, EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
@@ -11,6 +11,7 @@ from simcore_service_autoscaling.constants import (
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     WARM_BUFFER_MACHINE_TAG_KEY,
 )
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.cluster_scaling._provider_computational import (
     ComputationalAutoscalingProvider,
 )
@@ -18,6 +19,7 @@ from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic impor
     DynamicAutoscalingProvider,
 )
 from simcore_service_autoscaling.utils.warm_buffer_machines import (
+    ec2_warm_buffer_startup_script,
     get_activated_warm_buffer_ec2_tags,
     get_deactivated_warm_buffer_ec2_tags,
     is_warm_buffer_machine,
@@ -97,3 +99,37 @@ def test_get_deactivated_buffer_ec2_tags_computational(
 )
 def test_is_buffer_machine(tags: EC2Tags, expected_is_buffer: bool):
     assert is_warm_buffer_machine(tags) is expected_is_buffer
+
+
+def test_ec2_warm_buffer_startup_script_logs_in_before_warming_up(app_environment: EnvVarsDict):
+    app_settings = ApplicationSettings.create_from_envs()
+    assert app_settings.AUTOSCALING_REGISTRY
+    boot_specific = EC2InstanceBootSpecific(ami_id="ami-0123456789abcdef0", pre_pull_images=["nginx:latest"])
+
+    steps = ec2_warm_buffer_startup_script(boot_specific, app_settings).split(" && ")
+
+    # the machine is not in the swarm yet here, so a failing login costs nothing but a replaced machine
+    assert steps[0].startswith("( "), f"expected the login to retry in a subshell, got {steps[0]}"
+    assert " docker login " in steps[0], f"expected the machine to log in before warming up, got {steps[0]}"
+
+
+def test_ec2_warm_buffer_startup_script_without_an_authentication_no_login(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("REGISTRY_AUTH", "False")
+    app_settings = ApplicationSettings.create_from_envs()
+    assert app_settings.AUTOSCALING_REGISTRY
+    boot_specific = EC2InstanceBootSpecific(ami_id="ami-0123456789abcdef0", pre_pull_images=["nginx:latest"])
+
+    steps = ec2_warm_buffer_startup_script(boot_specific, app_settings).split(" && ")
+
+    # images pull without credentials here, so the machine still gets its compose file
+    assert "docker login" not in " && ".join(steps), f"expected no login without registry authentication, got {steps}"
+    assert steps[0].startswith('echo "'), f"expected the compose file to be written, got {steps[0]}"
+
+
+def test_ec2_warm_buffer_startup_script_without_pre_pulling_skips_the_login(app_environment: EnvVarsDict):
+    app_settings = ApplicationSettings.create_from_envs()
+    boot_specific = EC2InstanceBootSpecific(ami_id="ami-0123456789abcdef0")
+
+    assert ec2_warm_buffer_startup_script(boot_specific, app_settings) == ""

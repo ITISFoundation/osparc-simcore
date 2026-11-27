@@ -34,7 +34,7 @@ pydantic-core==2.50.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pydantic-settings==2.16.2
+pydantic-settings==2.16.3
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest

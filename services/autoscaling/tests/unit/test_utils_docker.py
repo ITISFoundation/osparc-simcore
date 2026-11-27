@@ -6,15 +6,19 @@
 import asyncio
 import datetime
 import itertools
+import logging
 import random
 import secrets
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
-from typing import Any
+from pathlib import Path
+from typing import Annotated, Any, Final
 
 import aiodocker
 import arrow
 import pytest
+from annotated_types import doc
 from aws_library.ec2 import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
@@ -35,13 +39,18 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.services_metadata_runtime import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
 )
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from pytest_simcore.helpers.typing_ec2_boot import BootScriptRunner
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
+from simcore_service_autoscaling.constants import (
+    DOCKER_LOGIN_MAX_ATTEMPTS,
+)
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
+from simcore_service_autoscaling.utils import utils_docker
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
@@ -167,6 +176,12 @@ async def test_get_monitored_nodes_with_valid_label(
     assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(exclude=EXCLUDED_KEYS)
 
 
+def _create_node_creation_datetime(node: Node) -> datetime.datetime:
+    """Creation datetime of a node, parsed from the ``created_at`` string aiodocker types as optional"""
+    assert node.created_at
+    return datetime.datetime.fromisoformat(node.created_at)
+
+
 async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
     mocker: MockerFixture,
     autoscaling_docker: AutoscalingDocker,
@@ -178,9 +193,9 @@ async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
     mocked_aiodocker.list.return_value = fake_nodes
     monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=[])
     assert len(monitored_nodes) == len(fake_nodes)
-    sorted_fake_nodes = sorted(fake_nodes, key=lambda node: arrow.get(node.created_at))
+    sorted_fake_nodes = sorted(fake_nodes, key=_create_node_creation_datetime)
     assert monitored_nodes == sorted_fake_nodes
-    assert monitored_nodes[0].created_at < monitored_nodes[1].created_at
+    assert _create_node_creation_datetime(monitored_nodes[0]) < _create_node_creation_datetime(monitored_nodes[1])
 
 
 async def test_worker_nodes(
@@ -413,7 +428,7 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
 
 def test_safe_sort_key_callback():
     tasks_with_faulty_timestamp = [
-        Task(ID=f"{n}", CreatedAt=value)
+        Task(id=f"{n}", created_at=value)
         for n, value in enumerate(
             [
                 # SEE test_to_datetime_conversion_known_errors
@@ -843,14 +858,151 @@ async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
     assert join_script_non_idempotent.count("docker swarm join") == 1
 
 
-def test_get_docker_login_on_start_bash_command():
-    registry_settings = RegistrySettings(**RegistrySettings.model_config["json_schema_extra"]["examples"][0])
-    returned_command = get_docker_login_on_start_bash_command(registry_settings)
-    assert (
-        f'echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | '
-        f"docker login --username {registry_settings.REGISTRY_USER} "
-        f"--password-stdin {registry_settings.resolved_registry_url}" == returned_command
+_DOCKER_SUCCEEDS_ON_SECOND_LOGIN: Final[
+    Annotated[str, doc("fake docker command that counts its calls in $CALLS_FILE and succeeds from the second on")]
+] = """#!/usr/bin/env bash
+calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$CALLS_FILE"
+test "$calls" -ge 2
+"""
+
+_DOCKER_ALWAYS_FAILS_LOGIN: Final[
+    Annotated[
+        str,
+        doc("fake docker command that counts its calls in $CALLS_FILE, logs its arguments in $ARGS_FILE, always fails"),
+    ]
+] = """#!/usr/bin/env bash
+calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$CALLS_FILE"
+if [ -n "$ARGS_FILE" ]; then printf '%s\\n' "$*" >> "$ARGS_FILE"; fi
+exit 1
+"""
+
+_DOCKER_HANGS_ON_LOGIN: Final[
+    Annotated[
+        str, doc("fake docker command that never returns on its own, so only `timeout` can stop its login attempt")
+    ]
+] = """#!/usr/bin/env bash
+calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
+echo "$calls" > "$CALLS_FILE"
+sleep 300
+"""
+
+
+_INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=1)
+
+
+@pytest.fixture
+def mock_registry_settings() -> RegistrySettings:
+    return RegistrySettings(
+        REGISTRY_AUTH=True,
+        REGISTRY_URL="registry.example.invalid",
+        REGISTRY_USER="the-registry-user",
+        REGISTRY_PW=SecretStr("the-registry-password"),
+        REGISTRY_SSL=True,
     )
+
+
+def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
+    mock_registry_settings: RegistrySettings,
+    tmp_path: Path,
+    run_as_if_in_ec2: BootScriptRunner,
+):
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
+    calls_file = tmp_path / "calls"
+    calls_file.write_text("")
+
+    result = run_as_if_in_ec2(command, {"docker": _DOCKER_SUCCEEDS_ON_SECOND_LOGIN}, {"CALLS_FILE": str(calls_file)})
+
+    assert result.returncode == 0, result.stderr
+    assert calls_file.read_text() == "2\n", "the login was not retried until it succeeded"
+
+
+def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
+    mock_registry_settings: RegistrySettings,
+    tmp_path: Path,
+    run_as_if_in_ec2: BootScriptRunner,
+):
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
+    calls_file, args_file = tmp_path / "calls", tmp_path / "args"
+    calls_file.write_text("")
+    args_file.write_text("")
+
+    result = run_as_if_in_ec2(
+        command,
+        {"docker": _DOCKER_ALWAYS_FAILS_LOGIN},
+        {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)},
+    )
+
+    # a machine that cannot log in must fail its boot chain, else it joins the swarm without credentials
+    assert result.returncode != 0, "a machine that cannot log in must not report a booted machine"
+    assert calls_file.read_text() == f"{DOCKER_LOGIN_MAX_ATTEMPTS}\n", (
+        f"expected {DOCKER_LOGIN_MAX_ATTEMPTS} login attempts"
+    )
+    expected_login = (
+        f"login --username {mock_registry_settings.REGISTRY_USER}"
+        f" --password-stdin {mock_registry_settings.resolved_registry_url}"
+    )
+    assert args_file.read_text().splitlines() == [expected_login] * DOCKER_LOGIN_MAX_ATTEMPTS, (
+        f"expected {DOCKER_LOGIN_MAX_ATTEMPTS} identical logins against {mock_registry_settings.resolved_registry_url}"
+    )
+
+
+def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
+    mock_registry_settings: RegistrySettings,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    run_as_if_in_ec2: BootScriptRunner,
+):
+    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_MAX_ATTEMPTS", 1)
+    # half of 6 s for 1 attempt, minus the 1 s kill delay and the 1 s retry delay, leaves a 1 s attempt
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, datetime.timedelta(seconds=6))
+    calls_file = tmp_path / "calls"
+    calls_file.write_text("")
+
+    started = time.monotonic()
+    result = run_as_if_in_ec2(command, {"docker": _DOCKER_HANGS_ON_LOGIN}, {"CALLS_FILE": str(calls_file)})
+
+    assert result.returncode != 0, "a login cut short by timeout must still fail the boot chain"
+    assert calls_file.read_text() == "1\n", "a hung login must not be retried beyond its timeout"
+    assert time.monotonic() - started < 10, "the login attempt was not cut short by timeout"
+
+
+def test_get_docker_login_on_start_bash_command_scales_the_attempt_timeout_with_the_start_budget(
+    mock_registry_settings: RegistrySettings,
+):
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, datetime.timedelta(seconds=90))
+    # half of 90 s over 3 attempts, minus the 1 s kill delay and the 1 s retry delay
+    assert "timeout -k 1 13 docker login " in command, f"unexpected timeout budget in {command}"
+
+
+def test_get_docker_login_on_start_bash_command_keeps_sub_second_delays(
+    mock_registry_settings: RegistrySettings, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_KILL_DELAY", datetime.timedelta(milliseconds=500))
+    monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_RETRY_DELAY", datetime.timedelta(milliseconds=250))
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
+
+    # a truncated `-k 0` would disable the SIGKILL fallback
+    assert "timeout -k 0.5 " in command, f"the kill delay lost its sub-second part in {command}"
+    assert "sleep 0.25;" in command, f"the retry delay lost its sub-second part in {command}"
+
+
+def test_get_docker_login_on_start_bash_command_overruns_a_too_small_start_budget_with_a_warning(
+    mock_registry_settings: RegistrySettings, caplog: pytest.LogCaptureFixture
+):
+    """Below DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT per attempt the loop is allowed to outlast its budget, and says so"""
+    with caplog.at_level(logging.WARNING):
+        command = get_docker_login_on_start_bash_command(mock_registry_settings, datetime.timedelta(seconds=1))
+
+    assert "timeout -k 1 1 docker login " in command, f"expected the 1 s minimum attempt timeout in {command}"
+    assert "EC2_INSTANCES_MAX_START_TIME" in caplog.text, "an overrunning login budget must be logged"
+
+
+def test_get_docker_login_on_start_bash_command_is_chainable(mock_registry_settings: RegistrySettings):
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
+    # the boot script joins its steps on `&&`, so a step holding one would be read as several steps
+    assert "&" not in command, f"the boot script joins its steps on `&&`, got {command}"
 
 
 async def test_try_get_node_with_name(autoscaling_docker: AutoscalingDocker, host_node: Node):
@@ -877,7 +1029,7 @@ async def test_find_node_with_name_with_common_prefixed_nodes(
     common_prefix = "ip-10-0-1-"
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
-        create_fake_node(Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
+        create_fake_node(Description=NodeDescription(hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
     ]
     needed_host_name = f"{common_prefix}11"
     found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
@@ -894,7 +1046,7 @@ async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_no
     common_prefix = "ip-10-0-1-"
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
-        create_fake_node(Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
+        create_fake_node(Description=NodeDescription(hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
     ]
     needed_host_name = f"{common_prefix}"
     found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
@@ -971,6 +1123,7 @@ def test_get_new_node_docker_tags(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
     random_ec2_type = secrets.choice(list(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES))
 
     ec2_instance_data = fake_ec2_instance_data(type=random_ec2_type)
@@ -1031,18 +1184,18 @@ def test_get_docker_pull_images_on_start_bash_command(images: list[DockerGeneric
 
 def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
     # check not ready state return false
-    for node_status in [NodeStatus(State=s, Message=None, Addr=None) for s in NodeState if s is not NodeState.ready]:
+    for node_status in [NodeStatus(state=s, message=None, addr=None) for s in NodeState if s is not NodeState.ready]:
         fake_node = create_fake_node(Status=node_status)
         assert not is_node_ready_and_available(fake_node, availability=Availability.drain)
 
-    node_ready_status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    node_ready_status = NodeStatus(state=NodeState.ready, message=None, addr=None)
     fake_drained_node = create_fake_node(
         Status=node_ready_status,
         Spec=NodeSpec(
-            Name=None,
-            Labels=None,
-            Role=None,
-            Availability=Availability.drain,
+            name=None,
+            labels=None,
+            role=None,
+            availability=Availability.drain,
         ),
     )
     assert is_node_ready_and_available(fake_drained_node, availability=Availability.drain)
@@ -1060,7 +1213,7 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
     fake_node.spec.availability = Availability.active
     assert not is_node_osparc_ready(fake_node)
     # no labels, ready and active
-    fake_node.status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    fake_node.status = NodeStatus(state=NodeState.ready, message=None, addr=None)
     assert not is_node_osparc_ready(fake_node)
     # add some random labels
     assert fake_node.spec
@@ -1115,8 +1268,13 @@ async def test_set_node_osparc_ready(
     assert get_node_last_readiness_update(updated_node) > updated_last_readiness
 
     # check now passing additional labels
-    osparc_custom_labels = {key: f"value_for_{key}" for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}
-    non_specific_labels = {"key1": "value1", "key2": "value2"}
+    osparc_custom_labels: dict[DockerLabelKey, str] = {
+        DockerLabelKey(key): f"value_for_{key}" for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+    }
+    non_specific_labels = {
+        DockerLabelKey("key1"): "value1",
+        DockerLabelKey("key2"): "value2",
+    }
     additional_labels = non_specific_labels | osparc_custom_labels
     updated_node = await set_node_osparc_ready(
         app_settings,
@@ -1128,6 +1286,7 @@ async def test_set_node_osparc_ready(
     assert is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert updated_node.spec
+    assert updated_node.spec.labels
     for key, value in additional_labels.items():
         assert key in updated_node.spec.labels
         assert updated_node.spec.labels[key] == value
@@ -1142,6 +1301,7 @@ async def test_set_node_osparc_ready(
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     assert updated_node.spec
+    assert updated_node.spec.labels
     for key in non_specific_labels:
         assert key in updated_node.spec.labels
     for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:

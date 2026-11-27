@@ -79,7 +79,7 @@ pydantic==2.14.4
     #   pydantic-settings
 pydantic-core==2.50.5
     # via pydantic
-pydantic-settings==2.16.2
+pydantic-settings==2.16.3
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
