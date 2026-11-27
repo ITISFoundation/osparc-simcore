@@ -8,10 +8,11 @@ import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
-from typing import Final, cast
+from typing import Annotated, Final, cast
 
 import arrow
 import yaml
+from annotated_types import doc
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
@@ -43,6 +44,11 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ..constants import (
     DOCKER_COMPOSE_CMD,
     DOCKER_COMPOSE_PULL_SCRIPT_PATH,
+    DOCKER_LOGIN_KILL_DELAY,
+    DOCKER_LOGIN_MAX_ATTEMPTS,
+    DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT,
+    DOCKER_LOGIN_RETRY_DELAY,
+    DOCKER_LOGIN_SHARE_OF_START_TIME,
     PRE_PULL_COMPOSE_PATH,
 )
 from ..core.settings import ApplicationSettings
@@ -456,12 +462,44 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempoten
     raise RuntimeError(msg)
 
 
-def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
-    return " ".join(
+def _as_bash_seconds(duration: datetime.timedelta) -> str:
+    return f"{duration.total_seconds():g}"
+
+
+def get_docker_login_on_start_bash_command(
+    registry_settings: RegistrySettings, instance_max_start_time: datetime.timedelta
+) -> Annotated[
+    str,
+    doc(
+        "a single bash command that exits 0 on the first successful attempt and 1 after the last one; it contains "
+        "no `&` because the boot script joins its steps on it"
+    ),
+]:
+    """Returns the command logging a machine in to the registry at boot, retrying it up to DOCKER_LOGIN_MAX_ATTEMPTS.
+
+    Args:
+        registry_settings: registry credentials the machine logs in with
+        instance_max_start_time: EC2_INSTANCES_MAX_START_TIME, counted from the instance launch. The retry loop
+            gets DOCKER_LOGIN_SHARE_OF_START_TIME of it, split over the attempts minus the kill and retry delays,
+            and at least DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT; below that floor a warning is logged.
+    """
+    login_budget = instance_max_start_time * DOCKER_LOGIN_SHARE_OF_START_TIME
+    attempt_timeout = login_budget / DOCKER_LOGIN_MAX_ATTEMPTS - DOCKER_LOGIN_KILL_DELAY - DOCKER_LOGIN_RETRY_DELAY
+    if attempt_timeout < DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT:
+        _logger.warning(
+            "EC2_INSTANCES_MAX_START_TIME=%s leaves %s per registry login attempt, using %s instead: "
+            "a machine that cannot log in may be terminated before its last attempt",
+            instance_max_start_time,
+            attempt_timeout,
+            DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT,
+        )
+        attempt_timeout = DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT
+    login_command = " ".join(
         [
             "echo",
             f'"{registry_settings.REGISTRY_PW.get_secret_value()}"',
             "|",
+            f"timeout -k {_as_bash_seconds(DOCKER_LOGIN_KILL_DELAY)} {_as_bash_seconds(attempt_timeout)}",
             "docker",
             "login",
             "--username",
@@ -470,6 +508,15 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
             registry_settings.resolved_registry_url,
         ]
     )
+    retry_delay = _as_bash_seconds(DOCKER_LOGIN_RETRY_DELAY)
+    commands = [
+        f'attempt=0; while [ "$attempt" -lt {DOCKER_LOGIN_MAX_ATTEMPTS} ]; do attempt=$((attempt + 1))',
+        f"if {login_command}; then exit 0; fi",
+        f'if [ "$attempt" -lt {DOCKER_LOGIN_MAX_ATTEMPTS} ]; then sleep {retry_delay}; fi',
+        "done",
+        "exit 1",
+    ]
+    return "( " + "; ".join(commands) + " )"
 
 
 def write_compose_file_command(
@@ -494,9 +541,11 @@ def get_docker_pull_images_on_start_bash_command(
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} '
-            f"--project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull "
-            '--ignore-pull-failures"',
+            (
+                f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} '
+                f"--project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull "
+                '--ignore-pull-failures"'
+            ),
             ">",
             f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
