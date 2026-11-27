@@ -366,7 +366,9 @@ class FileMetaDataRepository(BaseRepository):
             conditions = [
                 sa.or_(
                     file_meta_data.c.file_id == file_id,
-                    file_meta_data.c.file_id.startswith(f"{file_id}/"),
+                    # autoescape so `_` and `%` in a folder id stay path characters
+                    # and do not widen the cascade to LIKE-matching siblings
+                    file_meta_data.c.file_id.startswith(f"{file_id}/", autoescape=True),
                 )
                 for file_id in file_ids
             ]

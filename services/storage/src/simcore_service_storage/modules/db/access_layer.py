@@ -38,8 +38,11 @@
 """
 
 import logging
+from pathlib import PurePosixPath
+from typing import Annotated, Final, NamedTuple
 
 import sqlalchemy as sa
+from annotated_types import doc
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -54,12 +57,133 @@ from simcore_postgres_database.storage_models import file_meta_data, user_to_gro
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ...constants import EXPORTS_S3_PREFIX
+from ...constants import API_S3_PREFIX, EXPORTS_S3_PREFIX
 from ...exceptions.errors import InvalidFileIdentifierError
 from ...models import AccessRights
 from ._base import BaseRepository
 
 _logger = logging.getLogger(__name__)
+
+
+class _RegisteredDirectory(NamedTuple):
+    user_id: UserID
+    project_id: ProjectID | None
+
+
+_ROOT_PARENTS_TO_DROP: Final[
+    Annotated[int, doc("trailing `parents` entries: the `api` prefix and the relative root `.`, no directory")]
+] = 2
+
+
+def _ancestor_prefixes(file_id: str) -> list[str]:
+    """Prefix of every ancestor directory of file_id, direct parent first
+
+    Analogous to PurePath.parents: every ancestor, not only the direct parent.
+    Directory ids end with a slash, which PurePosixPath absorbs into the path
+    itself; include it then, so a directory registered without the trailing
+    slash still matches.
+    """
+    path = PurePosixPath(file_id)
+    prefixes = [path, *path.parents] if file_id.endswith("/") else list(path.parents)
+    return [f"{p}" for p in prefixes[:-_ROOT_PARENTS_TO_DROP]]
+
+
+async def _get_registered_directories(
+    connection: AsyncConnection, stored_file_ids: list[str]
+) -> dict[str, _RegisteredDirectory]:
+    """Entries registered under any of stored_file_ids, keyed by stored file_id.
+    A directory accepts both forms of a prefix, with and without trailing slash.
+    """
+    if not stored_file_ids:
+        return {}
+    result = await connection.execute(
+        sa.select(file_meta_data.c.file_id, file_meta_data.c.user_id, file_meta_data.c.project_id).where(
+            file_meta_data.c.file_id.in_(stored_file_ids)
+        )
+    )
+    return {
+        row.file_id: _RegisteredDirectory(
+            user_id=UserID(row.user_id),
+            project_id=ProjectID(row.project_id) if row.project_id else None,
+        )
+        for row in result.fetchall()
+    }
+
+
+async def _has_registered_descendants_by_other_users(
+    connection: AsyncConnection, *, file_id: str, user_id: UserID
+) -> bool:
+    """True if another user has entries registered as descendants of file_id, i.e.
+    at paths starting with `file_id/`: file_id is matched as a directory path prefix
+    """
+    result = await connection.execute(
+        sa.select(sa.literal(1))
+        .select_from(file_meta_data)
+        .where(
+            file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/", autoescape=True),
+            file_meta_data.c.user_id != user_id,
+        )
+        .limit(1)
+    )
+    return result.first() is not None
+
+
+async def _can_delete_all_sub_entries(connection: AsyncConnection, *, file_id: str, user_id: UserID) -> bool:
+    """True if the caller has delete rights over every descendant entry of file_id,
+    i.e. at a path starting with `file_id/` (file_id as directory prefix). A
+    descendant the caller cannot delete is one owned by someone else without a
+    project, or shared through a project the caller cannot delete. The project
+    rights mirror `get_project_access_rights`, owner override included: the
+    override applies only on top of a readable group grant, so a caller whose
+    grants were revoked has no rights even as project owner.
+    """
+    user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
+    private_grants = sa.select(sa.literal(1)).where(
+        (project_to_groups.c.project_uuid == projects.c.uuid)
+        & project_to_groups.c.read
+        & project_to_groups.c.gid.in_(user_group_ids)
+    )
+    shared_workspace_grants = sa.select(sa.literal(1)).where(
+        (workspaces_access_rights.c.workspace_id == projects.c.workspace_id)
+        & workspaces_access_rights.c.read
+        & workspaces_access_rights.c.gid.in_(user_group_ids)
+    )
+    caller_can_read_project = sa.or_(
+        sa.and_(projects.c.workspace_id.is_(None), sa.exists(private_grants)),
+        sa.and_(projects.c.workspace_id.is_not(None), sa.exists(shared_workspace_grants)),
+    )
+    caller_can_delete_project = sa.and_(
+        caller_can_read_project,
+        sa.or_(
+            projects.c.prj_owner == user_id,
+            sa.and_(
+                projects.c.workspace_id.is_(None),
+                sa.exists(private_grants.where(project_to_groups.c.delete)),
+            ),
+            sa.and_(
+                projects.c.workspace_id.is_not(None),
+                sa.exists(shared_workspace_grants.where(workspaces_access_rights.c.delete)),
+            ),
+        ),
+    )
+    result = await connection.execute(
+        sa.select(sa.literal(1))
+        .select_from(file_meta_data)
+        .where(
+            file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/", autoescape=True),
+            file_meta_data.c.user_id != user_id,
+            ~sa.or_(
+                file_meta_data.c.project_id.is_(None),
+                ~sa.exists(
+                    sa.select(sa.literal(1))
+                    .select_from(projects)
+                    .where(projects.c.uuid == file_meta_data.c.project_id, caller_can_delete_project)
+                ),
+            ),
+        )
+        .limit(1)
+    )
+    return result.first() is None
 
 
 async def _get_user_groups_ids(connection: AsyncConnection, user_id: UserID) -> list[GroupID]:
@@ -288,9 +412,76 @@ class AccessLayerRepository(BaseRepository):
 
         return access_rights
 
-    async def _get_access_without_metardata_entry(
+    async def _get_api_data_access_rights(
         self,
         *,
+        connection: AsyncConnection | None,
+        user_id: UserID,
+        file_id: StorageFileID,
+    ) -> AccessRights:
+        ancestor_prefixes = _ancestor_prefixes(file_id)
+        candidates = [p for prefix in ancestor_prefixes for p in (prefix, f"{prefix}/")]
+
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            registered_by_file_id = await _get_registered_directories(conn, candidates)
+            for prefix in ancestor_prefixes:
+                group = [d for key in (prefix, f"{prefix}/") if (d := registered_by_file_id.get(key)) is not None]
+                if not group:
+                    continue
+                if len({(d.user_id, d.project_id) for d in group}) > 1:
+                    _logger.warning(
+                        "file_meta_data holds conflicting entries for %s and %s/, revoking all rights",
+                        prefix,
+                        prefix,
+                    )
+                    return AccessRights.none()
+                access_rights = await self._access_rights_of_registered_directory(
+                    connection=conn, user_id=user_id, directory=group[0]
+                )
+                if (access_rights.write or access_rights.delete) and not await _can_delete_all_sub_entries(
+                    conn, file_id=file_id, user_id=user_id
+                ):
+                    # deleting this path cascades into entries the caller cannot delete
+                    # on their own, and so does an upload: create_file_upload_links
+                    # deletes the target id (enforcing only write) before storing the
+                    # new object. Read does not cascade and is kept.
+                    return AccessRights(read=access_rights.read, write=False, delete=False)
+                return access_rights
+
+            # deleting an unregistered id cascades to everything below it, so a path
+            # populated by other users is not up for grabs
+            if await _has_registered_descendants_by_other_users(conn, file_id=file_id, user_id=user_id):
+                return AccessRights.none()
+            return AccessRights.all()
+
+    async def _access_rights_of_registered_directory(
+        self,
+        *,
+        connection: AsyncConnection | None,
+        user_id: UserID,
+        directory: _RegisteredDirectory,
+    ) -> AccessRights:
+        if int(directory.user_id) == user_id:
+            return AccessRights.all()
+        if not directory.project_id:
+            return AccessRights.none()
+        return await self.get_project_access_rights(
+            connection=connection, user_id=user_id, project_id=directory.project_id
+        )
+
+    @staticmethod
+    def _get_exports_access_rights(*, user_id: UserID, sub_path: str) -> AccessRights:
+        """The owner of an exports/ path is embedded in it: exports/{user_id}/{filename}
+
+        NOTE: all permissions are required for: downloading, uploading and aborting
+        """
+        path_owner_id = sub_path.split("/", maxsplit=1)[0]
+        return AccessRights.all() if int(path_owner_id) == user_id else AccessRights.none()
+
+    async def _get_access_without_metadata_entry(
+        self,
+        *,
+        connection: AsyncConnection | None,
         user_id: UserID,
         file_id: StorageFileID,
     ) -> AccessRights:
@@ -304,19 +495,16 @@ class AccessLayerRepository(BaseRepository):
         #
 
         try:
-            parent, _, _ = file_id.split("/", maxsplit=2)
+            root_folder, sub_path = file_id.split("/", maxsplit=1)
 
-            if parent == "api":
-                # ownership still not defined, so we assume it is user_id
-                return AccessRights.all()
+            if root_folder == API_S3_PREFIX:
+                return await self._get_api_data_access_rights(connection=connection, user_id=user_id, file_id=file_id)
 
-            if parent == EXPORTS_S3_PREFIX:
-                # ownership still not defined, so we assume it is user_id
-                # NOTE: all permissions are required for: downloading, uploading and aborting
-                return AccessRights.all()
+            if root_folder == EXPORTS_S3_PREFIX:
+                return self._get_exports_access_rights(user_id=user_id, sub_path=sub_path)
 
-            # otherwise assert 'parent' string corresponds to a valid UUID
-            access_rights = await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(parent))
+            # otherwise assert 'root_folder' string corresponds to a valid UUID
+            access_rights = await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(root_folder))
             if not access_rights:
                 _logger.warning(
                     "File %s references a project that does not exists in db",
@@ -351,7 +539,7 @@ class AccessLayerRepository(BaseRepository):
         if access_rights is not None:
             return access_rights
 
-        return await self._get_access_without_metardata_entry(user_id=user_id, file_id=file_id)
+        return await self._get_access_without_metadata_entry(connection=connection, user_id=user_id, file_id=file_id)
 
     async def get_readable_project_ids(
         self,
