@@ -2,34 +2,64 @@
 
 import asyncio
 import json
+import logging
+import re
+import urllib.parse
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace, TracebackType
-from typing import Any, Final, Self, cast
+from typing import Annotated, Any, Final, NoReturn, Self, cast
 from unittest import mock
 
 import pytest
+from annotated_types import doc
+from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
 from playwright.sync_api import ElementHandle, Frame, Locator, Page, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from pydantic import AnyUrl, TypeAdapter
-from pytest_simcore.helpers import playwright as playwright_helpers
-from pytest_simcore.helpers.playwright import (
+from pydantic import AnyUrl, TypeAdapter, ValidationError
+from pytest_simcore.helpers import playwright_service, playwright_websocket
+from pytest_simcore.helpers.playwright_diagnostics import (
+    FAILURE_DIAGNOSIS_LOG_SERVICES,
+    FAILURE_DIAGNOSIS_LOGS_QUERY,
+    backend_computation_snapshots,
+    capture_backend_computation,
+    classify_backend_stall,
+    grafana_explore_url,
+    normalize_grafana_base_url,
+)
+from pytest_simcore.helpers.playwright_pipeline import wait_for_pipeline_state
+from pytest_simcore.helpers.playwright_service import (
     REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE,
+    SocketIONodeProgressCompleteWaiter,
+    _ensure_service_iframe_attached,
+)
+from pytest_simcore.helpers.playwright_websocket import (
     SOCKETIO_MESSAGE_PREFIX,
     RobustWebSocket,
-    SocketIONodeProgressCompleteWaiter,
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
-    _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
     start_websocket_tracking,
+    wait_for_nodes_outputs_updated,
 )
 
 _NODE_ID: Final[str] = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
+_OTHER_NODE_ID: Final[str] = "2fb4808a-e403-4a46-b52c-892560d27862"
+
+# NOTE: each stall diagnosis is recognised here by a fragment of its own text, so a test case can
+# say which diagnosis it expects without repeating the hint sentences
+_NEVER_SENT_TO_SCHEDULER_MARKER: Final[str] = "never scheduled"
+_NO_WORKER_MARKER: Final[str] = "no worker picked the task up"
+_NO_CLUSTER_MARKER: Final[str] = "no dask-scheduler is available"
+_STALL_HINT_MARKERS: Final[tuple[str, ...]] = (
+    _NEVER_SENT_TO_SCHEDULER_MARKER,
+    _NO_WORKER_MARKER,
+    _NO_CLUSTER_MARKER,
+)
 
 
 def _socketio_message(name: str, obj: dict[str, Any]) -> str:
@@ -200,9 +230,9 @@ def _page_with_service_iframe(
 @pytest.fixture()
 def _no_service_iframe_waits(monkeypatch: pytest.MonkeyPatch) -> None:
     """Drop the waiting windows of `_ensure_service_iframe_attached`."""
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(0))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_ATTACH_TIMEOUT", timedelta(0))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_ATTACH_TIMEOUT", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
 
 
 def _navigated_url(iframe_locator: mock.Mock) -> str:
@@ -299,8 +329,8 @@ def test_transient_errors_during_polling_still_run_the_recovery(
     """
     page, iframe_locator = _page_with_service_iframe(iframe_content=None)
     mock_page = cast("mock.Mock", page)
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
     stale_element = mock.create_autospec(ElementHandle, instance=True)
     stale_element.content_frame.return_value = _frame("about:blank")
     mock_page.query_selector.side_effect = _read_fails_then_returns(
@@ -318,8 +348,8 @@ def test_transient_errors_during_polling_still_see_a_late_navigation(
     """The frame attaching after a failed read must still end the wait without a navigation."""
     page, iframe_locator = _page_with_service_iframe(iframe_content=_frame(_SERVICE_FRAME_URL))
     mock_page = cast("mock.Mock", page)
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    monkeypatch.setattr(playwright_service, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
+    monkeypatch.setattr(playwright_service, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
     mock_page.query_selector.side_effect = _read_fails_then_returns(
         PlaywrightError("Execution context was destroyed"),
         cast("ElementHandle", mock_page.query_selector.return_value),
@@ -487,6 +517,32 @@ class _FakeEventContextManager:
             self.cancelled_with.append(exc_val)
 
 
+_WAIT_TIMED_OUT_MSG: Final[Annotated[str, doc("mirrors the error text Playwright raises when a wait times out")]] = (
+    "Timeout exceeded"
+)
+
+
+class _TimedOutEventContextManager(_FakeEventContextManager):
+    """A wait that times out: the pending event is never delivered, so reading its
+    `value` raises, and an exit without a result reads it and surfaces the timeout."""
+
+    @property
+    def value(self) -> str:
+        self.value_read = True
+        raise PlaywrightTimeoutError(_WAIT_TIMED_OUT_MSG)
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if exc_val is None and not self.value_read:
+            self.value_read = True
+            raise PlaywrightTimeoutError(_WAIT_TIMED_OUT_MSG)
+        super().__exit__(exc_type, exc_val, exc_tb)
+
+
 def _make_reconnectable_waiter(
     predicate: Callable[[str], bool],
 ) -> tuple[_ReconnectableEventWaiter, _FakeEventContextManager]:
@@ -525,6 +581,212 @@ def test_reconnectable_waiter_waits_for_an_event_when_the_predicate_is_not_satis
 
     assert context_manager.value_read is True
     assert context_manager.cancelled_with == []
+
+
+def _timed_out_websocket() -> RobustWebSocket:
+    # NOTE: models a wait that times out: its pending event is never delivered and reading
+    # its value raises, as Playwright does
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.return_value = _TimedOutEventContextManager()
+    return cast(RobustWebSocket, websocket)
+
+
+def _websocket_failing_with(error: BaseException) -> RobustWebSocket:
+    """A wait that cannot even be registered, e.g. because the browser was closed underneath it"""
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.side_effect = error
+    return cast(RobustWebSocket, websocket)
+
+
+class _SawStatesThenTimedOutEventContextManager(_TimedOutEventContextManager):
+    """A wait that received pushes for the project without any of them matching, then timed out"""
+
+    def __init__(self, predicate: Callable[[str], bool], messages: list[str]) -> None:
+        super().__init__()
+        self._predicate = predicate
+        self._messages = messages
+
+    def __enter__(self) -> Self:
+        for message in self._messages:
+            self._predicate(message)
+        return self
+
+
+def _websocket_that_times_out_after(*messages: str) -> RobustWebSocket:
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.side_effect = lambda _event, predicate, **_kwargs: _SawStatesThenTimedOutEventContextManager(
+        predicate, list(messages)
+    )
+    return cast(RobustWebSocket, websocket)
+
+
+def _satisfied_websocket() -> RobustWebSocket:
+    # NOTE: an already-settled wait, so exiting the outputs wait without a caller error is
+    # not treated as a cancellation
+    websocket = mock.create_autospec(RobustWebSocket, instance=True)
+    websocket.expect_event.return_value = _FakeEventContextManager(done=True)
+    return cast(RobustWebSocket, websocket)
+
+
+@pytest.mark.parametrize(
+    "state,expected_fragments",
+    [
+        pytest.param(
+            RunningState.PUBLISHED,
+            (_NEVER_SENT_TO_SCHEDULER_MARKER, "director-v2"),
+            id="published-blames-backend-scheduling",
+        ),
+        pytest.param(
+            # NOTE: a task reaches PENDING once the scheduler gave it a job id, so the wait then
+            # lacks a worker rather than a scheduler
+            RunningState.PENDING,
+            (_NO_WORKER_MARKER, "dask-sidecar"),
+            id="pending-blames-the-worker-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_RESOURCES,
+            (_NO_WORKER_MARKER, "autoscaling"),
+            id="resource-wait-blames-the-worker-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_CLUSTER,
+            (_NO_CLUSTER_MARKER, "autoscaling"),
+            id="cluster-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(RunningState.STARTED, (), id="a-stuck-running-pipeline-names-no-layer"),
+    ],
+)
+def test_pipeline_state_timeout_message_names_the_stalled_layer(
+    state: RunningState,
+    expected_fragments: Annotated[tuple[str, ...], doc("fragments the failure message must carry for this state")],
+    caplog: pytest.LogCaptureFixture,
+):
+    with pytest.raises(PlaywrightTimeoutError), caplog.at_level(logging.INFO):
+        wait_for_pipeline_state(
+            state,
+            websocket=_timed_out_websocket(),
+            project_uuid="project-a",
+            if_in_states=(state,),
+            expected_states=(RunningState.STARTED, RunningState.SUCCESS),
+            timeout_ms=100,
+        )
+
+    assert state.value in caplog.text
+    for fragment in expected_fragments:
+        assert fragment in caplog.text
+    for marker in _STALL_HINT_MARKERS:
+        assert (marker in caplog.text) is (marker in expected_fragments)
+
+
+def test_a_wait_that_progressed_before_timing_out_reports_the_last_state_seen(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: only the state that matches the expectation ends the wait, so a pipeline can be
+    # reported as stuck in the state it left behind unless the last push is looked up
+    websocket = _websocket_that_times_out_after(
+        _project_state_updated_message("project-a", RunningState.PUBLISHED),
+        _project_state_updated_message("project-a", RunningState.STARTED),
+    )
+
+    with pytest.raises(PlaywrightTimeoutError), caplog.at_level(logging.INFO):
+        wait_for_pipeline_state(
+            RunningState.PUBLISHED,
+            websocket=websocket,
+            project_uuid="project-a",
+            if_in_states=(RunningState.PUBLISHED,),
+            expected_states=(RunningState.SUCCESS,),
+            timeout_ms=100,
+        )
+
+    assert f"timed out with {RunningState.STARTED}" in caplog.text
+    for marker in _STALL_HINT_MARKERS:
+        assert marker not in caplog.text
+
+
+def test_a_websocket_error_that_is_not_a_timeout_names_no_backend_layer(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: a socket that never connected says nothing about the backend, so the state it was
+    # waiting in must not be turned into a backend diagnosis
+    with pytest.raises(PlaywrightError), caplog.at_level(logging.INFO):
+        wait_for_pipeline_state(
+            RunningState.PUBLISHED,
+            websocket=_websocket_failing_with(PlaywrightError("Target page, context or browser has been closed")),
+            project_uuid="project-a",
+            if_in_states=(RunningState.PUBLISHED,),
+            expected_states=(RunningState.STARTED, RunningState.SUCCESS),
+            timeout_ms=100,
+        )
+
+    assert "pipeline failed or timed out" in caplog.text
+    for marker in _STALL_HINT_MARKERS:
+        assert marker not in caplog.text
+
+
+def test_outputs_wait_with_failed_caller_block_does_not_blame_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: when the caller's block raises, no output was ever expected, so blaming the
+    # db-listener for the missing push would misdirect the reader
+    def _pipeline_wait_failed() -> NoReturn:
+        msg = "pipeline wait failed"
+        raise RuntimeError(msg)
+
+    with (
+        pytest.raises(RuntimeError, match="pipeline wait failed"),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _satisfied_websocket(),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        _pipeline_wait_failed()
+
+    assert "missing outputs push" in caplog.text
+    assert "the outputs wait never timed out" in caplog.text
+    assert "db-listener" not in caplog.text
+
+
+def test_outputs_wait_timeout_after_ok_caller_block_still_suggests_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: outputs the backend pushed but the client never received IS a db-listener symptom,
+    # so the TIP must still fire when the caller's block completed cleanly
+    with (
+        pytest.raises(PlaywrightTimeoutError),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _timed_out_websocket(),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        pass
+
+    assert "missing outputs push" in caplog.text
+    assert "db-listener" in caplog.text
+    assert "the outputs wait never timed out" not in caplog.text
+
+
+def test_outputs_wait_that_never_ran_does_not_blame_the_db_listener(
+    caplog: pytest.LogCaptureFixture,
+):
+    # NOTE: if the websocket failed, nothing was ever listened to, which is again not a
+    # db-listener symptom
+    with (
+        pytest.raises(PlaywrightError),
+        caplog.at_level(logging.INFO),
+        wait_for_nodes_outputs_updated(
+            _websocket_failing_with(PlaywrightError("Target page, context or browser has been closed")),
+            node_id_to_expected_number_of_outputs={_NODE_ID: 1},
+            timeout=100,
+        ),
+    ):
+        pass
+
+    assert "missing outputs push" in caplog.text
+    assert "db-listener" not in caplog.text
 
 
 _S4L_WS_URL: Final[str] = f"https://{_NODE_ID}.services.example.org/socket.io/?EIO=4&transport=websocket"
@@ -779,7 +1041,7 @@ def test_reconnecting_socket_handshaking_during_the_creation_wait_is_adopted(
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
 
     # timeout larger than one slice, so a wait for the full timeout would be detectable
-    reconnect_timeout = 10 * playwright_helpers._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
+    reconnect_timeout = 10 * playwright_websocket._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
     websocket = RobustWebSocket(
         page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=reconnect_timeout
     )
@@ -788,7 +1050,7 @@ def test_reconnecting_socket_handshaking_during_the_creation_wait_is_adopted(
     assert websocket._num_reconnections == 1  # noqa: SLF001
     assert page.expect_websocket_calls == 1
     assert (
-        page.expect_websocket_timeouts[0] == playwright_helpers._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
+        page.expect_websocket_timeouts[0] == playwright_websocket._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
     )
 
 
@@ -1002,7 +1264,7 @@ def test_repeated_moves_count_against_the_reattachment_limit():
         robust_websocket=cast(RobustWebSocket, robust), event="framereceived", predicate=None, timeout=None
     )
 
-    for _attempt in range(playwright_helpers._MAX_REATTACH_ATTEMPTS):  # noqa: SLF001
+    for _attempt in range(playwright_websocket._MAX_REATTACH_ATTEMPTS):  # noqa: SLF001
         robust.ws = SimpleNamespace(expect_event=lambda *_a, **_k: _FakeEventContextManager())
         waiter.reattach_on_reconnection()
         assert waiter._failed_reattachment is None  # noqa: SLF001
@@ -1036,3 +1298,251 @@ def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
 
     assert websocket.ws is reconnected
     assert healthy._bound_ws is reconnected  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    "state,node_statuses,expected_fragments",
+    [
+        pytest.param(
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.NOT_STARTED},
+            (_NEVER_SENT_TO_SCHEDULER_MARKER, "director-v2"),
+            id="published-with-no-task-scheduled-blames-scheduling",
+        ),
+        pytest.param(
+            # NOTE: publishing a run already marks its tasks PUBLISHED, so a scheduler outage leaves
+            # both the run and its nodes in PUBLISHED with nothing scheduled
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.PUBLISHED},
+            (_NEVER_SENT_TO_SCHEDULER_MARKER, "director-v2"),
+            id="published-with-published-tasks-blames-scheduling",
+        ),
+        pytest.param(
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.STARTED},
+            (),
+            id="published-with-a-running-task-is-not-a-scheduling-stall",
+        ),
+        pytest.param(
+            # NOTE: one task reaching the scheduler is enough to rule out a scheduling stall
+            RunningState.PUBLISHED,
+            {_NODE_ID: RunningState.NOT_STARTED, _OTHER_NODE_ID: RunningState.STARTED},
+            (),
+            id="published-with-one-of-two-tasks-scheduled-is-not-a-scheduling-stall",
+        ),
+        pytest.param(
+            RunningState.PUBLISHED,
+            {},
+            (),
+            id="published-without-nodes-is-not-blamed-on-scheduling",
+        ),
+        pytest.param(
+            RunningState.PENDING,
+            {_NODE_ID: RunningState.PENDING},
+            (_NO_WORKER_MARKER, "dask-sidecar"),
+            id="pending-blames-the-worker-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_RESOURCES,
+            {_NODE_ID: RunningState.WAITING_FOR_RESOURCES},
+            (_NO_WORKER_MARKER, "autoscaling"),
+            id="resource-wait-blames-the-worker-layer",
+        ),
+        pytest.param(
+            RunningState.WAITING_FOR_CLUSTER,
+            {_NODE_ID: RunningState.NOT_STARTED},
+            (_NO_CLUSTER_MARKER, "autoscaling"),
+            id="cluster-wait-blames-the-cluster-layer",
+        ),
+        pytest.param(
+            RunningState.FAILED,
+            {_NODE_ID: RunningState.FAILED},
+            (_NODE_ID,),
+            id="failed-names-the-failed-node",
+        ),
+        pytest.param(
+            RunningState.FAILED,
+            {_NODE_ID: RunningState.ABORTED},
+            (),
+            id="failed-without-failed-nodes-names-no-node",
+        ),
+        pytest.param(
+            RunningState.SUCCESS,
+            {_NODE_ID: RunningState.SUCCESS},
+            (),
+            id="success-gets-no-hint",
+        ),
+    ],
+)
+def test_classify_backend_stall_hints_match_what_the_backend_reports(
+    state: RunningState,
+    node_statuses: dict[str, RunningState],
+    expected_fragments: tuple[str, ...],
+):
+    text = "\n".join(classify_backend_stall(state, node_statuses))
+    for fragment in expected_fragments:
+        assert fragment in text
+
+    for marker in _STALL_HINT_MARKERS:
+        assert (marker in text) is (marker in expected_fragments)
+    if not expected_fragments:
+        assert text == ""
+
+
+_COMPUTATION_EXAMPLE: Final[dict[str, Any]] = ComputationGet.model_json_schema()["examples"][0]
+
+
+def _computation_body(*computations: ComputationGet) -> dict[str, Any]:
+    return {"data": [c.model_dump(mode="json") for c in computations], "error": None}
+
+
+def _computation(**overrides: Any) -> ComputationGet:
+    return ComputationGet.model_validate(_COMPUTATION_EXAMPLE | overrides)
+
+
+def test_backend_computation_snapshots_reports_every_variant_the_web_server_returns():
+    # NOTE: GET /v0/computations/{project_id} answers with one ComputationGet per runnable variant
+    # of the project (ref_ids), and the stalled one is not necessarily the first
+    healthy = _computation(id=_NODE_ID, state=RunningState.SUCCESS)
+    stalled = _computation(id=_OTHER_NODE_ID, state=RunningState.WAITING_FOR_CLUSTER)
+
+    snapshots = backend_computation_snapshots(_computation_body(healthy, stalled))
+
+    assert list(snapshots) == [_NODE_ID, _OTHER_NODE_ID]
+    assert snapshots[_NODE_ID]["state"] == RunningState.SUCCESS.value
+    assert snapshots[_NODE_ID]["stall_hints"] == []
+    assert snapshots[_OTHER_NODE_ID]["state"] == RunningState.WAITING_FOR_CLUSTER.value
+    assert [
+        marker for hint in snapshots[_OTHER_NODE_ID]["stall_hints"] for marker in _STALL_HINT_MARKERS if marker in hint
+    ] == [_NO_CLUSTER_MARKER]
+
+
+def test_backend_computation_snapshot_reads_the_node_states_of_a_computation():
+    computation = _computation()
+    node_states = computation.pipeline_details.node_states
+
+    snapshot = backend_computation_snapshots(_computation_body(computation))[f"{computation.id}"]
+
+    assert snapshot["state"] == computation.state.value
+    assert snapshot["result"] == computation.result
+    assert snapshot["node_statuses"] == {
+        f"{node_id}": node_state.current_status.value for node_id, node_state in node_states.items()
+    }
+    # NOTE: the model's example is PUBLISHED with every node NOT_STARTED, i.e. never scheduled
+    reported = [marker for hint in snapshot["stall_hints"] for marker in _STALL_HINT_MARKERS if marker in hint]
+    assert reported == [_NEVER_SENT_TO_SCHEDULER_MARKER]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param({"data": {}}, id="single-object-body"),
+        pytest.param({"data": []}, id="empty-list-body"),
+        pytest.param({"data": [{"state": "PUBLISHED"}]}, id="partial-entry-from-exclude-unset"),
+    ],
+)
+def test_backend_computation_snapshot_rejects_a_body_without_a_full_computation(body: dict[str, Any]):
+    # NOTE: the web-server dumps with exclude_unset, so an entry can lack required fields: the
+    # snapshot of a project is all-or-nothing and the caller reports it as an error
+    with pytest.raises((ValidationError, LookupError)):
+        backend_computation_snapshots(body)
+
+
+def _api_request_answering(*, ok: bool, payload: Any = None, text: str = "not found") -> mock.Mock:
+    response = mock.Mock()
+    response.ok = ok
+    response.status = 200 if ok else 404
+    response.json.return_value = payload
+    response.text.return_value = text
+    api_request_context = mock.Mock()
+    api_request_context.get.return_value = response
+    return api_request_context
+
+
+def test_capture_backend_computation_snapshots_every_variant_of_the_project():
+    stalled = _computation(state=RunningState.PUBLISHED)
+    api_request_context = _api_request_answering(ok=True, payload=_computation_body(stalled))
+
+    captured = capture_backend_computation(api_request_context, AnyUrl("https://foo.test"), f"{stalled.id}")
+
+    assert captured[f"{stalled.id}"]["state"] == RunningState.PUBLISHED.value
+    assert api_request_context.get.call_args.kwargs["timeout"] > 0
+
+
+@pytest.mark.parametrize(
+    "api_request_context,expected_error",
+    [
+        pytest.param(
+            _api_request_answering(ok=False, text="404 Not Found"),
+            "HTTP 404",
+            id="http-error",
+        ),
+        pytest.param(
+            _api_request_answering(ok=True, payload={"data": [{"state": "PUBLISHED"}]}),
+            "validation errors for ComputationGet",
+            id="partial-payload",
+        ),
+    ],
+)
+def test_capture_backend_computation_turns_a_failure_into_an_error_entry(
+    api_request_context: mock.Mock, expected_error: str
+):
+    # NOTE: the caller stops the computations right after this, so a raise here would hide the
+    # test's own error and skip the stop requests
+    captured = capture_backend_computation(api_request_context, AnyUrl("https://foo.test"), _NODE_ID)
+
+    assert set(captured) == {"error"}
+    assert expected_error in captured["error"]
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param(None, None, id="unset"),
+        pytest.param("", None, id="empty"),
+        pytest.param(
+            "https://grafana.test/?orgId=1",
+            "https://grafana.test",
+            id="query-dropped",
+        ),
+        pytest.param(
+            "https://grafana.test/grafana/",
+            "https://grafana.test/grafana",
+            id="path-kept-trailing-slash-dropped",
+        ),
+        pytest.param("https://[grafana.example/", None, id="malformed-url"),
+        pytest.param("grafana.test", None, id="no-scheme"),
+    ],
+)
+def test_normalize_grafana_base_url(value: str | None, expected: str | None):
+    assert normalize_grafana_base_url(value) == expected
+
+
+def test_the_logs_query_selects_the_services_the_failure_hints_name():
+    # NOTE: an explore link whose filter drops wb-db-event-listener cannot show the logs of the
+    # service the outputs wait blames, so the query has to keep up with the hints
+    stream_pattern = FAILURE_DIAGNOSIS_LOGS_QUERY.removeprefix('{service_name=~"').removesuffix('"}')
+    stream_name = re.compile(stream_pattern)
+
+    for service in FAILURE_DIAGNOSIS_LOG_SERVICES:
+        assert stream_name.fullmatch(f"master-simcore_master_{service}"), service
+    assert not stream_name.fullmatch("master-simcore_master_dyn-proxy_1234")
+
+
+def test_grafana_explore_url_carries_the_datasource_query_and_window():
+    start = datetime(2026, 11, 19, 10, 0, tzinfo=UTC)
+    end = datetime(2026, 11, 19, 10, 30, tzinfo=UTC)
+
+    url = grafana_explore_url(
+        "https://grafana.test",
+        datasource_uid="victoria-logs",
+        query='{service_name=~".*_webserver"}',
+        start_time=start,
+        end_time=end,
+    )
+
+    assert url.startswith("https://grafana.test/explore?left=")
+    pane = json.loads(urllib.parse.unquote(url.removeprefix("https://grafana.test/explore?left=")))
+    assert pane["datasource"] == "victoria-logs"
+    assert pane["queries"][0]["expr"] == '{service_name=~".*_webserver"}'
+    assert pane["range"] == {"from": 1795082400000, "to": 1795084200000}

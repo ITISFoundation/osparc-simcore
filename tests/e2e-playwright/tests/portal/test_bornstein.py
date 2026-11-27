@@ -12,14 +12,10 @@ from annotated_types import doc
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-    check_node_files_panel,
-    get_node_id_from_service_key,
-    wait_for_service_running,
-)
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
+from pytest_simcore.helpers.playwright_page import check_node_files_panel, get_node_id_from_service_key
 from pytest_simcore.helpers.playwright_portal import restore_iframe
+from pytest_simcore.helpers.playwright_service import wait_for_service_running
 
 _IS_SERVICE_LEGACY: Final[
     Annotated[

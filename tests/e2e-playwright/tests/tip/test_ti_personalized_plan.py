@@ -33,13 +33,9 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-    RobustWebSocket,
-    app_mode_trigger_next_app,
-    expected_service_running,
-)
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
+from pytest_simcore.helpers.playwright_service import app_mode_trigger_next_app, expected_service_running
+from pytest_simcore.helpers.playwright_websocket import RobustWebSocket
 from tenacity import retry, stop_after_attempt, stop_after_delay, wait_fixed
 
 _OPEN_PROJECT_WAIT_TIME: Final[int] = 20 * SECOND

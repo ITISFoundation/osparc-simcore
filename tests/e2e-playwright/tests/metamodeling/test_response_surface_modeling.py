@@ -29,12 +29,9 @@ from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-    RobustWebSocket,
-    wait_for_service_running,
-)
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
+from pytest_simcore.helpers.playwright_service import wait_for_service_running
+from pytest_simcore.helpers.playwright_websocket import RobustWebSocket
 from tenacity import (
     RetryError,
     before_sleep_log,

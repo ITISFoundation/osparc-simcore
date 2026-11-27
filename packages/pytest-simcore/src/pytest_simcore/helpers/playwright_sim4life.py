@@ -9,14 +9,13 @@ from playwright.sync_api import FrameLocator, Page, WebSocket, expect
 from pydantic import AnyUrl, ByteSize, TypeAdapter  # pylint: disable=no-name-in-module
 
 from .logging_tools import log_context
-from .playwright import (
-    MINUTE,
-    SECOND,
+from .playwright_constants import MINUTE, SECOND
+from .playwright_service import wait_for_service_running
+from .playwright_websocket import (
     SOCKETIO_MESSAGE_PREFIX,
     RobustWebSocket,
     SocketIOEvent,
     decode_socketio_42_message,
-    wait_for_service_running,
 )
 
 _S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME: Final[int] = 5 * SECOND

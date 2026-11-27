@@ -7,7 +7,8 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from playwright.sync_api import APIRequestContext, Page
-from pytest_simcore.helpers.playwright import get_node_id_from_service_key, wait_for_service_running
+from pytest_simcore.helpers.playwright_page import get_node_id_from_service_key
+from pytest_simcore.helpers.playwright_service import wait_for_service_running
 
 _FILE_TYPE = "VTK"
 

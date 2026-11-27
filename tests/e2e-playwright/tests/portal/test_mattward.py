@@ -6,12 +6,9 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright import (
-    check_node_files_panel,
-    get_node_id_from_service_key,
-    wait_for_service_running,
-)
+from pytest_simcore.helpers.playwright_page import check_node_files_panel, get_node_id_from_service_key
 from pytest_simcore.helpers.playwright_portal import restore_iframe
+from pytest_simcore.helpers.playwright_service import wait_for_service_running
 
 # NOTE: mattward-viewer is a legacy dynamic service (port of the legacy Mattward.js, which calls
 # `waitForServices(..., waitForConnected=true)`), so the websocket node-progress path never fires.

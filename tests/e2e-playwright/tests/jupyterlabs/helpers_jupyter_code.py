@@ -10,7 +10,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import ByteSize
 from pytest_simcore.helpers.datetime_tools import timedelta_as_minute_second_ms
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import SECOND
+from pytest_simcore.helpers.playwright_constants import SECOND
 
 _IDLE_TIMEOUT_MS: Final[int] = 60 * SECOND
 _DISMISS_DIALOG_POLL_MS: Final[int] = 2 * SECOND

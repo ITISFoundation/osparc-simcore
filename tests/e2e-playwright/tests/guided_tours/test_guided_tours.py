@@ -10,7 +10,8 @@ from typing import Final
 import pytest
 from playwright.sync_api import Page, expect
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import SECOND, RobustWebSocket
+from pytest_simcore.helpers.playwright_constants import SECOND
+from pytest_simcore.helpers.playwright_websocket import RobustWebSocket
 
 _TOUR_STEP_TIMEOUT: Final[int] = 30 * SECOND
 _TOUR_STEP_WAIT_BETWEEN: Final[int] = 500  # ms

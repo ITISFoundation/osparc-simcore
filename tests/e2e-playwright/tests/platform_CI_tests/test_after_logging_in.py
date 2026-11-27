@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, Response
-from pytest_simcore.helpers.playwright import RobustWebSocket
+from pytest_simcore.helpers.playwright_websocket import RobustWebSocket
 
 
 @pytest.fixture

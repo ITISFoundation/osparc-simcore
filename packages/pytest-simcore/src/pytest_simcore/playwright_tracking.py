@@ -16,7 +16,7 @@ both fixtures are idempotent.
 import pytest
 from playwright.sync_api import BrowserContext, Page
 
-from .helpers.playwright import start_websocket_tracking
+from .helpers.playwright_websocket import start_websocket_tracking
 
 
 @pytest.fixture

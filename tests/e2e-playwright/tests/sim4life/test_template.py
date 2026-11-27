@@ -12,12 +12,12 @@ from typing import Any
 
 from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import RobustWebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
     wait_for_launched_s4l,
 )
+from pytest_simcore.helpers.playwright_websocket import RobustWebSocket
 
 
 def test_template(

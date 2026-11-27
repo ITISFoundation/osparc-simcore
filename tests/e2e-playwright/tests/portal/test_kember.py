@@ -10,13 +10,10 @@ from playwright.sync_api import Page
 from pytest_simcore.helpers.logging_tools import (
     log_context,
 )
-from pytest_simcore.helpers.playwright import (
-    SECOND,
-    app_mode_trigger_next_app,
-    check_node_files_panel,
-    get_node_id_from_service_key,
-    run_pipeline_and_wait_done,
-)
+from pytest_simcore.helpers.playwright_constants import SECOND
+from pytest_simcore.helpers.playwright_page import check_node_files_panel, get_node_id_from_service_key
+from pytest_simcore.helpers.playwright_pipeline import run_pipeline_and_wait_done
+from pytest_simcore.helpers.playwright_service import app_mode_trigger_next_app
 
 
 def _get_app_mode_steps(page: Page) -> list[str]:

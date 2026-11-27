@@ -31,15 +31,16 @@ from _tip_steps import (
 from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import (
-    MINUTE,
-    SECOND,
-    RobustWebSocket,
-    SocketIOWaitNodeForOutputs,
+from pytest_simcore.helpers.playwright_constants import MINUTE, SECOND
+from pytest_simcore.helpers.playwright_service import (
     app_mode_trigger_next_app,
-    decode_socketio_42_message,
     expected_service_running,
     wait_for_service_running,
+)
+from pytest_simcore.helpers.playwright_websocket import (
+    RobustWebSocket,
+    SocketIOWaitNodeForOutputs,
+    decode_socketio_42_message,
 )
 
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1

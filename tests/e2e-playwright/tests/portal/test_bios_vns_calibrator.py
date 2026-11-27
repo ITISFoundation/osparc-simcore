@@ -6,8 +6,9 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page, expect
-from pytest_simcore.helpers.playwright import get_node_id_from_service_key, wait_for_service_running
+from pytest_simcore.helpers.playwright_page import get_node_id_from_service_key
 from pytest_simcore.helpers.playwright_portal import restore_iframe
+from pytest_simcore.helpers.playwright_service import wait_for_service_running
 
 # NOTE: port of the legacy BIOS_VNS_Calibrator.js, which calls
 # `waitForServices(..., waitForConnected=false)`
