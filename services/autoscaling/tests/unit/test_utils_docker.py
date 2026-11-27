@@ -9,7 +9,6 @@ import itertools
 import logging
 import random
 import secrets
-import subprocess
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
@@ -41,6 +40,7 @@ from models_library.services_metadata_runtime import (
 )
 from pydantic import ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.ec2_boot import BootScriptRunner
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
@@ -175,10 +175,10 @@ async def test_get_monitored_nodes_with_valid_label(
     assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(exclude=EXCLUDED_KEYS)
 
 
-def _create_arrow_from_node_created_at(node: Node) -> arrow.Arrow:
-    """Creation date of a node built with an explicit ``CreatedAt``, which aiodocker types as optional"""
+def _create_node_creation_datetime(node: Node) -> datetime.datetime:
+    """Creation datetime of a node, parsed from the ``created_at`` string aiodocker types as optional"""
     assert node.created_at
-    return arrow.get(node.created_at)
+    return datetime.datetime.fromisoformat(node.created_at)
 
 
 async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
@@ -192,11 +192,9 @@ async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
     mocked_aiodocker.list.return_value = fake_nodes
     monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=[])
     assert len(monitored_nodes) == len(fake_nodes)
-    sorted_fake_nodes = sorted(fake_nodes, key=_create_arrow_from_node_created_at)
+    sorted_fake_nodes = sorted(fake_nodes, key=_create_node_creation_datetime)
     assert monitored_nodes == sorted_fake_nodes
-    assert _create_arrow_from_node_created_at(monitored_nodes[0]) < _create_arrow_from_node_created_at(
-        monitored_nodes[1]
-    )
+    assert _create_node_creation_datetime(monitored_nodes[0]) < _create_node_creation_datetime(monitored_nodes[1])
 
 
 async def test_worker_nodes(
@@ -859,23 +857,20 @@ async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
     assert join_script_non_idempotent.count("docker swarm join") == 1
 
 
-# counts the calls it receives in $CALLS_FILE and succeeds from the second one on
-_DOCKER_SUCCEEDS_ON_SECOND_LOGIN = """#!/usr/bin/env bash
+_DOCKER_SUCCEEDS_ON_SECOND_LOGIN: Final[str] = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
 test "$calls" -ge 2
 """
 
-# counts the calls it receives in $CALLS_FILE and logs the arguments it was given in $ARGS_FILE
-_DOCKER_ALWAYS_FAILS_LOGIN = """#!/usr/bin/env bash
+_DOCKER_ALWAYS_FAILS_LOGIN: Final[str] = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
 if [ -n "$ARGS_FILE" ]; then printf '%s\\n' "$*" >> "$ARGS_FILE"; fi
 exit 1
 """
 
-# never returns on its own, only `timeout` can stop it
-_DOCKER_HANGS_ON_LOGIN = """#!/usr/bin/env bash
+_DOCKER_HANGS_ON_LOGIN: Final[str] = """#!/usr/bin/env bash
 calls=$(( $(cat "$CALLS_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$calls" > "$CALLS_FILE"
 sleep 300
@@ -899,7 +894,7 @@ def mock_registry_settings() -> RegistrySettings:
 def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
     mock_registry_settings: RegistrySettings,
     tmp_path: Path,
-    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
+    run_as_if_in_ec2: BootScriptRunner,
 ):
     command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file = tmp_path / "calls"
@@ -914,7 +909,7 @@ def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
 def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
     mock_registry_settings: RegistrySettings,
     tmp_path: Path,
-    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
+    run_as_if_in_ec2: BootScriptRunner,
 ):
     command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file, args_file = tmp_path / "calls", tmp_path / "args"
@@ -945,7 +940,7 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
     mock_registry_settings: RegistrySettings,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
+    run_as_if_in_ec2: BootScriptRunner,
 ):
     monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_MAX_ATTEMPTS", 1)
     # half of 6 s for 1 attempt, minus the 1 s kill delay and the 1 s retry delay, leaves a 1 s attempt

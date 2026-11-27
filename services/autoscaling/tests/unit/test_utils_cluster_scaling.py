@@ -7,7 +7,6 @@
 import datetime
 import json
 import secrets
-import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from random import choice, shuffle
@@ -19,6 +18,7 @@ from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import TypeAdapter
+from pytest_simcore.ec2_boot import BootScriptRunner
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -247,7 +247,7 @@ async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
     with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
     app_settings: ApplicationSettings,
     tmp_path: Path,
-    run_as_if_in_ec2: Callable[..., subprocess.CompletedProcess[str]],
+    run_as_if_in_ec2: BootScriptRunner,
 ):
     """A machine that cannot log in must not join the swarm
 
@@ -260,7 +260,6 @@ async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
     docker_calls_log_path = tmp_path / "docker-calls.log"
-    docker_calls_log_path.write_text("")
     result = run_as_if_in_ec2(
         startup_script,
         {
@@ -273,7 +272,7 @@ test "$1" != login
     )
 
     assert result.returncode != 0, result.stderr
-    logged_docker_calls = docker_calls_log_path.read_text()
+    logged_docker_calls = docker_calls_log_path.read_text() if docker_calls_log_path.exists() else ""
     assert "login" in logged_docker_calls, "the boot script never tried to log in"
     assert "swarm join" not in logged_docker_calls, "the machine joined the swarm without credentials"
 
