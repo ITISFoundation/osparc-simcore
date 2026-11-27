@@ -53,7 +53,6 @@ def _k8s_cluster_exists(k8s_dir: Path) -> bool:
 
 @pytest.fixture(scope="session")
 def kubernetes_cluster_env(kind_env_file: Path) -> FrozenEnvVarsDict:
-    """Host address and ports where the kind cluster publishes its workloads (k8s/kind.env)"""
     return MappingProxyType(load_dotenv(kind_env_file, verbose=True, interpolate=True))
 
 

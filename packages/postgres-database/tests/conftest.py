@@ -96,7 +96,6 @@ def postgres_service_docker_swarm(docker_services, docker_ip, docker_compose_fil
 
 @pytest.fixture(scope="session")
 def k8s_ops_workloads(k8s_cluster: None, osparc_simcore_k8s_dir: Path, keep_docker_up: bool) -> Iterator[list[str]]:
-    """Overrides pytest-simcore fixture: keeps postgres up for the whole session"""
     with deployed_ops_workloads(osparc_simcore_k8s_dir, ["postgres"], keep_docker_up) as releases:
         yield releases
 
@@ -105,7 +104,6 @@ def k8s_ops_workloads(k8s_cluster: None, osparc_simcore_k8s_dir: Path, keep_dock
 def postgres_service_k8s(
     k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict, kubernetes_cluster_env: FrozenEnvVarsDict
 ) -> str:
-    """Deploys postgres in the kind cluster and returns a responsive DSN."""
     host = kubernetes_cluster_env["KIND_HOST"]
     port = kubernetes_cluster_env["KIND_POSTGRES_HOST_PORT"]
 

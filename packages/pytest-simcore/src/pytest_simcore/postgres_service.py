@@ -88,7 +88,6 @@ def postgres_dsn_k8s(
     kubernetes_cluster_env: FrozenEnvVarsDict,
     request: pytest.FixtureRequest,
 ) -> PostgresTestConfig:
-    """Config of the postgres release running in the kubernetes cluster"""
     assert "postgres" in k8s_ops_workloads
 
     database = env_devel_dict_session["POSTGRES_DB"]
