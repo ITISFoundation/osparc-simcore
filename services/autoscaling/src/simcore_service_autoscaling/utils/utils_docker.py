@@ -8,10 +8,11 @@ import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
-from typing import Final, cast
+from typing import Annotated, Final, cast
 
 import arrow
 import yaml
+from annotated_types import doc
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
@@ -462,21 +463,25 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempoten
 
 
 def _as_bash_seconds(duration: datetime.timedelta) -> str:
-    """`timeout` and `sleep` accept fractional seconds, so no sub-second part is dropped"""
     return f"{duration.total_seconds():g}"
 
 
 def get_docker_login_on_start_bash_command(
     registry_settings: RegistrySettings, instance_max_start_time: datetime.timedelta
-) -> str:
+) -> Annotated[
+    str,
+    doc(
+        "a single bash command that exits 0 on the first successful attempt and 1 after the last one; it contains "
+        "no `&` because the boot script joins its steps on it"
+    ),
+]:
     """Returns the command logging a machine in to the registry at boot, retrying it up to DOCKER_LOGIN_MAX_ATTEMPTS.
 
-    The retry loop gets DOCKER_LOGIN_SHARE_OF_START_TIME of `instance_max_start_time`, which is counted from
-    launch, so boot, custom scripts and the swarm join keep the rest. Each attempt gets that budget split over the
-    attempts, minus the kill delay and the retry delay, and at least DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT: below that
-    the loop outlasts its budget and a warning is logged. The retry runs in a subshell that exits on the first
-    success or with an error after the last attempt. The command contains no `&` because the boot script joins
-    its steps on it.
+    Args:
+        registry_settings: registry credentials the machine logs in with
+        instance_max_start_time: EC2_INSTANCES_MAX_START_TIME, counted from the instance launch. The retry loop
+            gets DOCKER_LOGIN_SHARE_OF_START_TIME of it, split over the attempts minus the kill and retry delays,
+            and at least DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT; below that floor a warning is logged.
     """
     login_budget = instance_max_start_time * DOCKER_LOGIN_SHARE_OF_START_TIME
     attempt_timeout = login_budget / DOCKER_LOGIN_MAX_ATTEMPTS - DOCKER_LOGIN_KILL_DELAY - DOCKER_LOGIN_RETRY_DELAY
