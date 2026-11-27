@@ -9,14 +9,15 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from multiprocessing.queues import Queue
 from threading import Barrier, Thread
 from typing import Final
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from pydantic import PositiveFloat
+from models_library.services_io import ServiceOutput
+from pydantic import PositiveFloat, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
@@ -28,7 +29,9 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
+from simcore_service_dynamic_sidecar.modules.outputs import _content_monitor
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
+from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.asyncio import AsyncRetrying
@@ -40,6 +43,27 @@ logger = logging.getLogger(__name__)
 
 _CONCURRENT_RUN_TIMEOUT_S: Final[float] = 10
 _COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
+
+
+@pytest.fixture
+def with_disable_quiet_delay(mocker: MockerFixture) -> None:
+    mocker.patch.object(_content_monitor, "_QUIET_SECONDS", 0.0)
+
+
+@pytest.fixture
+def mock_outputs_labels() -> dict[str, ServiceOutput]:
+    return {
+        "output_port_1": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
+        "output_port_2": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
+    }
+
+
+@pytest.fixture
+def mock_outputs_event_delivery(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    mock = MagicMock()
+    outputs_manager: OutputsManager = app.state.outputs_manager
+    monkeypatch.setattr(outputs_manager, "on_port_key_change", mock)
+    return mock
 
 
 #

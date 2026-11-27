@@ -16,7 +16,7 @@ from ..mounted_fs import MountedVolumes
 class OutputsContext:
     outputs_path: Path
 
-    # _PortKeysEventHandler (generates) -> EventFilter (receives)
+    # _PortKeysEventHandler (generates) -> OutputsManager (receives)
     port_key_events_queue: Queue[str | None] = field(default_factory=multiprocessing.Queue)
 
     # OutputsContext (generates) -> _EventHandlerProcess(receives)

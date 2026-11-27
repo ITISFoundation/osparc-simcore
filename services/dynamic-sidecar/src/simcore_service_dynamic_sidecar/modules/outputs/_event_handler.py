@@ -1,6 +1,7 @@
 import logging
 import logging.handlers
 import multiprocessing
+import os
 from asyncio import CancelledError, Task, create_task, get_event_loop, to_thread
 from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
@@ -55,12 +56,10 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
 
     def _get_relative_path_parents(self, path: bytes | str) -> list[str]:
         try:
-            spath_relative_to_outputs = Path(path.decode() if isinstance(path, bytes) else path).relative_to(
-                self.outputs_path
-            )
+            relative_path = Path(os.fsdecode(path)).relative_to(self.outputs_path)
         except ValueError:
             return []
-        return [f"{x}" for x in spath_relative_to_outputs.parents]
+        return [f"{x}" for x in relative_path.parents]
 
     def event_handler(self, event: FileSystemEvent) -> None:
         if not self._is_event_propagation_enabled:

@@ -48,6 +48,10 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
   (a callback-style fixture) with a `create_` prefix, e.g.
   `create_running_service_task`, so call sites read as actions. Do not name it
   after the created object alone.
+- Name a fixture whose purpose is to toggle or patch a production behavior for
+  the duration of the test, and whose return value nobody consumes, with a
+  `with_` prefix, e.g. `with_disable_quiet_delay`. Its name states the state it
+  installs, not that it merely patches a symbol.
 - Put fixtures shared within a project in its nearest `conftest.py`, and ones
   useful across projects in `pytest-simcore`.
 - Fixtures must not leak mutable state, files, network resources, database
