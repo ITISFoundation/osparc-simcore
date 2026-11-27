@@ -346,6 +346,8 @@ class AccessLayerRepository(BaseRepository):
         governed by its nearest registered ancestor, so a nested directory takes
         precedence over the directories above it. Each ancestor prefix is looked up
         with and without its trailing slash; registrations that disagree deny access.
+        An inherited grant that includes delete is revoked when entries of other
+        users are registered below the path, since operations on it cascade to them.
         A path without registered ancestor can be claimed by the caller (first to
         register owns) unless entries of other users are already registered below it.
         """
@@ -363,9 +365,15 @@ class AccessLayerRepository(BaseRepository):
                         prefix,
                     )
                     return AccessRights.none()
-                return await self._access_rights_of_registered_directory(
-                    connection=connection, user_id=user_id, directory=registered[0]
+                access_rights = await self._access_rights_of_registered_directory(
+                    connection=conn, user_id=user_id, directory=registered[0]
                 )
+                if access_rights.delete and await _has_entries_registered_by_others_below(
+                    conn, file_id=file_id, user_id=user_id
+                ):
+                    # deleting this path cascades into the entries of other users below it
+                    return AccessRights.none()
+                return access_rights
 
             # deleting an unregistered id cascades to everything below it, so a path
             # populated by other users is not up for grabs
