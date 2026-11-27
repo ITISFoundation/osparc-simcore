@@ -342,15 +342,6 @@ class AccessLayerRepository(BaseRepository):
         user_id: UserID,
         file_id: StorageFileID,
     ) -> AccessRights:
-        """A file inside a registered api/ directory has no entry of its own and is
-        governed by its nearest registered ancestor, so a nested directory takes
-        precedence over the directories above it. Each ancestor prefix is looked up
-        with and without its trailing slash; registrations that disagree deny access.
-        An inherited grant that includes delete is revoked when entries of other
-        users are registered below the path, since operations on it cascade to them.
-        A path without registered ancestor can be claimed by the caller (first to
-        register owns) unless entries of other users are already registered below it.
-        """
         ancestor_prefixes = _ancestor_prefixes(file_id)
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:

@@ -365,7 +365,10 @@ async def test_unregistered_api_directory_with_foreign_contents_is_not_claimable
     parent_directory = f"api/{api_dataset_id}/data"
     registered_subdirectory = f"{parent_directory}/sub"
 
-    async with _registered_directories(sqlalchemy_async_engine, [(registered_subdirectory, user_id)]):
+    async with _registered_directories(
+        sqlalchemy_async_engine,
+        [(registered_subdirectory, user_id), (f"{registered_subdirectory}/deep", user_id)],
+    ):
         repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
 
         access = await repository.get_file_access_rights(user_id=other_user_id, file_id=parent_directory)
@@ -373,6 +376,11 @@ async def test_unregistered_api_directory_with_foreign_contents_is_not_claimable
 
         # the owner can still operate on their own unregistered parent directory
         access = await repository.get_file_access_rights(user_id=user_id, file_id=parent_directory)
+        assert access == AccessRights.all()
+
+        # `_` in the queried path matches literally, never as a LIKE wildcard:
+        # the sibling `su_` must not be judged against the foreign `sub` contents
+        access = await repository.get_file_access_rights(user_id=other_user_id, file_id=f"{parent_directory}/su_")
         assert access == AccessRights.all()
 
 
