@@ -167,7 +167,12 @@ async def test_delete_price_constraints(connection: AsyncConnection, fake_produc
             cause_chain.append(cause)
             cause = cause.__cause__
 
-        assert any(isinstance(err, asyncpg.exceptions.ForeignKeyViolationError) for err in cause_chain), cause_chain
+        constraint_names = [
+            err.constraint_name
+            for err in cause_chain
+            if isinstance(err, asyncpg.exceptions.IntegrityConstraintViolationError)
+        ]
+        assert constraint_names == ["fk_products_prices_product_name"], cause_chain
 
     # GOOD DELETE: this is the correct way to delete
     async with connection.begin():

@@ -2,10 +2,12 @@
 
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 
 import docker
 import pytest
 import sqlalchemy as sa
+import yaml
 from pydantic import PostgresDsn
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
@@ -30,10 +32,11 @@ postgres_config = {
 
 
 @pytest.fixture(scope="module")
-def postgres_container() -> Iterator[PostgresTestConfig]:
+def postgres_container(osparc_simcore_root_dir: Path) -> Iterator[PostgresTestConfig]:
+    compose = yaml.safe_load((osparc_simcore_root_dir / "services/docker-compose.yml").read_text(encoding="utf-8"))
     client = docker.from_env()
     container = client.containers.run(
-        "postgres:14.23",
+        compose["services"]["postgres"]["image"],
         environment={
             "POSTGRES_USER": postgres_config["user"],
             "POSTGRES_PASSWORD": postgres_config["password"],
@@ -81,6 +84,19 @@ def _engine_to(config: PostgresTestConfig, database: str) -> sa.engine.Engine:
 def _count_rows(engine: sa.engine.Engine, table: sa.Table) -> int:
     with engine.connect() as conn:
         return int(conn.execute(sa.select(sa.func.count()).select_from(table)).scalar_one())
+
+
+@pytest.mark.parametrize(
+    "compose_path",
+    [
+        "packages/postgres-database/tests/docker-compose.yml",
+        "services/director-v2/docker-compose-extra.yml",
+    ],
+)
+def test_uses_same_postgres_image(osparc_simcore_root_dir: Path, compose_path: str):
+    stack = yaml.safe_load((osparc_simcore_root_dir / "services/docker-compose.yml").read_text(encoding="utf-8"))
+    fixture = yaml.safe_load((osparc_simcore_root_dir / compose_path).read_text(encoding="utf-8"))
+    assert fixture["services"]["postgres"]["image"] == stack["services"]["postgres"]["image"]
 
 
 class _Psycopg3MissingDatabaseError(Exception):
