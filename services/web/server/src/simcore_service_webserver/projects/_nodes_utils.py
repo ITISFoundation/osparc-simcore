@@ -1,9 +1,15 @@
+from models_library.services import ServiceKey
+from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from models_library.services_resources import ServiceResourcesDict
 
 from .exceptions import (
     InvalidContainerInResourcesSpecsError,
     InvalidImageInResourcesSpecsError,
 )
+
+
+def is_node_computational(service_key: ServiceKey) -> bool:
+    return bool(COMPUTATIONAL_SERVICE_KEY_RE.fullmatch(f"{service_key}"))
 
 
 def validate_new_service_resources(resources: ServiceResourcesDict, *, new_resources: ServiceResourcesDict) -> None:

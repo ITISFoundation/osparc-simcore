@@ -91,6 +91,13 @@ def make_pricing_unit(*, pricing_unit_id: int, default: bool, aws_ec2_instance: 
     )
 
 
+def make_pricing_unit_without_machine(*, pricing_unit_id: int, default: bool = False) -> RutPricingUnitGet:
+    """A pricing unit that defines no EC2 machine, as a per-seat or free unit does"""
+    base = RutPricingUnitGet.model_validate(RutPricingUnitGet.model_json_schema()["examples"][0])
+    no_machine = HardwareInfo(aws_ec2_instances=[])
+    return base.model_copy(update={"pricing_unit_id": pricing_unit_id, "default": default, "specific_info": no_machine})
+
+
 def ec2_type_name_in_pricing_unit_payload(pricing_unit: RutPricingUnitGet) -> str:
     return pricing_unit.specific_info.aws_ec2_instances[0]
 
@@ -137,6 +144,41 @@ def resources_limits(cpu: float, ram_bytes: int) -> dict[str, Any]:
         "CPU": {"limit": cpu, "reservation": cpu},
         "RAM": {"limit": ram_bytes, "reservation": ram_bytes},
     }
+
+
+# Hand-computed sizings of the two fixed machines, named once so a test asserts on
+# a name instead of repeating a magic number. Values are the table in this module's
+# docstring — deliberately NOT derived from the formulas above, which is what the
+# tests pin.
+T3_MEDIUM_DASK_WORKER_CPUS: Final[float] = 1.9
+T3_MEDIUM_DASK_WORKER_RAM_BYTES: Final[int] = 3865470566
+T3_MEDIUM_DYNAMIC_SIDECAR_CPUS: Final[float] = 0.6
+T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES: Final[int] = 2791728742
+R5_4XLARGE_DASK_WORKER_CPUS: Final[float] = 15.9
+R5_4XLARGE_DASK_WORKER_RAM_BYTES: Final[int] = 123695058124
+R5_4XLARGE_DYNAMIC_SIDECAR_CPUS: Final[float] = 14.6
+R5_4XLARGE_DYNAMIC_SIDECAR_RAM_BYTES: Final[int] = 122621316300
+
+T3_MEDIUM_DASK_WORKER_LIMITS: Final = resources_limits(
+    cpu=T3_MEDIUM_DASK_WORKER_CPUS, ram_bytes=T3_MEDIUM_DASK_WORKER_RAM_BYTES
+)
+T3_MEDIUM_DYNAMIC_SIDECAR_LIMITS: Final = resources_limits(
+    cpu=T3_MEDIUM_DYNAMIC_SIDECAR_CPUS, ram_bytes=T3_MEDIUM_DYNAMIC_SIDECAR_RAM_BYTES
+)
+R5_4XLARGE_DASK_WORKER_LIMITS: Final = resources_limits(
+    cpu=R5_4XLARGE_DASK_WORKER_CPUS, ram_bytes=R5_4XLARGE_DASK_WORKER_RAM_BYTES
+)
+R5_4XLARGE_DYNAMIC_SIDECAR_LIMITS: Final = resources_limits(
+    cpu=R5_4XLARGE_DYNAMIC_SIDECAR_CPUS, ram_bytes=R5_4XLARGE_DYNAMIC_SIDECAR_RAM_BYTES
+)
+
+
+# ---------------------------------------------------------------------------
+# Pricing plan/unit ids the mocked resource-usage-tracker serves
+# ---------------------------------------------------------------------------
+
+DEFAULT_PRICING_PLAN_ID: Final[int] = 1
+DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the product default, on t3.medium")]] = 1
 
 
 # ---------------------------------------------------------------------------
