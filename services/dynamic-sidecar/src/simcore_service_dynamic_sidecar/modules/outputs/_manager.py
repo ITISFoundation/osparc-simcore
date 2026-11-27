@@ -448,6 +448,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         # for each port. If any error is detected this will raise.
         any_failed_upload = any(True for v in self._last_upload_error_tracker.values() if v is not None)
         if any_failed_upload:
+            # OsparcErrorMixin.__init__ takes **kwargs; pyright sees only RuntimeError's signature
             raise UploadPortsFailedError(failures=self._last_upload_error_tracker)  # pyright: ignore[reportCallIssue]
 
     async def _no_outputs_work_left(self) -> bool:

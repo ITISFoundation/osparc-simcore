@@ -132,7 +132,7 @@ async def outputs_watcher(
 
 
 @pytest.fixture
-def mock_event_filter_upload_trigger(mocker: MockerFixture, outputs_manager: OutputsManager) -> MagicMock:
+def mock_manager_notification(mocker: MockerFixture, outputs_manager: OutputsManager) -> MagicMock:
     # every delivered event reaches the manager; the quiet-trigger check runs afterwards
     mock_on_event = MagicMock()
 
@@ -286,7 +286,7 @@ async def _wait_for_events_to_trigger() -> None:
 
 
 async def test_run_observer(
-    mock_event_filter_upload_trigger: AsyncMock,
+    mock_manager_notification: AsyncMock,
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
@@ -298,25 +298,25 @@ async def test_run_observer(
     outputs_path = outputs_watcher.outputs_context.outputs_path
 
     # generates the first event chain
-    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, port_keys[0])
+    await _wait_for_watch_registration_trigger(mock_manager_notification, outputs_path, port_keys[0])
     await _generate_event_burst(outputs_path, port_keys[0])
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert _get_notified_port_keys(mock_event_filter_upload_trigger) == {port_keys[0]}
+            assert _get_notified_port_keys(mock_manager_notification) == {port_keys[0]}
 
     # generates the second event chain
-    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, port_keys[1])
+    await _wait_for_watch_registration_trigger(mock_manager_notification, outputs_path, port_keys[1])
     await _generate_event_burst(outputs_path, port_keys[1])
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert _get_notified_port_keys(mock_event_filter_upload_trigger) == {port_keys[1]}
+            assert _get_notified_port_keys(mock_manager_notification) == {port_keys[1]}
 
 
 async def test_does_not_trigger_on_attribute_change(
-    mock_event_filter_upload_trigger: AsyncMock,
+    mock_manager_notification: AsyncMock,
     mounted_volumes: MountedVolumes,
     port_keys: list[str],
     outputs_watcher: OutputsWatcher,
@@ -335,8 +335,8 @@ async def test_does_not_trigger_on_attribute_change(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert mock_event_filter_upload_trigger.call_count > 0
-    call_count_after_touch = mock_event_filter_upload_trigger.call_count
+            assert mock_manager_notification.call_count > 0
+    call_count_after_touch = mock_manager_notification.call_count
 
     # apply an attribute change
     file_path_1.chmod(0o744)
@@ -345,8 +345,8 @@ async def test_does_not_trigger_on_attribute_change(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert mock_event_filter_upload_trigger.call_count > 0
-            assert mock_event_filter_upload_trigger.call_count == call_count_after_touch
+            assert mock_manager_notification.call_count > 0
+            assert mock_manager_notification.call_count == call_count_after_touch
 
 
 async def test_port_key_sequential_event_generation(
@@ -487,7 +487,7 @@ def _drain_queue(queue: multiprocessing.queues.Queue) -> None:
     "See https://github.com/ITISFoundation/osparc-simcore/issues/9862",
 )
 async def test_notification_queue_stays_bounded_under_event_storm(
-    mock_event_filter_upload_trigger: AsyncMock,
+    mock_manager_notification: AsyncMock,
     mocker: MockerFixture,
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
@@ -502,8 +502,8 @@ async def test_notification_queue_stays_bounded_under_event_storm(
     noisy_port_key, quiet_port_key = port_keys[0], port_keys[1]
 
     # ensure the emitter registered the watches before generating any events
-    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, noisy_port_key)
-    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, quiet_port_key)
+    await _wait_for_watch_registration_trigger(mock_manager_notification, outputs_path, noisy_port_key)
+    await _wait_for_watch_registration_trigger(mock_manager_notification, outputs_path, quiet_port_key)
 
     # stall the consumer at the threaded queue read: waiting inside the manager
     # callback would block the event loop instead of the consumer
@@ -535,7 +535,7 @@ async def test_notification_queue_stays_bounded_under_event_storm(
     async for attempt in AsyncRetrying(**{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(30)}):
         with attempt:
             await asyncio.sleep(0)
-            notified_port_keys = _get_notified_port_keys(mock_event_filter_upload_trigger)
+            notified_port_keys = _get_notified_port_keys(mock_manager_notification)
             assert {noisy_port_key, quiet_port_key} <= notified_port_keys
 
     # a sane design coalesces per port key, so the backlog must not grow with
