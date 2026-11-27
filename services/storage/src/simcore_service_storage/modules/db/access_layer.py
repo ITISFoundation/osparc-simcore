@@ -39,9 +39,10 @@
 
 import logging
 from pathlib import PurePosixPath
-from typing import NamedTuple
+from typing import Annotated, Final, NamedTuple
 
 import sqlalchemy as sa
+from annotated_types import doc
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -69,9 +70,9 @@ class _RegisteredDirectory(NamedTuple):
     project_id: ProjectID | None
 
 
-# `parents` ends with the one-component prefix (e.g. `api`) and the relative
-# root `.`: neither can be a registered directory
-_ROOT_PARENTS_TO_DROP = 2
+_ROOT_PARENTS_TO_DROP: Final[
+    Annotated[int, doc("trailing `parents` entries: the `api` prefix and the relative root `.`, no directory")]
+] = 2
 
 
 def _ancestor_prefixes(file_id: str) -> list[str]:
