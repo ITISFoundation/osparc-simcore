@@ -77,6 +77,10 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 - Test filenames must be unique across the package's test tree. Avoid generic
   names such as `test_list.py`.
+- Name a test module after the single module it tests:
+  `test_<package>_<module>.py`, e.g. tests for `docker_registry.py` live in
+  `test_docker_registry.py`. Tests that do not map to a single module get a
+  double-underscore topic name: `test__<topic>.py`.
 - When splitting a module, keep the full original prefix in each filename, and
   name the directory after the original filename without `test_`:
 

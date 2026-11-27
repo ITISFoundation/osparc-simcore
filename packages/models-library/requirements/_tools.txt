@@ -47,11 +47,11 @@ platformdirs==4.9.4
     #   -c requirements/_test.txt
     #   black
     #   pylint
-pydantic==2.14.3
+pydantic==2.14.4
     # via
     #   -c requirements/_base.txt
     #   typer
-pydantic-core==2.50.4
+pydantic-core==2.50.5
     # via
     #   -c requirements/_base.txt
     #   pydantic

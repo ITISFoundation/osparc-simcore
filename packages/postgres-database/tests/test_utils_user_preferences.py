@@ -145,6 +145,69 @@ async def test_user_preference_repo_workflow(
     )
 
 
+async def test_frontend_preference_conditional_update_preserves_changed_and_missing_values(
+    asyncpg_engine: AsyncEngine,
+    preference_one: str,
+    preference_two: str,
+    product_name: str,
+    create_fake_product: Callable[[str], Awaitable[RowMapping]],
+    faker: Faker,
+):
+    user_id = await _create_user_id(asyncpg_engine, faker)
+    other_user_id = await _create_user_id(asyncpg_engine, faker)
+    other_product_name = (await create_fake_product("other-fake-product"))["name"]
+    repo = FrontendUserPreferencesRepo
+    async with asyncpg_engine.begin() as connection:
+        assert not await repo.save_if_value_unchanged(
+            connection,
+            user_id=user_id,
+            product_name=product_name,
+            preference_name=preference_one,
+            payload={"value": [1]},
+            expected_value=[],
+        )
+        assert (
+            await repo.load(connection, user_id=user_id, product_name=product_name, preference_name=preference_one)
+            is None
+        )
+
+        for owner, product, name in [
+            (user_id, product_name, preference_one),
+            (user_id, product_name, preference_two),
+            (other_user_id, product_name, preference_one),
+            (user_id, other_product_name, preference_one),
+        ]:
+            await repo.save(
+                connection, user_id=owner, product_name=product, preference_name=name, payload={"value": [1, 2]}
+            )
+
+        assert not await repo.save_if_value_unchanged(
+            connection,
+            user_id=user_id,
+            product_name=product_name,
+            preference_name=preference_one,
+            payload={"value": [1]},
+            expected_value=[2, 1],
+        )
+        assert await repo.save_if_value_unchanged(
+            connection,
+            user_id=user_id,
+            product_name=product_name,
+            preference_name=preference_one,
+            payload={"value": [1]},
+            expected_value=[1, 2],
+        )
+        for owner, product, name, value in [
+            (user_id, product_name, preference_one, [1]),
+            (user_id, product_name, preference_two, [1, 2]),
+            (other_user_id, product_name, preference_one, [1, 2]),
+            (user_id, other_product_name, preference_one, [1, 2]),
+        ]:
+            assert await repo.load(connection, user_id=owner, product_name=product, preference_name=name) == {
+                "value": value
+            }
+
+
 async def test__same_preference_name_product_name__different_users(
     asyncpg_engine: AsyncEngine,
     preference_repo: type[BasePreferencesRepo],

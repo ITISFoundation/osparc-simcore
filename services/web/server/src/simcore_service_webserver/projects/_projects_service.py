@@ -165,6 +165,7 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
+from ._default_tags_service import apply_user_default_tags
 from ._nodes_utils import validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
@@ -579,6 +580,13 @@ async def clone_project_data(
             )
             for node_id, node_create in project_nodes.items()
         }
+
+    new_project = await apply_user_default_tags(
+        app,
+        project=new_project,
+        user_id=user_id,
+        product_name=product_name,
+    )
 
     db = ProjectDBAPI.get_from_app_context(app)
     inserted_project = await db.insert_project(

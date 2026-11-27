@@ -5,6 +5,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
@@ -15,6 +16,7 @@ from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from deepdiff import DeepDiff
@@ -25,6 +27,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 from models_library.api_schemas_webserver.projects import ProjectStateOutputSchema
 from models_library.products import ProductName
 from models_library.projects_state import RunningState
+from models_library.shared_user_preferences import DefaultStudyTagIdsFrontendUserPreference
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -54,6 +57,9 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_permalink_service import (
     ProjectPermalink,
 )
+from simcore_service_webserver.tags import tags_service
+from simcore_service_webserver.tags.schemas import TagGet
+from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
@@ -458,6 +464,164 @@ async def test_new_project(
     project_db_cleaner,
 ):
     await request_create_project(client, expected.accepted, expected.created, logged_user, primary_group)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_new_project_merges_accessible_default_tags_and_discards_stale_defaults(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    storage_subsystem_mock,
+    project_db_cleaner,
+    osparc_product_name: str,
+):
+    assert client.app
+
+    tag_ids = []
+    for name in ("explicit tag", "default tag", "source tag"):
+        response = await client.post(
+            client.app.router["create_tag"].url_for(),
+            json={"name": name, "color": "#336699"},
+        )
+        tag, _ = await assert_status(response, status.HTTP_201_CREATED)
+        tag_ids.append(tag["id"])
+
+    accessible_default_tag_id = tag_ids[1]
+    stale_tag_id = 2_147_483_647
+    preference_url = client.app.router["set_frontend_preference"].url_for(preference_id="defaultStudyTagIds")
+    response = await client.patch(
+        preference_url,
+        json={"value": [accessible_default_tag_id, stale_tag_id]},
+    )
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
+
+    explicit_tag_id = tag_ids[0]
+    project = await request_create_project(
+        client,
+        status.HTTP_202_ACCEPTED,
+        status.HTTP_201_CREATED,
+        logged_user,
+        primary_group,
+        project={"tags": [explicit_tag_id]},
+        expected_tags=[explicit_tag_id, accessible_default_tag_id],
+    )
+    assert project["tags"] == [explicit_tag_id, accessible_default_tag_id]
+
+    saved_preference = await user_preferences_service.get_frontend_user_preference(
+        client.app,
+        UserID(logged_user["id"]),
+        ProductName(osparc_product_name),
+        DefaultStudyTagIdsFrontendUserPreference,
+    )
+    assert saved_preference is not None
+    assert saved_preference.value == [accessible_default_tag_id]
+
+    source_tag_id = tag_ids[2]
+    response = await client.post(
+        client.app.router["add_project_tag"].url_for(project_uuid=user_project["uuid"], tag_id=f"{source_tag_id}")
+    )
+    await assert_status(response, status.HTTP_200_OK)
+
+    copied_project = await request_create_project(
+        client,
+        status.HTTP_202_ACCEPTED,
+        status.HTTP_201_CREATED,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+        expected_tags=[source_tag_id, accessible_default_tag_id],
+    )
+    assert copied_project["tags"] == [source_tag_id, accessible_default_tag_id]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("copy_project", [False, True], ids=["new", "copy-with-selection"])
+async def test_new_project_preserves_concurrent_default_tag_preference_update(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    storage_subsystem_mock: MockedStorageSubsystem,
+    project_db_cleaner: None,
+    osparc_product_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+    copy_project: bool,
+):
+    assert client.app
+
+    tag_ids: list[int] = []
+    for name in ("original default", "new default", "selected"):
+        response = await client.post(
+            client.app.router["create_tag"].url_for(),
+            json={"name": name, "color": "#336699"},
+        )
+        tag, _ = await assert_status(response, status.HTTP_201_CREATED)
+        tag_ids.append(tag["id"])
+
+    original_tag_id = tag_ids[0]
+    new_tag_id = tag_ids[1]
+    selected_tag_id = tag_ids[2]
+    stale_tag_id = 2_147_483_647
+    preference_url = client.app.router["set_frontend_preference"].url_for(preference_id="defaultStudyTagIds")
+    response = await client.patch(preference_url, json={"value": [original_tag_id, stale_tag_id]})
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
+
+    list_tags_entered = asyncio.Event()
+    release_list_tags = asyncio.Event()
+    original_list_tags = tags_service.list_tags
+    list_tags_calls = 0
+
+    async def delayed_list_tags(app: web.Application, user_id: UserID) -> list[TagGet]:
+        nonlocal list_tags_calls
+        list_tags_calls += 1
+        if copy_project and list_tags_calls == 1:
+            return await original_list_tags(app, user_id)
+        list_tags_entered.set()
+        await release_list_tags.wait()
+        return await original_list_tags(app, user_id)
+
+    async def create_project() -> ProjectDict:
+        return await request_create_project(
+            client,
+            status.HTTP_202_ACCEPTED,
+            status.HTTP_201_CREATED,
+            logged_user,
+            primary_group,
+            from_study=user_project if copy_project else None,
+            project={"tags": [selected_tag_id]} if copy_project else None,
+            expected_tags=[selected_tag_id, original_tag_id] if copy_project else [original_tag_id],
+        )
+
+    monkeypatch.setattr(tags_service, "list_tags", delayed_list_tags)
+    creation_task = asyncio.create_task(create_project())
+    try:
+        await asyncio.wait_for(list_tags_entered.wait(), timeout=30)
+        response = await asyncio.wait_for(
+            client.patch(preference_url, json={"value": [original_tag_id, new_tag_id]}),
+            timeout=30,
+        )
+        await assert_status(response, status.HTTP_204_NO_CONTENT)
+    finally:
+        release_list_tags.set()
+        await asyncio.wait_for(asyncio.gather(creation_task, return_exceptions=True), timeout=75)
+
+    project = creation_task.result()
+    assert project["tags"] == ([selected_tag_id, original_tag_id] if copy_project else [original_tag_id])
+    saved_preference = await user_preferences_service.get_frontend_user_preference(
+        client.app,
+        UserID(logged_user["id"]),
+        ProductName(osparc_product_name),
+        DefaultStudyTagIdsFrontendUserPreference,
+    )
+    assert saved_preference is not None
+    assert saved_preference.value == [original_tag_id, new_tag_id]
 
 
 @pytest.mark.parametrize(

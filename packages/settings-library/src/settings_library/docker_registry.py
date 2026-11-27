@@ -3,6 +3,7 @@ from typing import Annotated, Any, Self
 
 from pydantic import (
     AnyHttpUrl,
+    BeforeValidator,
     Field,
     SecretStr,
     TypeAdapter,
@@ -12,12 +13,15 @@ from pydantic import (
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
+from .basic_types import HostNamePortStr
+from .utils_validators import validate_no_protocol_scheme
 
 
 class RegistrySettings(BaseCustomSettings):
     REGISTRY_AUTH: Annotated[bool, Field(description="do registry authentication")]
     REGISTRY_PATH: Annotated[
         str | None,
+        BeforeValidator(validate_no_protocol_scheme),
         Field(
             # This is useful in case of a local registry, where the registry url (path)
             # is relative to the host docker engine
@@ -28,7 +32,7 @@ class RegistrySettings(BaseCustomSettings):
     ] = None
 
     REGISTRY_URL: Annotated[
-        str,
+        HostNamePortStr,
         Field(
             # NOTE: name is misleading, http or https protocol are not included
             description="hostname of docker registry (without protocol but with port if available)",

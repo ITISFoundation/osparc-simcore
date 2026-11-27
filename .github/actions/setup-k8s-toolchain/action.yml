@@ -1,0 +1,10 @@
+name: 'Setup k8s toolchain'
+description: 'Installs tools for Kubernetes'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: mise
+      uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+      with:
+        working_directory: ./k8s

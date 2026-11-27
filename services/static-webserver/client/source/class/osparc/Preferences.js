@@ -145,6 +145,13 @@ qx.Class.define("osparc.Preferences", {
       check: "Array",
       event: "changeBillingCenterUsageColumnOrder",
       apply: "__patchPreference"
+    },
+
+    defaultStudyTagIds: {
+      nullable: false,
+      init: [],
+      check: "Array",
+      event: "changeDefaultStudyTagIds"
     }
   },
 

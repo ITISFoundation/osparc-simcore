@@ -8,6 +8,7 @@ from models_library.shared_user_preferences import (
     ConfirmationStopNodeFrontendUserPreference,
     ConnectPortsAutomaticallyFrontendUserPreference,
     CreditsWarningThresholdFrontendUserPreference,
+    DefaultStudyTagIdsFrontendUserPreference,
     DoNotShowAnnouncementsFrontendUserPreference,
     JobConcurrencyLimitFrontendUserPreference,
     LastVcsRefUIFrontendUserPreference,
@@ -48,6 +49,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
     TwoFAFrontendUserPreference,
     BillingCenterUsageColumnOrderFrontendUserPreference,
+    DefaultStudyTagIdsFrontendUserPreference,
 ]
 
 _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {
