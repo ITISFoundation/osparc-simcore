@@ -248,7 +248,7 @@ async def limited_as_completed[T](
                         future.set_name(f"{tasks_group_prefix}-{future.get_name()}")
                     pending_futures.add(future)
 
-                except (StopIteration, StopAsyncIteration):
+                except StopIteration, StopAsyncIteration:
                     completed_all_awaitables = True
             if not pending_futures:
                 return
@@ -351,6 +351,17 @@ async def limited_gather[T](
 
     # NOTE: None is already contained in T
     return cast(list[T | BaseException], interim_results)
+
+
+def raise_first_error[T](results: Iterable[T | BaseException]) -> None:
+    """Raises the first error found in results, if any
+
+    Companion to ``limited_gather(..., reraise=False)``: the gather settles every
+    awaitable (so each one runs its cleanup) before the failure is raised.
+    """
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
 
 
 @lru_cache

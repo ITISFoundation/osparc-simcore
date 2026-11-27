@@ -18,6 +18,7 @@ from servicelib.utils import (
     limited_as_completed,
     limited_gather,
     logged_gather,
+    raise_first_error,
 )
 
 
@@ -276,6 +277,19 @@ async def test_limited_gather_wo_raising(coros: list[Coroutine], mock_logger: mo
     assert isinstance(results[3], RuntimeError)
     assert isinstance(results[4], ValueError)
     assert results[5] == 5
+
+
+def test_raise_first_error_raises_the_first_error_in_order():
+    first_error = ValueError("first")
+    second_error = RuntimeError("second")
+    with pytest.raises(ValueError, match="first") as excinfo:
+        raise_first_error([42, first_error, None, second_error])
+
+    assert excinfo.value is first_error
+
+
+def test_raise_first_error_returns_when_no_errors():
+    raise_first_error([42, "ok", None])
 
 
 async def test_limited_gather_cancellation(slow_successful_coros_list: list[Coroutine]):
