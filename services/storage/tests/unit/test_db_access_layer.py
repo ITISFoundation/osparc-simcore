@@ -20,6 +20,7 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
+from simcore_postgres_database.models.workspaces_access_rights import workspaces_access_rights
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB
 from simcore_service_storage.modules.db.access_layer import (
@@ -178,6 +179,59 @@ async def _registered_api_directory(
 
     async with _registered_directories(engine, [(directory_file_id, owner_id)], project_id=project_id):
         yield _ApiDirectory(directory_file_id=directory_file_id, file_in_directory_id=file_in_directory_id)
+
+
+@asynccontextmanager
+async def _project_in_shared_workspace(
+    engine: AsyncEngine,
+    project_id: ProjectID,
+    grants: list[tuple[UserID, AccessRights]],
+) -> AsyncIterator[int]:
+    # link the project to a workspace and share that workspace with the listed users;
+    # a DB trigger grants the workspace owner (the project owner here) full rights, so
+    # the owner keeps access without an explicit grant row
+    async with engine.begin() as conn:
+        owner_gid = (
+            await conn.execute(
+                sa.select(users.c.primary_gid)
+                .select_from(projects.join(users, projects.c.prj_owner == users.c.id))
+                .where(projects.c.uuid == f"{project_id}")
+            )
+        ).scalar_one()
+        workspace_id = (
+            await conn.execute(
+                workspaces.insert()
+                .values(
+                    name=f"workspace-{project_id}",
+                    description=None,
+                    owner_primary_gid=owner_gid,
+                    thumbnail=None,
+                    created=sa.func.now(),
+                    modified=sa.func.now(),
+                    product_name="osparc",
+                )
+                .returning(workspaces.c.workspace_id)
+            )
+        ).scalar_one()
+        await conn.execute(
+            projects.update().values(workspace_id=workspace_id).where(projects.c.uuid == f"{project_id}")
+        )
+        for granted_user_id, access_rights in grants:
+            await conn.execute(
+                workspaces_access_rights.insert().values(
+                    workspace_id=workspace_id,
+                    gid=(sa.select(users.c.primary_gid).where(users.c.id == granted_user_id).scalar_subquery()),
+                    read=access_rights.read,
+                    write=access_rights.write,
+                    delete=access_rights.delete,
+                    created=sa.func.now(),
+                    modified=sa.func.now(),
+                )
+            )
+    yield workspace_id
+    async with engine.begin() as conn:
+        await conn.execute(workspaces.delete().where(workspaces.c.workspace_id == workspace_id))
+        await conn.execute(projects.update().values(workspace_id=None).where(projects.c.uuid == f"{project_id}"))
 
 
 async def test_files_in_registered_api_directory_follow_directory_ownership(
@@ -425,6 +479,150 @@ async def test_revoked_project_access_below_an_ancestor_denies_write_and_delete(
             )
 
         access = await repository.get_file_access_rights(user_id=user_id, file_id=unregistered_parent)
+        assert access == AccessRights(read=True, write=False, delete=False)
+
+
+async def test_workspace_delete_access_preserves_inherited_grants(
+    user_id: UserID,
+    collaborator_id: UserID,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # access reaching a project through workspaces_access_rights is checked with the
+    # same delete flag as project_to_groups grants
+    api_dataset_id = f"{uuid4()}"
+    ancestor_directory = f"api/{api_dataset_id}/data"
+    unregistered_parent = f"{ancestor_directory}/mid"
+    descendant_directory = f"{unregistered_parent}/sub"
+
+    shared_project = ProjectID((await create_project())["uuid"])
+
+    async with (
+        _project_in_shared_workspace(sqlalchemy_async_engine, shared_project, [(collaborator_id, AccessRights.all())]),
+        _registered_directories(
+            sqlalchemy_async_engine,
+            [(ancestor_directory, user_id), (descendant_directory, user_id)],
+            project_id=shared_project,
+        ),
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=unregistered_parent)
+        assert access == AccessRights.all()
+
+
+async def test_workspace_write_without_delete_strips_write_from_inherited_grant(
+    user_id: UserID,
+    collaborator_id: UserID,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # a workspace member without the delete flag cannot remove the entries shared
+    # through the workspace, so the ancestor grant keeps read only
+    api_dataset_id = f"{uuid4()}"
+    ancestor_directory = f"api/{api_dataset_id}/data"
+    unregistered_parent = f"{ancestor_directory}/mid"
+    descendant_directory = f"{unregistered_parent}/sub"
+
+    shared_project = ProjectID((await create_project())["uuid"])
+
+    async with (
+        _project_in_shared_workspace(
+            sqlalchemy_async_engine,
+            shared_project,
+            [(collaborator_id, AccessRights(read=True, write=True, delete=False))],
+        ),
+        _registered_directories(
+            sqlalchemy_async_engine,
+            [(ancestor_directory, user_id), (descendant_directory, user_id)],
+            project_id=shared_project,
+        ),
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=unregistered_parent)
+        assert access == AccessRights(read=True, write=False, delete=False)
+
+
+async def test_revoked_workspace_access_strips_owner_override(
+    user_id: UserID,
+    other_user_id: UserID,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # the owner override applies only while the project owner holds a readable
+    # workspace grant: once that grant is revoked the descendants below the project
+    # are no longer deletable and the ancestor grant falls back to read
+    api_dataset_id = f"{uuid4()}"
+    ancestor_directory = f"api/{api_dataset_id}/data"
+    unregistered_parent = f"{ancestor_directory}/mid"
+    descendant_directory = f"{unregistered_parent}/sub"
+
+    shared_project = ProjectID((await create_project())["uuid"])
+
+    async with (
+        _project_in_shared_workspace(sqlalchemy_async_engine, shared_project, []) as workspace_id,
+        _registered_directories(sqlalchemy_async_engine, [(ancestor_directory, user_id)]),
+        _registered_directories(
+            sqlalchemy_async_engine, [(descendant_directory, other_user_id)], project_id=shared_project
+        ),
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        # grants intact: the workspace owner (full rights via the insert trigger)
+        # also owns the project and runs the subtree
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=unregistered_parent)
+        assert access == AccessRights.all()
+
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                workspaces_access_rights.delete()
+                .where(workspaces_access_rights.c.workspace_id == workspace_id)
+                .where(
+                    workspaces_access_rights.c.gid
+                    == sa.select(users.c.primary_gid).where(users.c.id == user_id).scalar_subquery()
+                )
+            )
+
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=unregistered_parent)
+        assert access == AccessRights(read=True, write=False, delete=False)
+
+
+async def test_project_access_rights_cannot_bypass_workspace_restrictions(
+    user_id: UserID,
+    collaborator_id: UserID,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # once a project carries a workspace_id, the workspace grants govern it: the
+    # delete=True project_to_groups row must not make the workspace-shared
+    # descendants deletable
+    api_dataset_id = f"{uuid4()}"
+    ancestor_directory = f"api/{api_dataset_id}/data"
+    unregistered_parent = f"{ancestor_directory}/mid"
+    descendant_directory = f"{unregistered_parent}/sub"
+
+    shared_project = ProjectID((await create_project())["uuid"])
+    await create_project_access_rights(
+        project_id=shared_project, user_id=collaborator_id, read=True, write=True, delete=True
+    )
+
+    async with (
+        _project_in_shared_workspace(
+            sqlalchemy_async_engine,
+            shared_project,
+            [(collaborator_id, AccessRights(read=True, write=True, delete=False))],
+        ),
+        _registered_directories(
+            sqlalchemy_async_engine,
+            [(ancestor_directory, user_id), (descendant_directory, user_id)],
+            project_id=shared_project,
+        ),
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=unregistered_parent)
         assert access == AccessRights(read=True, write=False, delete=False)
 
 
