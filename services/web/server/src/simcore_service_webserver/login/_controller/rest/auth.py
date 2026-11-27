@@ -26,6 +26,7 @@ from ....user_preferences.models import TwoFAFrontendUserPreference
 from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response, flash_response
 from ... import _auth_service, _login_service, _login_throttle_service, _security_service, _twofa_service
+from ..._auth_service import UserInfoDict
 from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -43,7 +44,11 @@ from ...constants import (
 from ...decorators import login_required
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email, set_pending_2fa_email
+from ._session_trusted_identity import (
+    clear_pending_2fa_email,
+    get_trusted_login_email,
+    set_pending_2fa_email,
+)
 from .auth_schemas import LoginBody, LoginTwoFactorAuthBody, LogoutBody
 
 log = logging.getLogger(__name__)
@@ -52,42 +57,24 @@ log = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
-@routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
-@on_success_grant_session_access_to(
-    name="auth_register_phone",
-    max_access_count=MAX_2FA_CODE_TRIALS,
-)
-@on_success_grant_session_access_to(
-    name="auth_login_2fa",
-    max_access_count=MAX_2FA_CODE_TRIALS,
-)
-@on_success_grant_session_access_to(
-    name="auth_resend_2fa_code",
-    max_access_count=MAX_2FA_CODE_RESEND,
-)
-@handle_rest_requests_exceptions
-async def login(request: web.Request):
-    """Login: user submits an email (identification) and a password
+async def password_login_continuation(
+    request: web.Request,
+    *,
+    user: UserInfoDict,
+    product: Product,
+    settings: LoginSettingsForProduct,
+) -> web.StreamResponse:
+    """Completes (or defers) the login of an already authenticated user
 
-    If 2FA is enabled, then the login continues with a second request to login_2fa
+    Used by both auth_login and auth_register (existing-user branch) so a
+    password check alone never grants a session on 2FA-required products
+    (SEC-WS-31).
+
+    Returns a granted session response when 2FA does not apply (TESTER role,
+    product without ``LOGIN_2FA_REQUIRED``, or account preference DISABLED) or
+    a 202 LoginNextPage after sending the second-factor code and storing the
+    pending identity in the session.
     """
-    product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
-    login_data = await parse_request_body_as(LoginBody, request)
-
-    # Authenticate user and verify access to the product
-    user = await _auth_service.authenticate_user(
-        request.app,
-        email=login_data.email,
-        password=login_data.password.get_secret_value(),
-        product=product,
-        client_ip=_login_throttle_service.parse_client_ip(
-            request.headers.get(X_FORWARDED_FOR), settings=settings.LOGIN_THROTTLE
-        ),
-    )
-    await _auth_service.check_authorized_user_in_product(request.app, user_email=user["email"], product=product)
-
-    # Check if user role allows skipping 2FA or if 2FA is not required
     skip_2fa = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
         # an abandoned earlier login may have left a pending email: drop it so
@@ -95,7 +82,6 @@ async def login(request: web.Request):
         await clear_pending_2fa_email(request)
         return await _security_service.login_granted_response(request, user=user)
 
-    # 2FA login process continuation
     user_2fa_preference = await user_preferences_service.get_frontend_user_preference(
         request.app,
         user_id=user["id"],
@@ -179,7 +165,7 @@ async def login(request: web.Request):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    # otherwise create email f2a
+    # otherwise create email 2fa
     assert user_2fa_authentication_method == TwoFactorAuthenticationMethod.EMAIL  # nosec
     await _twofa_service.send_email_code(
         request.app,
@@ -203,6 +189,44 @@ async def login(request: web.Request):
         },
         status=status.HTTP_202_ACCEPTED,
     )
+
+
+@routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
+@on_success_grant_session_access_to(
+    name="auth_register_phone",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_login_2fa",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_resend_2fa_code",
+    max_access_count=MAX_2FA_CODE_RESEND,
+)
+@handle_rest_requests_exceptions
+async def login(request: web.Request):
+    """Login: user submits an email (identification) and a password
+
+    If 2FA is enabled, then the login continues with a second request to login_2fa
+    """
+    product: Product = products_web.get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
+    login_data = await parse_request_body_as(LoginBody, request)
+
+    # Authenticate user and verify access to the product
+    user = await _auth_service.authenticate_user(
+        request.app,
+        email=login_data.email,
+        password=login_data.password.get_secret_value(),
+        product=product,
+        client_ip=_login_throttle_service.parse_client_ip(
+            request.headers.get(X_FORWARDED_FOR), settings=settings.LOGIN_THROTTLE
+        ),
+    )
+    await _auth_service.check_authorized_user_in_product(request.app, user_email=user["email"], product=product)
+
+    return await password_login_continuation(request, user=user, product=product, settings=settings)
 
 
 @routes.post(f"/{API_VTAG}/auth/validate-code-login", name="auth_login_2fa")
@@ -232,10 +256,10 @@ async def login_2fa(request: web.Request):
     trial = await _twofa_service.check_2fa_code(
         request.app, user_email=trusted.email, code=login_2fa_.code.get_secret_value()
     )
-    if trial in (
+    if trial in {
         _twofa_service.TrialOutcome.NO_CODE,
         _twofa_service.TrialOutcome.TRIALS_EXHAUSTED,
-    ):
+    }:
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
     if trial is _twofa_service.TrialOutcome.INVALID:
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
