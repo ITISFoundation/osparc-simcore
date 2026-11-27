@@ -116,31 +116,36 @@ async def _has_entries_below_the_caller_cannot_delete(
 ) -> bool:
     """Entries below file_id whose own access rights do not grant the caller delete:
     owned by someone else without a project, or shared through a project the caller
-    cannot delete. The project rights mirror `get_project_access_rights`, read included.
+    cannot delete. The project rights mirror `get_project_access_rights`, owner
+    override included: the override applies only on top of a readable group grant,
+    so a caller whose grants were revoked has no rights even as project owner.
     """
     user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
-    caller_can_delete_project = sa.or_(
-        projects.c.prj_owner == user_id,
-        sa.and_(
-            projects.c.workspace_id.is_(None),
-            sa.exists(
-                sa.select(sa.literal(1)).where(
-                    (project_to_groups.c.project_uuid == projects.c.uuid)
-                    & project_to_groups.c.read
-                    & project_to_groups.c.delete
-                    & project_to_groups.c.gid.in_(user_group_ids)
-                )
+    private_grants = sa.select(sa.literal(1)).where(
+        (project_to_groups.c.project_uuid == projects.c.uuid)
+        & project_to_groups.c.read
+        & project_to_groups.c.gid.in_(user_group_ids)
+    )
+    shared_workspace_grants = sa.select(sa.literal(1)).where(
+        (workspaces_access_rights.c.workspace_id == projects.c.workspace_id)
+        & workspaces_access_rights.c.read
+        & workspaces_access_rights.c.gid.in_(user_group_ids)
+    )
+    caller_can_read_project = sa.or_(
+        sa.and_(projects.c.workspace_id.is_(None), sa.exists(private_grants)),
+        sa.and_(projects.c.workspace_id.is_not(None), sa.exists(shared_workspace_grants)),
+    )
+    caller_can_delete_project = sa.and_(
+        caller_can_read_project,
+        sa.or_(
+            projects.c.prj_owner == user_id,
+            sa.and_(
+                projects.c.workspace_id.is_(None),
+                sa.exists(private_grants.where(project_to_groups.c.delete)),
             ),
-        ),
-        sa.and_(
-            projects.c.workspace_id.is_not(None),
-            sa.exists(
-                sa.select(sa.literal(1)).where(
-                    (workspaces_access_rights.c.workspace_id == projects.c.workspace_id)
-                    & workspaces_access_rights.c.read
-                    & workspaces_access_rights.c.delete
-                    & workspaces_access_rights.c.gid.in_(user_group_ids)
-                )
+            sa.and_(
+                projects.c.workspace_id.is_not(None),
+                sa.exists(shared_workspace_grants.where(workspaces_access_rights.c.delete)),
             ),
         ),
     )

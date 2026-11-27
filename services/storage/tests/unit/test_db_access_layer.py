@@ -391,6 +391,43 @@ async def test_fully_shared_subtree_keeps_inherited_grants(
         assert access == AccessRights.all()
 
 
+async def test_revoked_project_access_below_an_ancestor_denies_write_and_delete(
+    user_id: UserID,
+    other_user_id: UserID,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # get_project_access_rights grants the owner override only on top of a readable
+    # group grant: once the project grants are revoked, the project owner has no
+    # rights there and an ancestor grant must not cascade past its descendants
+    api_dataset_id = f"{uuid4()}"
+    ancestor_directory = f"api/{api_dataset_id}/data"
+    unregistered_parent = f"{ancestor_directory}/mid"
+    descendant_directory = f"{unregistered_parent}/sub"
+
+    revoked_project = ProjectID((await create_project())["uuid"])
+
+    async with (
+        _registered_directories(sqlalchemy_async_engine, [(ancestor_directory, user_id)]),
+        _registered_directories(
+            sqlalchemy_async_engine, [(descendant_directory, other_user_id)], project_id=revoked_project
+        ),
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        # grants intact: the owner of the ancestor runs the subtree
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=unregistered_parent)
+        assert access == AccessRights.all()
+
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                project_to_groups.delete().where(project_to_groups.c.project_uuid == f"{revoked_project}")
+            )
+
+        access = await repository.get_file_access_rights(user_id=user_id, file_id=unregistered_parent)
+        assert access == AccessRights(read=True, write=False, delete=False)
+
+
 async def test_files_in_registered_api_directory_follow_project_sharing(
     user_id: UserID,
     collaborator_id: UserID,
