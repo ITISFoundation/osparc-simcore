@@ -58,7 +58,8 @@ def associate_ec2_instances_with_nodes(
 async def ec2_startup_script(ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings) -> str:
     """Composes the user-data script a cold-started machine runs once on first boot.
 
-    Every command that can fail comes before the swarm join.
+    The registry login comes before the swarm join, so a machine without credentials never joins. Pre-pulling
+    comes after the join: a failed pull costs a service that has to pull its own image, not the machine.
     """
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     startup_commands: list[str] = ec2_boot_specific.custom_boot_scripts.copy()
