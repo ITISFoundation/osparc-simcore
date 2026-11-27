@@ -87,7 +87,7 @@ pydantic==2.14.4
     #   pydantic-settings
 pydantic-core==2.50.5
     # via pydantic
-pydantic-settings==2.16.2
+pydantic-settings==2.16.3
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest
