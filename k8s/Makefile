@@ -26,16 +26,14 @@ install-tools: _require-mise ## Installs k8s tools
 
 ##@ Cluster
 
-KIND_CONFIG_VARIABLES := $${KIND_POSTGRES_HOST_PORT} $${KIND_RABBIT_HOST_PORT} $${KIND_RABBIT_MANAGEMENT_HOST_PORT} $${KIND_REDIS_HOST_PORT}
-
-kind-config.yaml: kind-config.yaml.template kind.env ## Renders kind config from kind.env. Port mapping changes need 'make recreate-cluster'
+kind-config.yaml: kind-config.yaml.template kind.env
 	@set -o allexport; source kind.env; set +o allexport; \
-	envsubst '$(KIND_CONFIG_VARIABLES)' < $< > $@
+	envsubst < $< > $@
 
 .PHONY: create-cluster
-create-cluster: .init-swarm kind-config.yaml ## Creates Kubernetes cluster unless it exists
+create-cluster: kind-config.yaml .init-swarm ## Creates Kubernetes cluster unless it exists
 	@if ! $(MAKE) --no-print-directory cluster-exists; then \
-		cd $(CURDIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml; \
+		cd $(CURDIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config $<; \
 	fi
 
 .PHONY: delete-cluster
