@@ -10,7 +10,11 @@ _logger = logging.getLogger(__name__)
 
 
 class PortUploadTrust:
-    """Tracks, for one port, the fingerprint a successful upload certified as stored."""
+    """Tracks, for one port, the fingerprint a successful upload certified as stored.
+
+    Certified means: the bytes behind that fingerprint are known to be in the remote store,
+    because an upload of exactly that content finished without error in this session.
+    """
 
     def __init__(self, *, port_key: ServicePortKey, monitor: PortContentMonitor) -> None:
         self._port_key = port_key

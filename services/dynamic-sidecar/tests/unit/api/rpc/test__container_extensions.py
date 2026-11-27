@@ -23,7 +23,6 @@ from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
-from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
@@ -44,7 +43,6 @@ from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import InputsState
-from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from simcore_service_dynamic_sidecar.services.container_extensions import (
     _TIMEOUT_PERMISSION_CHANGES,
@@ -100,22 +98,6 @@ async def test_toggle_ports_io(
 
     _assert_inputs_pulling(app, enabled)
     _assert_outputs_event_propagation(spy_output_watcher, enabled)
-
-
-@pytest.fixture
-def mock_outputs_labels() -> dict[str, ServiceOutput]:
-    return {
-        "output_port_1": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
-        "output_port_2": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
-    }
-
-
-@pytest.fixture
-def mock_outputs_event_delivery(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> MagicMock:
-    mock = MagicMock()
-    outputs_manager: OutputsManager = app.state.outputs_manager
-    monkeypatch.setattr(outputs_manager, "on_port_key_change", mock)
-    return mock
 
 
 async def test_container_create_outputs_dirs(

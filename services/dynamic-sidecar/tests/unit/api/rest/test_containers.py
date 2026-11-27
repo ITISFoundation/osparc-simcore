@@ -25,7 +25,6 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
-from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
@@ -282,14 +281,6 @@ def not_started_containers() -> list[str]:
 
 
 @pytest.fixture
-def mock_outputs_labels() -> dict[str, ServiceOutput]:
-    return {
-        "output_port_1": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
-        "output_port_2": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
-    }
-
-
-@pytest.fixture
 async def attachable_networks_and_ids(faker: Faker) -> AsyncIterable[dict[str, str]]:
     # generate some network names
     unique_id = faker.uuid4()
@@ -327,14 +318,6 @@ def mock_aiodocker_containers_get(mocker: MockerFixture, faker: Faker) -> int:
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
 
     return mock_status_code
-
-
-@pytest.fixture
-def mock_outputs_event_delivery(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> MagicMock:
-    mock = MagicMock()
-    outputs_manager: OutputsManager = app.state.outputs_manager
-    monkeypatch.setattr(outputs_manager, "on_port_key_change", mock)
-    return mock
 
 
 # TESTS

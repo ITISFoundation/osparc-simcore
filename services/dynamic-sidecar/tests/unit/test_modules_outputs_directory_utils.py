@@ -86,5 +86,20 @@ def test_get_directory_total_size_with_broken_symlink(tmp_path: Path):
     assert get_directory_total_size(tmp_path) == 0
 
 
+def test_get_directory_total_size_ignores_symlinks_to_targets_outside_the_tree(tmp_path: Path):
+    # every entry check passes follow_symlinks=False: a symlink contributes no size, valid or not
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "target.dat").write_bytes(b"1234567890")
+
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    (tree / "real.dat").write_bytes(b"123")
+    (tree / "link_to_file").symlink_to(outside / "target.dat")
+    (tree / "link_to_dir").symlink_to(outside)
+
+    assert get_directory_total_size(tree) == 3
+
+
 def test_get_directory_total_size_on_missing_directory(tmp_path: Path):
     assert get_directory_total_size(tmp_path / "does_not_exist") == 0
