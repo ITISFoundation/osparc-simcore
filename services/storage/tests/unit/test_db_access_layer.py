@@ -126,26 +126,6 @@ async def test_get_readable_project_ids_shared_workspace(
     assert project_id in readable
 
 
-def _registered_directory_row_values(
-    *,
-    file_id: str,
-    user_id: UserID,
-    project_id: ProjectID | None = None,
-) -> dict[str, Any]:
-    fmd = FileMetaData.from_simcore_node(
-        user_id=user_id,
-        file_id=file_id,
-        bucket="simcore-testing-bucket",
-        location_id=SimcoreS3DataManager.get_location_id(),
-        location_name=SimcoreS3DataManager.get_location_name(),
-        sha256_checksum=None,
-        file_size=UNDEFINED_SIZE,
-        is_directory=True,
-        project_id=f"{project_id}" if project_id else None,
-    )
-    return FileMetaDataAtDB.model_validate(fmd).model_dump()
-
-
 @asynccontextmanager
 async def _registered_directories(
     engine: AsyncEngine,
@@ -155,11 +135,22 @@ async def _registered_directories(
 ) -> AsyncIterator[None]:
     async with AsyncExitStack() as stack:
         for file_id, owner_id in directories:
+            fmd = FileMetaData.from_simcore_node(
+                user_id=owner_id,
+                file_id=file_id,
+                bucket="simcore-testing-bucket",
+                location_id=SimcoreS3DataManager.get_location_id(),
+                location_name=SimcoreS3DataManager.get_location_name(),
+                sha256_checksum=None,
+                file_size=UNDEFINED_SIZE,
+                is_directory=True,
+                project_id=f"{project_id}" if project_id else None,
+            )
             await stack.enter_async_context(
                 insert_and_get_row_lifespan(
                     engine,
                     table=file_meta_data,
-                    values=_registered_directory_row_values(file_id=file_id, user_id=owner_id, project_id=project_id),
+                    values=FileMetaDataAtDB.model_validate(fmd).model_dump(),
                     pk_col=file_meta_data.c.file_id,
                 )
             )
