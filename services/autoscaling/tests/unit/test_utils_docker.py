@@ -9,7 +9,6 @@ import itertools
 import logging
 import random
 import secrets
-import shutil
 import subprocess
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
@@ -42,6 +41,7 @@ from models_library.services_metadata_runtime import (
 )
 from pydantic import ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.bash_tools import create_link_to_tool_in_path, make_path_write_executable
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
@@ -176,7 +176,7 @@ async def test_get_monitored_nodes_with_valid_label(
     assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(exclude=EXCLUDED_KEYS)
 
 
-def _creation_date(node: Node) -> arrow.Arrow:
+def _create_arrow_from_node_created_at(node: Node) -> arrow.Arrow:
     """Creation date of a node built with an explicit ``CreatedAt``, which aiodocker types as optional"""
     assert node.created_at
     return arrow.get(node.created_at)
@@ -193,9 +193,11 @@ async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
     mocked_aiodocker.list.return_value = fake_nodes
     monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=[])
     assert len(monitored_nodes) == len(fake_nodes)
-    sorted_fake_nodes = sorted(fake_nodes, key=_creation_date)
+    sorted_fake_nodes = sorted(fake_nodes, key=_create_arrow_from_node_created_at)
     assert monitored_nodes == sorted_fake_nodes
-    assert _creation_date(monitored_nodes[0]) < _creation_date(monitored_nodes[1])
+    assert _create_arrow_from_node_created_at(monitored_nodes[0]) < _create_arrow_from_node_created_at(
+        monitored_nodes[1]
+    )
 
 
 async def test_worker_nodes(
@@ -858,29 +860,18 @@ async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
     assert join_script_non_idempotent.count("docker swarm join") == 1
 
 
-def _write_executable(path: Path, content: str) -> None:
-    path.write_text(content)
-    path.chmod(0o755)
-
-
-def _link_tool(bin_dir: Path, tool: str) -> None:
-    tool_path = shutil.which(tool)
-    assert tool_path
-    (bin_dir / tool).symlink_to(tool_path)
-
-
 def _make_boot_bin_dir(tmp_path: Path, name: str, *, docker: str) -> Path:
     """Directory holding the subset of tools a booting machine has available to the login snippet"""
     bin_dir = tmp_path / name
     bin_dir.mkdir()
     tools = ["bash", "cat", "sleep", "timeout"]
     for tool in tools:
-        _link_tool(bin_dir, tool)
-    _write_executable(bin_dir / "docker", docker)
+        create_link_to_tool_in_path(bin_dir, tool)
+    make_path_write_executable(bin_dir / "docker", docker)
     return bin_dir
 
 
-def _run_at_boot(script: str, bin_dir: Path, extra_env: Mapping[str, str]) -> subprocess.CompletedProcess[str]:
+def _create_process(script: str, bin_dir: Path, extra_env: Mapping[str, str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(  # noqa: S603
         [str(bin_dir / "bash"), "-c", script],
         capture_output=True,
@@ -918,7 +909,7 @@ _INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes
 
 
 @pytest.fixture
-def example_registry_settings() -> RegistrySettings:
+def mock_registry_settings() -> RegistrySettings:
     return RegistrySettings(
         REGISTRY_AUTH=True,
         REGISTRY_URL="registry.example.invalid",
@@ -929,29 +920,29 @@ def example_registry_settings() -> RegistrySettings:
 
 
 def test_get_docker_login_on_start_bash_command_retries_until_it_succeeds(
-    example_registry_settings: RegistrySettings, tmp_path: Path
+    mock_registry_settings: RegistrySettings, tmp_path: Path
 ):
-    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file = tmp_path / "calls"
     calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "retried", docker=_DOCKER_SUCCEEDS_ON_SECOND_LOGIN)
 
-    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
+    result = _create_process(command, bin_dir, {"CALLS_FILE": str(calls_file)})
 
     assert result.returncode == 0, result.stderr
     assert calls_file.read_text() == "2\n", "the login was not retried until it succeeded"
 
 
 def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
-    example_registry_settings: RegistrySettings, tmp_path: Path
+    mock_registry_settings: RegistrySettings, tmp_path: Path
 ):
-    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
     calls_file, args_file = tmp_path / "calls", tmp_path / "args"
     calls_file.write_text("")
     args_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "failing", docker=_DOCKER_ALWAYS_FAILS_LOGIN)
 
-    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)})
+    result = _create_process(command, bin_dir, {"CALLS_FILE": str(calls_file), "ARGS_FILE": str(args_file)})
 
     # a machine that cannot log in must fail its boot chain, else it joins the swarm without credentials
     assert result.returncode != 0, "a machine that cannot log in must not report a booted machine"
@@ -959,29 +950,28 @@ def test_get_docker_login_on_start_bash_command_gives_up_after_the_last_attempt(
         f"expected {DOCKER_LOGIN_MAX_ATTEMPTS} login attempts"
     )
     expected_login = (
-        f"login --username {example_registry_settings.REGISTRY_USER}"
-        f" --password-stdin {example_registry_settings.resolved_registry_url}"
+        f"login --username {mock_registry_settings.REGISTRY_USER}"
+        f" --password-stdin {mock_registry_settings.resolved_registry_url}"
     )
     assert args_file.read_text().splitlines() == [expected_login] * DOCKER_LOGIN_MAX_ATTEMPTS, (
-        f"expected {DOCKER_LOGIN_MAX_ATTEMPTS} identical logins against"
-        f" {example_registry_settings.resolved_registry_url}"
+        f"expected {DOCKER_LOGIN_MAX_ATTEMPTS} identical logins against {mock_registry_settings.resolved_registry_url}"
     )
 
 
 def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
-    example_registry_settings: RegistrySettings,
+    mock_registry_settings: RegistrySettings,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
     monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_MAX_ATTEMPTS", 1)
     # half of 6 s for 1 attempt, minus the 1 s kill delay and the 1 s retry delay, leaves a 1 s attempt
-    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=6))
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, datetime.timedelta(seconds=6))
     calls_file = tmp_path / "calls"
     calls_file.write_text("")
     bin_dir = _make_boot_bin_dir(tmp_path, "hanging", docker=_DOCKER_HANGS_ON_LOGIN)
 
     started = time.monotonic()
-    result = _run_at_boot(command, bin_dir, {"CALLS_FILE": str(calls_file)})
+    result = _create_process(command, bin_dir, {"CALLS_FILE": str(calls_file)})
 
     assert result.returncode != 0, "a login cut short by timeout must still fail the boot chain"
     assert calls_file.read_text() == "1\n", "a hung login must not be retried beyond its timeout"
@@ -989,19 +979,19 @@ def test_get_docker_login_on_start_bash_command_gives_up_on_a_hanging_login(
 
 
 def test_get_docker_login_on_start_bash_command_scales_the_attempt_timeout_with_the_start_budget(
-    example_registry_settings: RegistrySettings,
+    mock_registry_settings: RegistrySettings,
 ):
-    command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=90))
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, datetime.timedelta(seconds=90))
     # half of 90 s over 3 attempts, minus the 1 s kill delay and the 1 s retry delay
     assert "timeout -k 1 13 docker login " in command, f"unexpected timeout budget in {command}"
 
 
 def test_get_docker_login_on_start_bash_command_keeps_sub_second_delays(
-    example_registry_settings: RegistrySettings, monkeypatch: pytest.MonkeyPatch
+    mock_registry_settings: RegistrySettings, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_KILL_DELAY", datetime.timedelta(milliseconds=500))
     monkeypatch.setattr(utils_docker, "DOCKER_LOGIN_RETRY_DELAY", datetime.timedelta(milliseconds=250))
-    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
 
     # a truncated `-k 0` would disable the SIGKILL fallback
     assert "timeout -k 0.5 " in command, f"the kill delay lost its sub-second part in {command}"
@@ -1009,18 +999,18 @@ def test_get_docker_login_on_start_bash_command_keeps_sub_second_delays(
 
 
 def test_get_docker_login_on_start_bash_command_overruns_a_too_small_start_budget_with_a_warning(
-    example_registry_settings: RegistrySettings, caplog: pytest.LogCaptureFixture
+    mock_registry_settings: RegistrySettings, caplog: pytest.LogCaptureFixture
 ):
     """Below DOCKER_LOGIN_MIN_ATTEMPT_TIMEOUT per attempt the loop is allowed to outlast its budget, and says so"""
     with caplog.at_level(logging.WARNING):
-        command = get_docker_login_on_start_bash_command(example_registry_settings, datetime.timedelta(seconds=1))
+        command = get_docker_login_on_start_bash_command(mock_registry_settings, datetime.timedelta(seconds=1))
 
     assert "timeout -k 1 1 docker login " in command, f"expected the 1 s minimum attempt timeout in {command}"
     assert "EC2_INSTANCES_MAX_START_TIME" in caplog.text, "an overrunning login budget must be logged"
 
 
-def test_get_docker_login_on_start_bash_command_is_chainable(example_registry_settings: RegistrySettings):
-    command = get_docker_login_on_start_bash_command(example_registry_settings, _INSTANCE_MAX_START_TIME)
+def test_get_docker_login_on_start_bash_command_is_chainable(mock_registry_settings: RegistrySettings):
+    command = get_docker_login_on_start_bash_command(mock_registry_settings, _INSTANCE_MAX_START_TIME)
     # the boot script joins its steps on `&&`, so a step holding one would be read as several steps
     assert "&" not in command, f"the boot script joins its steps on `&&`, got {command}"
 

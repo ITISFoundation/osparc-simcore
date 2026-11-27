@@ -8,7 +8,6 @@ import asyncio
 import datetime
 import json
 import secrets
-import shutil
 from collections.abc import Callable
 from pathlib import Path
 from random import choice, shuffle
@@ -20,6 +19,7 @@ from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import TypeAdapter
+from pytest_simcore.helpers.bash_tools import create_link_to_tool_in_path, make_path_write_executable
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -38,17 +38,6 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 def _find_boot_steps(startup_script: str) -> list[str]:
     return startup_script.split(" && ")
-
-
-def _make_path_write_executable(path: Path, content: str) -> None:
-    path.write_text(content)
-    path.chmod(0o755)
-
-
-def _create_link_to_tool_in_path(bin_dir: Path, tool: str) -> None:
-    tool_path = shutil.which(tool)
-    assert tool_path
-    (bin_dir / tool).symlink_to(tool_path)
 
 
 @pytest.fixture
@@ -275,8 +264,8 @@ async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     for tool in ("bash", "cat", "chmod", "sleep", "timeout"):
-        _create_link_to_tool_in_path(bin_dir, tool)
-    _make_path_write_executable(
+        create_link_to_tool_in_path(bin_dir, tool)
+    make_path_write_executable(
         bin_dir / "docker",
         """#!/usr/bin/env bash
 echo "$*" >> "$DOCKER_CALLS_LOG"
