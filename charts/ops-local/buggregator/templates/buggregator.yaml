@@ -34,7 +34,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: buggregator
-          image: ghcr.io/buggregator/server:2.11.2
+          image: ghcr.io/buggregator/server:2.15.0
           ports:
             - name: smtp
               containerPort: 1025
