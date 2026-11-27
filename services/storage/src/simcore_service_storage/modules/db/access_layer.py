@@ -65,8 +65,7 @@ _logger = logging.getLogger(__name__)
 
 class _RegisteredDirectory(NamedTuple):
     user_id: UserID
-    # the file_meta_data column stores the project UUID as string (FK projects.uuid)
-    project_id: str | None
+    project_id: ProjectID | None
 
 
 def _ancestor_prefixes(file_id: str) -> list[str]:
@@ -86,7 +85,13 @@ async def _get_registered_directories(
             file_meta_data.c.file_id.in_(stored_file_ids)
         )
     )
-    return [_RegisteredDirectory(user_id=UserID(row.user_id), project_id=row.project_id) for row in result.fetchall()]
+    return [
+        _RegisteredDirectory(
+            user_id=UserID(row.user_id),
+            project_id=ProjectID(row.project_id) if row.project_id else None,
+        )
+        for row in result.fetchall()
+    ]
 
 
 async def _has_entries_registered_by_others_below(
@@ -380,7 +385,7 @@ class AccessLayerRepository(BaseRepository):
         if not directory.project_id:
             return AccessRights.none()
         return await self.get_project_access_rights(
-            connection=connection, user_id=user_id, project_id=ProjectID(directory.project_id)
+            connection=connection, user_id=user_id, project_id=directory.project_id
         )
 
     @staticmethod
