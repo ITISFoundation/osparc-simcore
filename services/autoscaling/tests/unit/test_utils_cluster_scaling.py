@@ -259,15 +259,15 @@ async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
 
-    docker_calls_log_path = tmp_path / "docker-calls.log"
-    result = run_as_if_in_ec2(
-        startup_script,
-        {
-            "docker": """#!/usr/bin/env bash
+    fake_docker_refusing_login = """#!/usr/bin/env bash
 echo "$*" >> "$DOCKER_CALLS_LOG"
 test "$1" != login
 """
-        },
+
+    docker_calls_log_path = tmp_path / "docker-calls.log"
+    result = run_as_if_in_ec2(
+        startup_script,
+        {"docker": fake_docker_refusing_login},
         {"DOCKER_CALLS_LOG": str(docker_calls_log_path)},
     )
 

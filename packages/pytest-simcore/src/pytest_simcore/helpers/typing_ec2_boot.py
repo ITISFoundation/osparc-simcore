@@ -1,9 +1,3 @@
-"""
-Types for running a boot script the way a machine does while it starts up.
-
-Used by the ``run_as_if_in_ec2`` fixture in ``pytest_simcore.ec2_boot``.
-"""
-
 import subprocess
 from collections.abc import Mapping
 from typing import Annotated, Protocol
