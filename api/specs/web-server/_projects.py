@@ -72,8 +72,12 @@ class _ProjectCreateHeaderParams(BaseModel):
     "/projects",
     response_model=Envelope[TaskGet],
     description="Creates a new project or copies an existing one. "
+    "When copying, explicit tag IDs must be accessible to the caller or present in the source. "
+    "Omitted tags preserve source tags, "
+    "while an empty list clears them. Accessible user default tags are added to non-template projects. "
     "NOTE: implemented as a long running task, "
-    "i.e. requires polling `status_href` (HTTP_200_OK) to get status and `result_href` (HTTP_201_CREATED) to get created project",
+    "i.e. requires polling `status_href` (HTTP_200_OK) to get status and "
+    "`result_href` (HTTP_201_CREATED) to get created project",
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_project(
@@ -88,7 +92,10 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _query: Annotated[as_query(ProjectsListQueryParams), Depends()],
+    _query: Annotated[
+        as_query(ProjectsListQueryParams),  # type: ignore[reportInvalidTypeForm]  # runtime-generated query model
+        Depends(),
+    ],
 ): ...
 
 
@@ -145,7 +152,10 @@ async def clone_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects_full_search(
-    _query: Annotated[as_query(ProjectsSearchQueryParams), Depends()],
+    _query: Annotated[
+        as_query(ProjectsSearchQueryParams),  # type: ignore[reportInvalidTypeForm]  # runtime-generated query model
+        Depends(),
+    ],
 ): ...
 
 

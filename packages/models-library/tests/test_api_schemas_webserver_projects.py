@@ -4,8 +4,11 @@
 # pylint: disable=too-many-arguments
 
 
+from typing import Any
+
 import pytest
 from models_library.api_schemas_webserver.projects import (
+    ProjectCopyOverride,
     ProjectCreateNew,
     ProjectGet,
     ProjectListItem,
@@ -14,7 +17,7 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.simcore_webserver_projects_rest_api import (
     CREATE_FROM_SERVICE,
     CREATE_FROM_TEMPLATE,
@@ -39,6 +42,28 @@ def test_create_project_schemas(api_call: HttpApiCallCapture):
 
     response_body = TypeAdapter(Envelope[ProjectGet] | Envelope[TaskProjectGet]).validate_python(api_call.response_body)
     assert response_body
+
+
+@pytest.mark.parametrize(
+    "tags,expected",
+    [(None, {}), ([], {"tags": []}), ([3, 5], {"tags": [3, 5]})],
+    ids=["omitted", "empty", "selected"],
+)
+def test_project_copy_override_preserves_tag_presence(tags: list[int] | None, expected: dict):
+    payload: dict[str, Any] = {"name": "Copy", "prjOwner": "user@example.com"}
+    if tags is not None:
+        payload["tags"] = tags
+
+    override = ProjectCopyOverride.model_validate(payload).to_domain_model()
+    assert {key: override[key] for key in override if key == "tags"} == expected
+
+
+@pytest.mark.parametrize(
+    "tags", [None, "invalid", ["invalid"], {"id": 1}], ids=["null", "string", "bad-item", "object"]
+)
+def test_project_copy_override_rejects_invalid_tags(tags: Any):
+    with pytest.raises(ValidationError):
+        ProjectCopyOverride.model_validate({"name": "Copy", "prjOwner": "user@example.com", "tags": tags})
 
 
 @pytest.mark.parametrize(

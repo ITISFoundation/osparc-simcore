@@ -47,3 +47,21 @@ class UserPreferencesRepository(BaseRepository):
                 product_name=product_name,
                 payload=preference.to_db(),
             )
+
+    async def set_user_preference_if_unchanged(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        preference: FrontendUserPreference,
+        expected_preference: FrontendUserPreference,
+    ) -> bool:
+        async with transaction_context(self.engine) as conn:
+            return await FrontendUserPreferencesRepo.save_if_value_unchanged(
+                conn,
+                user_id=user_id,
+                preference_name=self._get_user_preference_name(user_id, preference.get_preference_name()),
+                product_name=product_name,
+                payload=preference.to_db(),
+                expected_value=expected_preference.value,
+            )

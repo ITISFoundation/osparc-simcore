@@ -93,6 +93,15 @@ class ProjectCopyOverride(InputSchema):
     description: str | None = None
     thumbnail: HttpUrl | None = None
     prj_owner: LowerCaseEmailStr
+    tags: Annotated[
+        list[int],
+        Field(
+            default_factory=list,
+            description="Accessible or source tag IDs to replace the source tags. Omit to keep source tags; "
+            "an empty list clears them. "
+            "Accessible user default tags are then added to non-template projects.",
+        ),
+    ] = DEFAULT_FACTORY
 
     _empty_is_none = field_validator("thumbnail", mode="before")(empty_str_to_none_pre_validator)
 
@@ -204,7 +213,7 @@ class ProjectGet(OutputSchema):
         )
 
 
-TaskProjectGet: TypeAlias = TaskGet
+TaskProjectGet: TypeAlias = TaskGet  # noqa: UP040  # preserves the runtime model class
 
 
 class ProjectListItem(ProjectGet): ...
@@ -284,7 +293,7 @@ class ProjectDocument(OutputSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
-ProjectDocumentVersion: TypeAlias = int
+ProjectDocumentVersion: TypeAlias = int  # noqa: UP040  # preserves the callable runtime alias
 
 
 __all__: tuple[str, ...] = (

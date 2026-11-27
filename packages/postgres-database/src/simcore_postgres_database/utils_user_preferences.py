@@ -1,6 +1,7 @@
 from typing import Any
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import Insert as PostgresInsert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -67,6 +68,31 @@ class BasePreferencesRepo:
 
 class FrontendUserPreferencesRepo(BasePreferencesRepo):
     model = user_preferences_frontend
+
+    @classmethod
+    async def save_if_value_unchanged(
+        cls,
+        conn: AsyncConnection,
+        *,
+        user_id: int,
+        product_name: str,
+        preference_name: str,
+        payload: dict[str, Any],
+        expected_value: Any,
+    ) -> bool:
+        """Update an existing preference only when its stored value matches."""
+        stmt = (
+            sa.update(cls.model)
+            .where(
+                cls.model.c.user_id == user_id,
+                cls.model.c.product_name == product_name,
+                cls.model.c.preference_name == preference_name,
+                sa.cast(cls.model.c.payload, JSONB)["value"] == sa.literal(expected_value, type_=JSONB),
+            )
+            .values(payload=payload)
+            .returning(cls.model.c.user_id)
+        )
+        return await conn.scalar(stmt) is not None
 
 
 class UserServicesUserPreferencesRepo(BasePreferencesRepo):

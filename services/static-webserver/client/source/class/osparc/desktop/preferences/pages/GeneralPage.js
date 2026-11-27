@@ -40,6 +40,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this.__addSetting(() => this.__addLowDiskSpaceSetting());
     }
 
+    this.__defaultStudyTagsIndex = this._getChildren().length;
+    this.__addSetting(() => this.refreshDefaultStudyTagsSetting());
+
     if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addSetting(() => this.__addInactivitySetting());
     }
@@ -50,6 +53,13 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
   },
 
   members: {
+    __defaultStudyTagsBox: null,
+    __defaultStudyTagsIndex: 0,
+    __defaultStudyTagsLoaded: false,
+    __defaultStudyTagsLoad: null,
+    __defaultStudyTagsSaving: false,
+    __defaultStudyTagsRefreshPending: false,
+
     getChildrenCount: function() {
       return this._getChildren().length;
     },
@@ -209,6 +219,109 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
       box.add(new qx.ui.form.renderer.Single(form));
       this._add(box);
+    },
+
+    refreshDefaultStudyTagsSetting: function() {
+      if (this.isDisposed()) {
+        return;
+      }
+      if (this.__defaultStudyTagsSaving) {
+        this.__defaultStudyTagsRefreshPending = true;
+        return;
+      }
+      const store = osparc.store.Tags.getInstance();
+      if (!this.__defaultStudyTagsLoaded) {
+        if (!this.__defaultStudyTagsLoad) {
+          this.__defaultStudyTagsLoad = store.fetchTags()
+            .then(() => {
+              if (!this.isDisposed()) {
+                this.__defaultStudyTagsLoaded = true;
+                this.refreshDefaultStudyTagsSetting();
+              }
+            })
+            .catch(err => console.error("Failed to load tags for default study settings", err))
+            .finally(() => { this.__defaultStudyTagsLoad = null; });
+        }
+        return;
+      }
+
+      const box = this.__createDefaultStudyTagsSettingContent(store.getTags());
+      if (this.__defaultStudyTagsBox) {
+        this._remove(this.__defaultStudyTagsBox);
+        this.__defaultStudyTagsBox.destroy();
+      }
+      this.__defaultStudyTagsBox = box;
+      if (box) {
+        this._addAt(box, Math.min(this.__defaultStudyTagsIndex, this._getChildren().length));
+      }
+    },
+
+    __createDefaultStudyTagsSettingContent: function(tags) {
+      if (!tags.length) {
+        return null;
+      }
+
+      const box = new osparc.widget.SectionBox(this.tr("Default Study Tags"));
+      box.addHelper(this.tr("Selected tags are automatically added to studies you create."));
+
+      const preferences = osparc.Preferences.getInstance();
+      const selectedTagIds = preferences.getDefaultStudyTagIds();
+      const checkboxes = [];
+      let isRestoring = false;
+      const tagsList = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      tags.forEach(tag => {
+        const tagId = tag.getTagId();
+        const checkbox = new qx.ui.form.CheckBox(tag.getName()).set({
+          value: selectedTagIds.includes(tagId)
+        });
+        checkboxes.push({
+          checkbox,
+          tagId
+        });
+        checkbox.addListener("changeValue", () => {
+          if (isRestoring) {
+            return;
+          }
+          const newTagIds = checkboxes
+            .filter(item => item.checkbox.getValue())
+            .map(item => item.tagId);
+          const oldTagIds = preferences.getDefaultStudyTagIds();
+          if (newTagIds.length === oldTagIds.length && newTagIds.every(tagId => oldTagIds.includes(tagId))) {
+            return;
+          }
+
+          box.setEnabled(false);
+          this.__defaultStudyTagsSaving = true;
+          osparc.Preferences.patchPreference("defaultStudyTagIds", newTagIds)
+            .then(() => preferences.setDefaultStudyTagIds(newTagIds))
+            .catch(err => {
+              osparc.FlashMessenger.logError(err);
+              if (!this.isDisposed()) {
+                isRestoring = true;
+                checkboxes.forEach(item => item.checkbox.setValue(oldTagIds.includes(item.tagId)));
+                isRestoring = false;
+              }
+            })
+            .finally(() => {
+              this.__defaultStudyTagsSaving = false;
+              if (!this.isDisposed()) {
+                box.setEnabled(true);
+                if (this.__defaultStudyTagsRefreshPending) {
+                  this.__defaultStudyTagsRefreshPending = false;
+                  this.refreshDefaultStudyTagsSetting();
+                }
+              }
+            });
+        });
+        tagsList.add(checkbox);
+      });
+
+      const scroll = new qx.ui.container.Scroll(tagsList).set({
+        height: Math.min(tagsList.getSizeHint().height, 240)
+      });
+      box.add(scroll);
+      return box;
     },
 
     __addS4LUserPrivacySettings: function() {

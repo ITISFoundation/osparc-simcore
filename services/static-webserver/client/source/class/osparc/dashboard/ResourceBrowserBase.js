@@ -900,7 +900,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           win.close();
 
           this._showLoadingPage(this.tr("Creating ") + (newName || studyAlias));
-          osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+          osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage, {}, selectedTagIds)
             .then(newStudyData => {
               const studyId = newStudyData["uuid"];
               const openCB = () => {
@@ -916,22 +916,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               if (newStudyData["name"] !== newName) {
                 promises.push(osparc.study.StudyOptions.updateName(newStudyData, newName));
               }
-              // add the tags if they changed
-              selectedTagIds.forEach(tagId => {
-                const found = newStudyData["tags"].includes(tagId);
-                if (!found) {
-                  // add the missing tag
-                  promises.push(osparc.store.Study.getInstance().addTag(newStudyData["uuid"], tagId));
-                }
-              });
-              // remove the tags that are not selected anymore
-              newStudyData["tags"].forEach(tagId => {
-                const found = selectedTagIds.includes(tagId);
-                if (!found) {
-                  // remove the tag
-                  promises.push(osparc.store.Study.getInstance().removeTag(newStudyData["uuid"], tagId));
-                }
-              });
               // patch the wallet
               if (walletSelection.length && walletSelection[0]["walletId"]) {
                 const walletId = walletSelection[0]["walletId"];

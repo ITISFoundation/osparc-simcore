@@ -249,6 +249,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        expected_tags: list[int] | None = None,
+        minimal_copy_override: bool = False,
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
     ):
@@ -293,6 +295,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         if not from_study or project:
             assert NEW_PROJECT.request_payload
             project_data = deepcopy(NEW_PROJECT.request_payload)
+            if from_study and minimal_copy_override:
+                project_data = {"name": project_data["name"], "prjOwner": "user@example.com"}
 
             if project:
                 project_data.update(project)
@@ -301,6 +305,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 expected_data[key] = project_data[key]
                 if key in OVERRIDABLE_DOCUMENT_KEYS and not project_data[key] and from_study:
                     expected_data[key] = from_study[key]
+
+        if expected_tags is not None:
+            expected_data["tags"] = expected_tags
 
         # POST /v0/projects -> returns 202 or denied access
         assert client.app
@@ -334,6 +341,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        expected_tags: list[int] | None = None,
+        minimal_copy_override: bool = False,
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> ProjectDict:
@@ -345,6 +354,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             from_study=from_study,
             as_template=as_template,
             copy_data=copy_data,
+            expected_tags=expected_tags,
+            minimal_copy_override=minimal_copy_override,
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
