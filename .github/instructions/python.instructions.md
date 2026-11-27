@@ -89,6 +89,11 @@ Target the Python version in `.python-version`.
 
 - Use only Pydantic v2 APIs, such as `model_dump`, `model_validate`, `model_copy`,
   and `ConfigDict`.
+- Declare field metadata in the annotation with `Annotated`, e.g.
+  `value: Annotated[list[int], Field(default_factory=list)]`, rather than
+  assigning `Field(...)` as the default (`value: list[int] = Field(...)`).
+  This keeps the type self-contained, composes with validators, and is required
+  when the default is a sentinel such as `DEFAULT_FACTORY`.
 - For JSON payloads, use `model_dump_json()` to serialize Pydantic models.
   Use `json_dumps` and `json_loads` from `common_library.json_serialization`
   for all other data. Never double-serialize framework responses.
