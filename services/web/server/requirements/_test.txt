@@ -89,7 +89,7 @@ faker==40.54.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-fakeredis==2.40.0
+fakeredis==2.41.0
     # via -r requirements/_test.in
 fastapi==0.162.3
     # via
