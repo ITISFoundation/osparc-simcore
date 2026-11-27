@@ -36,11 +36,6 @@ async def get_group_by_gid(app: web.Application, group_id: GroupID) -> Group | N
     return None
 
 
-#
-# SHARING GUARD: rights a caller may grant to a group on a shared resource
-#
-
-
 def _check_requested_rights_are_subset(
     *,
     user_id: UserID,
