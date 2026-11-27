@@ -359,10 +359,12 @@ class AccessLayerRepository(BaseRepository):
                 access_rights = await self._access_rights_of_registered_directory(
                     connection=conn, user_id=user_id, directory=registered[0]
                 )
-                if access_rights.delete and await _has_entries_registered_by_others_below(
+                if (access_rights.write or access_rights.delete) and await _has_entries_registered_by_others_below(
                     conn, file_id=file_id, user_id=user_id
                 ):
-                    # deleting this path cascades into the entries of other users below it
+                    # deleting this path cascades into the entries of other users below
+                    # it, and so does an upload: create_file_upload_links deletes the
+                    # target id (enforcing only write) before storing the new object
                     return AccessRights.none()
                 return access_rights
 

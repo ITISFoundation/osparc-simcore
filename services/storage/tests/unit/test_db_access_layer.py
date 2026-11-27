@@ -324,6 +324,41 @@ async def test_api_directory_ancestor_denies_unregistered_path_with_foreign_cont
         assert access == AccessRights.all()
 
 
+async def test_write_without_delete_denied_on_unregistered_path_with_foreign_contents(
+    user_id: UserID,
+    collaborator_id: UserID,
+    other_user_id: UserID,
+    project_id: ProjectID,
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # an upload enforces only write and deletes its target id first (see
+    # create_file_upload_links -> delete_file), so a write-only cascade into
+    # another user's entries must be denied just like a delete cascade
+    api_dataset_id = f"{uuid4()}"
+    shared_directory = f"api/{api_dataset_id}/data"
+    unregistered_parent = f"{shared_directory}/mid"
+    foreign_directory = f"{unregistered_parent}/sub"
+
+    await create_project_access_rights(
+        project_id=project_id, user_id=collaborator_id, read=True, write=True, delete=False
+    )
+
+    async with (
+        _registered_directories(sqlalchemy_async_engine, [(shared_directory, user_id)], project_id=project_id),
+        _registered_directories(sqlalchemy_async_engine, [(foreign_directory, other_user_id)]),
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=unregistered_parent)
+        assert access == AccessRights.none()
+
+        # without foreign contents below, the project grant still applies
+        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=f"{shared_directory}/mine")
+        assert access.write is True
+        assert access.delete is False
+
+
 async def test_files_in_registered_api_directory_follow_project_sharing(
     user_id: UserID,
     collaborator_id: UserID,
