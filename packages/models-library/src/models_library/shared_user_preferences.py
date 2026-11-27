@@ -1,6 +1,7 @@
-from typing import Any, ClassVar, Final
+from typing import Annotated, Any, ClassVar, Final
 
-from pydantic import EmailStr, Field
+from common_library.basic_types import DEFAULT_FACTORY
+from pydantic import EmailStr, Field, PositiveInt
 
 from .authentication import TwoFactorAuthenticationMethod
 from .user_preferences import FrontendUserPreference, PreferenceIdentifier
@@ -16,7 +17,7 @@ class AllowMetricsCollectionFrontendUserPreference(FrontendUserPreference):
 
 class InvoiceEmailRecipientsFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "invoiceEmailRecipients"
-    value: list[EmailStr] = Field(default_factory=list)
+    value: Annotated[list[EmailStr], Field(default_factory=list)] = DEFAULT_FACTORY
 
 
 class ConfirmationBackToDashboardFrontendUserPreference(FrontendUserPreference):
@@ -51,12 +52,12 @@ class ConnectPortsAutomaticallyFrontendUserPreference(FrontendUserPreference):
 
 class DoNotShowAnnouncementsFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "dontShowAnnouncements"
-    value: list = Field(default_factory=list)
+    value: Annotated[list, Field(default_factory=list)] = DEFAULT_FACTORY
 
 
 class ServicesFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "services"
-    value: dict = Field(default_factory=dict)
+    value: Annotated[dict, Field(default_factory=dict)] = DEFAULT_FACTORY
 
 
 class ThemeNameFrontendUserPreference(FrontendUserPreference):
@@ -108,3 +109,8 @@ class TwoFAFrontendUserPreference(FrontendUserPreference):
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
     value: list[int] | None = None
+
+
+class DefaultStudyTagIdsFrontendUserPreference(FrontendUserPreference):
+    preference_identifier: PreferenceIdentifier = "defaultStudyTagIds"
+    value: Annotated[list[PositiveInt], Field(default_factory=list)] = DEFAULT_FACTORY

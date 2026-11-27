@@ -96,7 +96,7 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
+    createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}, selectedTagIds = null) {
       return new Promise((resolve, reject) => {
         osparc.store.Services.getStudyServicesMetadata(templateData)
           .finally(() => {
@@ -113,6 +113,11 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["name"] = templateData["name"];
             minStudyData["description"] = templateData["description"];
             minStudyData["thumbnail"] = templateData["thumbnail"];
+            if (selectedTagIds === null) {
+              delete minStudyData["tags"];
+            } else {
+              minStudyData["tags"] = selectedTagIds;
+            }
             const pollPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
             const pollTasks = osparc.store.PollTasks.getInstance();
             const interval = 1000;

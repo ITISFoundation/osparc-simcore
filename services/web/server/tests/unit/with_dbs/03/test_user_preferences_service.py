@@ -13,7 +13,10 @@ from common_library.pydantic_fields_extension import get_type
 from faker import Faker
 from models_library.api_schemas_webserver.users_preferences import Preference
 from models_library.products import ProductName
-from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
+from models_library.shared_user_preferences import (
+    DefaultStudyTagIdsFrontendUserPreference,
+    InvoiceEmailRecipientsFrontendUserPreference,
+)
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from pydantic import BaseModel
@@ -131,7 +134,8 @@ def _get_non_default_value(  # noqa: PLR0911
     if isinstance(value, dict):
         return {**value, "non_default_key": "non_default_value"}
     if isinstance(value, list):
-        return [*value, "non_default_value"]
+        new_item = 1 if model_class is DefaultStudyTagIdsFrontendUserPreference else "non_default_value"
+        return [*value, new_item]
     if isinstance(value, int | str):
         return value
 

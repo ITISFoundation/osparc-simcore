@@ -7942,7 +7942,7 @@
           "projects"
         ],
         "summary": "Create Project",
-        "description": "Creates a new project or copies an existing one. NOTE: implemented as a long running task, i.e. requires polling `status_href` (HTTP_200_OK) to get status and `result_href` (HTTP_201_CREATED) to get created project",
+        "description": "Creates a new project or copies an existing one. When copying, explicit tag IDs must be accessible to the caller or present in the source. Omitted tags preserve source tags, while an empty list clears them. Accessible user default tags are added to non-template projects. NOTE: implemented as a long running task, i.e. requires polling `status_href` (HTTP_200_OK) to get status and `result_href` (HTTP_201_CREATED) to get created project",
         "operationId": "create_project",
         "parameters": [
           {
@@ -25703,6 +25703,14 @@
           },
           "prjOwner": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
+          },
+          "tags": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Tags",
+            "description": "Accessible or source tag IDs to replace the source tags. Omit to keep source tags; an empty list clears them. Accessible user default tags are then added to non-template projects."
           }
         },
         "type": "object",

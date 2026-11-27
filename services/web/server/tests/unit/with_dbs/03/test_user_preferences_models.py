@@ -18,6 +18,7 @@ from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.user_preferences._models import (
     ALL_FRONTEND_PREFERENCES,
+    DefaultStudyTagIdsFrontendUserPreference,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
     get_preference_identifier,
     get_preference_name,
@@ -40,6 +41,14 @@ def test_get_preference_name_and_get_preference_identifier():
 
     preference_name_via_identifier: PreferenceName = get_preference_name(preference_identifier)
     assert preference_name_via_identifier == preference_name
+
+
+def test_default_study_tag_preference_is_registered():
+    preference = DefaultStudyTagIdsFrontendUserPreference()
+
+    assert preference.preference_identifier == "defaultStudyTagIds"
+    assert preference.value == []
+    assert get_preference_name(preference.preference_identifier) == preference.get_preference_name()
 
 
 @pytest.fixture
