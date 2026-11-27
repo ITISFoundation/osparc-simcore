@@ -313,7 +313,8 @@ async def test_api_directory_ancestor_denies_unregistered_path_with_foreign_cont
         repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
 
         access = await repository.get_file_access_rights(user_id=user_id, file_id=unregistered_parent)
-        assert access == AccessRights.none()
+        # write/delete revoked (they cascade into the foreign entry), read kept
+        assert access == AccessRights(read=True, write=False, delete=False)
 
         # a path without foreign contents below stays governed by the registered directory
         access = await repository.get_file_access_rights(user_id=user_id, file_id=f"{registered_directory}/mine")
@@ -351,12 +352,43 @@ async def test_write_without_delete_denied_on_unregistered_path_with_foreign_con
         repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
 
         access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=unregistered_parent)
-        assert access == AccessRights.none()
+        # write revoked (an upload pre-deletes its target id), read kept
+        assert access == AccessRights(read=True, write=False, delete=False)
 
         # without foreign contents below, the project grant still applies
         access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=f"{shared_directory}/mine")
         assert access.write is True
         assert access.delete is False
+
+
+async def test_fully_shared_subtree_keeps_inherited_grants(
+    user_id: UserID,
+    collaborator_id: UserID,
+    project_id: ProjectID,
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # a collaborator holding delete on the project can delete the registered
+    # directory itself, which cascades over the whole subtree: an unregistered
+    # path inside that subtree must not deny what the ancestor entry already allows
+    api_dataset_id = f"{uuid4()}"
+    shared_directory = f"api/{api_dataset_id}/data"
+    unregistered_parent = f"{shared_directory}/mid"
+    shared_subdirectory = f"{unregistered_parent}/sub"
+
+    await create_project_access_rights(
+        project_id=project_id, user_id=collaborator_id, read=True, write=True, delete=True
+    )
+
+    async with _registered_directories(
+        sqlalchemy_async_engine,
+        [(shared_directory, user_id), (shared_subdirectory, user_id)],
+        project_id=project_id,
+    ):
+        repository = AccessLayerRepository.instance(sqlalchemy_async_engine)
+
+        access = await repository.get_file_access_rights(user_id=collaborator_id, file_id=unregistered_parent)
+        assert access == AccessRights.all()
 
 
 async def test_files_in_registered_api_directory_follow_project_sharing(

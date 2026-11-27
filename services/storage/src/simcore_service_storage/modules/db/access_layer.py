@@ -76,22 +76,24 @@ def _ancestor_prefixes(file_id: str) -> list[str]:
 
 async def _get_registered_directories(
     connection: AsyncConnection, stored_file_ids: list[str]
-) -> list[_RegisteredDirectory]:
-    """Entries registered under any of stored_file_ids: the same prefix stored
-    with and without its trailing slash (a directory accepts both forms)
+) -> dict[str, _RegisteredDirectory]:
+    """Entries registered under any of stored_file_ids, keyed by stored file_id.
+    A directory accepts both forms of a prefix, with and without trailing slash.
     """
+    if not stored_file_ids:
+        return {}
     result = await connection.execute(
-        sa.select(file_meta_data.c.user_id, file_meta_data.c.project_id).where(
+        sa.select(file_meta_data.c.file_id, file_meta_data.c.user_id, file_meta_data.c.project_id).where(
             file_meta_data.c.file_id.in_(stored_file_ids)
         )
     )
-    return [
-        _RegisteredDirectory(
+    return {
+        row.file_id: _RegisteredDirectory(
             user_id=UserID(row.user_id),
             project_id=ProjectID(row.project_id) if row.project_id else None,
         )
         for row in result.fetchall()
-    ]
+    }
 
 
 async def _has_entries_registered_by_others_below(
@@ -103,6 +105,59 @@ async def _has_entries_registered_by_others_below(
         .where(
             file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/", autoescape=True),
             file_meta_data.c.user_id != user_id,
+        )
+        .limit(1)
+    )
+    return result.first() is not None
+
+
+async def _has_entries_below_the_caller_cannot_delete(
+    connection: AsyncConnection, *, file_id: str, user_id: UserID
+) -> bool:
+    """Entries below file_id whose own access rights do not grant the caller delete:
+    owned by someone else without a project, or shared through a project the caller
+    cannot delete. The project rights mirror `get_project_access_rights`, read included.
+    """
+    user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
+    caller_can_delete_project = sa.or_(
+        projects.c.prj_owner == user_id,
+        sa.and_(
+            projects.c.workspace_id.is_(None),
+            sa.exists(
+                sa.select(sa.literal(1)).where(
+                    (project_to_groups.c.project_uuid == projects.c.uuid)
+                    & project_to_groups.c.read
+                    & project_to_groups.c.delete
+                    & project_to_groups.c.gid.in_(user_group_ids)
+                )
+            ),
+        ),
+        sa.and_(
+            projects.c.workspace_id.is_not(None),
+            sa.exists(
+                sa.select(sa.literal(1)).where(
+                    (workspaces_access_rights.c.workspace_id == projects.c.workspace_id)
+                    & workspaces_access_rights.c.read
+                    & workspaces_access_rights.c.delete
+                    & workspaces_access_rights.c.gid.in_(user_group_ids)
+                )
+            ),
+        ),
+    )
+    result = await connection.execute(
+        sa.select(sa.literal(1))
+        .select_from(file_meta_data)
+        .where(
+            file_meta_data.c.file_id.startswith(f"{file_id.rstrip('/')}/", autoescape=True),
+            file_meta_data.c.user_id != user_id,
+            sa.or_(
+                file_meta_data.c.project_id.is_(None),
+                ~sa.exists(
+                    sa.select(sa.literal(1))
+                    .select_from(projects)
+                    .where(projects.c.uuid == file_meta_data.c.project_id, caller_can_delete_project)
+                ),
+            ),
         )
         .limit(1)
     )
@@ -343,13 +398,15 @@ class AccessLayerRepository(BaseRepository):
         file_id: StorageFileID,
     ) -> AccessRights:
         ancestor_prefixes = _ancestor_prefixes(file_id)
+        candidates = [p for prefix in ancestor_prefixes for p in (prefix, f"{prefix}/")]
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            registered_by_file_id = await _get_registered_directories(conn, candidates)
             for prefix in ancestor_prefixes:
-                registered = await _get_registered_directories(conn, [prefix, f"{prefix}/"])
-                if not registered:
+                group = [d for key in (prefix, f"{prefix}/") if (d := registered_by_file_id.get(key)) is not None]
+                if not group:
                     continue
-                if len(set(registered)) > 1:
+                if len({(d.user_id, d.project_id) for d in group}) > 1:
                     _logger.warning(
                         "file_meta_data holds conflicting entries for %s and %s/, revoking all rights",
                         prefix,
@@ -357,15 +414,16 @@ class AccessLayerRepository(BaseRepository):
                     )
                     return AccessRights.none()
                 access_rights = await self._access_rights_of_registered_directory(
-                    connection=conn, user_id=user_id, directory=registered[0]
+                    connection=conn, user_id=user_id, directory=group[0]
                 )
-                if (access_rights.write or access_rights.delete) and await _has_entries_registered_by_others_below(
+                if (access_rights.write or access_rights.delete) and await _has_entries_below_the_caller_cannot_delete(
                     conn, file_id=file_id, user_id=user_id
                 ):
-                    # deleting this path cascades into the entries of other users below
-                    # it, and so does an upload: create_file_upload_links deletes the
-                    # target id (enforcing only write) before storing the new object
-                    return AccessRights.none()
+                    # deleting this path cascades into entries the caller cannot delete
+                    # on their own, and so does an upload: create_file_upload_links
+                    # deletes the target id (enforcing only write) before storing the
+                    # new object. Read does not cascade and is kept.
+                    return AccessRights(read=access_rights.read, write=False, delete=False)
                 return access_rights
 
             # deleting an unregistered id cascades to everything below it, so a path
