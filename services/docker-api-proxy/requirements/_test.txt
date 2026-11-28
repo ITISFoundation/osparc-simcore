@@ -32,6 +32,7 @@ annotated-types==0.8.0
 anyio==4.15.1
     # via
     #   fast-depends
+    #   fastapi
     #   faststream
     #   httpx2
     #   starlette
@@ -67,7 +68,7 @@ faker==40.54.0
     # via -r requirements/_test.in
 fast-depends==3.0.11
     # via faststream
-fastapi==0.162.3
+fastapi==0.162.7
     # via
     #   -r requirements/_test.in
     #   fastapi-lifespan-manager
