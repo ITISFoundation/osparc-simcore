@@ -20,6 +20,9 @@ from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
 )
+from pytest_simcore.helpers.typing_env import FrozenEnvVarsDict
+from pytest_simcore.k8s_cluster import deployed_ops_workloads
+from pytest_simcore.simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 from simcore_postgres_database.constants import POSTGRES_SYNC_DSN_SCHEME
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
@@ -38,8 +41,11 @@ from simcore_postgres_database.webserver_models import (
 from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
+from tenacity import Retrying, stop_after_delay, wait_fixed
 
 pytest_plugins = [
+    "pytest_simcore.environment_configs",
+    "pytest_simcore.k8s_cluster",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
 ]
@@ -54,7 +60,14 @@ def docker_compose_file(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
+def postgres_service(request: pytest.FixtureRequest, simcore_cluster_orchestrator: SimcoreClusterOrchestrator) -> str:
+    """DSN of a responsive postgres deployed by the selected cluster orchestrator"""
+    dsn: str = request.getfixturevalue(f"postgres_service_{simcore_cluster_orchestrator}")
+    return dsn
+
+
+@pytest.fixture(scope="session")
+def postgres_service_docker_swarm(docker_services, docker_ip, docker_compose_file) -> str:
     """Deploys postgres and service is responsive"""
     # container environment
     with Path.open(docker_compose_file) as fh:
@@ -78,6 +91,30 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
         timeout=30.0,
         pause=0.1,
     )
+    return dsn
+
+
+@pytest.fixture(scope="session")
+def k8s_ops_workloads(k8s_cluster: None, osparc_simcore_k8s_dir: Path, keep_docker_up: bool) -> Iterator[list[str]]:
+    with deployed_ops_workloads(osparc_simcore_k8s_dir, ["postgres"], keep_docker_up) as releases:
+        yield releases
+
+
+@pytest.fixture(scope="session")
+def postgres_service_k8s(
+    k8s_ops_workloads: list[str], env_devel_dict_session: FrozenEnvVarsDict, kubernetes_cluster_env: FrozenEnvVarsDict
+) -> str:
+    host = kubernetes_cluster_env["KIND_HOST"]
+    port = kubernetes_cluster_env["KIND_POSTGRES_HOST_PORT"]
+
+    user = env_devel_dict_session["POSTGRES_USER"]
+    password = env_devel_dict_session["POSTGRES_PASSWORD"]
+    database = env_devel_dict_session["POSTGRES_DB"]
+    dsn = f"{POSTGRES_SYNC_DSN_SCHEME}://{user}:{password}@{host}:{port}/{database}"
+
+    for attempt in Retrying(wait=wait_fixed(0.1), stop=stop_after_delay(30), reraise=True):
+        with attempt:
+            assert is_postgres_responsive(dsn)
     return dsn
 
 

@@ -76,6 +76,8 @@ pytest-timeout==2.4.0
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via arrow
+python-dotenv==1.2.4
+    # via -r requirements/_test.in
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt

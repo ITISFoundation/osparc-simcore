@@ -26,14 +26,23 @@ install-tools: _require-mise ## Installs k8s tools
 
 ##@ Cluster
 
+kind-config.yaml: kind-config.yaml.template kind.env
+	@set -o allexport; source kind.env; set +o allexport; \
+	envsubst < $< > $@
+
 .PHONY: create-cluster
-create-cluster: .init-swarm ## Creates Kubernetes cluster
-	@cd $(CURDIR) && \
-	kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
+create-cluster: kind-config.yaml .init-swarm ## Creates Kubernetes cluster unless it exists
+	@if ! $(MAKE) --no-print-directory cluster-exists; then \
+		cd $(CURDIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config $<; \
+	fi
 
 .PHONY: delete-cluster
 delete-cluster: ## Deletes Kubernetes cluster
 	kind delete cluster --name $(KIND_CLUSTER_NAME)
+
+.PHONY: cluster-exists
+cluster-exists:
+	@kind get clusters | grep --quiet --line-regexp '$(KIND_CLUSTER_NAME)'
 
 .PHONY: recreate-cluster
 recreate-cluster: ## Recreates Kubernetes cluster
@@ -49,8 +58,11 @@ load-images-into-cluster: ## Loads simcore images into Kubernetes cluster
 ##@ Services
 
 .PHONY: down-devel up-devel
-down-devel: helmfile-destroy ## Destroys services
-up-devel: ## Deploys services
+down-devel: ## Stops local development environment
+	@$(MAKE) helmfile-destroy
+	@$(MAKE) delete-cluster
+
+up-devel: create-cluster ## Start local development environment
 	@$(MAKE) load-images-into-cluster
 	@$(MAKE) helmfile-apply
 

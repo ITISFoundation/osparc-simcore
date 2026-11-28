@@ -1,0 +1,566 @@
+name: CI Build Test K8s
+# NOTE: mirrors, job by job, the jobs of ci-build-test.yml that need no docker daemon.
+# The job blocks are kept byte-identical to ci-build-test.yml so both files can be
+# diffed job by job; what differs is this header (name, triggers, extra env) and that
+# there is no `changes` job here: every job runs on every trigger.
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ci-build-test-k8s.yml"
+      - ".github/actions/setup-k8s-toolchain/**"
+      - "charts/**"
+      - "k8s/**"
+      - "services/**/helmfile*"
+      - "services/**/helm-values*"
+      - "scripts/makefiles/k8s.mk"
+  workflow_dispatch:
+
+# same as ci-build-test.yml: the codecov steps read workflow-run metadata through the API
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+env:
+  # NOTE: 'COLUMNS' is a shell env var that represents the width (number of columns)
+  #       of the terminal or command-line interface in characters.
+  COLUMNS: 120
+  # the only reader today is tests/environment-setup/test_used_docker_compose.py
+  SIMCORE_CLUSTER_ORCHESTRATOR: k8s
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-test-api:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] api"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/api/requirements/ci.txt"
+      - name: install api
+        run: ./ci/github/unit-testing/api.bash install
+      - name: test
+        run: ./ci/github/unit-testing/api.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: api/tests/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-api-server:
+    timeout-minutes: 20
+    name: "[unit] api-server"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/api-server/requirements/ci.txt"
+      - name: Setup k8s toolchain
+        uses: $/.github/actions/setup-k8s-toolchain
+      - name: install
+        run: ./ci/github/unit-testing/api-server.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/api-server.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/api-server.bash test
+      - name: OAS backwards compatibility check
+        run: ./ci/github/unit-testing/api-server.bash openapi-diff
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: services/api-server/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-aws-library:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] aws-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/aws-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/aws-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/aws-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/aws-library.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/aws-library/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-celery-library:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] celery-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/celery-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/celery-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/celery-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/celery-library.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/celery-library/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-common-library:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] common-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/common-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/common-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/common-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/common-library.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/common-library/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-dask-task-models-library:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] dask-task-models-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/dask-task-models-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/dask-task-models-library.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/dask-task-models-library/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-datcore-adapter:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] datcore-adapter"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/datcore-adapter.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/datcore-adapter.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/datcore-adapter/test_failures
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: services/datcore-adapter/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-invitations:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] invitations"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/invitations/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/invitations.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/invitations.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/invitations.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: services/invitations/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-models-library:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] models-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/models-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/models-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/models-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/models-library.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/models-library/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-python-linting:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] python-linting"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14", "3.15"]
+        # ARM runners have 4 vCPUs (vs 2 on x64)
+        os: [ubuntu-24.04-arm]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/pylint/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/python-linting.bash install
+      - name: test
+        run: ./ci/github/unit-testing/python-linting.bash test
+
+  unit-test-service-integration:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] service-integration"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/service-integration/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/service-integration.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/service-integration.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/service-integration.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/service-integration/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-settings-library:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] settings-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/settings-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/settings-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/settings-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/settings-library.bash test
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: packages/settings-library/junit.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-static-webserver:
+    timeout-minutes: 10
+    name: "[unit] static-webserver"
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Test
+        working-directory: services/static-webserver/client/tests
+        run: node --test
+
+  unit-test-webserver-01:
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 01 (isolated)"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04-arm]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/webserver.bash typecheck
+      - name: test isolated
+        run: ./ci/github/unit-testing/webserver.bash test_isolated
+      # shortcut: test_with_db 01 needs the postgres/redis/rabbit stack, added with the infra jobs
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: services/web/server/junit-isolated.xml
+          flags: unittests # optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  system-test-environment-setup:
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[sys] environment setup"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.14"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup SimCore environment
+        uses: $/.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/system-testing/environment-setup.bash install
+      - name: test
+        run: ./ci/github/system-testing/environment-setup.bash test

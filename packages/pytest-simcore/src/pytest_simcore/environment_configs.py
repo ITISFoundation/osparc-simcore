@@ -7,13 +7,15 @@ import logging
 import re
 from copy import deepcopy
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 import pytest
 from faker import Faker
 
 from .helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
-from .helpers.typing_env import EnvVarsDict
+from .helpers.typing_env import EnvVarsDict, FrozenEnvVarsDict
+from .simcore_cluster_orchestrator import SimcoreClusterOrchestrator
 
 _logger = logging.getLogger(__name__)
 
@@ -83,11 +85,23 @@ def skip_if_no_external_envfile(external_envfile_dict: EnvVarsDict) -> None:
 
 
 @pytest.fixture(scope="session")
-def _env_devel_dict_session(env_devel_file: Path) -> EnvVarsDict:
+def _env_devel_dict_session(
+    env_devel_file: Path,
+    simcore_cluster_orchestrator: SimcoreClusterOrchestrator,
+    request: pytest.FixtureRequest,
+) -> EnvVarsDict:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"
-    # Loads and interpolates .env-devel file
-    return load_dotenv(env_devel_file, verbose=True, interpolate=True)
+    envs = load_dotenv(env_devel_file, verbose=True, interpolate=True)
+    if simcore_cluster_orchestrator == SimcoreClusterOrchestrator.K8S:
+        override_file: Path = request.getfixturevalue("env_devel_k8s_override_file")
+        envs |= load_dotenv(override_file, verbose=True, interpolate=True)
+    return envs
+
+
+@pytest.fixture(scope="session")
+def env_devel_dict_session(_env_devel_dict_session: EnvVarsDict) -> FrozenEnvVarsDict:
+    return MappingProxyType(_env_devel_dict_session)
 
 
 @pytest.fixture

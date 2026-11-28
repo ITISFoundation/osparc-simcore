@@ -98,7 +98,6 @@ def mock_env_deployer_pipeline(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         },
     )
 
-
 @pytest.fixture
 def mock_env_devel_environment(
     env_devel_dict: EnvVarsDict,

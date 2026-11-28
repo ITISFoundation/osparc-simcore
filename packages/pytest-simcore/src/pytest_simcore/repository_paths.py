@@ -77,6 +77,30 @@ def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def osparc_simcore_k8s_dir(osparc_simcore_root_dir: Path) -> Path:
+    """osparc-simcore/k8s folder"""
+    k8s_dir = osparc_simcore_root_dir / "k8s"
+    assert k8s_dir.exists()
+    return k8s_dir
+
+
+@pytest.fixture(scope="session")
+def env_devel_k8s_override_file(osparc_simcore_k8s_dir: Path) -> Path:
+    """Path to osparc-simcore/k8s/.env-devel-k8s-override file"""
+    override_fpath = osparc_simcore_k8s_dir / ".env-devel-k8s-override"
+    assert override_fpath.exists()
+    return override_fpath
+
+
+@pytest.fixture(scope="session")
+def kind_env_file(osparc_simcore_k8s_dir: Path) -> Path:
+    """Path to osparc-simcore/k8s/kind.env file"""
+    kind_env_fpath = osparc_simcore_k8s_dir / "kind.env"
+    assert kind_env_fpath.exists()
+    return kind_env_fpath
+
+
+@pytest.fixture(scope="session")
 def services_docker_compose_file(services_dir: Path) -> Path:
     dcpath = services_dir / "docker-compose.yml"
     assert dcpath.exists()

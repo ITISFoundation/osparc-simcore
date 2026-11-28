@@ -27,6 +27,7 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.httpx_calls_capture",
+    "pytest_simcore.k8s_cluster",
     "pytest_simcore.logging",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
