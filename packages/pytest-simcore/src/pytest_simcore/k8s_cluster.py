@@ -15,6 +15,7 @@ from .helpers.constants import HEADER_STR
 from .helpers.logging_tools import log_context
 from .helpers.monkeypatch_envs import load_dotenv
 from .helpers.typing_env import FrozenEnvVarsDict
+from .helpers.xdist import is_xdist_worker
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
@@ -51,6 +52,12 @@ def _k8s_cluster_exists(k8s_dir: Path) -> bool:
     return _run_make(k8s_dir, "cluster-exists", check=False).returncode == 0
 
 
+def _reject_xdist_worker(request: pytest.FixtureRequest) -> None:
+    if is_xdist_worker(request):
+        msg = "the k8s flavor does not support pytest-xdist. Run without -n/--numprocesses"
+        raise pytest.UsageError(msg)
+
+
 @pytest.fixture(scope="session")
 def kubernetes_cluster_env(kind_env_file: Path) -> FrozenEnvVarsDict:
     return MappingProxyType(load_dotenv(kind_env_file, verbose=True, interpolate=True))
@@ -58,6 +65,7 @@ def kubernetes_cluster_env(kind_env_file: Path) -> FrozenEnvVarsDict:
 
 @pytest.fixture(scope="session")
 def k8s_cluster(osparc_simcore_k8s_dir: Path, request: pytest.FixtureRequest) -> None:
+    _reject_xdist_worker(request)
     if not _k8s_cluster_exists(osparc_simcore_k8s_dir):
         _run_make(osparc_simcore_k8s_dir, "create-cluster")
         request.session.stash[_K8S_CLUSTER_CREATED_STASH_KEY] = osparc_simcore_k8s_dir
