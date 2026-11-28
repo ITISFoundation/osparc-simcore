@@ -60,11 +60,19 @@ def _worker_db_offset(request: pytest.FixtureRequest, deployed_databases_count: 
 
 
 @pytest.fixture
-async def redis_settings(
+def _redis_settings_for_orchestrator(
     request: pytest.FixtureRequest, simcore_cluster_orchestrator: SimcoreClusterOrchestrator
 ) -> RedisSettings:
-    """Returns the settings of a redis service that is up and responsive"""
+    # sync on purpose: getfixturevalue may set up async fixtures (e.g. docker_stack), which
+    # pytest-asyncio cannot do from inside a running event loop, i.e. from the async redis_settings
     settings: RedisSettings = request.getfixturevalue(f"redis_settings_{simcore_cluster_orchestrator}")
+    return settings
+
+
+@pytest.fixture
+async def redis_settings(_redis_settings_for_orchestrator: RedisSettings) -> RedisSettings:
+    """Returns the settings of a redis service that is up and responsive"""
+    settings = _redis_settings_for_orchestrator
     with log_context(
         logging.INFO,
         f"waiting for redis at {settings.REDIS_HOST}:{settings.REDIS_PORT} "
