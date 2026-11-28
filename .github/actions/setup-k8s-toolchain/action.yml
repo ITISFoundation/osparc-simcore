@@ -4,7 +4,32 @@ description: 'Installs tools for Kubernetes'
 runs:
   using: 'composite'
   steps:
+    - name: Set helm plugins dir
+      shell: bash
+      run: | # zizmor: ignore[github-env] Constant value, no untrusted input.
+        echo "HELM_PLUGINS=${HOME}/.local/share/helm/plugins" >> "${GITHUB_ENV}"
+
+    - name: cache tools and helm plugins
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.local/share/mise/installs
+          ${{ env.HELM_PLUGINS }}
+        key: k8s-tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('k8s/.mise.toml') }}
+
     - name: mise
       uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
       with:
+        install: false
+        cache: false
         working_directory: ./k8s
+
+    - name: install tools
+      shell: bash
+      run: make -C k8s install-tools
+
+    - name: export tool paths
+      shell: bash
+      working-directory: ./k8s
+      run: | # zizmor: ignore[github-env] Install dirs of tools pinned in k8s/.mise.toml.
+        mise env --paths >> "${GITHUB_PATH}"
