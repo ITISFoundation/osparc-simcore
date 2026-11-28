@@ -6,9 +6,9 @@
 
 import datetime
 import json
-import re
 import secrets
 from collections.abc import Callable
+from pathlib import Path
 from random import choice, shuffle
 
 import arrow
@@ -19,6 +19,7 @@ from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_ec2_boot import BootScriptRunner
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceData
@@ -32,6 +33,10 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from types_aiobotocore_ec2.literals import InstanceTypeType
+
+
+def _find_boot_steps(startup_script: str) -> list[str]:
+    return startup_script.split(" && ")
 
 
 @pytest.fixture
@@ -153,8 +158,13 @@ async def test_ec2_startup_script_just_ami(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert not instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 2
-    assert re.fullmatch(r"^docker swarm join --availability=drain --token .*$", startup_script)
+
+    steps = _find_boot_steps(startup_script)
+    assert len(steps) == 2, f"expected a login and a swarm join, got {steps}"
+    assert " docker login " in steps[0], f"expected the machine to log in before joining, got {steps[0]}"
+    assert steps[-1].startswith("docker swarm join --availability=drain --token "), (
+        f"expected the last step to join the swarm, got {steps[-1]}"
+    )
 
 
 @pytest.fixture
@@ -206,6 +216,11 @@ def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("REGISTRY_AUTH")
 
 
+@pytest.fixture
+def anonymous_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REGISTRY_AUTH", "False")
+
+
 async def test_ec2_startup_script_with_pre_pulling(
     minimal_configuration: None,
     ec2_instances_boot_ami_pre_pull: EnvVarsDict,
@@ -216,12 +231,50 @@ async def test_ec2_startup_script_with_pre_pulling(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 6
-    assert re.fullmatch(
-        r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && "
-        r"(echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh)$",
+
+    steps = _find_boot_steps(startup_script)
+    login = next(step for step in steps if " docker login " in step)
+    join = next(step for step in steps if step.startswith("docker swarm join "))
+    assert login.startswith("( "), f"expected the login to retry in a subshell, got {login}"
+    pull = next(index for index, step in enumerate(steps) if step == "./docker-pull-script.sh")
+    # the machine logs in before it can be accepted into the cluster, and pulls only after joining
+    assert steps.index(login) < steps.index(join) < pull, f"expected login, join, pull, got {steps}"
+
+
+async def test_ec2_startup_script_logs_in_before_joining_the_swarm(
+    minimal_configuration: None,
+    ec2_instances_boot_ami_pre_pull: EnvVarsDict,
+    with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
+    app_settings: ApplicationSettings,
+    tmp_path: Path,
+    run_as_if_in_ec2: BootScriptRunner,
+):
+    """A machine that cannot log in must not join the swarm
+
+    The service accepts a machine as soon as it sees its swarm node, so a machine joining without registry
+    credentials gets tasks it cannot pull. This is the behaviour private-issues#703 is about, hence running
+    the boot script instead of only reading it.
+    """
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
+    startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
+
+    fake_docker_refusing_login = """#!/usr/bin/env bash
+echo "$*" >> "$DOCKER_CALLS_LOG"
+test "$1" != login
+"""
+
+    docker_calls_log_path = tmp_path / "docker-calls.log"
+    result = run_as_if_in_ec2(
         startup_script,
-    ), f"{startup_script=}"
+        {"docker": fake_docker_refusing_login},
+        {"DOCKER_CALLS_LOG": str(docker_calls_log_path)},
+    )
+
+    assert result.returncode != 0, result.stderr
+    logged_docker_calls = docker_calls_log_path.read_text() if docker_calls_log_path.exists() else ""
+    assert "login" in logged_docker_calls, "the boot script never tried to log in"
+    assert "swarm join" not in logged_docker_calls, "the machine joined the swarm without credentials"
 
 
 async def test_ec2_startup_script_with_custom_scripts(
@@ -234,11 +287,16 @@ async def test_ec2_startup_script_with_custom_scripts(
         instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
         assert not instance_boot_specific.pre_pull_images
         startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-        assert len(startup_script.split("&&")) == 2 + len(ec2_instances_boot_ami_scripts)
-        assert re.fullmatch(
-            rf"^([^&&]+ &&){{{len(ec2_instances_boot_ami_scripts)}}} (docker swarm join .+)$",
-            startup_script,
-        ), f"{startup_script=}"
+
+        steps = _find_boot_steps(startup_script)
+        num_custom_scripts = len(ec2_instances_boot_ami_scripts)
+        assert steps[:num_custom_scripts] == ec2_instances_boot_ami_scripts, (
+            f"expected the custom boot scripts first, got {steps}"
+        )
+        assert " docker login " in steps[num_custom_scripts], (
+            f"expected the machine to log in after the custom scripts, got {steps}"
+        )
+        assert steps[-1].startswith("docker swarm join "), f"expected the last step to join the swarm, got {steps[-1]}"
 
 
 async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
@@ -251,8 +309,33 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 1
-    assert re.fullmatch(r"^docker swarm join --availability=drain --token .*$", startup_script)
+
+    steps = _find_boot_steps(startup_script)
+    assert len(steps) == 1, f"expected only a swarm join without a registry, got {steps}"
+    assert steps[0].startswith("docker swarm join "), f"expected the machine to join the swarm, got {steps[0]}"
+    assert "docker login" not in startup_script, f"expected no login without a registry, got {startup_script}"
+
+
+async def test_ec2_startup_script_with_pre_pulling_but_anonymous_registry(
+    minimal_configuration: None,
+    ec2_instances_boot_ami_pre_pull: EnvVarsDict,
+    with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
+    anonymous_registry: None,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_REGISTRY
+    assert not app_settings.AUTOSCALING_REGISTRY.REGISTRY_AUTH
+    instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
+    assert instance_boot_specific.pre_pull_images
+    startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
+
+    steps = _find_boot_steps(startup_script)
+    # images pull without credentials here, so a login failure must not keep the machine out of the swarm
+    assert "docker login" not in startup_script, f"expected no login without registry authentication, got {steps}"
+    join = next(step for step in steps if step.startswith("docker swarm join "))
+    pull = next(index for index, step in enumerate(steps) if step == "./docker-pull-script.sh")
+    assert steps.index(join) < pull, f"expected the machine to join before pulling, got {steps}"
 
 
 def test_sort_empty_drained_nodes(

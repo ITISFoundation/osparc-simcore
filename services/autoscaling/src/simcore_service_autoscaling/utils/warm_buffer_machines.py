@@ -95,16 +95,18 @@ def is_warm_buffer_machine(tags: EC2Tags) -> bool:
 def ec2_warm_buffer_startup_script(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> str:
-    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    startup_commands: list[str] = ec2_boot_specific.custom_boot_scripts.copy()
+
     desired_pre_pull_images = utils_docker.compute_full_list_of_pre_pulled_images(ec2_boot_specific, app_settings)
     if desired_pre_pull_images:
         assert app_settings.AUTOSCALING_REGISTRY  # nosec
-
-        startup_commands.extend(
-            (
-                utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY),
-                utils_docker.write_compose_file_command(desired_pre_pull_images),
+        if app_settings.AUTOSCALING_REGISTRY.REGISTRY_AUTH:
+            startup_commands.append(
+                utils_docker.get_docker_login_on_start_bash_command(
+                    app_settings.AUTOSCALING_REGISTRY,
+                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
+                )
             )
-        )
+        startup_commands.append(utils_docker.write_compose_file_command(desired_pre_pull_images))
     return " && ".join(startup_commands)
